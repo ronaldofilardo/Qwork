@@ -613,9 +613,10 @@ function ComissaoSection({
                         const valorTotal = Number(
                           solicitacao.valor_total_calculado
                         );
-                        const ratio = negociado > 0 ? (negociado - custo) / negociado : 0;
+                        const ratio =
+                          negociado > 0 ? (negociado - custo) / negociado : 0;
                         const valorComissao =
-                          Math.round((ratio * valorTotal) * 100) / 100;
+                          Math.round(ratio * valorTotal * 100) / 100;
                         return (
                           <div>
                             <p className="font-bold text-purple-600">
