@@ -140,14 +140,25 @@ export default function EditRepresentanteModal({
           ? parseFloat(percentualComercial)
           : null;
       }
-      // Validar soma
+      // Validar soma — aplica APENAS ao modelo percentual
+      // No modelo custo_fixo, percComercial é % sobre o custo fixo (dimensão independente)
       const totalPerc =
         parseFloat(percentual || '0') + parseFloat(percentualComercial || '0');
-      if (totalPerc > 40) {
+      if (modelo !== 'custo_fixo' && totalPerc > 40) {
         setErro(
           `A soma dos percentuais (rep + comercial) não pode ultrapassar 40%. Atual: ${totalPerc.toFixed(1)}%.`
         );
         return;
+      }
+      // Para custo_fixo: validar que % comercial está em 0–40
+      if (modelo === 'custo_fixo') {
+        const percCom = parseFloat(percentualComercial || '0');
+        if (isNaN(percCom) || percCom < 0 || percCom > 40) {
+          setErro(
+            '% Comissão Comercial deve estar entre 0% e 40% (incide sobre o custo fixo).'
+          );
+          return;
+        }
       }
       if (rep.tipo_pessoa === 'pf' && cpf.trim() !== (rep.cpf ?? ''))
         body.cpf = cpf.trim() || null;
@@ -379,7 +390,9 @@ export default function EditRepresentanteModal({
                     placeholder="Ex: 2.0"
                   />
                   <p className="text-xs text-gray-400 mt-1">
-                    Soma rep + comercial ≤ 40%
+                    {modelo === 'custo_fixo'
+                      ? '% sobre o custo fixo (não sobre o valor negociado)'
+                      : 'Soma rep + comercial ≤ 40%'}
                   </p>
                 </div>
                 <div className="col-span-2">

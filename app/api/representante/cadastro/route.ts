@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       nome,
       email,
       tipo_pessoa,
-      cpf,
       cnpj,
       cpf_responsavel_pj,
       telefone,
@@ -42,9 +41,9 @@ export async function POST(request: NextRequest) {
         { error: 'E-mail é obrigatório' },
         { status: 400 }
       );
-    if (!tipo_pessoa || !['pf', 'pj'].includes(tipo_pessoa))
+    if (tipo_pessoa !== 'pj')
       return NextResponse.json(
-        { error: 'tipo_pessoa deve ser "pf" ou "pj"' },
+        { error: 'Apenas representantes PJ (CNPJ) são aceitos' },
         { status: 400 }
       );
     if (!aceite_termos)
@@ -61,24 +60,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
 
-    if (tipo_pessoa === 'pf') {
-      if (!cpf || !/^\d{11}$/.test(cpf))
-        return NextResponse.json(
-          { error: 'CPF inválido (11 dígitos)' },
-          { status: 400 }
-        );
-    } else {
-      if (!cnpj || !/^\d{14}$/.test(cnpj))
-        return NextResponse.json(
-          { error: 'CNPJ inválido (14 dígitos)' },
-          { status: 400 }
-        );
-      if (!cpf_responsavel_pj || !/^\d{11}$/.test(cpf_responsavel_pj))
-        return NextResponse.json(
-          { error: 'CPF do responsável PJ é obrigatório (11 dígitos)' },
-          { status: 400 }
-        );
-    }
+    if (!cnpj || !/^\d{14}$/.test(cnpj))
+      return NextResponse.json(
+        { error: 'CNPJ inválido (14 dígitos)' },
+        { status: 400 }
+      );
+    if (!cpf_responsavel_pj || !/^\d{11}$/.test(cpf_responsavel_pj))
+      return NextResponse.json(
+        { error: 'CPF do responsável PJ é obrigatório (11 dígitos)' },
+        { status: 400 }
+      );
 
     // Verificar se e-mail já existe
     const emailExiste = await query(
@@ -91,20 +82,8 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
 
-    // Verificar conflito PJ: cpf_responsavel_pj = CPF de representante PF existente
-    let conflictoPfId: number | null = null;
-    if (tipo_pessoa === 'pj' && cpf_responsavel_pj) {
-      const pfConflito = await query(
-        `SELECT id FROM representantes WHERE cpf = $1 AND tipo_pessoa = 'pf' LIMIT 1`,
-        [cpf_responsavel_pj]
-      );
-      if (pfConflito.rows.length > 0) {
-        conflictoPfId = pfConflito.rows[0].id;
-      }
-    }
-
-    // Status inicial: se houver conflito PF/PJ → 'apto_bloqueado', senão 'ativo'
-    const statusInicial = conflictoPfId ? 'apto_bloqueado' : 'ativo';
+    // Status inicial: 'ativo'
+    const statusInicial = 'ativo';
 
     const result = await query(
       `INSERT INTO representantes (
@@ -114,8 +93,7 @@ export async function POST(request: NextRequest) {
          pix_chave, pix_tipo,
          status,
          aceite_termos, aceite_termos_em,
-         aceite_disclaimer_nv, aceite_disclaimer_nv_em,
-         bloqueio_conflito_pf_id
+         aceite_disclaimer_nv, aceite_disclaimer_nv_em
        ) VALUES (
          $1,$2,$3,$4,
          $5,$6,$7,
@@ -123,8 +101,7 @@ export async function POST(request: NextRequest) {
          $13,$14,
          $15,
          $16, CASE WHEN $16 THEN NOW() END,
-         $17, CASE WHEN $17 THEN NOW() END,
-         $18
+         $17, CASE WHEN $17 THEN NOW() END
        )
        RETURNING id, codigo, email, nome, status, tipo_pessoa, criado_em`,
       [
@@ -132,7 +109,7 @@ export async function POST(request: NextRequest) {
         nome.trim(),
         email.toLowerCase().trim(),
         telefone ?? null,
-        cpf ?? null,
+        null, // cpf: apenas PJ, sem CPF próprio
         cnpj ?? null,
         cpf_responsavel_pj ?? null,
         banco_codigo ?? null,
@@ -145,29 +122,10 @@ export async function POST(request: NextRequest) {
         statusInicial,
         !!aceite_termos,
         !!aceite_disclaimer_nv,
-        conflictoPfId,
       ]
     );
 
     const representante = result.rows[0];
-
-    // Notificar admin sobre conflito PF/PJ se houver
-    if (conflictoPfId) {
-      await query(
-        `INSERT INTO comissionamento_auditoria (tabela, registro_id, status_anterior, status_novo, triggador, motivo, dados_extras)
-         VALUES ('representantes', $1, NULL, 'apto_bloqueado', 'sistema',
-                 'PJ cadastrada com CPF de PF existente — aguarda decisão Admin',
-                 $2::jsonb)`,
-        [
-          representante.id,
-          JSON.stringify({
-            pf_conflito_id: conflictoPfId,
-            cnpj,
-            cpf_responsavel_pj,
-          }),
-        ]
-      );
-    }
 
     return NextResponse.json(
       {
@@ -181,9 +139,6 @@ export async function POST(request: NextRequest) {
           tipo_pessoa: representante.tipo_pessoa,
           criado_em: representante.criado_em,
         },
-        aviso: conflictoPfId
-          ? 'Cadastro PJ criado com conflito de CPF. Admin será notificado para resolver.'
-          : null,
       },
       { status: 201 }
     );

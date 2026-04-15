@@ -259,9 +259,9 @@ export async function criarComissaoAdmin(params: {
   const modeloRep: string = rep.modelo_comissionamento ?? 'percentual';
   const isCustoFixo = modeloRep === 'custo_fixo';
 
-  // Buscar valor_negociado do vínculo (para custo_fixo) e percentual (para percentual)
+  // Buscar valor_negociado do vínculo (para custo_fixo), percentual e % comercial
   const vinculoPercResult = await query(
-    `SELECT percentual_comissao_representante, valor_negociado
+    `SELECT percentual_comissao_representante, valor_negociado, percentual_comissao_comercial
      FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
     [vinculo_id]
   );
@@ -271,9 +271,14 @@ export async function criarComissaoAdmin(params: {
     vinculoPercResult.rows[0]?.valor_negociado != null
       ? parseFloat(vinculoPercResult.rows[0].valor_negociado)
       : null;
+  const percComercialVinculo: number =
+    vinculoPercResult.rows[0]?.percentual_comissao_comercial != null
+      ? parseFloat(vinculoPercResult.rows[0].percentual_comissao_comercial)
+      : 0;
 
   let percentualRep: number | null = null;
   let valorComissao: number;
+  let baseCalculoFinal = 0;
 
   if (isCustoFixo) {
     // Custo fixo: comissão = (valor_negociado - custo_fixo) × avaliações / parcelas
@@ -292,7 +297,8 @@ export async function criarComissaoAdmin(params: {
     const negociado = valorNegociadoVinculo ?? valor_laudo;
     const { valorRep, abaixoMinimo } = calcularComissaoCustoFixo(
       negociado,
-      custoFixoRep
+      custoFixoRep,
+      percComercialVinculo
     );
     if (abaixoMinimo) {
       return {
@@ -309,6 +315,7 @@ export async function criarComissaoAdmin(params: {
     const ratioRep = negociado > 0 ? valorRep / negociado : 0;
     valorComissao = Math.round(ratioRep * baseCalculo * 100) / 100;
     percentualRep = null; // custo_fixo não usa percentual
+    baseCalculoFinal = baseCalculo;
   } else {
     // Percentual: lógica original
     percentualRep =
@@ -330,7 +337,15 @@ export async function criarComissaoAdmin(params: {
         : valor_laudo / totalParc;
     valorComissao =
       Math.round(((baseCalculo * percentualRep) / 100) * 100) / 100;
+    baseCalculoFinal = baseCalculo;
   }
+
+  // Comissão do comercial: % aplicado sobre baseCalculo (igual para ambos os modelos)
+  const valorComissaoComercial: number =
+    percComercialVinculo > 0
+      ? Math.round(((baseCalculoFinal * percComercialVinculo) / 100) * 100) /
+        100
+      : 0;
 
   // Status inicial:
   //   forcar_retida=true → sempre retida (provisionamento antecipado de parcelas futuras)
@@ -352,14 +367,16 @@ export async function criarComissaoAdmin(params: {
     `INSERT INTO comissoes_laudo (
        vinculo_id, representante_id, entidade_id, clinica_id, laudo_id, lote_pagamento_id,
        valor_laudo, percentual_comissao, valor_comissao,
+       percentual_comissao_comercial, valor_comissao_comercial,
        status, mes_emissao, mes_pagamento, data_emissao_laudo,
        data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9,
-       $10::status_comissao, $11::date, $12::date, NOW(),
-       CASE WHEN $10::status_comissao = 'pendente_consolidacao' THEN NOW() ELSE NULL END,
-       $13, $14, $15
+       $10, $11,
+       $12::status_comissao, $13::date, $14::date, NOW(),
+       CASE WHEN $12::status_comissao = 'pendente_consolidacao' THEN NOW() ELSE NULL END,
+       $15, $16, $17
      ) RETURNING *`,
     [
       vinculo_id,
@@ -371,6 +388,8 @@ export async function criarComissaoAdmin(params: {
       valor_laudo,
       percentualRep,
       valorComissao,
+      percComercialVinculo,
+      valorComissaoComercial,
       statusInicial,
       mesEmissao,
       mes_pagamento,
@@ -400,6 +419,8 @@ export async function criarComissaoAdmin(params: {
         valor_laudo,
         percentual_comissao: percentualRep,
         valor_comissao: valorComissao,
+        percentual_comissao_comercial: percComercialVinculo,
+        valor_comissao_comercial: valorComissaoComercial,
       },
       criado_por_cpf: admin_cpf ?? null,
     });
@@ -460,7 +481,9 @@ export async function ativarComissaoParcelaPaga(params: {
 
     const repApto = comissao.rep_status === 'apto';
     const statusAnterior: string = comissao.status;
-    const statusNovo: StatusComissao = repApto ? 'pendente_consolidacao' : 'retida';
+    const statusNovo: StatusComissao = repApto
+      ? 'pendente_consolidacao'
+      : 'retida';
 
     await query(
       `UPDATE comissoes_laudo

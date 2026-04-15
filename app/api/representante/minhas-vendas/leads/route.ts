@@ -21,7 +21,6 @@ import {
   calcularRequerAprovacao,
   calcularComissaoCustoFixo,
   CUSTO_POR_AVALIACAO,
-  MAX_PERCENTUAL_COMISSAO,
   TIPOS_CLIENTE,
 } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
@@ -186,10 +185,11 @@ export async function POST(request: NextRequest) {
     const comissaoNum = Number(repResult.rows[0]?.percentual_comissao ?? 0);
     const modeloComissionamento =
       repResult.rows[0]?.modelo_comissionamento ?? null;
+    // Usar percentual_comissao_comercial explícito do representante (nunca auto-calcular)
     const percComercial =
       modeloComissionamento === 'percentual'
-        ? MAX_PERCENTUAL_COMISSAO - comissaoNum
-        : Number(repResult.rows[0]?.percentual_comissao_comercial ?? 0);
+        ? Number(repResult.rows[0]?.percentual_comissao_comercial ?? 0)
+        : 0;
 
     if (
       typeof contato_email === 'string' &&
@@ -271,7 +271,11 @@ export async function POST(request: NextRequest) {
         custoFixoRaw != null
           ? Number(custoFixoRaw)
           : CUSTO_POR_AVALIACAO[tipoCliente];
-      const calc = calcularComissaoCustoFixo(valorNum, valorCustoFixo);
+      const calc = calcularComissaoCustoFixo(
+        valorNum,
+        valorCustoFixo,
+        percComercial
+      );
       if (calc.abaixoMinimo) {
         return NextResponse.json(
           {
@@ -291,14 +295,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // requer_aprovacao_suporte: quando valor que fica para o QWork é inferior ao custo mínimo
+    const valorQWork =
+      modeloComissionamento === 'custo_fixo'
+        ? valorNum -
+          (valorCustoFixoSnapshot ?? CUSTO_POR_AVALIACAO[tipoCliente])
+        : valorNum * (1 - (comissaoNum + percComercial) / 100);
+    const requerAprovacaoSuporteCalc =
+      requerAprovacao && valorQWork < CUSTO_POR_AVALIACAO[tipoCliente];
+
     // Lead direto: vendedor_id = NULL, origem implícita via representante_id
     const result = await query(
       `INSERT INTO leads_representante
          (representante_id, vendedor_id, cnpj, razao_social, contato_nome, contato_email,
           contato_telefone, valor_negociado, percentual_comissao,
           percentual_comissao_representante, percentual_comissao_comercial,
-          tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado, valor_custo_fixo_snapshot)
-       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          tipo_cliente, requer_aprovacao_comercial, requer_aprovacao_suporte,
+          num_vidas_estimado, valor_custo_fixo_snapshot)
+       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
        RETURNING *`,
       [
         sess.representante_id,
@@ -313,13 +327,18 @@ export async function POST(request: NextRequest) {
         percComercial,
         tipoCliente,
         requerAprovacao,
+        requerAprovacaoSuporteCalc,
         numVidas,
         valorCustoFixoSnapshot,
       ]
     );
 
     return NextResponse.json(
-      { lead: result.rows[0], requer_aprovacao_comercial: requerAprovacao },
+      {
+        lead: result.rows[0],
+        requer_aprovacao_comercial: requerAprovacao,
+        requer_aprovacao_suporte: requerAprovacaoSuporteCalc,
+      },
       { status: 201 }
     );
   } catch (err: unknown) {

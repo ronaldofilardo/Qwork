@@ -16,7 +16,10 @@ interface Props {
   repNome: string;
   modeloAtual: 'percentual' | 'custo_fixo' | null;
   percentualAtual: number | null;
+  percentualComercialAtual: number | null;
   walletIdAtual: string | null;
+  valorCFEntidadeAtual?: number | null;
+  valorCFClinicaAtual?: number | null;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -26,7 +29,10 @@ export default function AprovarComissaoModal({
   repNome,
   modeloAtual,
   percentualAtual,
+  percentualComercialAtual,
   walletIdAtual,
+  valorCFEntidadeAtual,
+  valorCFClinicaAtual,
   onClose,
   onSuccess,
 }: Props) {
@@ -36,15 +42,63 @@ export default function AprovarComissaoModal({
   const [percentual, setPercentual] = useState<string>(
     percentualAtual != null ? String(percentualAtual) : ''
   );
+  const [percentualComercial, setPercentualComercial] = useState<string>(
+    percentualComercialAtual != null ? String(percentualComercialAtual) : '0'
+  );
+  const [valorCFEntidade, setValorCFEntidade] = useState<string>(
+    valorCFEntidadeAtual != null ? String(valorCFEntidadeAtual) : ''
+  );
+  const [valorCFClinica, setValorCFClinica] = useState<string>(
+    valorCFClinicaAtual != null ? String(valorCFClinicaAtual) : ''
+  );
   const [walletId, setWalletId] = useState<string>(walletIdAtual ?? '');
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const pctNum = parseFloat(percentual);
+  const pctComNum = parseFloat(percentualComercial);
+  const cfEntidadeNum = parseFloat(valorCFEntidade);
+  const cfClinicaNum = parseFloat(valorCFClinica);
+  const somaPerc =
+    (isNaN(pctNum) ? 0 : pctNum) + (isNaN(pctComNum) ? 0 : pctComNum);
+
+  // Validações modelo percentual
   const pctValido =
     modelo !== 'percentual' || (!isNaN(pctNum) && pctNum > 0 && pctNum <= 40);
+  const pctComValido =
+    modelo !== 'percentual' ||
+    (!isNaN(pctComNum) && pctComNum >= 0 && pctComNum <= 40);
+  const somaValida = modelo !== 'percentual' || somaPerc <= 40;
+
+  // Validações modelo custo_fixo
+  const cfEntidadeValido =
+    modelo !== 'custo_fixo' || (!isNaN(cfEntidadeNum) && cfEntidadeNum > 0);
+  const cfClinicaValido =
+    modelo !== 'custo_fixo' || (!isNaN(cfClinicaNum) && cfClinicaNum > 0);
+  const cfPercComValido =
+    modelo !== 'custo_fixo' ||
+    (!isNaN(pctComNum) && pctComNum >= 0 && pctComNum <= 40);
+
+  // Preview para custo_fixo: comercial recebe pctComNum% do custo_fixo
+  const previewComercialEntidade =
+    modelo === 'custo_fixo' && !isNaN(cfEntidadeNum) && !isNaN(pctComNum)
+      ? Math.round(((cfEntidadeNum * pctComNum) / 100) * 100) / 100
+      : null;
+  const previewComercialClinica =
+    modelo === 'custo_fixo' && !isNaN(cfClinicaNum) && !isNaN(pctComNum)
+      ? Math.round(((cfClinicaNum * pctComNum) / 100) * 100) / 100
+      : null;
+
   const semWallet = walletId.trim() === '' && walletIdAtual === null;
-  const podeSubmeter = modelo !== null && pctValido && !loading;
+  const podeSubmeter =
+    modelo !== null &&
+    pctValido &&
+    pctComValido &&
+    somaValida &&
+    cfEntidadeValido &&
+    cfClinicaValido &&
+    cfPercComValido &&
+    !loading;
 
   const handleSubmit = async () => {
     if (!podeSubmeter) return;
@@ -54,9 +108,20 @@ export default function AprovarComissaoModal({
       const body: {
         modelo: string;
         percentual?: number;
+        percentual_comissao_comercial?: number;
+        valor_custo_fixo_entidade?: number;
+        valor_custo_fixo_clinica?: number;
         asaas_wallet_id?: string;
       } = { modelo };
-      if (modelo === 'percentual') body.percentual = pctNum;
+      if (modelo === 'percentual') {
+        body.percentual = pctNum;
+        body.percentual_comissao_comercial = isNaN(pctComNum) ? 0 : pctComNum;
+      }
+      if (modelo === 'custo_fixo') {
+        body.valor_custo_fixo_entidade = cfEntidadeNum;
+        body.valor_custo_fixo_clinica = cfClinicaNum;
+        body.percentual_comissao_comercial = isNaN(pctComNum) ? 0 : pctComNum;
+      }
       if (walletId.trim()) body.asaas_wallet_id = walletId.trim();
       const res = await fetch(
         `/api/comercial/representantes/${repId}/aprovar-comissao`,
@@ -168,6 +233,180 @@ export default function AprovarComissaoModal({
           </div>
         )}
 
+        {/* Campo percentual comercial (modelo percentual) */}
+        {modelo === 'percentual' && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              % Comissão Comercial (0% – 40%)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min={0}
+                max={40}
+                step={0.01}
+                value={percentualComercial}
+                onChange={(e) => setPercentualComercial(e.target.value)}
+                placeholder="Ex: 5.00"
+                className="w-full pr-8 pl-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                %
+              </span>
+            </div>
+            {!isNaN(pctComNum) && pctComNum < 0 && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle size={11} />
+                Percentual não pode ser negativo
+              </p>
+            )}
+            {!somaValida && (
+              <p className="text-xs text-red-600 flex items-center gap-1">
+                <AlertCircle size={11} />
+                Soma (Rep {pctNum}% + Comercial {pctComNum}% ={' '}
+                {somaPerc.toFixed(2)}%) excede 40%
+              </p>
+            )}
+            {somaValida &&
+              modelo === 'percentual' &&
+              !isNaN(pctNum) &&
+              !isNaN(pctComNum) &&
+              pctNum > 0 && (
+                <p className="text-xs text-gray-500">
+                  Total: {somaPerc.toFixed(2)}% · QWork fica com{' '}
+                  {(100 - somaPerc).toFixed(2)}%
+                </p>
+              )}
+          </div>
+        )}
+
+        {/* Campos custo fixo (modelo custo_fixo) */}
+        {modelo === 'custo_fixo' && (
+          <div className="space-y-4">
+            {/* Custo fixo Entidade */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Custo Fixo — Entidade (R$)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                  R$
+                </span>
+                <input
+                  type="number"
+                  min={0.01}
+                  step={0.01}
+                  value={valorCFEntidade}
+                  onChange={(e) => setValorCFEntidade(e.target.value)}
+                  placeholder="Ex: 15.00"
+                  className="w-full pl-9 pr-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+              {valorCFEntidade !== '' &&
+                !isNaN(cfEntidadeNum) &&
+                cfEntidadeNum <= 0 && (
+                  <p className="text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle size={11} />
+                    Valor deve ser maior que zero
+                  </p>
+                )}
+            </div>
+
+            {/* Custo fixo Clínica */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Custo Fixo — Clínica (R$)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                  R$
+                </span>
+                <input
+                  type="number"
+                  min={0.01}
+                  step={0.01}
+                  value={valorCFClinica}
+                  onChange={(e) => setValorCFClinica(e.target.value)}
+                  placeholder="Ex: 8.00"
+                  className="w-full pl-9 pr-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+              </div>
+              {valorCFClinica !== '' &&
+                !isNaN(cfClinicaNum) &&
+                cfClinicaNum <= 0 && (
+                  <p className="text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle size={11} />
+                    Valor deve ser maior que zero
+                  </p>
+                )}
+            </div>
+
+            {/* % Comissão Comercial sobre o custo fixo */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                % Comissão Comercial (0% – 40% do custo fixo)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min={0}
+                  max={40}
+                  step={0.01}
+                  value={percentualComercial}
+                  onChange={(e) => setPercentualComercial(e.target.value)}
+                  placeholder="Ex: 10.00"
+                  className="w-full pr-8 pl-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                  %
+                </span>
+              </div>
+              {!cfPercComValido && (
+                <p className="text-xs text-red-600 flex items-center gap-1">
+                  <AlertCircle size={11} />
+                  Percentual deve ser entre 0% e 40%
+                </p>
+              )}
+              {/* Preview distribuição */}
+              {!isNaN(pctComNum) &&
+                pctComNum >= 0 &&
+                pctComNum <= 40 &&
+                previewComercialEntidade !== null &&
+                previewComercialClinica !== null && (
+                  <div className="mt-1.5 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2 text-xs space-y-1">
+                    <p className="font-semibold text-blue-700 text-[11px] uppercase tracking-wide">
+                      Distribuição por avaliação (custo fixo)
+                    </p>
+                    {cfEntidadeNum > 0 && (
+                      <div className="flex justify-between text-blue-700">
+                        <span>Comercial recebe (entidade)</span>
+                        <span className="font-semibold">
+                          {pctComNum.toFixed(1)}% de R${' '}
+                          {cfEntidadeNum.toFixed(2)} = R${' '}
+                          {previewComercialEntidade.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    {cfClinicaNum > 0 && (
+                      <div className="flex justify-between text-blue-700">
+                        <span>Comercial recebe (clínica)</span>
+                        <span className="font-semibold">
+                          {pctComNum.toFixed(1)}% de R${' '}
+                          {cfClinicaNum.toFixed(2)} = R${' '}
+                          {previewComercialClinica.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-[11px] text-blue-600 pt-0.5">
+                      Rep recebe: valor negociado − custo fixo (diferença
+                      inteira)
+                    </p>
+                  </div>
+                )}
+            </div>
+          </div>
+        )}
+
         {/* Wallet ID Asaas */}
         <div className="space-y-1.5">
           <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
@@ -198,6 +437,11 @@ export default function AprovarComissaoModal({
             </p>
           )}
         </div>
+
+        {/* Nota do fluxo de 2 etapas */}
+        <p className="text-xs text-gray-400">
+          Após confirmar, o Suporte ativará a subconta Asaas do representante.
+        </p>
 
         {/* Erro */}
         {erro && (

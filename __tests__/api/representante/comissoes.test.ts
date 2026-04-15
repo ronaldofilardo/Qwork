@@ -168,9 +168,9 @@ describe('GET /api/representante/comissoes', () => {
 
     await GET(makeReq());
 
-    // A query de lista (3ª chamada) deve usar e.nome, nunca e.razao_social
+    // A query de lista (3ª chamada) deve usar COALESCE(e.nome, cl.nome) ou e.nome, nunca e.razao_social
     const listSQL = mockQuery.mock.calls[2][0] as string;
-    expect(listSQL).toMatch(/e\.nome\s+AS\s+entidade_nome/i);
+    expect(listSQL).toMatch(/COALESCE\(e\.nome.*\)\s+AS\s+entidade_nome|e\.nome\s+AS\s+entidade_nome/i);
     expect(listSQL).not.toMatch(/e\.razao_social/i);
   });
 

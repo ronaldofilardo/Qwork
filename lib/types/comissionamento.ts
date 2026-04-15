@@ -31,8 +31,8 @@ export type StatusRepresentante =
   | 'expirado'
   | 'aprovacao_comercial';
 
-/** Pessoa Física ou Jurídica */
-export type TipoPessoaRepresentante = 'pf' | 'pj';
+/** Tipo de pessoa — somente PJ desde migration 1209 */
+export type TipoPessoaRepresentante = 'pj';
 
 /**
  * Ciclo de vida de um lead (CNPJ indicado pelo representante).
@@ -113,7 +113,7 @@ export interface Representante {
   nome: string;
   email: string;
   telefone: string;
-  // PF: CPF obrigatório; PJ: CNPJ + cpf_responsavel_pj obrigatórios
+  // PJ: CNPJ + cpf_responsavel_pj obrigatórios
   cpf?: string | null;
   cnpj?: string | null;
   cpf_responsavel_pj?: string | null;
@@ -202,6 +202,8 @@ export interface VinculoComissao {
   data_expiracao: string;
   // Status
   status: StatusVinculo;
+  // Comissão comercial
+  percentual_comissao_comercial?: number | null;
   // Controle de inatividade
   ultimo_laudo_em?: string | null;
   // Auditoria
@@ -226,6 +228,8 @@ export interface ComissaoLaudo {
   valor_laudo: number;
   percentual_comissao: number; // % individual do representante (copiado no momento da geração)
   valor_comissao: number; // valor_laudo × percentual_comissao / 100
+  percentual_comissao_comercial?: number | null;
+  valor_comissao_comercial?: number | null;
   // Status
   status: StatusComissao;
   motivo_congelamento?: MotivoCongelamento | null;
@@ -270,14 +274,12 @@ export interface ComissionamentoAuditoria {
 // DTOs de entrada (API requests)
 // ---------------------------------------------------------------------------
 
-/** Body para auto-cadastro do representante */
+/** Body para auto-cadastro do representante (somente PJ) */
 export interface CriarRepresentanteDTO {
   nome: string;
   email: string;
   tipo_pessoa: TipoPessoaRepresentante;
   telefone: string;
-  // PF
-  cpf?: string;
   // PJ
   cnpj?: string;
   cpf_responsavel_pj?: string;
@@ -356,6 +358,7 @@ export interface ComissaoComDetalhes extends ComissaoLaudo {
   representante_codigo: string;
   representante_email: string;
   representante_tipo_pessoa: TipoPessoaRepresentante;
+  representante_percentual_comissao_comercial?: number | null;
   entidade_nome: string;
   numero_laudo?: string | null;
 }

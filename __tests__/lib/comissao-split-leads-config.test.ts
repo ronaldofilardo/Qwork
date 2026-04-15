@@ -269,6 +269,7 @@ describe('calcularComissaoCustoFixo', () => {
     const r = calcularComissaoCustoFixo(100, 12);
     expect(r.valorRep).toBe(88);
     expect(r.valorQWork).toBe(12);
+    expect(r.valorComercial).toBe(0);
     expect(r.abaixoMinimo).toBe(false);
   });
 
@@ -276,6 +277,7 @@ describe('calcularComissaoCustoFixo', () => {
     const r = calcularComissaoCustoFixo(12, 12);
     expect(r.valorRep).toBe(0);
     expect(r.valorQWork).toBe(12);
+    expect(r.valorComercial).toBe(0);
     expect(r.abaixoMinimo).toBe(false);
   });
 
@@ -284,9 +286,10 @@ describe('calcularComissaoCustoFixo', () => {
     expect(r.abaixoMinimo).toBe(true);
     expect(r.valorRep).toBe(0);
     expect(r.valorQWork).toBe(12);
+    expect(r.valorComercial).toBe(0);
   });
 
-  test('valorQWork é sempre == custoFixo', () => {
+  test('valorQWork é sempre == custoFixo quando percComercial = 0', () => {
     const cases: [number, number][] = [
       [50, 12],
       [12, 12],
@@ -303,6 +306,31 @@ describe('calcularComissaoCustoFixo', () => {
     const r = calcularComissaoCustoFixo(50, 10);
     expect(r.valorRep).toBe(40);
     expect(r.valorQWork).toBe(10);
+    expect(r.valorComercial).toBe(0);
+    expect(r.abaixoMinimo).toBe(false);
+  });
+
+  test('com percComercial — rep 118: custo R$15, negociado R$25, comercial 10%', () => {
+    const r = calcularComissaoCustoFixo(25, 15, 10);
+    expect(r.valorRep).toBe(10); // 25 - 15
+    expect(r.valorComercial).toBe(1.5); // 10% de 15
+    expect(r.valorQWork).toBe(13.5); // 15 - 1.5
+    expect(r.abaixoMinimo).toBe(false);
+  });
+
+  test('com percComercial = 40% — máximo permitido', () => {
+    const r = calcularComissaoCustoFixo(100, 20, 40);
+    expect(r.valorRep).toBe(80); // 100 - 20
+    expect(r.valorComercial).toBe(8); // 40% de 20
+    expect(r.valorQWork).toBe(12); // 20 - 8
+    expect(r.abaixoMinimo).toBe(false);
+  });
+
+  test('percComercial é capped a 40% no máximo (regra de negócio)', () => {
+    // Mesmo passando 100%, a função usa max 40%
+    const r = calcularComissaoCustoFixo(50, 12, 100);
+    expect(r.valorComercial).toBe(4.8); // 40% de 12 (capped)
+    expect(r.valorQWork).toBe(7.2); // 12 - 4.8
     expect(r.abaixoMinimo).toBe(false);
   });
 });

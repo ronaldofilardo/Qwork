@@ -190,8 +190,8 @@ describe('4. POST /api/comercial/representantes/[id]/aprovar-comissao', () => {
   });
 
   it('deve verificar status apto ou apto_pendente (STATUS_INVALIDO)', () => {
-    // Após correção do bug, aceita tanto 'apto' quanto 'apto_pendente'
-    expect(src).toContain("['apto', 'apto_pendente']");
+    // Aceita 'apto', 'apto_pendente' e 'aprovacao_comercial'
+    expect(src).toContain("['apto', 'apto_pendente', 'aprovacao_comercial']");
     expect(src).toContain('STATUS_INVALIDO');
   });
 
@@ -199,7 +199,7 @@ describe('4. POST /api/comercial/representantes/[id]/aprovar-comissao', () => {
     expect(src).toContain("'apto'");
     expect(src).toContain("'apto_pendente'");
     // Validação via array, não comparação simples
-    expect(src).toMatch(/\['apto',\s*'apto_pendente'\]\.includes/);
+    expect(src).toMatch(/\['apto',\s*'apto_pendente'/);
   });
 
   it('deve mover para aprovacao_comercial ao aprovar', () => {
@@ -207,7 +207,7 @@ describe('4. POST /api/comercial/representantes/[id]/aprovar-comissao', () => {
   });
 
   it('deve atualizar modelo_comissionamento no DB', () => {
-    expect(src).toContain('modelo_comissionamento = $1');
+    expect(src).toMatch(/modelo_comissionamento\s*=\s*\$1/);
   });
 
   it('deve exigir comercial ou admin', () => {

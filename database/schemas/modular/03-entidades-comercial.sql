@@ -1905,6 +1905,7 @@ CREATE TABLE public.representantes (
     doc_identificacao_path text,
     comprovante_conta_path text,
     status public.status_representante DEFAULT 'ativo'::public.status_representante NOT NULL,
+    ativo boolean DEFAULT true NOT NULL,
     aceite_termos boolean DEFAULT false NOT NULL,
     aceite_termos_em timestamp with time zone,
     aceite_disclaimer_nv boolean DEFAULT false NOT NULL,

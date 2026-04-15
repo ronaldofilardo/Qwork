@@ -5,10 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import {
-  calcularValoresComissao,
-  MAX_PERCENTUAL_COMISSAO,
-} from '@/lib/leads-config';
+import { calcularValoresComissao } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
@@ -98,10 +95,7 @@ export async function PATCH(
       const leadRow = existing.rows[0];
       const valorNegociado = Number(leadRow.valor_negociado ?? 0);
       const percRep = Number(leadRow.percentual_comissao_representante ?? 0);
-      const percComercial =
-        leadRow.modelo_comissionamento === 'percentual'
-          ? MAX_PERCENTUAL_COMISSAO - percRep
-          : Number(leadRow.percentual_comissao_comercial ?? 0);
+      const percComercial = Number(leadRow.percentual_comissao_comercial ?? 0);
 
       const bd = calcularValoresComissao(
         valorNegociado,

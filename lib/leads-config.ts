@@ -99,9 +99,11 @@ export function calcularValoresComissao(
 
 /** Resultado do cálculo de comissão no modelo custo_fixo */
 export interface ValoresComissaoCustoFixo {
-  /** Valor que fica para o representante (R$) */
+  /** Valor que fica para o representante (R$): valorNegociado − valorCustoFixo */
   valorRep: number;
-  /** Valor que fica para o QWork = custo fixo negociado (R$) */
+  /** Valor da comissão do comercial (R$): percComercial% do custo fixo bruto */
+  valorComercial: number;
+  /** Valor líquido que fica para o QWork (R$): valorCustoFixo − valorComercial */
   valorQWork: number;
   /** true quando valorNegociado < valorCustoFixo (rep ficaria com valor negativo) */
   abaixoMinimo: boolean;
@@ -109,20 +111,38 @@ export interface ValoresComissaoCustoFixo {
 
 /**
  * Calcula comissão no modelo custo_fixo.
- * O QWork retém `valorCustoFixo` e o representante recebe o restante.
+ *
+ * Distribuição:
+ * - **Representante** recebe: `valorNegociado − valorCustoFixo` (diferença inteira).
+ * - **Comercial** recebe: `percComercial% × valorCustoFixo`.
+ * - **QWork** recebe (líquido): `valorCustoFixo − valorComercial`.
+ *
  * Se valorNegociado < valorCustoFixo, abaixoMinimo=true e valorRep=0.
+ *
+ * @param percComercial Percentual do comercial sobre o custo fixo (0–40). Default = 0.
  */
 export function calcularComissaoCustoFixo(
   valorNegociado: number,
-  valorCustoFixo: number
+  valorCustoFixo: number,
+  percComercial = 0
 ): ValoresComissaoCustoFixo {
   if (valorNegociado <= 0 || valorCustoFixo <= 0) {
-    return { valorRep: 0, valorQWork: valorCustoFixo, abaixoMinimo: true };
+    return {
+      valorRep: 0,
+      valorComercial: 0,
+      valorQWork: valorCustoFixo,
+      abaixoMinimo: true,
+    };
   }
+  const percCom = Math.max(0, Math.min(40, percComercial));
+  const valorComercial =
+    Math.round(((valorCustoFixo * percCom) / 100) * 100) / 100;
+  const valorQWork = Math.round((valorCustoFixo - valorComercial) * 100) / 100;
   const valorRep = Math.round((valorNegociado - valorCustoFixo) * 100) / 100;
   return {
     valorRep: Math.max(0, valorRep),
-    valorQWork: valorCustoFixo,
+    valorComercial,
+    valorQWork,
     abaixoMinimo: valorRep < 0,
   };
 }

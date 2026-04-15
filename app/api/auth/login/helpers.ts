@@ -17,7 +17,7 @@ export async function handleRepresentanteLogin(
   contextoRequisicao: ContextoRequisicao
 ): Promise<NextResponse> {
   const repResult = await query(
-    `SELECT id, nome, email, cpf, cpf_responsavel_pj, codigo, senha_hash, senha_repres, status, tipo_pessoa
+    `SELECT id, nome, email, cpf, cpf_responsavel_pj, codigo, senha_hash, senha_repres, status, tipo_pessoa, ativo
      FROM representantes
      WHERE cpf = $1 OR cpf_responsavel_pj = $1
      LIMIT 1`,
@@ -64,6 +64,30 @@ export async function handleRepresentanteLogin(
     );
   }
 
+  // Verificar se o acesso está bloqueado pelo comercial (ativo=false)
+  if (rep.ativo === false) {
+    try {
+      await registrarAuditoria({
+        entidade_tipo: 'login',
+        acao: 'login_falha',
+        usuario_cpf: cpf,
+        metadados: { motivo: 'representante_acesso_bloqueado' },
+        ...contextoRequisicao,
+      });
+    } catch (err) {
+      console.warn(
+        '[LOGIN] Falha ao registrar auditoria (rep_bloqueado):',
+        err
+      );
+    }
+    return NextResponse.json(
+      {
+        error: 'Usuário inativo. Entre em contato com o administrador.',
+      },
+      { status: 403 }
+    );
+  }
+
   if (rep.status === 'aguardando_senha') {
     return NextResponse.json(
       {
@@ -98,13 +122,20 @@ export async function handleRepresentanteLogin(
     [rep.id]
   );
 
-  if (repSenhaResult.rows.length > 0 && repSenhaResult.rows[0].senha_hash) {
-    senhaRepValida = await bcrypt.compare(
-      senha,
-      repSenhaResult.rows[0].senha_hash
-    );
+  if (repSenhaResult.rows.length > 0) {
     primeiraSenhaAlterada =
       repSenhaResult.rows[0].primeira_senha_alterada ?? true;
+
+    if (repSenhaResult.rows[0].senha_hash) {
+      senhaRepValida = await bcrypt.compare(
+        senha,
+        repSenhaResult.rows[0].senha_hash
+      );
+    } else if (rep.senha_repres) {
+      senhaRepValida = await bcrypt.compare(senha, rep.senha_repres);
+    } else if (rep.senha_hash) {
+      senhaRepValida = await bcrypt.compare(senha, rep.senha_hash);
+    }
   } else if (rep.senha_repres) {
     senhaRepValida = await bcrypt.compare(senha, rep.senha_repres);
   } else if (rep.senha_hash) {

@@ -31,11 +31,11 @@ const mockAuditoria = registrarAuditoria as jest.MockedFunction<
 // Helper session
 const repSession = {
   representante_id: 1,
-  nome: 'Carlos Rep',
+  nome: 'Carlos Rep LTDA',
   email: 'carlos@test.dev',
   codigo: 'AB12-CD34',
   status: 'apto',
-  tipo_pessoa: 'pf' as const,
+  tipo_pessoa: 'pj' as const,
   criado_em_ms: Date.now(),
 };
 
@@ -67,10 +67,10 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
         {
           id: 1,
           codigo: 'AB12-CD34',
-          nome: 'Carlos Rep',
+          nome: 'Carlos Rep LTDA',
           email: 'carlos@test.dev',
           status: 'ativo',
-          tipo_pessoa: 'pf',
+          tipo_pessoa: 'pj',
           criado_em: '2026-01-01',
         },
       ],
@@ -81,10 +81,11 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
       new NextRequest('http://localhost/api/representante/cadastro', {
         method: 'POST',
         body: JSON.stringify({
-          nome: 'Carlos Rep',
+          nome: 'Carlos Rep LTDA',
           email: 'carlos@test.dev',
-          tipo_pessoa: 'pf',
-          cpf: '12345678901',
+          tipo_pessoa: 'pj',
+          cnpj: '12345678000190',
+          cpf_responsavel_pj: '12345678901',
           aceite_termos: true,
           aceite_disclaimer_nv: true,
         }),
@@ -103,11 +104,11 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
       rows: [
         {
           id: 1,
-          nome: 'Carlos Rep',
+          nome: 'Carlos Rep LTDA',
           email: 'carlos@test.dev',
           codigo: 'AB12-CD34',
           status: 'ativo',
-          tipo_pessoa: 'pf',
+          tipo_pessoa: 'pj',
           telefone: null,
           aceite_termos: true,
           aceite_disclaimer_nv: true,

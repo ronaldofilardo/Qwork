@@ -73,7 +73,11 @@ export default function NovoLeadModal({
     modeloComissionamento === 'custo_fixo' &&
     custoFixoRep !== null &&
     valorNegociadoNum > 0
-      ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
+      ? calcularComissaoCustoFixo(
+          valorNegociadoNum,
+          custoFixoRep,
+          percComercial
+        )
       : null;
 
   // CASO C base: percentual model breakdown
@@ -428,11 +432,32 @@ export default function NovoLeadModal({
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Custo fixo QWork</span>
+                  <span className="text-gray-500">Custo fixo (bruto)</span>
                   <span className="text-gray-700 font-medium">
                     {fmtBRL(custoFixoRep)}
                   </span>
                 </div>
+                {breakdownCustoFixo && percComercial > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">
+                      Comissão comercial ({percComercial.toFixed(1)}% do custo
+                      fixo)
+                    </span>
+                    <span className="text-purple-700 font-medium">
+                      {fmtBRL(breakdownCustoFixo.valorComercial)}
+                    </span>
+                  </div>
+                )}
+                {breakdownCustoFixo && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">
+                      QWork recebe (líquido)
+                    </span>
+                    <span className="text-gray-700 font-medium">
+                      {fmtBRL(breakdownCustoFixo.valorQWork)}
+                    </span>
+                  </div>
+                )}
                 {breakdownCustoFixo && (
                   <div className="flex justify-between border-t pt-1.5">
                     <span className="text-blue-700 font-semibold">
