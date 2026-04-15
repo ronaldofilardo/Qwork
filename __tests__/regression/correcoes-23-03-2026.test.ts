@@ -266,9 +266,10 @@ describe('6. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery'
     expect(src).toContain('c.representante_id = $1');
   });
 
-  it('deve incluir statusValidos com pendente_nf para Aguardando NF', () => {
-    expect(src).toContain('pendente_nf');
-    expect(src).toContain('nf_em_analise');
+  it('deve incluir statusValidos com pendente_consolidacao (novo ciclo)', () => {
+    expect(src).toContain('pendente_consolidacao');
+    expect(src).not.toContain('pendente_nf');
+    expect(src).not.toContain('nf_em_analise');
   });
 });
 
@@ -577,8 +578,9 @@ describe('13. Comissões Minhas Vendas — reutiliza componentes de comissoes', 
     expect(src).toContain('/api/representante/minhas-vendas/comissoes');
   });
 
-  it('deve ter filtro por pendente_nf (Aguardando NF)', () => {
-    expect(src).toContain('pendente_nf');
+  it('deve ter filtro por pendente_consolidacao (No Ciclo)', () => {
+    expect(src).toContain('pendente_consolidacao');
+    expect(src).not.toContain('pendente_nf');
   });
 });
 

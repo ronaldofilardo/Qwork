@@ -68,7 +68,7 @@ export async function getOrCreateCiclo(params: {
 
 /**
  * Recalcula os totais do ciclo a partir das comissões_laudo vinculadas.
- * Considera comissões com status liberada, paga, pendente_nf, nf_em_analise.
+ * Considera comissões com status liberada, paga, pendente_consolidacao (e legados pendente_nf, nf_em_analise).
  * Atualiza valor_total e qtd_comissoes no ciclo.
  */
 export async function sincronizarCiclo(cicloId: number): Promise<Ciclo | null> {
@@ -237,6 +237,15 @@ export async function aprovarNfCiclo(
   );
 
   if (updated.rows[0]) {
+    // Cascata: pendente_consolidacao → liberada para todas as comissões do ciclo
+    await query(
+      `UPDATE comissoes_laudo
+       SET status = 'liberada', data_liberacao = NOW(), atualizado_em = NOW()
+       WHERE ciclo_id = $1
+         AND status = 'pendente_consolidacao'`,
+      [cicloId]
+    );
+
     await registrarAuditoria({
       tabela: 'ciclos_comissao',
       registro_id: cicloId,
@@ -334,6 +343,15 @@ export async function registrarPagamentoCiclo(
   );
 
   if (updated.rows[0]) {
+    // Cascata: liberada → paga para todas as comissões do ciclo
+    await query(
+      `UPDATE comissoes_laudo
+       SET status = 'paga', data_pagamento = NOW(), atualizado_em = NOW()
+       WHERE ciclo_id = $1
+         AND status = 'liberada'`,
+      [cicloId]
+    );
+
     await registrarAuditoria({
       tabela: 'ciclos_comissao',
       registro_id: cicloId,

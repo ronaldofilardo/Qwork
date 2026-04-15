@@ -56,16 +56,16 @@ export function ComissoesTab({
               cor: 'text-green-700',
             },
             {
-              label: 'Aguardando NF',
-              value: resumo.pendentes_nf,
-              icon: '📄',
+              label: 'No Ciclo',
+              value: resumo.pendentes_consolidacao,
+              icon: '📅',
               cor: 'text-blue-700',
             },
             {
-              label: 'NF em Análise',
-              value: resumo.em_analise,
-              icon: '🔍',
-              cor: 'text-indigo-700',
+              label: 'Liberadas',
+              value: resumo.liberadas,
+              icon: '🟢',
+              cor: 'text-purple-700',
             },
           ].map((c) => (
             <div key={c.label} className="bg-white rounded-xl border p-4">
@@ -124,7 +124,6 @@ export function ComissoesTab({
                 <th className="px-3 py-3 text-center">%</th>
                 <th className="px-3 py-3 text-center">Parcelas</th>
                 <th className="px-3 py-3 text-left">Status</th>
-                <th className="px-3 py-3 text-center">NF/RPA</th>
                 <th className="px-3 py-3 text-left">Mês Pag.</th>
                 <th className="px-3 py-3 text-center">Ações</th>
               </tr>
@@ -189,23 +188,6 @@ export function ComissoesTab({
                         {STATUS_BADGE[c.status]?.label ?? c.status}
                       </span>
                     </td>
-                    <td className="px-3 py-3 text-center">
-                      {c.nf_rpa_aprovada_em ? (
-                        <span className="text-xs text-green-700">✅</span>
-                      ) : c.nf_rpa_enviada_em ? (
-                        <a
-                          href={`/api/admin/comissoes/${c.id}/nf`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:text-blue-800 underline"
-                          title={c.nf_nome_arquivo || 'Ver NF'}
-                        >
-                          📄 Ver
-                        </a>
-                      ) : (
-                        <span className="text-xs text-gray-300">—</span>
-                      )}
-                    </td>
                     <td className="px-3 py-3 text-gray-500 text-xs">
                       {c.mes_pagamento
                         ? new Date(
@@ -218,17 +200,6 @@ export function ComissoesTab({
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1 justify-center flex-wrap">
-                        {c.nf_rpa_enviada_em && !c.nf_rpa_aprovada_em && (
-                          <a
-                            href={`/api/admin/comissoes/${c.id}/nf`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs px-2 py-1 border border-blue-300 rounded text-blue-700 hover:bg-blue-50 transition-colors whitespace-nowrap"
-                            title={c.nf_nome_arquivo || 'Ver NF/RPA'}
-                          >
-                            📄 Ver NF
-                          </a>
-                        )}
                         {acoes.map((acao) => (
                           <button
                             key={acao}

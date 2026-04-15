@@ -4,7 +4,7 @@
  * Cobre:
  * - Correção 06/03/2026: SQL usa `::status_comissao` nas duas ocorrências de $10
  *   para evitar o erro PostgreSQL 42P08 "tipos inconsistentes deduzidos do parâmetro $10"
- * - Lógica de status inicial: 'pendente_nf' para rep.status='apto', 'retida' para demais
+ * - Lógica de status inicial: 'pendente_consolidacao' para rep.status='apto', 'retida' para demais
  * - Guards de negócio: duplicata, percentual nulo, vínculo inválido, sem entidade/clínica
  * - Adições 15/03/2026 (migration 532):
  *   - forcar_retida=true → status sempre 'retida' mesmo com rep apto
@@ -44,12 +44,17 @@ function mockFluxoCompleto({
       rows: [{ id: 6, status: repStatus, percentual_comissao: percentual }],
       rowCount: 1,
     } as any)
-    // 4. INSERT comissão
+    // 4. Busca percentual/valor_negociado do vínculo
+    .mockResolvedValueOnce({
+      rows: [{ percentual_comissao_representante: percentual, valor_negociado: null }],
+      rowCount: 1,
+    } as any)
+    // 5. INSERT comissão
     .mockResolvedValueOnce({
       rows: [
         {
           id: 99,
-          status: repStatus === 'apto' ? 'pendente_nf' : 'retida',
+          status: repStatus === 'apto' ? 'pendente_consolidacao' : 'retida',
           valor_comissao: '3.30',
           percentual_comissao: percentual,
         },
@@ -85,7 +90,7 @@ describe('criarComissaoAdmin', () => {
       await criarComissaoAdmin(BASE_PARAMS);
 
       // O 4º call é o INSERT de comissões
-      const insertCallArgs = mockQuery.mock.calls[3];
+      const insertCallArgs = mockQuery.mock.calls[4];
       const sql: string = insertCallArgs[0];
 
       // Verifica que $10 é castado para o enum em ambos os usos
@@ -100,22 +105,22 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin(BASE_PARAMS);
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
-      // $10 é o 10º parâmetro (índice 9), valor 'pendente_nf'
-      expect(insertCallValues[9]).toBe('pendente_nf');
+      const insertCallValues = mockQuery.mock.calls[4][1];
+      // $10 é o 10º parâmetro (índice 9), valor 'pendente_consolidacao'
+      expect(insertCallValues[9]).toBe('pendente_consolidacao');
       expect(typeof insertCallValues[9]).toBe('string');
     });
   });
 
   // ── Status inicial ────────────────────────────────────────────────────────
   describe('status inicial', () => {
-    it('deve usar status "pendente_nf" quando representante.status = "apto"', async () => {
+    it('deve usar status "pendente_consolidacao" quando representante.status = "apto"', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
       await criarComissaoAdmin(BASE_PARAMS);
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
-      expect(insertCallValues[9]).toBe('pendente_nf');
+      const insertCallValues = mockQuery.mock.calls[4][1];
+      expect(insertCallValues[9]).toBe('pendente_consolidacao');
     });
 
     it('deve usar status "retida" quando representante.status = "suspenso"', async () => {
@@ -123,7 +128,7 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin(BASE_PARAMS);
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
+      const insertCallValues = mockQuery.mock.calls[4][1];
       expect(insertCallValues[9]).toBe('retida');
     });
 
@@ -132,7 +137,7 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin(BASE_PARAMS);
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
+      const insertCallValues = mockQuery.mock.calls[4][1];
       expect(insertCallValues[9]).toBe('retida');
     });
 
@@ -142,17 +147,17 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin({ ...BASE_PARAMS, forcar_retida: true });
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
+      const insertCallValues = mockQuery.mock.calls[4][1];
       expect(insertCallValues[9]).toBe('retida');
     });
 
-    it('deve usar status "pendente_nf" quando forcar_retida=false e rep apto', async () => {
+    it('deve usar status "pendente_consolidacao" quando forcar_retida=false e rep apto', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
       await criarComissaoAdmin({ ...BASE_PARAMS, forcar_retida: false });
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
-      expect(insertCallValues[9]).toBe('pendente_nf');
+      const insertCallValues = mockQuery.mock.calls[4][1];
+      expect(insertCallValues[9]).toBe('pendente_consolidacao');
     });
   });
 
@@ -163,7 +168,7 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin(BASE_PARAMS);
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
+      const insertCallValues = mockQuery.mock.calls[4][1];
       // $15 é o 15º parâmetro (índice 14)
       expect(insertCallValues[14]).toBeNull();
     });
@@ -173,7 +178,7 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin({ ...BASE_PARAMS, parcela_confirmada_em: null });
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
+      const insertCallValues = mockQuery.mock.calls[4][1];
       expect(insertCallValues[14]).toBeNull();
     });
 
@@ -186,7 +191,7 @@ describe('criarComissaoAdmin', () => {
         parcela_confirmada_em: agora,
       });
 
-      const insertCallValues = mockQuery.mock.calls[3][1];
+      const insertCallValues = mockQuery.mock.calls[4][1];
       expect(insertCallValues[14]).toBe(agora.toISOString());
     });
 
@@ -195,7 +200,7 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin(BASE_PARAMS);
 
-      const insertSql: string = mockQuery.mock.calls[3][0];
+      const insertSql: string = mockQuery.mock.calls[4][0];
       expect(insertSql).toContain('parcela_confirmada_em');
       expect(insertSql).toMatch(/\$15/);
     });
@@ -265,7 +270,11 @@ describe('criarComissaoAdmin', () => {
           rowCount: 1,
         } as any)
         .mockResolvedValueOnce({
-          rows: [{ id: 6, status: 'apto', percentual_comissao: null }],
+          rows: [{ id: 6, status: 'apto', percentual_comissao: null, modelo_comissionamento: null }],
+          rowCount: 1,
+        } as any)
+        .mockResolvedValueOnce({
+          rows: [{ percentual_comissao_representante: null, valor_negociado: null }],
           rowCount: 1,
         } as any);
 
@@ -274,7 +283,7 @@ describe('criarComissaoAdmin', () => {
       expect(result.comissao).toBeNull();
       expect(result.erro).toMatch(/percentual/i);
       // Não deve ter chegado ao INSERT
-      expect(mockQuery).toHaveBeenCalledTimes(3);
+      expect(mockQuery).toHaveBeenCalledTimes(4);
     });
 
     it('deve retornar erro quando representante não existe', async () => {
@@ -300,7 +309,7 @@ describe('criarComissaoAdmin', () => {
 
       await criarComissaoAdmin({ ...BASE_PARAMS, valor_laudo: 33 });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       // $9 = valor_comissao (índice 8) = 33 × 10 / 100 = 3.30
       expect(insertValues[8]).toBeCloseTo(3.3, 2);
     });
@@ -314,7 +323,7 @@ describe('criarComissaoAdmin', () => {
         clinica_id: 7,
       });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       // $3 = entidade_id (índice 2) → null
       expect(insertValues[2]).toBeNull();
       // $4 = clinica_id (índice 3)
@@ -343,7 +352,7 @@ describe('criarComissaoAdmin', () => {
         total_parcelas: 4,
       });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       // $12 = mes_pagamento (índice 11)
       expect(insertValues[11]).toBe('2026-04-01');
     });
@@ -357,7 +366,7 @@ describe('criarComissaoAdmin', () => {
         total_parcelas: 4,
       });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       expect(insertValues[11]).toBe('2026-05-01');
     });
 
@@ -370,7 +379,7 @@ describe('criarComissaoAdmin', () => {
         total_parcelas: 4,
       });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       expect(insertValues[11]).toBe('2026-06-01');
     });
 
@@ -383,7 +392,7 @@ describe('criarComissaoAdmin', () => {
         total_parcelas: 4,
       });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       expect(insertValues[11]).toBe('2026-07-01');
     });
 
@@ -396,7 +405,7 @@ describe('criarComissaoAdmin', () => {
         total_parcelas: 1,
       });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       expect(insertValues[11]).toBe('2026-04-01');
     });
 
@@ -410,7 +419,7 @@ describe('criarComissaoAdmin', () => {
         total_parcelas: 3,
       });
 
-      const insertValues = mockQuery.mock.calls[3][1];
+      const insertValues = mockQuery.mock.calls[4][1];
       // base = jan/2027, + 2 meses = mar/2027
       expect(insertValues[11]).toBe('2027-03-01');
     });

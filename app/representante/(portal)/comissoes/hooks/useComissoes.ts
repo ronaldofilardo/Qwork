@@ -10,7 +10,6 @@ export function useComissoes() {
   const [page, setPage] = useState(1);
   const [statusFiltro, setStatusFiltro] = useState('');
   const [loading, setLoading] = useState(true);
-  const [uploadModal, setUploadModal] = useState<Comissao | null>(null);
   const [erro, setErro] = useState('');
 
   const carregar = useCallback(async () => {
@@ -53,8 +52,6 @@ export function useComissoes() {
     statusFiltro,
     setStatusFiltro,
     loading,
-    uploadModal,
-    setUploadModal,
     erro,
     carregar,
   };

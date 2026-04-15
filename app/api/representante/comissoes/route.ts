@@ -27,8 +27,7 @@ export async function GET(request: NextRequest) {
 
     const statusValidos = [
       'retida',
-      'pendente_nf',
-      'nf_em_analise',
+      'pendente_consolidacao',
       'congelada_rep_suspenso',
       'congelada_aguardando_admin',
       'liberada',
@@ -51,10 +50,10 @@ export async function GET(request: NextRequest) {
     // Resumo total para o representante
     const resumo = await query(
       `SELECT
-       COUNT(*) FILTER (WHERE c.status::text IN ('pendente_nf','nf_em_analise','retida'))                         AS pendentes,
+       COUNT(*) FILTER (WHERE c.status::text IN ('pendente_consolidacao','retida'))                         AS pendentes,
        COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                    AS liberadas,
        COUNT(*) FILTER (WHERE c.status::text = 'paga')                                        AS pagas,
-       COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text IN ('pendente_nf','nf_em_analise','retida')), 0) AS valor_pendente,
+       COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text IN ('pendente_consolidacao','retida')), 0) AS valor_pendente,
          COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'),0)            AS valor_liberado,
          COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'),0)                AS valor_pago_total
        FROM comissoes_laudo c
@@ -71,7 +70,30 @@ export async function GET(request: NextRequest) {
     params.push(limit, offset);
     const rows = await query(
       `SELECT
-         c.*,
+         c.id,
+         c.vinculo_id,
+         c.representante_id,
+         c.entidade_id,
+         c.clinica_id,
+         c.laudo_id,
+         c.percentual_comissao,
+         c.valor_laudo,
+         c.valor_comissao,
+         c.status,
+         c.motivo_congelamento,
+         c.mes_emissao,
+         c.mes_pagamento,
+         c.data_emissao_laudo,
+         c.data_aprovacao,
+         c.data_liberacao,
+         c.data_pagamento,
+         c.comprovante_pagamento_path,
+         c.criado_em,
+         c.atualizado_em,
+         c.parcela_numero,
+         c.total_parcelas,
+         c.lote_pagamento_id,
+         c.parcela_confirmada_em,
          COALESCE(e.nome, cl.nome) AS entidade_nome
        FROM comissoes_laudo c
        LEFT JOIN entidades e  ON e.id  = c.entidade_id

@@ -63,16 +63,18 @@ export type StatusVinculo = 'ativo' | 'inativo' | 'suspenso' | 'encerrado';
  * Máquina de estados das comissões (por laudo emitido+pago).
  *
  * retida                     → rep não é "apto" ainda; guardada até aprovação
- * pendente_nf                → rep é apto; aguardando envio da NF/RPA pelo rep
- * nf_em_analise              → NF/RPA enviada; aguardando validação do admin
+ * pendente_consolidacao      → novo fluxo: parcela paga, aguardando fechamento do ciclo mensal
+ * pendente_nf                → legado: rep é apto; aguardando envio de NF individual
+ * nf_em_analise              → legado: NF/RPA enviada; aguardando validação do admin
  * congelada_rep_suspenso     → rep suspenso; aguarda resolução
  * congelada_aguardando_admin → pendência administrativa genérica
- * liberada                   → NF/RPA validada; pronta para pagamento
+ * liberada                   → NF do ciclo aprovada; pronta para pagamento
  * paga                       → pagamento confirmado pelo admin
  * cancelada                  → cancelada (vínculo encerrado ou admin cancelou)
  */
 export type StatusComissao =
   | 'retida'
+  | 'pendente_consolidacao'
   | 'pendente_nf'
   | 'nf_em_analise'
   | 'congelada_rep_suspenso'
