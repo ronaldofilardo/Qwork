@@ -24,16 +24,7 @@ interface UseComissoesReturn {
   setMotivoAcao: (v: string) => void;
   comprovante: string;
   setComprovante: (v: string) => void;
-  nfReviewModal: { comissao: Comissao; acao: 'aprovar' | 'rejeitar' } | null;
-  setNfReviewModal: (
-    v: { comissao: Comissao; acao: 'aprovar' | 'rejeitar' } | null
-  ) => void;
-  nfRejectMotivo: string;
-  setNfRejectMotivo: (v: string) => void;
-  nfPendentes: Comissao[];
-  nfPendentesCount: number;
   executarAcao: () => Promise<void>;
-  executarNfReview: () => Promise<void>;
 }
 
 export function useComissoes(): UseComissoesReturn {
@@ -53,11 +44,6 @@ export function useComissoes(): UseComissoesReturn {
   } | null>(null);
   const [motivoAcao, setMotivoAcao] = useState('');
   const [comprovante, setComprovante] = useState('');
-  const [nfReviewModal, setNfReviewModal] = useState<{
-    comissao: Comissao;
-    acao: 'aprovar' | 'rejeitar';
-  } | null>(null);
-  const [nfRejectMotivo, setNfRejectMotivo] = useState('');
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -122,48 +108,6 @@ export function useComissoes(): UseComissoesReturn {
     }
   }, [acaoPendente, motivoAcao, comprovante, carregar]);
 
-  const executarNfReview = useCallback(async () => {
-    if (!nfReviewModal) return;
-    const { comissao, acao } = nfReviewModal;
-    setActionLoading(comissao.id);
-    setErro('');
-    try {
-      const res = await fetch(`/api/admin/comissoes/${comissao.id}/nf`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          acao,
-          motivo: acao === 'rejeitar' ? nfRejectMotivo : undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErro(data.error ?? 'Erro ao processar NF');
-        return;
-      }
-      setSucesso(
-        `NF ${acao === 'aprovar' ? 'aprovada' : 'rejeitada'} com sucesso`
-      );
-      setTimeout(() => setSucesso(''), 3000);
-      setNfReviewModal(null);
-      setNfRejectMotivo('');
-      await carregar();
-    } finally {
-      setActionLoading(null);
-    }
-  }, [nfReviewModal, nfRejectMotivo, carregar]);
-
-  const nfPendentes = comissoes.filter(
-    (c) =>
-      c.nf_rpa_enviada_em &&
-      !c.nf_rpa_aprovada_em &&
-      !c.nf_rpa_rejeitada_em &&
-      c.status === 'nf_em_analise'
-  );
-  const nfPendentesCount = resumo
-    ? parseInt(resumo.em_analise ?? '0')
-    : nfPendentes.length;
-
   return {
     comissoes,
     resumo,
@@ -185,13 +129,6 @@ export function useComissoes(): UseComissoesReturn {
     setMotivoAcao,
     comprovante,
     setComprovante,
-    nfReviewModal,
-    setNfReviewModal,
-    nfRejectMotivo,
-    setNfRejectMotivo,
-    nfPendentes,
-    nfPendentesCount,
     executarAcao,
-    executarNfReview,
   };
 }

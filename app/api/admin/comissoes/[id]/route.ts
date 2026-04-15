@@ -1,8 +1,8 @@
 /**
  * PATCH /api/admin/comissoes/[id]
  * Atualiza status de uma comissão.
- * Ações suporte: liberar, pagar, congelar, cancelar, descongelar (acesso total)
- * Ações comercial: congelar, cancelar, descongelar (sem liberar)
+ * Ações suporte: pagar, congelar, cancelar, descongelar (acesso total)
+ * Ações comercial: congelar, cancelar, descongelar (sem pagar)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -12,13 +12,7 @@ import { requireRole } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 
 // Ações permitidas por perfil
-const ACOES_SUPORTE = [
-  'liberar',
-  'pagar',
-  'congelar',
-  'cancelar',
-  'descongelar',
-];
+const ACOES_SUPORTE = ['pagar', 'congelar', 'cancelar', 'descongelar'];
 const ACOES_COMERCIAL = ['congelar', 'cancelar', 'descongelar'];
 
 export async function PATCH(
@@ -84,11 +78,6 @@ export async function PATCH(
       extraParam?: unknown;
     }
     const acaoMap: Record<string, AcaoConfig> = {
-      liberar: {
-        novoStatus: 'liberada',
-        statusPermitidos: ['nf_em_analise'],
-        extraSet: ', data_liberacao = NOW(), nf_rpa_aprovada_em = NOW()',
-      },
       pagar: {
         novoStatus: 'paga',
         statusPermitidos: ['liberada'],
@@ -96,15 +85,14 @@ export async function PATCH(
       },
       congelar: {
         novoStatus: 'congelada_aguardando_admin',
-        statusPermitidos: ['pendente_nf', 'nf_em_analise', 'liberada'],
+        statusPermitidos: ['pendente_consolidacao', 'liberada'],
         exigirMotivo: true,
         extraSet: ', motivo_congelamento = $3',
       },
       cancelar: {
         novoStatus: 'cancelada',
         statusPermitidos: [
-          'pendente_nf',
-          'nf_em_analise',
+          'pendente_consolidacao',
           'liberada',
           'congelada_aguardando_admin',
           'congelada_rep_suspenso',
@@ -112,13 +100,12 @@ export async function PATCH(
         ],
       },
       descongelar: {
-        novoStatus: 'pendente_nf',
+        novoStatus: 'pendente_consolidacao',
         statusPermitidos: [
           'congelada_aguardando_admin',
           'congelada_rep_suspenso',
         ],
-        extraSet:
-          ', motivo_congelamento = NULL, nf_rpa_enviada_em = NULL, nf_rpa_aprovada_em = NULL, nf_rpa_rejeitada_em = NULL, nf_rpa_motivo_rejeicao = NULL, nf_path = NULL, nf_nome_arquivo = NULL',
+        extraSet: ', motivo_congelamento = NULL',
       },
     };
 
@@ -132,13 +119,7 @@ export async function PATCH(
       );
     }
 
-    // F-08: liberar exige que NF tenha sido enviada
-    if (acao === 'liberar' && !comissao.nf_rpa_enviada_em) {
-      return NextResponse.json(
-        { error: 'Não é possível liberar comissão sem NF/RPA enviada.' },
-        { status: 422 }
-      );
-    }
+    // F-08: liberar removido — liberação agora ocorre via ciclo mensal
 
     if (config.exigirMotivo && !motivo?.trim()) {
       return NextResponse.json(

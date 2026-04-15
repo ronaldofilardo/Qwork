@@ -9,8 +9,6 @@ import {
   fmt,
   STATUS_BADGE,
 } from '@/app/representante/(portal)/comissoes/types';
-import CicloPagamentoBanner from '@/app/representante/(portal)/comissoes/components/CicloPagamentoBanner';
-import NfUploadModal from '@/app/representante/(portal)/comissoes/components/NfUploadModal';
 import ComissoesTable from '@/app/representante/(portal)/comissoes/components/ComissoesTable';
 
 export default function MinhasVendasComissoesPage() {
@@ -20,7 +18,6 @@ export default function MinhasVendasComissoesPage() {
   const [page, setPage] = useState(1);
   const [statusFiltro, setStatusFiltro] = useState('');
   const [loading, setLoading] = useState(true);
-  const [uploadModal, setUploadModal] = useState<Comissao | null>(null);
   const [erro, setErro] = useState('');
 
   const carregar = useCallback(async () => {
@@ -80,8 +77,6 @@ export default function MinhasVendasComissoesPage() {
         </div>
       )}
 
-      <CicloPagamentoBanner />
-
       {resumo && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
@@ -92,7 +87,7 @@ export default function MinhasVendasComissoesPage() {
               cor: 'text-blue-700',
               bg: 'bg-blue-50',
               borderCor: 'border-blue-200',
-              title: 'Parcelas pagas aguardando NF/aprovação',
+              title: 'Parcelas pagas aguardando consolidação em ciclo',
             },
             {
               label: 'Liberado',
@@ -101,7 +96,7 @@ export default function MinhasVendasComissoesPage() {
               cor: 'text-purple-700',
               bg: 'bg-purple-50',
               borderCor: 'border-purple-200',
-              title: 'NF aprovada, aguardando pagamento no dia 15',
+              title: 'NF do ciclo aprovada, aguardando pagamento no dia 15',
             },
             {
               label: 'Total Pago',
@@ -137,7 +132,7 @@ export default function MinhasVendasComissoesPage() {
           Pipeline de Pagamento
         </h2>
         <div className="flex items-center gap-1 flex-wrap">
-          {['retida', 'pendente_nf', 'nf_em_analise', 'liberada', 'paga'].map(
+          {['retida', 'pendente_consolidacao', 'liberada', 'paga'].map(
             (s, i, arr) => (
               <div key={s} className="flex items-center gap-1">
                 <button
@@ -189,19 +184,7 @@ export default function MinhasVendasComissoesPage() {
         page={page}
         setPage={setPage}
         loading={loading}
-        setUploadModal={setUploadModal}
       />
-
-      {uploadModal && (
-        <NfUploadModal
-          comissao={uploadModal}
-          onClose={() => setUploadModal(null)}
-          onSuccess={() => {
-            setUploadModal(null);
-            void carregar();
-          }}
-        />
-      )}
     </div>
   );
 }

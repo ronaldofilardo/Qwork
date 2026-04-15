@@ -24,16 +24,13 @@ export interface Comissao {
   data_pagamento: string | null;
   nf_path: string | null;
   nf_nome_arquivo: string | null;
-  nf_rpa_enviada_em: string | null;
-  nf_rpa_aprovada_em: string | null;
-  nf_rpa_rejeitada_em: string | null;
-  nf_rpa_motivo_rejeicao: string | null;
+  parcela_confirmada_em: string | null;
+  comprovante_pagamento_path: string | null;
 }
 
 export interface Resumo {
   total_comissoes: string;
-  pendentes_nf: string;
-  em_analise: string;
+  pendentes_consolidacao: string;
   liberadas: string;
   pagas: string;
   congeladas: string;
@@ -43,10 +40,9 @@ export interface Resumo {
 
 export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
   retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
-  pendente_nf: { label: 'Aguardando NF', cor: 'bg-blue-100 text-blue-700' },
-  nf_em_analise: {
-    label: 'NF em Análise',
-    cor: 'bg-indigo-100 text-indigo-700',
+  pendente_consolidacao: {
+    label: 'No Ciclo',
+    cor: 'bg-blue-100 text-blue-700',
   },
   congelada_rep_suspenso: {
     label: 'Congelada (Suspensão)',
@@ -62,8 +58,7 @@ export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
 };
 
 export const ACOES_POR_STATUS: Record<string, string[]> = {
-  pendente_nf: ['congelar', 'cancelar'],
-  nf_em_analise: ['liberar', 'congelar', 'cancelar'],
+  pendente_consolidacao: ['congelar', 'cancelar'],
   liberada: ['pagar', 'congelar', 'cancelar'],
   congelada_aguardando_admin: ['descongelar', 'cancelar'],
   congelada_rep_suspenso: ['descongelar', 'cancelar'],
@@ -71,10 +66,9 @@ export const ACOES_POR_STATUS: Record<string, string[]> = {
 };
 
 /** Ações proibidas para o perfil comercial (servidor também bloqueia). */
-export const ACOES_COMERCIAL_BLOQUEADAS = ['liberar', 'pagar'] as const;
+export const ACOES_COMERCIAL_BLOQUEADAS = ['pagar'] as const;
 
 export const ACAO_LABEL: Record<string, string> = {
-  liberar: '✅ Liberar (aprovar NF)',
   pagar: '💰 Marcar como Paga',
   congelar: '❄ Congelar',
   cancelar: '❌ Cancelar',

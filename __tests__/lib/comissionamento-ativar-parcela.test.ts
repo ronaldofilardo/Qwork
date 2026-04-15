@@ -6,7 +6,7 @@
  * ativarComissaoParcelaPaga:
  *   - Comissão não encontrada → { ok: false, motivo: 'comissao_nao_encontrada' }
  *   - Idempotente: parcela_confirmada_em NOT NULL → { ok: true, motivo: 'ja_ativada' }
- *   - Rep apto: seta parcela_confirmada_em + transiciona status para pendente_nf
+ *   - Rep apto: seta parcela_confirmada_em + transiciona status para pendente_consolidacao
  *   - Rep não apto: seta apenas parcela_confirmada_em, mantém status retida
  *   - Erro interno (query lança) → { ok: false, motivo: 'erro_interno' }
  *
@@ -56,8 +56,17 @@ function mockCriarAdmin({
     .mockResolvedValueOnce({
       rows: [
         {
+          percentual_comissao_representante: percentual,
+          valor_negociado: null,
+        },
+      ],
+      rowCount: 1,
+    } as any) // vinculos percentual
+    .mockResolvedValueOnce({
+      rows: [
+        {
           id: 99,
-          status: repStatus === 'apto' ? 'pendente_nf' : 'retida',
+          status: repStatus === 'apto' ? 'pendente_consolidacao' : 'retida',
           valor_comissao: '5.00',
         },
       ],
@@ -91,7 +100,7 @@ describe('ativarComissaoParcelaPaga', () => {
       rows: [
         {
           id: 10,
-          status: 'pendente_nf',
+          status: 'pendente_consolidacao',
           parcela_confirmada_em: new Date(),
           rep_status: 'apto',
         },

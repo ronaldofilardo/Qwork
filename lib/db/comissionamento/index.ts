@@ -11,5 +11,4 @@ export * from './vinculos';
 export * from './comissoes';
 export * from './ciclos';
 export * from './auditoria';
-export * from './nf-rpa';
 export * from './utils';

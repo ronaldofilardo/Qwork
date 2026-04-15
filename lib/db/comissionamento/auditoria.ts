@@ -45,7 +45,7 @@ export async function congelarComissoesRepSuspenso(representanteId: number) {
   return query(
     `UPDATE comissoes_laudo
      SET status = 'congelada_rep_suspenso', motivo_congelamento = 'rep_suspenso', atualizado_em = NOW()
-     WHERE representante_id = $1 AND status::text IN ('retida', 'pendente_nf', 'nf_em_analise', 'liberada')
+     WHERE representante_id = $1 AND status::text IN ('retida', 'pendente_consolidacao', 'liberada')
      RETURNING id`,
     [representanteId]
   );
@@ -79,7 +79,7 @@ export async function restaurarVinculosRep(representanteId: number) {
 export async function liberarComissoesRetidas(representanteId: number) {
   return query(
     `UPDATE comissoes_laudo
-     SET status = 'pendente_nf', data_aprovacao = NOW(), atualizado_em = NOW()
+     SET status = 'pendente_consolidacao', data_aprovacao = NOW(), atualizado_em = NOW()
      WHERE representante_id = $1
        AND status = 'retida'
        AND parcela_confirmada_em IS NOT NULL
@@ -103,7 +103,7 @@ export async function encerrarTudoRep(representanteId: number) {
   await query(
     `UPDATE comissoes_laudo
      SET status = 'cancelada', atualizado_em = NOW()
-     WHERE representante_id = $1 AND status::text IN ('retida','pendente_nf','nf_em_analise','liberada','congelada_rep_suspenso','congelada_aguardando_admin')`,
+     WHERE representante_id = $1 AND status::text IN ('retida','pendente_consolidacao','liberada','congelada_rep_suspenso','congelada_aguardando_admin')`,
     [representanteId]
   );
 }

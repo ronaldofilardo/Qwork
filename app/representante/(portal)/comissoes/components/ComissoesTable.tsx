@@ -2,7 +2,6 @@
 
 import type { Comissao } from '../types';
 import { STATUS_BADGE, fmt } from '../types';
-import NfStatusCell from './NfStatusCell';
 
 interface ComissoesTableProps {
   comissoes: Comissao[];
@@ -10,7 +9,6 @@ interface ComissoesTableProps {
   page: number;
   setPage: (fn: (p: number) => number) => void;
   loading: boolean;
-  setUploadModal: (c: Comissao | null) => void;
 }
 
 export default function ComissoesTable({
@@ -19,7 +17,6 @@ export default function ComissoesTable({
   page,
   setPage,
   loading,
-  setUploadModal,
 }: ComissoesTableProps) {
   if (loading) {
     return (
@@ -56,7 +53,6 @@ export default function ComissoesTable({
               <th className="px-4 py-3 text-right">Comissão</th>
               <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Previsão</th>
-              <th className="px-4 py-3 text-center">NF/RPA</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -147,12 +143,6 @@ export default function ComissoesTable({
                         year: 'numeric',
                       })
                     : '—'}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <NfStatusCell
-                    comissao={c}
-                    onUpload={() => setUploadModal(c)}
-                  />
                 </td>
               </tr>
             ))}

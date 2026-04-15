@@ -33,8 +33,7 @@ export async function getComissoesByRepresentante(
 
   const statusValidos: StatusComissao[] = [
     'retida',
-    'pendente_nf',
-    'nf_em_analise',
+    'pendente_consolidacao',
     'congelada_rep_suspenso',
     'congelada_aguardando_admin',
     'liberada',
@@ -55,12 +54,12 @@ export async function getComissoesByRepresentante(
 
   const resumo = await query(
     `SELECT
-       COUNT(*) FILTER (WHERE c.status::text IN ('pendente_nf','nf_em_analise','retida'))      AS pendentes,
+       COUNT(*) FILTER (WHERE c.status::text IN ('pendente_nf','nf_em_analise','retida','pendente_consolidacao'))      AS pendentes,
        COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                      AS liberadas,
        COUNT(*) FILTER (WHERE c.status::text = 'paga')                                          AS pagas,
        -- valor_pendente: apenas comissões ativas no pipeline (parcela já paga ou à vista)
        COALESCE(SUM(c.valor_comissao) FILTER (WHERE
-         c.status::text IN ('pendente_nf','nf_em_analise')
+         c.status::text IN ('pendente_nf','nf_em_analise','pendente_consolidacao')
          OR (c.status::text = 'retida' AND c.parcela_confirmada_em IS NOT NULL)
        ), 0) AS valor_pendente,
        -- valor_futuro: comissões provisionadas aguardando pagamento da parcela
@@ -131,7 +130,7 @@ export async function atualizarStatusComissao(
   }
 
   // Limpar campos ao descongelar (F-13: forçar reenvio de NF)
-  if (novoStatus === 'pendente_nf') {
+  if (novoStatus === 'pendente_nf' || novoStatus === 'pendente_consolidacao') {
     setClauses.push(`motivo_congelamento = NULL`);
     setClauses.push(`nf_rpa_enviada_em = NULL`);
     setClauses.push(`nf_rpa_aprovada_em = NULL`);
@@ -335,9 +334,9 @@ export async function criarComissaoAdmin(params: {
 
   // Status inicial:
   //   forcar_retida=true → sempre retida (provisionamento antecipado de parcelas futuras)
-  //   forcar_retida=false → pendente_nf se rep é apto, retida caso contrário
+  //   novo fluxo: apto → pendente_consolidacao (aguarda fechamento do ciclo mensal)
   const statusInicial: StatusComissao =
-    forcar_retida || rep.status !== 'apto' ? 'retida' : 'pendente_nf';
+    forcar_retida || rep.status !== 'apto' ? 'retida' : 'pendente_consolidacao';
 
   // Mês de emissão e pagamento
   const agora = new Date();
@@ -359,7 +358,7 @@ export async function criarComissaoAdmin(params: {
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9,
        $10::status_comissao, $11::date, $12::date, NOW(),
-       CASE WHEN $10::status_comissao = 'pendente_nf' THEN NOW() ELSE NULL END,
+       CASE WHEN $10::status_comissao = 'pendente_consolidacao' THEN NOW() ELSE NULL END,
        $13, $14, $15
      ) RETURNING *`,
     [
@@ -416,12 +415,12 @@ export async function criarComissaoAdmin(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Ativação de parcela paga (retida → pendente_nf)
+// Ativação de parcela paga (retida → pendente_consolidacao)
 // ---------------------------------------------------------------------------
 
 /**
  * Ativa a comissão de uma parcela específica ao confirmar o seu pagamento.
- * Transição: retida → pendente_nf (se rep apto) ou retida + parcela_confirmada_em (se rep não apto).
+ * Transição: retida → pendente_consolidacao (se rep apto) ou retida + parcela_confirmada_em (se rep não apto).
  *
  * Idempotente: se parcela_confirmada_em já está preenchida, retorna ok:true/ja_ativada.
  * Nunca lança exceção.
@@ -461,13 +460,13 @@ export async function ativarComissaoParcelaPaga(params: {
 
     const repApto = comissao.rep_status === 'apto';
     const statusAnterior: string = comissao.status;
-    const statusNovo: StatusComissao = repApto ? 'pendente_nf' : 'retida';
+    const statusNovo: StatusComissao = repApto ? 'pendente_consolidacao' : 'retida';
 
     await query(
       `UPDATE comissoes_laudo
        SET parcela_confirmada_em = NOW(),
            atualizado_em = NOW(),
-           status = CASE WHEN $2::boolean THEN 'pendente_nf'::status_comissao ELSE status END,
+           status = CASE WHEN $2::boolean THEN 'pendente_consolidacao'::status_comissao ELSE status END,
            data_aprovacao = CASE WHEN $2::boolean THEN NOW() ELSE data_aprovacao END
        WHERE id = $1`,
       [comissao.id, repApto]
@@ -481,7 +480,7 @@ export async function ativarComissaoParcelaPaga(params: {
       triggador: 'sistema',
       motivo: `Parcela ${parcela_numero} confirmada como paga via webhook${
         repApto
-          ? ' — transicionada para pendente_nf'
+          ? ' — transicionada para pendente_consolidacao'
           : ' — mantida retida (rep não apto ainda)'
       }`,
     });

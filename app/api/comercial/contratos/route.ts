@@ -47,22 +47,17 @@ export async function GET(): Promise<NextResponse> {
          r.cpf                                                AS rep_cpf,
          lr.criado_em                                         AS lead_data,
          vc.data_inicio                                       AS contrato_data,
-         EXTRACT(DAY FROM (vc.data_inicio - lr.criado_em::date)) AS tempo_dias,
-         COALESCE(lr.modelo_comissionamento, r.modelo_comissionamento) AS tipo_comissionamento,
+         (vc.data_inicio - lr.criado_em::date)                        AS tempo_dias,
+         r.modelo_comissionamento                              AS tipo_comissionamento,
          r.percentual_comissao                                AS percentual_comissao,
-         lr.valor_custo_fixo_snapshot                         AS valor_custo_fixo,
+         NULL                                                 AS valor_custo_fixo,
          cl.laudo_id                                          AS laudo_id,
          laudo.lote_id                                        AS lote_id,
          COUNT(av.id) FILTER (WHERE av.status = 'concluida') AS avaliacoes_concluidas,
          la.valor_por_funcionario                             AS valor_avaliacao,
          cl.valor_laudo                                       AS valor_total,
-         lr.percentual_comissao_comercial                     AS perc_comercial,
-         ROUND(
-           COALESCE(cl.valor_comissionavel, 0)
-           * COALESCE(lr.percentual_comissao_comercial, 0)
-           / 100.0,
-           2
-         )                                                    AS valor_comercial,
+         NULL                                                 AS perc_comercial,
+         0                                                    AS valor_comercial,
          cl.percentual_comissao                               AS perc_rep,
          cl.valor_comissao                                    AS valor_rep
        FROM public.comissoes_laudo cl
@@ -82,16 +77,12 @@ export async function GET(): Promise<NextResponse> {
          r.nome, r.cpf,
          lr.criado_em,
          vc.data_inicio,
-         lr.modelo_comissionamento,
          r.modelo_comissionamento,
          r.percentual_comissao,
-         lr.valor_custo_fixo_snapshot,
          cl.laudo_id,
          laudo.lote_id,
          la.valor_por_funcionario,
          cl.valor_laudo,
-         lr.percentual_comissao_comercial,
-         cl.valor_comissionavel,
          cl.percentual_comissao,
          cl.valor_comissao
        ORDER BY cl.laudo_id DESC
