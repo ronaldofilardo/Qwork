@@ -18,7 +18,6 @@ import {
   calcularRequerAprovacao,
   calcularComissaoCustoFixo,
   CUSTO_POR_AVALIACAO,
-  MAX_PERCENTUAL_COMISSAO,
   TIPOS_CLIENTE,
 } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
@@ -181,10 +180,9 @@ export async function POST(request: NextRequest) {
     const percRep = Number(repResult.rows[0]?.percentual_comissao ?? 0);
     const modeloComissionamento =
       repResult.rows[0]?.modelo_comissionamento ?? null;
-    const percComercial =
-      modeloComissionamento === 'percentual'
-        ? MAX_PERCENTUAL_COMISSAO - percRep
-        : Number(repResult.rows[0]?.percentual_comissao_comercial ?? 0);
+    const percComercial = Number(
+      repResult.rows[0]?.percentual_comissao_comercial ?? 0
+    );
 
     // ── Lógica de custo_fixo ──────────────────────────────────────────────
     let requerAprovacao = false;
@@ -199,7 +197,11 @@ export async function POST(request: NextRequest) {
         custoFixoRaw != null
           ? Number(custoFixoRaw)
           : CUSTO_POR_AVALIACAO[tipoCliente];
-      const calc = calcularComissaoCustoFixo(valorNum, valorCustoFixo);
+      const calc = calcularComissaoCustoFixo(
+        valorNum,
+        valorCustoFixo,
+        percComercial
+      );
       if (calc.abaixoMinimo) {
         return NextResponse.json(
           {

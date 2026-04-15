@@ -77,15 +77,12 @@ export async function POST(
       );
     }
     const repRow = repResult.rows[0] as {
-      tipo_pessoa: 'pf' | 'pj';
+      tipo_pessoa: 'pj';
       cpf: string | null;
       cnpj: string | null;
     };
 
-    const identificador =
-      repRow.tipo_pessoa === 'pj'
-        ? (repRow.cnpj ?? String(sess.representante_id))
-        : (repRow.cpf ?? sess.cpf ?? String(sess.representante_id));
+    const identificador = repRow.cnpj ?? String(sess.representante_id);
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const originalName = file.name || `nf_ciclo_${cicloId}`;

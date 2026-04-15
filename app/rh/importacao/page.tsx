@@ -309,7 +309,11 @@ export default function ImportacaoPage() {
         if (nivel && !templateMap[f]) novas[f] = nivel;
       }
       if (Object.keys(novas).length > 0) {
-        updateTemplateNivelCargo(templateId, novas);
+        updateTemplateNivelCargo(
+          '/api/rh/importacao/templates',
+          templateId,
+          novas
+        );
       }
     }
     void handleExecute(
@@ -405,6 +409,7 @@ export default function ImportacaoPage() {
       {step === 'mapeamento' && analyzeData && (
         <>
           <TemplatePicker
+            apiBase="/api/rh/importacao/templates"
             onApply={(template) => {
               setAppliedTemplate(template);
               setTemplateMapeamento(template.mapeamentos);
@@ -438,6 +443,7 @@ export default function ImportacaoPage() {
                 mesmo formato de colunas.
               </div>
               <SaveTemplateForm
+                apiBase="/api/rh/importacao/templates"
                 mapeamentos={mapeamento.map((m) => ({
                   nomeOriginal: m.nomeOriginal,
                   campoQWork: m.campoQWork,

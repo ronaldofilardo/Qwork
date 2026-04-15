@@ -11,6 +11,9 @@ import {
   UserX,
   UserPlus,
   Percent,
+  ToggleLeft,
+  ToggleRight,
+  Loader2,
 } from 'lucide-react';
 import CadastrarRepresentanteModal from './CadastrarRepresentanteModal';
 
@@ -20,6 +23,7 @@ interface RepMetrica {
   email: string;
   status: string;
   codigo: string;
+  ativo: boolean;
   leads_ativos: number;
   leads_mes: number;
   vinculos_ativos: number;
@@ -40,6 +44,8 @@ export default function ComercialRepresentantesPage() {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [showCadastrar, setShowCadastrar] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [erroToggle, setErroToggle] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -69,6 +75,33 @@ export default function ComercialRepresentantesPage() {
 
   const fmtBRL = (v: number) =>
     (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const toggleAtivo = async (r: RepMetrica, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setTogglingId(r.id);
+    setErroToggle(null);
+    try {
+      const res = await fetch(
+        `/api/comercial/representantes/${r.id}/toggle-ativo`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ativo: !r.ativo }),
+        }
+      );
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(d.error ?? 'Erro ao alterar status');
+      }
+      await carregar();
+    } catch (error: unknown) {
+      setErroToggle(
+        error instanceof Error ? error.message : 'Erro desconhecido'
+      );
+    } finally {
+      setTogglingId(null);
+    }
+  };
 
   const lista = aba === 'ativos' ? ativos : inativos;
 
@@ -178,6 +211,18 @@ export default function ComercialRepresentantesPage() {
           )}
         </button>
       </div>
+
+      {erroToggle && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <span className="font-medium">Erro:</span> {erroToggle}
+          <button
+            onClick={() => setErroToggle(null)}
+            className="ml-auto text-red-400 hover:text-red-600"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
@@ -395,6 +440,32 @@ export default function ComercialRepresentantesPage() {
                     }`}
                   />
                 </div>
+              </div>
+
+              {/* Botão Ativar/Inativar */}
+              <div className="mt-3 pt-3 border-t border-gray-50">
+                <button
+                  onClick={(e) => void toggleAtivo(r, e)}
+                  disabled={togglingId === r.id}
+                  className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed ${
+                    r.ativo
+                      ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-100'
+                      : 'bg-green-50 text-green-700 hover:bg-green-100 border border-green-100'
+                  }`}
+                >
+                  {togglingId === r.id ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : r.ativo ? (
+                    <ToggleRight size={13} />
+                  ) : (
+                    <ToggleLeft size={13} />
+                  )}
+                  {togglingId === r.id
+                    ? 'Aguarde...'
+                    : r.ativo
+                      ? 'Inativar acesso'
+                      : 'Ativar acesso'}
+                </button>
               </div>
             </div>
           ))}

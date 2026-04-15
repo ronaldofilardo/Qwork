@@ -3,14 +3,16 @@
  *
  * Admin inicia o reset de senha de um usuário com perfil especial.
  * Perfis suportados: suporte, comercial, rh, gestor (tabela usuarios)
- *                   + representante (tabela representantes)
  *
  * Body: { cpf: string }
  * Resposta: { success: true, link: string, nome: string, perfil: string }
  *
  * Efeito colateral:
  *   - Usuários da tabela `usuarios` → ativo = false
- *   - Representantes → status = 'suspenso'
+ *
+ * IMPORTANTE:
+ *   - Reset de senha de representantes é EXCLUSIVO do suporte
+ *     via /api/suporte/representantes/reset-senha
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -20,7 +22,6 @@ import { logAudit, extractRequestInfo } from '@/lib/audit';
 import {
   PERFIS_RESET_USUARIOS,
   gerarTokenResetUsuario,
-  gerarTokenResetRepresentante,
   logEmailResetSenha,
 } from '@/lib/reset-senha/gerar-token';
 
@@ -43,10 +44,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const raw = await request.json();
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'CPF inválido' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
     }
 
     const { cpf } = parsed.data;
@@ -82,17 +80,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         return gerarTokenResetUsuario(cpf, tx);
       }, session);
 
-      logEmailResetSenha(resultado.nome, usuario.email, resultado.link, resultado.expira_em);
+      logEmailResetSenha(
+        resultado.nome,
+        usuario.email,
+        resultado.link,
+        resultado.expira_em
+      );
 
       const { ipAddress, userAgent } = extractRequestInfo(request);
-      await logAudit({
-        action: 'DEACTIVATE',
-        resource: 'usuarios',
-        resourceId: usuario.cpf,
-        details: `Reset de senha gerado para perfil ${usuario.tipo_usuario}. Expira em: ${resultado.expira_em.toISOString()}`,
-        ipAddress,
-        userAgent,
-      }, session).catch((e) => console.warn('[AUDIT] Erro ao registrar auditoria:', e));
+      await logAudit(
+        {
+          action: 'DEACTIVATE',
+          resource: 'usuarios',
+          resourceId: usuario.cpf,
+          details: `Reset de senha gerado para perfil ${usuario.tipo_usuario}. Expira em: ${resultado.expira_em.toISOString()}`,
+          ipAddress,
+          userAgent,
+        },
+        session
+      ).catch((e) => console.warn('[AUDIT] Erro ao registrar auditoria:', e));
 
       return NextResponse.json({
         success: true,
@@ -103,14 +109,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
     }
 
-    // 2. Verificar se é representante na tabela `representantes`
+    // 2. Verificar se o CPF pertence a um representante
     const repRes = await query<{
       id: number;
-      nome: string;
-      email: string | null;
-      status: string;
     }>(
-      `SELECT id, nome, email, status
+      `SELECT id
        FROM representantes
        WHERE cpf = $1 OR cpf_responsavel_pj = $1
        LIMIT 1`,
@@ -119,38 +122,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
 
     if (repRes.rows.length > 0) {
-      const rep = repRes.rows[0];
-
-      const resultado = await transaction(async (tx) => {
-        return gerarTokenResetRepresentante(cpf, tx);
-      }, session);
-
-      logEmailResetSenha(resultado.nome, rep.email, resultado.link, resultado.expira_em);
-
-      const { ipAddress, userAgent } = extractRequestInfo(request);
-      await logAudit({
-        action: 'DEACTIVATE',
-        resource: 'representantes',
-        resourceId: String(rep.id),
-        details: `Reset de senha gerado para representante. Expira em: ${resultado.expira_em.toISOString()}`,
-        ipAddress,
-        userAgent,
-      }, session).catch((e) => console.warn('[AUDIT] Erro ao registrar auditoria:', e));
-
-      return NextResponse.json({
-        success: true,
-        link: resultado.link,
-        nome: resultado.nome,
-        perfil: 'representante',
-        expira_em: resultado.expira_em.toISOString(),
-      });
+      return NextResponse.json(
+        {
+          error:
+            'Para representantes, o reset de senha deve ser realizado pelo suporte em Representantes > Lista Geral.',
+        },
+        { status: 403 }
+      );
     }
 
     // CPF não encontrado em nenhuma tabela com perfil válido
     return NextResponse.json(
       {
         error:
-          'Usuário não encontrado com CPF informado. Verifique se o CPF está correto e se o perfil é permitido (suporte, comercial, rh, gestor ou representante).',
+          'Usuário não encontrado com CPF informado. Verifique se o CPF está correto e se o perfil é permitido (suporte, comercial, rh ou gestor).',
       },
       { status: 404 }
     );

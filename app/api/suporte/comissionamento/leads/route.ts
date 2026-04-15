@@ -18,10 +18,15 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
     const limit = 50;
     const offset = (page - 1) * limit;
+    const apenasAprovacaoSuporte = searchParams.get('requer_aprovacao_suporte') === 'true';
+
+    const baseWhere = apenasAprovacaoSuporte
+      ? `WHERE l.requer_aprovacao_suporte = true AND l.status = 'pendente'`
+      : '';
 
     const [countRes, leadsRes] = await Promise.all([
       query<{ total: string }>(
-        `SELECT COUNT(*) AS total FROM leads_representante`,
+        `SELECT COUNT(*) AS total FROM leads_representante l ${baseWhere}`,
         []
       ),
       query(
@@ -35,6 +40,7 @@ export async function GET(request: NextRequest) {
            l.percentual_comissao_comercial,
            l.valor_custo_fixo_snapshot,
            l.requer_aprovacao_comercial,
+           l.requer_aprovacao_suporte,
            l.status,
            l.criado_em,
            r.nome                    AS representante_nome,
@@ -45,6 +51,7 @@ export async function GET(request: NextRequest) {
            r.valor_custo_fixo_clinica
          FROM leads_representante l
          JOIN representantes r ON r.id = l.representante_id
+         ${baseWhere}
          ORDER BY l.criado_em DESC
          LIMIT $1 OFFSET $2`,
         [limit, offset]

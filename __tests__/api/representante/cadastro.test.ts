@@ -56,25 +56,25 @@ describe('POST /api/representante/cadastro', () => {
   it('deve validar tipo_pessoa', async () => {
     const res = await POST(makeReq({ ...basePF, tipo_pessoa: 'xyz' }));
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/tipo_pessoa/i);
+    expect((await res.json()).error).toMatch(/Apenas representantes PJ|CNPJ/i);
   });
 
   it('deve exigir aceite_termos', async () => {
-    const res = await POST(makeReq({ ...basePF, aceite_termos: false }));
+    const res = await POST(makeReq({ ...basePJ, aceite_termos: false }));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/termos/i);
   });
 
   it('deve exigir aceite_disclaimer_nv', async () => {
-    const res = await POST(makeReq({ ...basePF, aceite_disclaimer_nv: false }));
+    const res = await POST(makeReq({ ...basePJ, aceite_disclaimer_nv: false }));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/disclaimer/i);
   });
 
-  it('deve validar CPF com 11 dígitos para PF', async () => {
-    const res = await POST(makeReq({ ...basePF, cpf: '123' }));
+  it('deve rejeitar cadastro PF com 400', async () => {
+    const res = await POST(makeReq({ ...basePF }));
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toMatch(/cpf/i);
+    expect((await res.json()).error).toMatch(/Apenas representantes PJ|CNPJ/i);
   });
 
   it('deve validar CNPJ com 14 dígitos para PJ', async () => {
@@ -93,13 +93,13 @@ describe('POST /api/representante/cadastro', () => {
   it('deve retornar 409 se email já existe', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 55 }], rowCount: 1 } as any);
 
-    const res = await POST(makeReq(basePF));
+    const res = await POST(makeReq(basePJ));
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/e-mail/i);
   });
 
-  // --- Cadastro PF com sucesso ---
-  it('deve cadastrar PF com status ativo e retornar 201', async () => {
+  // --- Cadastro PJ com sucesso ---
+  it('deve cadastrar PJ com status ativo e retornar 201', async () => {
     // email check
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // INSERT RETURNING
@@ -107,31 +107,28 @@ describe('POST /api/representante/cadastro', () => {
       rows: [
         {
           id: 10,
-          codigo: 'XX00-YY11',
-          nome: 'Maria Santos',
-          email: 'maria@test.dev',
+          codigo: 'PJ00-0001',
+          nome: 'Empresa LTDA',
+          email: 'empresa@test.dev',
           status: 'ativo',
-          tipo_pessoa: 'pf',
+          tipo_pessoa: 'pj',
           criado_em: '2026-01-01',
         },
       ],
       rowCount: 1,
     } as any);
 
-    const res = await POST(makeReq(basePF));
+    const res = await POST(makeReq(basePJ));
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(data.representante.codigo).toBe('XX00-YY11');
+    expect(data.representante.codigo).toBe('PJ00-0001');
     expect(data.representante.status).toBe('ativo');
-    expect(data.aviso).toBeNull();
   });
 
   // --- Cadastro PJ sem conflito ---
   it('deve cadastrar PJ com status ativo quando não há conflito PF', async () => {
     // email check
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-    // PJ conflito check → nenhum
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // INSERT RETURNING
     mockQuery.mockResolvedValueOnce({
@@ -153,40 +150,8 @@ describe('POST /api/representante/cadastro', () => {
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.representante.status).toBe('ativo');
-    expect(data.aviso).toBeNull();
-  });
-
-  // --- Cadastro PJ com conflito PF/PJ ---
-  it('deve cadastrar PJ com status apto_bloqueado quando há conflito PF', async () => {
-    // email check ok
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-    // conflito PF encontrado
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 99 }], rowCount: 1 } as any);
-    // INSERT RETURNING — status apto_bloqueado
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          id: 12,
-          codigo: 'PJ00-0002',
-          nome: 'Empresa LTDA',
-          email: 'empresa@test.dev',
-          status: 'apto_bloqueado',
-          tipo_pessoa: 'pj',
-          criado_em: '2026-02-01',
-        },
-      ],
-      rowCount: 1,
-    } as any);
-    // Auditoria INSERT
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
-
-    const res = await POST(makeReq(basePJ));
-    expect(res.status).toBe(201);
-    const data = await res.json();
-    expect(data.representante.status).toBe('apto_bloqueado');
-    expect(data.aviso).toMatch(/conflito/i);
-    // Verifica que auditoria foi gravada (4 chamadas)
-    expect(mockQuery).toHaveBeenCalledTimes(4);
+    // Apenas 2 chamadas ao DB: email check + INSERT
+    expect(mockQuery).toHaveBeenCalledTimes(2);
   });
 
   // --- Unique constraint exception ---
@@ -196,7 +161,7 @@ describe('POST /api/representante/cadastro', () => {
       new Error('duplicate key value violates unique constraint')
     );
 
-    const res = await POST(makeReq(basePF));
+    const res = await POST(makeReq(basePJ));
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/já cadastrado/i);
   });

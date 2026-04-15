@@ -170,13 +170,20 @@ export async function POST(request: Request): Promise<NextResponse> {
         mensagem: string;
       }> = [];
 
-for (const [, { nome: nomeRaw, cnpj, rows }] of empresaMap) {
-      // Find or create empresa
-      // Quando nome não mapeado, usar placeholder baseado no CNPJ
-      const cnpjFmtFallback = cnpj
-        ? cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
-        : '';
-      const nome = nomeRaw.trim() || (cnpjFmtFallback ? `Empresa ${cnpjFmtFallback}` : 'Empresa Desconhecida');
+      for (const [, { nome: nomeRaw, cnpj, rows }] of empresaMap) {
+        // Find or create empresa
+        // Quando nome não mapeado, usar placeholder baseado no CNPJ
+        const cnpjFmtFallback = cnpj
+          ? cnpj.replace(
+              /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+              '$1.$2.$3/$4-$5'
+            )
+          : '';
+        const nome =
+          nomeRaw.trim() ||
+          (cnpjFmtFallback
+            ? `Empresa ${cnpjFmtFallback}`
+            : 'Empresa Desconhecida');
         let empresaId: number | undefined;
 
         if (cnpj) {
@@ -367,8 +374,8 @@ for (const [, { nome: nomeRaw, cnpj, rows }] of empresaMap) {
               const insertFunc = await client.query(
                 `INSERT INTO funcionarios (
                   cpf, nome, data_nascimento, setor, funcao, email,
-                  senha_hash, perfil, ativo, matricula, nivel_cargo, usuario_tipo
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,'funcionario_clinica'::usuario_tipo_enum)
+                  senha_hash, perfil, ativo, matricula, nivel_cargo, clinica_id, usuario_tipo
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,'funcionario_clinica'::usuario_tipo_enum)
                 RETURNING id`,
                 [
                   cpf,
@@ -380,6 +387,7 @@ for (const [, { nome: nomeRaw, cnpj, rows }] of empresaMap) {
                   senhaHash,
                   matricula,
                   nivelCargo,
+                  clinicaId,
                 ]
               );
               funcionarioId = insertFunc.rows[0].id as number;

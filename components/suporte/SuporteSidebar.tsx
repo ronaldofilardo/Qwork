@@ -17,7 +17,7 @@ export type SuporteSection =
   | 'financeiro'
   | 'representantes'
   | 'leads';
-export type TomadoresSubSection = 'clinicas' | 'entidades' | 'pre-cadastro';
+export type TomadoresSubSection = 'clinicas' | 'entidades' | 'pre-cadastro' | 'contratos';
 export type FinanceiroSubSection = 'pagamentos' | 'comissoes' | 'individuais';
 export type RepresentantesSubSection = 'lista' | 'aprovacao';
 export type LeadsSubSection = 'comissoes';
@@ -183,6 +183,15 @@ export default function SuporteSidebar({
               activeSubSection === 'pre-cadastro'
             }
             onClick={() => onSectionChange('tomadores', 'pre-cadastro')}
+            icon={FileText}
+          />
+          <SubMenuItem
+            label="Contratos"
+            isActive={
+              activeSection === 'tomadores' &&
+              activeSubSection === 'contratos'
+            }
+            onClick={() => onSectionChange('tomadores', 'contratos')}
             icon={FileText}
           />
         </div>

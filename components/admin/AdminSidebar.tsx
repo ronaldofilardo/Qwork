@@ -15,7 +15,7 @@ import SidebarLayout from '@/components/shared/SidebarLayout';
 export type AdminSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
 export type VolumeSubSection = 'entidade' | 'rh';
 export type FinanceiroSubSection = 'contagem' | 'contratos';
-export type GeralSubSection = 'emissores';
+export type GeralSubSection = 'emissores' | 'usuarios';
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
@@ -202,9 +202,31 @@ export default function AdminSidebar({
         label="Perfis"
         isActive={activeSection === 'geral'}
         onClick={() => {
+          toggleSection('geral');
           onSectionChange('geral', 'emissores');
         }}
+        hasSubMenu
+        isExpanded={isExpanded('geral')}
       />
+
+      {isExpanded('geral') && (
+        <div className="border-l-2 border-gray-200 ml-4">
+          <SubMenuItem
+            label="Emissores"
+            isActive={
+              activeSection === 'geral' && activeSubSection === 'emissores'
+            }
+            onClick={() => onSectionChange('geral', 'emissores')}
+          />
+          <SubMenuItem
+            label="Usuários do Sistema"
+            isActive={
+              activeSection === 'geral' && activeSubSection === 'usuarios'
+            }
+            onClick={() => onSectionChange('geral', 'usuarios')}
+          />
+        </div>
+      )}
 
       {/* Auditorias */}
       <MenuItem

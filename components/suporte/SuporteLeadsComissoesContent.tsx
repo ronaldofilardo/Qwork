@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 interface LeadComissao {
   id: number;
@@ -13,6 +13,7 @@ interface LeadComissao {
   percentual_comissao_comercial: number | null;
   valor_custo_fixo_snapshot: number | null;
   requer_aprovacao_comercial: boolean;
+  requer_aprovacao_suporte: boolean;
   status: string;
   criado_em: string;
   representante_nome: string | null;
@@ -45,19 +46,23 @@ const STATUS_LABEL: Record<string, string> = {
   expirado: 'Expirado',
 };
 
+type Tab = 'aprovacao_suporte' | 'todos';
+
 export function SuporteLeadsComissoesContent() {
+  const [tab, setTab] = useState<Tab>('aprovacao_suporte');
   const [leads, setLeads] = useState<LeadComissao[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
   const limit = 50;
 
-  const carregar = useCallback(async (p: number) => {
+  const carregar = useCallback(async (p: number, t: Tab) => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/suporte/comissionamento/leads?page=${p}&limit=${limit}`
-      );
+      const params = new URLSearchParams({ page: String(p), limit: String(limit) });
+      if (t === 'aprovacao_suporte') params.set('requer_aprovacao_suporte', 'true');
+      const res = await fetch(`/api/suporte/comissionamento/leads?${params}`);
       if (res.ok) {
         const d = (await res.json()) as ApiResponse;
         setLeads(d.leads ?? []);
@@ -69,21 +74,87 @@ export function SuporteLeadsComissoesContent() {
   }, []);
 
   useEffect(() => {
-    void carregar(page);
-  }, [carregar, page]);
+    void carregar(page, tab);
+  }, [carregar, page, tab]);
+
+  const handleTabChange = (t: Tab) => {
+    setTab(t);
+    setPage(1);
+  };
+
+  const handleAprovar = async (id: number) => {
+    setActionLoading(id);
+    try {
+      const res = await fetch(`/api/suporte/leads/${id}/aprovar`, { method: 'PATCH' });
+      if (res.ok) {
+        void carregar(page, tab);
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRejeitar = async (id: number) => {
+    setActionLoading(id);
+    try {
+      const res = await fetch(`/api/suporte/leads/${id}/rejeitar`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo: 'Rejeitado pelo Suporte via painel' }),
+      });
+      if (res.ok) {
+        void carregar(page, tab);
+      }
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">
-          Lead / Comissões
-        </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {total} lead{total !== 1 ? 's' : ''} registrados
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Lead / Comissões</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {total} lead{total !== 1 ? 's' : ''}
+          </p>
+        </div>
       </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => handleTabChange('aprovacao_suporte')}
+          className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            tab === 'aprovacao_suporte'
+              ? 'bg-white text-orange-700 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Aguardando Suporte
+        </button>
+        <button
+          onClick={() => handleTabChange('todos')}
+          className={`px-4 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+            tab === 'todos'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Todos
+        </button>
+      </div>
+
+      {tab === 'aprovacao_suporte' && (
+        <div className="flex items-start gap-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-800">
+          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+          <span>
+            Leads abaixo requerem aprovação do Suporte — o valor negociado é inferior ao custo mínimo de operação.
+          </span>
+        </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-24">
@@ -91,7 +162,9 @@ export function SuporteLeadsComissoesContent() {
         </div>
       ) : leads.length === 0 ? (
         <div className="bg-white rounded-xl border p-12 text-center">
-          <p className="text-gray-500 text-sm">Nenhum lead encontrado.</p>
+          <p className="text-gray-500 text-sm">
+            {tab === 'aprovacao_suporte' ? 'Nenhum lead aguardando aprovação do Suporte.' : 'Nenhum lead encontrado.'}
+          </p>
         </div>
       ) : (
         <>
@@ -100,64 +173,45 @@ export function SuporteLeadsComissoesContent() {
               <table className="w-full text-sm">
                 <thead className="text-xs text-gray-500 uppercase tracking-wide bg-gray-50">
                   <tr>
-                    <th className="px-3 py-3 text-left font-medium">
-                      Representante
-                    </th>
-                    <th className="px-3 py-3 text-left font-medium">
-                      CNPJ / Razão
-                    </th>
+                    <th className="px-3 py-3 text-left font-medium">Representante</th>
+                    <th className="px-3 py-3 text-left font-medium">CNPJ / Razão</th>
                     <th className="px-3 py-3 text-left font-medium">Tipo</th>
                     <th className="px-3 py-3 text-left font-medium">Modelo</th>
-                    <th className="px-3 py-3 text-left font-medium">
-                      Valor neg.
-                    </th>
-                    <th className="px-3 py-3 text-left font-medium">
-                      Comissão rep
-                    </th>
+                    <th className="px-3 py-3 text-left font-medium">Valor neg.</th>
+                    <th className="px-3 py-3 text-left font-medium">Comissão rep</th>
                     <th className="px-3 py-3 text-left font-medium">Status</th>
                     <th className="px-3 py-3 text-left font-medium">Data</th>
+                    {tab === 'aprovacao_suporte' && (
+                      <th className="px-3 py-3 text-left font-medium">Ações</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {leads.map((l) => (
                     <tr key={l.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3">
-                        <div className="font-medium text-gray-900">
-                          {l.representante_nome ?? '—'}
-                        </div>
+                        <div className="font-medium text-gray-900">{l.representante_nome ?? '—'}</div>
                         {l.representante_codigo && (
-                          <div className="text-xs text-gray-400">
-                            {l.representante_codigo}
-                          </div>
+                          <div className="text-xs text-gray-400">{l.representante_codigo}</div>
                         )}
                       </td>
                       <td className="px-3 py-3">
                         <div className="text-gray-700">{l.cnpj ?? '—'}</div>
                         {l.razao_social && (
-                          <div className="text-xs text-gray-400 truncate max-w-[160px]">
-                            {l.razao_social}
-                          </div>
+                          <div className="text-xs text-gray-400 truncate max-w-[160px]">{l.razao_social}</div>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-gray-600 capitalize">
-                        {l.tipo_cliente}
-                      </td>
+                      <td className="px-3 py-3 text-gray-600 capitalize">{l.tipo_cliente}</td>
                       <td className="px-3 py-3">
                         {l.modelo_comissionamento === 'custo_fixo' ? (
-                          <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">
-                            Custo Fixo
-                          </span>
+                          <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">Custo Fixo</span>
                         ) : l.modelo_comissionamento === 'percentual' ? (
-                          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">
-                            Percentual
-                          </span>
+                          <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">Percentual</span>
                         ) : (
                           <span className="text-xs text-gray-400">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-gray-700">
-                        {fmtBRL(l.valor_negociado)}
-                      </td>
+                      <td className="px-3 py-3 text-gray-700">{fmtBRL(l.valor_negociado)}</td>
                       <td className="px-3 py-3 text-gray-600">
                         {l.modelo_comissionamento === 'custo_fixo'
                           ? l.valor_custo_fixo_snapshot != null
@@ -172,8 +226,7 @@ export function SuporteLeadsComissoesContent() {
                           className={`text-xs px-2 py-0.5 rounded-full border ${
                             l.status === 'aprovado' || l.status === 'convertido'
                               ? 'bg-green-50 text-green-700 border-green-200'
-                              : l.status === 'rejeitado' ||
-                                  l.status === 'expirado'
+                              : l.status === 'rejeitado' || l.status === 'expirado'
                                 ? 'bg-red-50 text-red-700 border-red-200'
                                 : 'bg-amber-50 text-amber-700 border-amber-200'
                           }`}
@@ -181,9 +234,29 @@ export function SuporteLeadsComissoesContent() {
                           {STATUS_LABEL[l.status] ?? l.status}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-gray-400 text-xs">
-                        {fmtDate(l.criado_em)}
-                      </td>
+                      <td className="px-3 py-3 text-gray-400 text-xs">{fmtDate(l.criado_em)}</td>
+                      {tab === 'aprovacao_suporte' && (
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => void handleAprovar(l.id)}
+                              disabled={actionLoading === l.id}
+                              title="Aprovar lead"
+                              className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 disabled:opacity-50 transition-colors"
+                            >
+                              <CheckCircle size={16} />
+                            </button>
+                            <button
+                              onClick={() => void handleRejeitar(l.id)}
+                              disabled={actionLoading === l.id}
+                              title="Rejeitar lead"
+                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition-colors"
+                            >
+                              <XCircle size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -200,9 +273,7 @@ export function SuporteLeadsComissoesContent() {
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-sm text-gray-600">
-                Página {page} de {totalPages}
-              </span>
+              <span className="text-sm text-gray-600">Página {page} de {totalPages}</span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}

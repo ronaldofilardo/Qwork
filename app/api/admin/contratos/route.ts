@@ -58,22 +58,13 @@ export async function GET(): Promise<NextResponse> {
          la.valor_por_funcionario                             AS valor_avaliacao,
          cl.valor_laudo                                       AS valor_total,
          lr.percentual_comissao_comercial                     AS perc_comercial,
-         ROUND(
-           COALESCE(cl.valor_comissionavel, 0)
-           * COALESCE(lr.percentual_comissao_comercial, 0)
-           / 100.0,
-           2
-         )                                                    AS valor_comercial,
+         COALESCE(cl.valor_comissao_comercial, 0)             AS valor_comercial,
          cl.percentual_comissao                               AS perc_rep,
          cl.valor_comissao                                    AS valor_rep,
          ROUND(
            cl.valor_laudo
            - cl.valor_comissao
-           - (
-               COALESCE(cl.valor_comissionavel, 0)
-               * COALESCE(lr.percentual_comissao_comercial, 0)
-               / 100.0
-             ),
+           - COALESCE(cl.valor_comissao_comercial, 0),
            2
          )                                                    AS valor_qwork
        FROM public.comissoes_laudo cl
@@ -85,7 +76,6 @@ export async function GET(): Promise<NextResponse> {
        JOIN public.laudos laudo             ON laudo.id = cl.laudo_id
        JOIN public.lotes_avaliacao la       ON la.id = laudo.lote_id
        LEFT JOIN public.avaliacoes av       ON av.lote_id = la.id
-       WHERE cl.status NOT IN ('cancelada')
        GROUP BY
          clin.nome, clin.cnpj,
          ent.nome, ent.cnpj,
@@ -101,7 +91,7 @@ export async function GET(): Promise<NextResponse> {
          la.valor_por_funcionario,
          cl.valor_laudo,
          lr.percentual_comissao_comercial,
-         cl.valor_comissionavel,
+         cl.valor_comissao_comercial,
          cl.percentual_comissao,
          cl.valor_comissao
        ORDER BY cl.laudo_id DESC

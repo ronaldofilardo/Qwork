@@ -184,6 +184,8 @@ export default function ComercialRepresentanteDetalhePage() {
     percentual_comissao?: number | null;
     percentual_comissao_comercial?: number | null;
     modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+    valor_custo_fixo_entidade?: number | null;
+    valor_custo_fixo_clinica?: number | null;
     asaas_wallet_id?: string | null;
     banco_codigo?: string | null;
     agencia?: string | null;
@@ -1173,7 +1175,12 @@ export default function ComercialRepresentanteDetalhePage() {
           repNome={repFull.nome}
           modeloAtual={repFull.modelo_comissionamento ?? null}
           percentualAtual={repFull.percentual_comissao ?? null}
+          percentualComercialAtual={
+            repFull.percentual_comissao_comercial ?? null
+          }
           walletIdAtual={repFull.asaas_wallet_id ?? null}
+          valorCFEntidadeAtual={repFull.valor_custo_fixo_entidade ?? null}
+          valorCFClinicaAtual={repFull.valor_custo_fixo_clinica ?? null}
           onClose={() => setShowComissao(false)}
           onSuccess={() => {
             setShowComissao(false);

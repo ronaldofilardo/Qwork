@@ -56,8 +56,8 @@ export async function GET(): Promise<NextResponse> {
          COUNT(av.id) FILTER (WHERE av.status = 'concluida') AS avaliacoes_concluidas,
          la.valor_por_funcionario                             AS valor_avaliacao,
          cl.valor_laudo                                       AS valor_total,
-         NULL                                                 AS perc_comercial,
-         0                                                    AS valor_comercial,
+         COALESCE(cl.percentual_comissao_comercial, r.percentual_comissao_comercial) AS perc_comercial,
+         COALESCE(cl.valor_comissao_comercial, 0)             AS valor_comercial,
          cl.percentual_comissao                               AS perc_rep,
          cl.valor_comissao                                    AS valor_rep
        FROM public.comissoes_laudo cl
@@ -69,7 +69,6 @@ export async function GET(): Promise<NextResponse> {
        JOIN public.laudos laudo             ON laudo.id = cl.laudo_id
        JOIN public.lotes_avaliacao la       ON la.id = laudo.lote_id
        LEFT JOIN public.avaliacoes av       ON av.lote_id = la.id
-       WHERE cl.status NOT IN ('cancelada')
        GROUP BY
          clin.nome, clin.cnpj,
          ent.nome, ent.cnpj,
@@ -84,7 +83,10 @@ export async function GET(): Promise<NextResponse> {
          la.valor_por_funcionario,
          cl.valor_laudo,
          cl.percentual_comissao,
-         cl.valor_comissao
+         cl.valor_comissao,
+         cl.percentual_comissao_comercial,
+         cl.valor_comissao_comercial,
+         r.percentual_comissao_comercial
        ORDER BY cl.laudo_id DESC
        LIMIT 500`,
       []
