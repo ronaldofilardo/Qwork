@@ -8,7 +8,7 @@ interface ContratoRow {
   contratante_nome: string;
   contratante_cnpj: string;
   contratante_id: number;
-  vinculo_id: number;
+  vinculo_id: number | null;
   tipo_contratante: string;
   rep_nome: string | null;
   rep_codigo: string | null;
@@ -195,6 +195,9 @@ export function ContratosTable({
                         <th className="text-center px-3 py-3 font-semibold text-gray-600">
                           Tipo
                         </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Comissão
+                        </th>
                       </>
                     ) : (
                       <>
@@ -325,7 +328,7 @@ export function ContratosTable({
 
                     return (
                       <tr
-                        key={`${row.vinculo_id}-${idx}`}
+                        key={`${row.vinculo_id ?? `novinc-${row.contratante_id}`}-${idx}`}
                         onClick={
                           rowClickable ? () => setDrawerRow(row) : undefined
                         }
@@ -386,6 +389,49 @@ export function ContratosTable({
                             <span className="text-gray-300">—</span>
                           )}
                         </td>
+
+                        {/* Coluna Comissão — visível na view comercial e admin */}
+                        {comercial && (
+                          <td className="text-center px-3 py-3 text-xs">
+                            {isPercentual ? (
+                              <div className="space-y-0.5">
+                                {row.perc_comercial ? (
+                                  <p className="font-semibold text-indigo-700">
+                                    Com.{' '}
+                                    {parseFloat(row.perc_comercial).toFixed(1)}%
+                                  </p>
+                                ) : null}
+                                {row.perc_rep !== null &&
+                                row.perc_rep !== undefined ? (
+                                  <p className="font-semibold text-blue-700">
+                                    Rep. {parseFloat(row.perc_rep).toFixed(1)}%
+                                  </p>
+                                ) : row.percentual_comissao ? (
+                                  <p className="font-semibold text-blue-700">
+                                    Rep.{' '}
+                                    {parseFloat(
+                                      row.percentual_comissao
+                                    ).toFixed(1)}
+                                    %
+                                  </p>
+                                ) : null}
+                                {!row.perc_comercial &&
+                                  !row.perc_rep &&
+                                  !row.percentual_comissao && (
+                                    <span className="text-gray-300">—</span>
+                                  )}
+                              </div>
+                            ) : row.tipo_comissionamento === 'custo_fixo' ? (
+                              <span className="font-semibold text-amber-700">
+                                {fmtBRL(
+                                  row.valor_negociado ?? row.valor_custo_fixo
+                                )}
+                              </span>
+                            ) : (
+                              <span className="text-gray-300">—</span>
+                            )}
+                          </td>
+                        )}
 
                         {!comercial && (
                           <>

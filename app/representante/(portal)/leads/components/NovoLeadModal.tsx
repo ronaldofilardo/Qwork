@@ -449,16 +449,6 @@ export default function NovoLeadModal({
                   </div>
                 )}
                 {breakdownCustoFixo && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">
-                      QWork recebe (líquido)
-                    </span>
-                    <span className="text-gray-700 font-medium">
-                      {fmtBRL(breakdownCustoFixo.valorQWork)}
-                    </span>
-                  </div>
-                )}
-                {breakdownCustoFixo && (
                   <div className="flex justify-between border-t pt-1.5">
                     <span className="text-blue-700 font-semibold">
                       Sua comissão

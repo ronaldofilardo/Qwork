@@ -125,10 +125,14 @@ export function useLeads() {
           d.representante?.modelo_comissionamento ?? null
         );
         setValorCustoFixoEntidade(
-          d.representante?.valor_custo_fixo_entidade ?? null
+          d.representante?.valor_custo_fixo_entidade != null
+            ? Number(d.representante.valor_custo_fixo_entidade)
+            : null
         );
         setValorCustoFixoClinica(
-          d.representante?.valor_custo_fixo_clinica ?? null
+          d.representante?.valor_custo_fixo_clinica != null
+            ? Number(d.representante.valor_custo_fixo_clinica)
+            : null
         );
       })
       .catch(() => {

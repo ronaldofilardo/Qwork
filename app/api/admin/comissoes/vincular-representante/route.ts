@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    await requireRole('comercial', false);
+    await requireRole(['admin', 'suporte', 'comercial'], false);
     const body = await request.json();
 
     const { codigo, entidade_id, clinica_id, valor_negociado, cnpj } = body;

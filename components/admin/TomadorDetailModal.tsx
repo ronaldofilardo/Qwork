@@ -10,6 +10,7 @@ import {
   XCircle,
   UserCheck,
   Link2,
+  Loader2,
 } from 'lucide-react';
 
 type TipoTomador = 'clinica' | 'entidade';
@@ -43,6 +44,14 @@ interface Tomador {
   representante: RepresentanteVinculo | null;
 }
 
+interface RepAutoFill {
+  nome: string;
+  codigo: string;
+  modelo: 'percentual' | 'custo_fixo';
+  percRep: number | null;
+  percComercial: number | null;
+}
+
 interface TomadorDetailModalProps {
   tomador: Tomador;
   onClose: () => void;
@@ -54,6 +63,8 @@ interface TomadorDetailModalProps {
   ativando: boolean;
   onVincular: () => void;
   onToggleAtivo: (t: Tomador) => void;
+  repAutoFill: RepAutoFill | null;
+  buscandoRep: boolean;
 }
 
 export default function TomadorDetailModal({
@@ -67,6 +78,8 @@ export default function TomadorDetailModal({
   ativando,
   onVincular,
   onToggleAtivo,
+  repAutoFill,
+  buscandoRep,
 }: TomadorDetailModalProps) {
   return (
     <div
@@ -221,35 +234,111 @@ export default function TomadorDetailModal({
                     Nenhum representante vinculado. Informe o código para
                     vincular:
                   </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Código (ex: REP-PJ123)"
-                      value={codigoRepInput}
-                      onChange={(e) =>
-                        setCodigoRepInput(e.target.value.toUpperCase())
-                      }
-                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                      disabled={vinculando}
-                    />
+                  {/* Campo: código do representante */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      Código do representante
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Código (ex: REP-PJ123)"
+                        value={codigoRepInput}
+                        onChange={(e) =>
+                          setCodigoRepInput(e.target.value.toUpperCase())
+                        }
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 pr-8"
+                        disabled={vinculando}
+                      />
+                      {buscandoRep && (
+                        <Loader2 className="absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
+                      )}
+                    </div>
+                    {repAutoFill && (
+                      <p className="text-xs text-green-700 mt-1 font-medium flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        {repAutoFill.nome}
+                        <span className="ml-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 font-mono text-[10px]">
+                          {repAutoFill.modelo === 'percentual'
+                            ? 'Comissão %'
+                            : 'Custo Fixo'}
+                        </span>
+                      </p>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Valor negociado/func (opcional)"
-                      value={valorNegociadoInput}
-                      onChange={(e) => setValorNegociadoInput(e.target.value)}
-                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                      disabled={vinculando}
-                    />
-                    <button
-                      onClick={onVincular}
-                      disabled={vinculando || !codigoRepInput.trim()}
-                      className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                      <Link2 className="h-4 w-4" />
-                      {vinculando ? 'Vinculando...' : 'Vincular'}
-                    </button>
+                  {/* Campo: valor / % — label dinâmico conforme modelo do rep */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">
+                      {repAutoFill?.modelo === 'percentual'
+                        ? '% Comissão'
+                        : 'Valor por avaliação (R$)'}
+                    </label>
+                    {repAutoFill?.modelo === 'percentual' ? (
+                      /* Para percentual: campos de leitura + input para confirmação */
+                      <div className="space-y-1.5">
+                        <div className="flex gap-2 flex-wrap">
+                          {repAutoFill.percRep != null && (
+                            <span className="px-2 py-1 rounded bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-800">
+                              Representante: {repAutoFill.percRep}%
+                            </span>
+                          )}
+                          {repAutoFill.percComercial != null && (
+                            <span className="px-2 py-1 rounded bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-800">
+                              Comercial: {repAutoFill.percComercial}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="% negociado (ex: 12.00)"
+                            value={valorNegociadoInput}
+                            onChange={(e) =>
+                              setValorNegociadoInput(e.target.value)
+                            }
+                            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                            disabled={vinculando}
+                          />
+                          <button
+                            onClick={onVincular}
+                            disabled={vinculando || !codigoRepInput.trim()}
+                            className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                          >
+                            <Link2 className="h-4 w-4" />
+                            {vinculando ? 'Vinculando...' : 'Vincular'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      /* Para custo_fixo: exibe valor lido + botão vincular */
+                      <div className="flex gap-2">
+                        {repAutoFill ? (
+                          <div className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 text-gray-800 font-semibold">
+                            {valorNegociadoInput ? (
+                              `R$ ${Number(valorNegociadoInput).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            ) : (
+                              <span className="text-gray-400 font-normal">
+                                Valor não configurado
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex-1 px-3 py-2 text-sm border border-dashed border-gray-300 rounded-lg bg-gray-50 text-gray-400 italic">
+                            Aguardando código…
+                          </div>
+                        )}
+                        <button
+                          onClick={onVincular}
+                          disabled={
+                            vinculando || !codigoRepInput.trim() || !repAutoFill
+                          }
+                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          <Link2 className="h-4 w-4" />
+                          {vinculando ? 'Vinculando...' : 'Vincular'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

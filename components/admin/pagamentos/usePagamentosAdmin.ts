@@ -27,16 +27,20 @@ export function usePagamentosAdmin() {
         solicitacoes: data.solicitacoes,
       });
       setSolicitacoes(data.solicitacoes || []);
-      // Pré-popular valorInput com lead_valor_negociado para solicitações aguardando cobrança
+      // Pré-popular valorInput para solicitações aguardando cobrança:
+      // - custo_fixo: usar valor_custo_fixo_snapshot (valor unitário por avaliação)
+      // - percentual: usar lead_valor_negociado (% negociado)
       const preFill: Record<number, string> = {};
       for (const s of data.solicitacoes || []) {
-        if (
-          s.status_pagamento === 'aguardando_cobranca' &&
-          s.lead_valor_negociado &&
-          s.lead_valor_negociado > 0
-        ) {
+        if (s.status_pagamento !== 'aguardando_cobranca') continue;
+        // Prioridade: lead_valor_negociado > valor_custo_fixo_snapshot > valor_negociado_vinculo
+        const val =
+          s.lead_valor_negociado ??
+          s.valor_custo_fixo_snapshot ??
+          s.valor_negociado_vinculo;
+        if (val != null && Number(val) > 0) {
           preFill[s.lote_id] =
-            `R$ ${Number(s.lead_valor_negociado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            `R$ ${Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
       }
       setValorInput((prev) => ({ ...preFill, ...prev }));
@@ -335,8 +339,7 @@ export function usePagamentosAdmin() {
         solicitacao.valor_negociado_vinculo ??
         solicitacao.lead_valor_negociado ??
         valorPorParcela;
-      const custo =
-        solicitacao.valor_custo_fixo_snapshot ?? 0;
+      const custo = solicitacao.valor_custo_fixo_snapshot ?? 0;
       const ratioRep = negociado > 0 ? (negociado - custo) / negociado : 0;
       valorComissao = Math.round(ratioRep * valorPorParcela * 100) / 100;
       comissaoInfo =
