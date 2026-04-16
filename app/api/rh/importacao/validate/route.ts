@@ -350,6 +350,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       novosCpfs: Set<string>;
       existentesCpfs: Set<string>;
       niveisSet: Set<NivelCargoValue>;
+      /** CPFs cujo nivel_cargo está vazio/inválido na planilha (rastreado quando temNivelCargoDirecto=true) */
+      semNivelNaPlanilha: Set<string>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -364,6 +366,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           novosCpfs: new Set(),
           existentesCpfs: new Set(),
           niveisSet: new Set(),
+          semNivelNaPlanilha: new Set(),
         });
       }
       const info = funcaoInfoMap.get(funcaoRow)!;
@@ -378,6 +381,21 @@ export async function POST(request: Request): Promise<NextResponse> {
       } else {
         info.novosCpfs.add(cpfRow);
       }
+
+      // Rastreia funcionários (novos OU existentes) sem nivel_cargo válido na planilha.
+      // Crítico quando temNivelCargoDirecto=true: novos com célula vazia não são detectados
+      // pelo bloco funcoesComMudancaNivel (que só verifica existentes), resultando em
+      // importação silenciosa com nivel_cargo=null.
+      if (temNivelCargoDirecto) {
+        const nivelNaPlanilha = ((row.nivel_cargo as string | undefined) ?? '')
+          .trim()
+          .toLowerCase();
+        const nivelValido =
+          nivelNaPlanilha === 'gestao' || nivelNaPlanilha === 'operacional';
+        if (!nivelValido) {
+          info.semNivelNaPlanilha.add(cpfRow);
+        }
+      }
     }
 
     const funcoesNivelInfo = [...funcaoInfoMap.entries()]
@@ -391,6 +409,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         isMudancaNivel: funcoesComMudancaNivel.has(funcao),
         temNivelNuloExistente:
           info.niveisSet.has(null) && info.existentesCpfs.size > 0,
+        qtdSemNivelNaPlanilha: info.semNivelNaPlanilha.size,
         funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
         funcionariosComMudancaNivel: mudancaNivelDetalhesMap.get(funcao) ?? [],
       }))
@@ -398,8 +417,10 @@ export async function POST(request: Request): Promise<NextResponse> {
         // Prioridade: mudanças de função > novos sem nível > demais
         if (a.isMudancaRole !== b.isMudancaRole)
           return a.isMudancaRole ? -1 : 1;
-        const aRequerAtencao = a.qtdNovos > 0 || a.temNivelNuloExistente;
-        const bRequerAtencao = b.qtdNovos > 0 || b.temNivelNuloExistente;
+        const aRequerAtencao =
+          a.qtdNovos > 0 || a.temNivelNuloExistente || a.qtdSemNivelNaPlanilha > 0;
+        const bRequerAtencao =
+          b.qtdNovos > 0 || b.temNivelNuloExistente || b.qtdSemNivelNaPlanilha > 0;
         if (aRequerAtencao !== bRequerAtencao) return aRequerAtencao ? -1 : 1;
         return a.funcao.localeCompare(b.funcao, 'pt-BR');
       });
@@ -469,6 +490,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         error.message.includes('Clínica inativa')
       ) {
         return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+      if (error.message.includes('Não autenticado')) {
+        return NextResponse.json({ error: error.message }, { status: 401 });
       }
     }
 

@@ -25,6 +25,8 @@ export interface FuncaoNivelInfo {
   isMudancaNivel?: boolean;
   /** Algum funcionário existente nesta função tem nivel_cargo = null no banco */
   temNivelNuloExistente: boolean;
+  /** Qtd de funcionários cujo nivel_cargo está vazio/inválido na planilha (presente quando temNivelCargoDirecto=true) */
+  qtdSemNivelNaPlanilha?: number;
   /** Detalhes dos funcionários que mudaram para esta função (isMudancaRole=true) */
   funcionariosComMudanca?: Array<{
     nome: string;
@@ -378,10 +380,31 @@ export default function NivelCargoStep({
     [funcoesNivelInfo, nivelCargoMap]
   );
 
+  /** Funções com pelo menos 1 funcionário sem nivel_cargo válido na planilha */
+  const funcoesSemNivelNaPlanilha = useMemo(
+    () => funcoesNivelInfo.filter((f) => (f.qtdSemNivelNaPlanilha ?? 0) > 0),
+    [funcoesNivelInfo]
+  );
+
+  /** Funções exibidas na tabela: quando temNivelCargoDirecto=true, oculta funções onde
+   * todos os funcionários já têm nivel_cargo explícito e válido na planilha. */
+  const funcoesVisiveis = useMemo(
+    () =>
+      temNivelCargoDirecto
+        ? funcoesNivelInfo.filter(
+            (f) =>
+              (f.qtdSemNivelNaPlanilha ?? 0) > 0 ||
+              f.isMudancaRole ||
+              !!f.isMudancaNivel
+          )
+        : funcoesNivelInfo,
+    [temNivelCargoDirecto, funcoesNivelInfo]
+  );
+
   // 'Não informado' é OPCIONAL — não bloqueia a importação
   const funcoesBloqueantes = useMemo(
-    () => funcoesNivelInfo.filter((f) => f.funcao !== 'Não informado'),
-    [funcoesNivelInfo]
+    () => funcoesVisiveis.filter((f) => f.funcao !== 'Não informado'),
+    [funcoesVisiveis]
   );
 
   const totalFuncoes = funcoesBloqueantes.length;
@@ -391,7 +414,14 @@ export default function NivelCargoStep({
     [funcoesBloqueantes, nivelCargoMap]
   );
 
-  const todasClassificadas = classificadas === totalFuncoes;
+  const todasClassificadas = useMemo(() => {
+    // Quando temNivelCargoDirecto=true, apenas funções com células vazias precisam classificação manual.
+    // Funções onde todos têm nivel_cargo explícito na planilha não bloqueiam o avanço.
+    if (temNivelCargoDirecto) {
+      return funcoesSemNivelNaPlanilha.every((f) => !!nivelCargoMap[f.funcao]);
+    }
+    return classificadas === totalFuncoes;
+  }, [temNivelCargoDirecto, funcoesSemNivelNaPlanilha, nivelCargoMap, classificadas, totalFuncoes]);
 
   const autoClassificadas = useMemo(
     () =>
@@ -424,8 +454,12 @@ export default function NivelCargoStep({
     [funcoesNivelInfo, onChange]
   );
 
-  // --- Planilha já tem coluna nivel_cargo (SEM mudanças pendentes) ---
-  if (temNivelCargoDirecto && mudancasNaoConfirmadas.length === 0) {
+  // --- Planilha já tem coluna nivel_cargo (SEM mudanças pendentes E todos com nível definido) ---
+  if (
+    temNivelCargoDirecto &&
+    mudancasNaoConfirmadas.length === 0 &&
+    funcoesSemNivelNaPlanilha.length === 0
+  ) {
     return (
       <div className="space-y-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
@@ -575,6 +609,39 @@ export default function NivelCargoStep({
 
   return (
     <div className="space-y-4">
+      {/* Banner: nivel_cargo direto mas funcionários sem valor na planilha */}
+      {temNivelCargoDirecto && funcoesSemNivelNaPlanilha.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertTriangle
+            size={18}
+            className="text-amber-600 flex-shrink-0 mt-0.5"
+          />
+          <div>
+            <p className="text-sm font-medium text-amber-900">
+              Funcionários sem nível de cargo na planilha
+            </p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              A coluna <strong>nivel_cargo</strong> existe, mas{' '}
+              <strong>
+                {funcoesSemNivelNaPlanilha.reduce(
+                  (s, f) => s + (f.qtdSemNivelNaPlanilha ?? 0),
+                  0
+                )}
+              </strong>{' '}
+              funcionário
+              {funcoesSemNivelNaPlanilha.reduce(
+                (s, f) => s + (f.qtdSemNivelNaPlanilha ?? 0),
+                0
+              ) > 1
+                ? 's'
+                : ''}{' '}
+              com célula vazia ou valor inválido. Classifique o nível abaixo
+              para que seja aplicado como padrão a eles.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Banner auto-classificação */}
       {autoClassificadas > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
@@ -634,7 +701,7 @@ export default function NivelCargoStep({
 
         {/* Rows */}
         <div className="divide-y divide-gray-50">
-          {funcoesNivelInfo.map((info) => {
+          {funcoesVisiveis.map((info) => {
             const nivel = nivelCargoMap[info.funcao] ?? '';
 
             return (
@@ -675,6 +742,11 @@ export default function NivelCargoStep({
                     {info.qtdNovos > 0 && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">
                         {info.qtdNovos} novo{info.qtdNovos > 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {(info.qtdSemNivelNaPlanilha ?? 0) > 0 && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
+                        {info.qtdSemNivelNaPlanilha} sem nível
                       </span>
                     )}
                     {info.niveisAtuais.length > 1 && (
@@ -762,14 +834,33 @@ export default function NivelCargoStep({
       {!todasClassificadas && (
         <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-          <span>
-            Classifique todas as funções para habilitar a importação.{' '}
-            <strong>
-              {totalFuncoes - classificadas} pendente
-              {totalFuncoes - classificadas > 1 ? 's' : ''}
-            </strong>
-            .
-          </span>
+          {temNivelCargoDirecto ? (
+            <span>
+              Classifique o nível para as funções com funcionários sem nível na
+              planilha antes de prosseguir.{' '}
+              <strong>
+                {funcoesSemNivelNaPlanilha.filter(
+                  (f) => !nivelCargoMap[f.funcao]
+                ).length}{' '}
+                pendente
+                {funcoesSemNivelNaPlanilha.filter(
+                  (f) => !nivelCargoMap[f.funcao]
+                ).length > 1
+                  ? 's'
+                  : ''}
+              </strong>
+              .
+            </span>
+          ) : (
+            <span>
+              Classifique todas as funções para habilitar a importação.{' '}
+              <strong>
+                {totalFuncoes - classificadas} pendente
+                {totalFuncoes - classificadas > 1 ? 's' : ''}
+              </strong>
+              .
+            </span>
+          )}
         </div>
       )}
 
