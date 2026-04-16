@@ -17,28 +17,32 @@ export async function GET(): Promise<NextResponse> {
     const rows = await query<{
       contratante_nome: string;
       contratante_cnpj: string;
+      contratante_id: number;
+      vinculo_id: number;
       tipo_contratante: string;
-      rep_nome: string;
-      rep_cpf: string;
+      rep_nome: string | null;
+      rep_cpf: string | null;
       lead_data: string | null;
       contrato_data: string | null;
       tempo_dias: string | null;
       tipo_comissionamento: string | null;
       percentual_comissao: string | null;
       valor_custo_fixo: string | null;
-      laudo_id: number;
-      lote_id: number;
+      laudo_id: number | null;
+      lote_id: number | null;
       avaliacoes_concluidas: string;
       valor_avaliacao: string | null;
-      valor_total: string;
+      valor_total: string | null;
       perc_comercial: string | null;
-      valor_comercial: string;
-      perc_rep: string;
-      valor_rep: string;
+      valor_comercial: string | null;
+      perc_rep: string | null;
+      valor_rep: string | null;
     }>(
       `SELECT
          COALESCE(clin.nome, ent.nome)                        AS contratante_nome,
          COALESCE(clin.cnpj, ent.cnpj)                        AS contratante_cnpj,
+         COALESCE(vc.clinica_id, vc.entidade_id)              AS contratante_id,
+         vc.id                                                AS vinculo_id,
          CASE
            WHEN vc.clinica_id IS NOT NULL THEN 'clinica'
            ELSE 'entidade'
@@ -57,37 +61,38 @@ export async function GET(): Promise<NextResponse> {
          la.valor_por_funcionario                             AS valor_avaliacao,
          cl.valor_laudo                                       AS valor_total,
          lr.percentual_comissao_comercial                     AS perc_comercial,
-         COALESCE(cl.valor_comissao_comercial, 0)             AS valor_comercial,
+         cl.valor_comissao_comercial                          AS valor_comercial,
          cl.percentual_comissao                               AS perc_rep,
          cl.valor_comissao                                    AS valor_rep
-       FROM public.comissoes_laudo cl
-       JOIN public.vinculos_comissao vc     ON vc.id = cl.vinculo_id
-       JOIN public.representantes r         ON r.id = cl.representante_id
+       FROM public.vinculos_comissao vc
+       LEFT JOIN public.comissoes_laudo cl   ON cl.vinculo_id = vc.id
+       LEFT JOIN public.representantes r     ON r.id = vc.representante_id
        LEFT JOIN public.leads_representante lr ON lr.id = vc.lead_id
-       LEFT JOIN public.entidades ent       ON ent.id = vc.entidade_id
-       LEFT JOIN public.clinicas clin       ON clin.id = vc.clinica_id
-       JOIN public.laudos laudo             ON laudo.id = cl.laudo_id
-       JOIN public.lotes_avaliacao la       ON la.id = laudo.lote_id
-       LEFT JOIN public.avaliacoes av       ON av.lote_id = la.id
+       LEFT JOIN public.entidades ent        ON ent.id = vc.entidade_id
+       LEFT JOIN public.clinicas clin        ON clin.id = vc.clinica_id
+       LEFT JOIN public.laudos laudo         ON laudo.id = cl.laudo_id
+       LEFT JOIN public.lotes_avaliacao la   ON la.id = laudo.lote_id
+       LEFT JOIN public.avaliacoes av        ON av.lote_id = la.id
        GROUP BY
          clin.nome, clin.cnpj,
          ent.nome, ent.cnpj,
-         vc.clinica_id,
+         vc.clinica_id, vc.entidade_id,
+         vc.id,
          r.nome, r.cpf,
-         lr.criado_em,
-         vc.data_inicio,
          r.modelo_comissionamento,
          r.percentual_comissao,
+         lr.criado_em,
          lr.valor_custo_fixo_snapshot,
+         lr.percentual_comissao_comercial,
+         vc.data_inicio,
          cl.laudo_id,
          laudo.lote_id,
          la.valor_por_funcionario,
          cl.valor_laudo,
-         lr.percentual_comissao_comercial,
-         cl.valor_comissao_comercial,
          cl.percentual_comissao,
-         cl.valor_comissao
-       ORDER BY cl.laudo_id DESC
+         cl.valor_comissao,
+         cl.valor_comissao_comercial
+       ORDER BY vc.id DESC, cl.laudo_id DESC NULLS LAST
        LIMIT 500`,
       []
     );
