@@ -22,14 +22,16 @@ export async function GET(): Promise<NextResponse> {
       tipo_contratante: string;
       rep_nome: string | null;
       rep_cpf: string | null;
+      rep_codigo: string | null;
       lead_data: string | null;
       contrato_data: string | null;
       tempo_dias: string | null;
       tipo_comissionamento: string | null;
       percentual_comissao: string | null;
       valor_custo_fixo: string | null;
-      laudo_id: number | null;
-      lote_id: number | null;
+      valor_negociado: string | null;
+      total_laudos: string;
+      total_lotes: string;
       avaliacoes_concluidas: string;
       valor_avaliacao: string | null;
       valor_total: string | null;
@@ -39,31 +41,33 @@ export async function GET(): Promise<NextResponse> {
       valor_rep: string | null;
     }>(
       `SELECT
-         COALESCE(clin.nome, ent.nome)                        AS contratante_nome,
-         COALESCE(clin.cnpj, ent.cnpj)                        AS contratante_cnpj,
-         COALESCE(vc.clinica_id, vc.entidade_id)              AS contratante_id,
-         vc.id                                                AS vinculo_id,
+         COALESCE(clin.nome, ent.nome)                             AS contratante_nome,
+         COALESCE(clin.cnpj, ent.cnpj)                             AS contratante_cnpj,
+         COALESCE(vc.clinica_id, vc.entidade_id)                   AS contratante_id,
+         vc.id                                                     AS vinculo_id,
          CASE
            WHEN vc.clinica_id IS NOT NULL THEN 'clinica'
            ELSE 'entidade'
-         END                                                  AS tipo_contratante,
-         r.nome                                               AS rep_nome,
-         r.cpf                                                AS rep_cpf,
-         lr.criado_em                                         AS lead_data,
-         vc.data_inicio                                       AS contrato_data,
-         (vc.data_inicio - lr.criado_em::date)                AS tempo_dias,
-         r.modelo_comissionamento                              AS tipo_comissionamento,
-         r.percentual_comissao                                AS percentual_comissao,
-         lr.valor_custo_fixo_snapshot                         AS valor_custo_fixo,
-         cl.laudo_id                                          AS laudo_id,
-         laudo.lote_id                                        AS lote_id,
-         COUNT(av.id) FILTER (WHERE av.status = 'concluida') AS avaliacoes_concluidas,
-         la.valor_por_funcionario                             AS valor_avaliacao,
-         cl.valor_laudo                                       AS valor_total,
-         lr.percentual_comissao_comercial                     AS perc_comercial,
-         cl.valor_comissao_comercial                          AS valor_comercial,
-         cl.percentual_comissao                               AS perc_rep,
-         cl.valor_comissao                                    AS valor_rep
+         END                                                       AS tipo_contratante,
+         r.nome                                                    AS rep_nome,
+         COALESCE(r.cpf, r.cpf_responsavel_pj)                     AS rep_cpf,
+         r.codigo                                                  AS rep_codigo,
+         lr.criado_em                                              AS lead_data,
+         vc.data_inicio                                            AS contrato_data,
+         (vc.data_inicio - lr.criado_em::date)                     AS tempo_dias,
+         r.modelo_comissionamento                                  AS tipo_comissionamento,
+         r.percentual_comissao                                     AS percentual_comissao,
+         lr.valor_custo_fixo_snapshot                              AS valor_custo_fixo,
+         COALESCE(lr.valor_negociado, vc.valor_negociado)          AS valor_negociado,
+         COUNT(DISTINCT cl.laudo_id)                               AS total_laudos,
+         COUNT(DISTINCT laudo.lote_id)                             AS total_lotes,
+         COUNT(av.id) FILTER (WHERE av.status = 'concluida')       AS avaliacoes_concluidas,
+         MAX(la.valor_por_funcionario)                             AS valor_avaliacao,
+         SUM(cl.valor_laudo)                                       AS valor_total,
+         lr.percentual_comissao_comercial                          AS perc_comercial,
+         SUM(cl.valor_comissao_comercial)                          AS valor_comercial,
+         r.percentual_comissao                                     AS perc_rep,
+         SUM(cl.valor_comissao)                                    AS valor_rep
        FROM public.vinculos_comissao vc
        LEFT JOIN public.comissoes_laudo cl   ON cl.vinculo_id = vc.id
        LEFT JOIN public.representantes r     ON r.id = vc.representante_id
@@ -78,21 +82,16 @@ export async function GET(): Promise<NextResponse> {
          ent.nome, ent.cnpj,
          vc.clinica_id, vc.entidade_id,
          vc.id,
-         r.nome, r.cpf,
+         vc.data_inicio,
+         vc.valor_negociado,
+         r.nome, r.cpf, r.cpf_responsavel_pj, r.codigo,
          r.modelo_comissionamento,
          r.percentual_comissao,
          lr.criado_em,
          lr.valor_custo_fixo_snapshot,
-         lr.percentual_comissao_comercial,
-         vc.data_inicio,
-         cl.laudo_id,
-         laudo.lote_id,
-         la.valor_por_funcionario,
-         cl.valor_laudo,
-         cl.percentual_comissao,
-         cl.valor_comissao,
-         cl.valor_comissao_comercial
-       ORDER BY vc.id DESC, cl.laudo_id DESC NULLS LAST
+         lr.valor_negociado,
+         lr.percentual_comissao_comercial
+       ORDER BY vc.id DESC
        LIMIT 500`,
       []
     );

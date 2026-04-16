@@ -30,14 +30,15 @@ const vinculoComLaudo = {
   tipo_contratante: 'clinica',
   rep_nome: 'João Rep',
   rep_cpf: '12345678900',
+  rep_codigo: 'ABC123',
   lead_data: '2026-01-15T00:00:00.000Z',
   contrato_data: '2026-02-01',
   tempo_dias: '17',
   tipo_comissionamento: 'percentual',
   percentual_comissao: '10.00',
-  valor_custo_fixo: null,
-  laudo_id: 5,
-  lote_id: 5,
+  valor_negociado: '500.00',
+  total_laudos: '1',
+  total_lotes: '1',
   avaliacoes_concluidas: '3',
   valor_avaliacao: '8.00',
   valor_total: '24.00',
@@ -56,14 +57,15 @@ const vinculoSemLaudo = {
   tipo_contratante: 'entidade',
   rep_nome: null,
   rep_cpf: null,
+  rep_codigo: null,
   lead_data: null,
   contrato_data: '2026-03-10',
   tempo_dias: null,
   tipo_comissionamento: null,
   percentual_comissao: null,
-  valor_custo_fixo: null,
-  laudo_id: null,
-  lote_id: null,
+  valor_negociado: null,
+  total_laudos: '0',
+  total_lotes: '0',
   avaliacoes_concluidas: '0',
   valor_avaliacao: null,
   valor_total: null,
@@ -118,7 +120,8 @@ describe('GET /api/comercial/contratos', () => {
     expect(c.contratante_nome).toBe('Clínica Teste');
     expect(c.tipo_contratante).toBe('clinica');
     expect(c.rep_nome).toBe('João Rep');
-    expect(c.laudo_id).toBe(5);
+    expect(c.rep_cpf).toBe('12345678900');
+    expect(c.total_laudos).toBe('1');
     expect(c.valor_total).toBe('24.00');
   });
 
@@ -135,7 +138,7 @@ describe('GET /api/comercial/contratos', () => {
     );
     expect(semLaudo).toBeDefined();
     expect(semLaudo.rep_nome).toBeNull();
-    expect(semLaudo.laudo_id).toBeNull();
+    expect(semLaudo.total_laudos).toBe('0');
     expect(semLaudo.valor_total).toBeNull();
   });
 
@@ -149,6 +152,10 @@ describe('GET /api/comercial/contratos', () => {
     expect(sql).toContain('left join public.comissoes_laudo');
     // Não deve filtrar por representante (LEFT JOIN)
     expect(sql).toContain('left join public.representantes');
+    // COALESCE para CPF de PF e PJ
+    expect(sql).toContain('cpf_responsavel_pj');
+    // Agrega por vínculo
+    expect(sql).toContain('count(distinct cl.laudo_id)');
   });
 
   it('não inclui campo valor_qwork na query', async () => {
