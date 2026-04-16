@@ -78,6 +78,82 @@ export function TomadoresContent({
   const [valorNegociadoInput, setValorNegociadoInput] = useState('');
   const [vinculando, setVinculando] = useState(false);
 
+  // Auto-preenchimento do valor/% quando código do rep é digitado
+  interface RepAutoFill {
+    nome: string;
+    codigo: string;
+    modelo: 'percentual' | 'custo_fixo';
+    percRep: number | null;
+    percComercial: number | null;
+  }
+  const [repAutoFill, setRepAutoFill] = useState<RepAutoFill | null>(null);
+  const [buscandoRep, setBuscandoRep] = useState(false);
+
+  useEffect(() => {
+    setRepAutoFill(null);
+    setValorNegociadoInput('');
+
+    if (!tomadorSelecionado || codigoRepInput.trim().length < 2) {
+      setBuscandoRep(false);
+      return;
+    }
+
+    // Ativa spinner imediatamente, antes do debounce
+    setBuscandoRep(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `/api/admin/representantes/busca?q=${encodeURIComponent(codigoRepInput.trim())}`,
+          { cache: 'no-store' }
+        );
+        const data = await res.json();
+        const reps: Array<{
+          nome: string;
+          codigo: string;
+          modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+          percentual_comissao: string | null;
+          percentual_comissao_comercial: string | null;
+          valor_custo_fixo_entidade: string | null;
+          valor_custo_fixo_clinica: string | null;
+        }> = data.representantes ?? [];
+        const rep = reps.find(
+          (r) => r.codigo.toUpperCase() === codigoRepInput.trim().toUpperCase()
+        );
+        if (rep && rep.modelo_comissionamento) {
+          setRepAutoFill({
+            nome: rep.nome,
+            codigo: rep.codigo,
+            modelo: rep.modelo_comissionamento,
+            percRep:
+              rep.percentual_comissao != null
+                ? Number(rep.percentual_comissao)
+                : null,
+            percComercial:
+              rep.percentual_comissao_comercial != null
+                ? Number(rep.percentual_comissao_comercial)
+                : null,
+          });
+          if (rep.modelo_comissionamento === 'percentual') {
+            setValorNegociadoInput(rep.percentual_comissao ?? '');
+          } else {
+            const val =
+              tomadorSelecionado.tipo === 'clinica'
+                ? rep.valor_custo_fixo_clinica
+                : rep.valor_custo_fixo_entidade;
+            setValorNegociadoInput(val ?? '');
+          }
+        }
+      } catch {
+        // silencioso — usuário pode digitar o valor manualmente
+      } finally {
+        setBuscandoRep(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [codigoRepInput, tomadorSelecionado]);
+
   type DocsData = {
     cartao_cnpj: string | null;
     contrato_social: string | null;
@@ -290,12 +366,20 @@ export function TomadoresContent({
         ...prev,
         [id]: data.success
           ? (data.documentos as DocsData)
-          : { cartao_cnpj: null, contrato_social: null, doc_identificacao: null },
+          : {
+              cartao_cnpj: null,
+              contrato_social: null,
+              doc_identificacao: null,
+            },
       }));
     } catch {
       setDocsMap((prev) => ({
         ...prev,
-        [id]: { cartao_cnpj: null, contrato_social: null, doc_identificacao: null },
+        [id]: {
+          cartao_cnpj: null,
+          contrato_social: null,
+          doc_identificacao: null,
+        },
       }));
     }
   };
@@ -694,9 +778,7 @@ export function TomadoresContent({
                             ).map(({ chave, label }) => {
                               const docs = docsMap[tomador.id];
                               const url =
-                                docs && docs !== 'loading'
-                                  ? docs[chave]
-                                  : null;
+                                docs && docs !== 'loading' ? docs[chave] : null;
                               return (
                                 <div
                                   key={chave}
@@ -740,7 +822,12 @@ export function TomadoresContent({
       {tomadorSelecionado && (
         <TomadorDetailModal
           tomador={tomadorSelecionado}
-          onClose={() => setTomadorSelecionado(null)}
+          onClose={() => {
+            setTomadorSelecionado(null);
+            setCodigoRepInput('');
+            setValorNegociadoInput('');
+            setRepAutoFill(null);
+          }}
           codigoRepInput={codigoRepInput}
           setCodigoRepInput={setCodigoRepInput}
           valorNegociadoInput={valorNegociadoInput}
@@ -749,6 +836,8 @@ export function TomadoresContent({
           ativando={ativando}
           onVincular={handleVincularRepresentante}
           onToggleAtivo={toggleAtivo}
+          repAutoFill={repAutoFill}
+          buscandoRep={buscandoRep}
         />
       )}
 

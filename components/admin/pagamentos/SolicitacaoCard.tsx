@@ -250,7 +250,7 @@ function StatusActions({
         {temSugestao && (
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-xs text-emerald-600">
-              Valor negociado pelo representante:{' '}
+              Valor negociado:{' '}
               <strong>
                 R${' '}
                 {Number(solicitacao.lead_valor_negociado).toLocaleString(
@@ -269,7 +269,17 @@ function StatusActions({
               >
                 {isCustoFixo
                   ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
-                  : '% Percentual'}
+                  : [
+                      solicitacao.representante_percentual_comissao != null
+                        ? `Rep ${solicitacao.representante_percentual_comissao}%`
+                        : '% Rep ?',
+                      solicitacao.representante_percentual_comissao_comercial !=
+                      null
+                        ? `Com. ${solicitacao.representante_percentual_comissao_comercial}%`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
               </span>
             )}
           </div>
@@ -284,7 +294,17 @@ function StatusActions({
           >
             {isCustoFixo
               ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
-              : '% Percentual'}
+              : [
+                  solicitacao.representante_percentual_comissao != null
+                    ? `Rep ${solicitacao.representante_percentual_comissao}%`
+                    : '% Percentual',
+                  solicitacao.representante_percentual_comissao_comercial !=
+                  null
+                    ? `Com. ${solicitacao.representante_percentual_comissao_comercial}%`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
           </span>
         )}
         <div className="flex items-center gap-3">
@@ -500,6 +520,9 @@ function ComissaoSection({
                 const modelo = solicitacao.modelo_comissionamento;
                 if (!modelo) return null;
                 const isCF = modelo === 'custo_fixo';
+                const percRep = solicitacao.representante_percentual_comissao;
+                const percCom =
+                  solicitacao.representante_percentual_comissao_comercial;
                 return (
                   <span
                     className={`mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
@@ -510,7 +533,12 @@ function ComissaoSection({
                   >
                     {isCF
                       ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` · R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
-                      : '% Percentual'}
+                      : [
+                          percRep != null ? `Rep ${percRep}%` : '% Percentual',
+                          percCom != null ? `Com. ${percCom}%` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
                   </span>
                 );
               })()}

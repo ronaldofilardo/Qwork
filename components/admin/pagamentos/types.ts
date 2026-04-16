@@ -34,6 +34,7 @@ export interface Solicitacao {
   representante_codigo: string | null;
   representante_tipo_pessoa: string | null;
   representante_percentual_comissao: number | null;
+  representante_percentual_comissao_comercial: number | null;
   comissao_gerada: boolean;
   /** Quantas comissões já foram geradas para este lote (inclui provisionadas futuras). */
   comissoes_geradas_count: number;

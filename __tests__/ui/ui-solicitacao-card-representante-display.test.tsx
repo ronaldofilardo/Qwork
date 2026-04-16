@@ -44,7 +44,9 @@ const createMockSolicitacao = (
   representante_nome: null,
   representante_codigo: null,
   representante_tipo_pessoa: null,
+  link_disponibilizado_em: null,
   representante_percentual_comissao: null,
+  representante_percentual_comissao_comercial: null,
   comissao_gerada: false,
   laudo_id: null,
   laudo_status: null,
@@ -127,14 +129,11 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
 
     const { container } = render(<SolicitacaoCard {...props} />);
 
-    // Procura pelo texto que indica valor negociado
-    expect(
-      screen.getByText(/Valor negociado pelo representante/i)
-    ).toBeInTheDocument();
+    // Procura pelo rótulo "Valor negociado:" (lead_valor_negociado é sempre R$, nunca %)
+    expect(container.textContent).toMatch(/Valor negociado:/i);
 
     // Verifica que o valor está mostrado (R$ 12,50)
-    const valorText = container.textContent;
-    expect(valorText).toContain('12,50');
+    expect(container.textContent).toContain('12,50');
   });
 
   test('4. Deve mostrar "Comissão" em vez de "Representante Responsável" se status=pago', () => {

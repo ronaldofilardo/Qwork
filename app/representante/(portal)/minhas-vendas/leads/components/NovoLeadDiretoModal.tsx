@@ -116,10 +116,14 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
             d.representante?.modelo_comissionamento ?? null
           );
           setValorCustoFixoEntidade(
-            d.representante?.valor_custo_fixo_entidade ?? null
+            d.representante?.valor_custo_fixo_entidade != null
+              ? Number(d.representante.valor_custo_fixo_entidade)
+              : null
           );
           setValorCustoFixoClinica(
-            d.representante?.valor_custo_fixo_clinica ?? null
+            d.representante?.valor_custo_fixo_clinica != null
+              ? Number(d.representante.valor_custo_fixo_clinica)
+              : null
           );
         }
       )
@@ -607,16 +611,6 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
                     </span>
                     <span className="text-blue-700 font-medium">
                       {fmtBRL(breakdownCustoFixo.valorComercial)}
-                    </span>
-                  </div>
-                )}
-                {breakdownCustoFixo && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">
-                      QWork recebe (líquido)
-                    </span>
-                    <span className="text-gray-700 font-medium">
-                      {fmtBRL(breakdownCustoFixo.valorQWork)}
                     </span>
                   </div>
                 )}

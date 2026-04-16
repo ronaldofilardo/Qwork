@@ -1,8 +1,8 @@
 /**
- * GET /api/comercial/representantes/busca
+ * GET /api/admin/representantes/busca
  * Busca representantes por nome ou código (mínimo 2 caracteres).
- * Usado pelo drawer de vínculo retroativo de representante.
- * Auth: comercial | admin
+ * Usado pelo modal de vínculo de representante em contexto admin e suporte.
+ * Auth: admin | suporte
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -25,7 +25,7 @@ interface RepBusca {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await requireRole(['comercial', 'admin', 'suporte'], false);
+    await requireRole(['admin', 'suporte'], false);
 
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get('q') ?? '').trim();
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const e = err as Error;
     if (e.message === 'Não autenticado' || e.message === 'Sem permissão')
       return NextResponse.json({ error: e.message }, { status: 403 });
-    console.error('[GET /api/comercial/representantes/busca]', e);
+    console.error('[GET /api/admin/representantes/busca]', e);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }

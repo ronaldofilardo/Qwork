@@ -18,7 +18,7 @@ export async function GET(): Promise<NextResponse> {
       contratante_nome: string;
       contratante_cnpj: string;
       contratante_id: number;
-      vinculo_id: number;
+      vinculo_id: number | null;
       tipo_contratante: string;
       rep_nome: string | null;
       rep_cpf: string | null;
@@ -98,7 +98,42 @@ export async function GET(): Promise<NextResponse> {
          lr.valor_custo_fixo_snapshot,
          lr.valor_negociado,
          lr.percentual_comissao_comercial
-       ORDER BY vc.id DESC
+       UNION ALL
+       SELECT
+         ent2.nome                                                  AS contratante_nome,
+         ent2.cnpj                                                  AS contratante_cnpj,
+         ent2.id                                                    AS contratante_id,
+         NULL::int                                                   AS vinculo_id,
+         'entidade'::text                                           AS tipo_contratante,
+         NULL::varchar                                              AS rep_nome,
+         NULL::varchar                                              AS rep_cpf,
+         NULL::varchar                                              AS rep_codigo,
+         NULL::timestamptz                                          AS lead_data,
+         NULL::date                                                 AS contrato_data,
+         NULL::int                                                   AS tempo_dias,
+         NULL::modelo_comissionamento                               AS tipo_comissionamento,
+         NULL::numeric                                              AS percentual_comissao,
+         NULL::numeric                                              AS valor_custo_fixo,
+         NULL::numeric                                              AS valor_negociado,
+         COUNT(DISTINCT la2.id)                                     AS total_laudos,
+         COUNT(DISTINCT la2.id)                                     AS total_lotes,
+         COUNT(av2.id) FILTER (WHERE av2.status = 'concluida')      AS avaliacoes_concluidas,
+         MAX(la2.valor_por_funcionario)                             AS valor_avaliacao,
+         NULL::numeric                                              AS valor_total,
+         NULL::numeric                                              AS perc_comercial,
+         NULL::numeric                                              AS valor_comercial,
+         NULL::numeric                                              AS perc_rep,
+         NULL::numeric                                              AS valor_rep,
+         NULL::numeric                                              AS valor_qwork
+       FROM public.entidades ent2
+       JOIN public.lotes_avaliacao la2 ON la2.entidade_id = ent2.id
+       LEFT JOIN public.avaliacoes av2 ON av2.lote_id = la2.id
+       WHERE la2.status_pagamento IS NOT NULL
+         AND NOT EXISTS (
+           SELECT 1 FROM public.vinculos_comissao vc2 WHERE vc2.entidade_id = ent2.id
+         )
+       GROUP BY ent2.id, ent2.nome, ent2.cnpj
+       ORDER BY vinculo_id DESC NULLS LAST
        LIMIT 500`,
       []
     );
