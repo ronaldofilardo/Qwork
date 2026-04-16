@@ -11,6 +11,7 @@ import { ComissoesIndividuaisContent } from '@/components/suporte/ComissoesIndiv
 import CiclosComissaoContent from '@/components/suporte/CiclosComissaoContent';
 import { PreCadastroContent } from '@/components/suporte/PreCadastroContent';
 import { SuporteLeadsComissoesContent } from '@/components/suporte/SuporteLeadsComissoesContent';
+import { ContratosTable } from '@/components/shared/ContratosTable';
 
 interface Session {
   cpf: string;
@@ -99,6 +100,9 @@ export default function SuportePage() {
     if (activeSection === 'tomadores') {
       if (activeSubSection === 'pre-cadastro') {
         return <PreCadastroContent />;
+      }
+      if (activeSubSection === 'contratos') {
+        return <ContratosTable endpoint="/api/suporte/contratos" />;
       }
       return <TomadoresContent activeSubSection={activeSubSection} />;
     }
