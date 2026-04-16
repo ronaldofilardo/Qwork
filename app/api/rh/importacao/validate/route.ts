@@ -418,9 +418,13 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (a.isMudancaRole !== b.isMudancaRole)
           return a.isMudancaRole ? -1 : 1;
         const aRequerAtencao =
-          a.qtdNovos > 0 || a.temNivelNuloExistente || a.qtdSemNivelNaPlanilha > 0;
+          a.qtdNovos > 0 ||
+          a.temNivelNuloExistente ||
+          a.qtdSemNivelNaPlanilha > 0;
         const bRequerAtencao =
-          b.qtdNovos > 0 || b.temNivelNuloExistente || b.qtdSemNivelNaPlanilha > 0;
+          b.qtdNovos > 0 ||
+          b.temNivelNuloExistente ||
+          b.qtdSemNivelNaPlanilha > 0;
         if (aRequerAtencao !== bRequerAtencao) return aRequerAtencao ? -1 : 1;
         return a.funcao.localeCompare(b.funcao, 'pt-BR');
       });

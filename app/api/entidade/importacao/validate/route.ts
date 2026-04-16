@@ -72,7 +72,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Validação de formato — CNPJ ignorado para fluxo de Entidade
-    const validacao = validarDadosImportacao(parsed.data, { ignorarCnpj: true });
+    const validacao = validarDadosImportacao(parsed.data, {
+      ignorarCnpj: true,
+    });
 
     // Consultar banco para duplicidades
     const cpfs = parsed.data
@@ -387,7 +389,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       .sort((a, b) => {
         if (a.isMudancaRole !== b.isMudancaRole)
           return a.isMudancaRole ? -1 : 1;
-        if ((a.qtdSemNivelNaPlanilha > 0) !== (b.qtdSemNivelNaPlanilha > 0))
+        if (a.qtdSemNivelNaPlanilha > 0 !== b.qtdSemNivelNaPlanilha > 0)
           return a.qtdSemNivelNaPlanilha > 0 ? -1 : 1;
         const aRequerAtencao = a.qtdNovos > 0 || a.temNivelNuloExistente;
         const bRequerAtencao = b.qtdNovos > 0 || b.temNivelNuloExistente;

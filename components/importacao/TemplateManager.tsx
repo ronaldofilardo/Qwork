@@ -17,7 +17,7 @@ export interface ImportTemplate {
   nivelCargoMap?: Record<string, string>;
 }
 
-/** Chave legada do localStorage — usada apenas para migração automática (flush único) */
+/** Chave legada do localStorage — mantida apenas para limpeza preventiva (remoção no mount) */
 const LEGACY_STORAGE_KEY = 'qwork-importacao-templates';
 
 /**
@@ -124,41 +124,19 @@ export function TemplatePicker({ apiBase, onApply }: TemplatePickerProps) {
   const [templates, setTemplates] = useState<ImportTemplate[]>([]);
   const [open, setOpen] = useState(false);
 
-  // Carrega templates da API e realiza flush único dos templates legados do localStorage
+  // Carrega templates APENAS da API (localStorage é global e não-isolado por tenant)
   useEffect(() => {
     let cancelled = false;
 
     const fetchTemplates = async () => {
       try {
-        // Migração de localStorage → API (executada uma única vez por dispositivo)
+        // SECURITY FIX: Remover localStorage legados para evitar contaminação entre usuários
+        // localStorage é GLOBAL do navegador, NÃO isolado por usuário/entidade/sessão.
         if (typeof window !== 'undefined') {
-          const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
-          if (legacy) {
-            try {
-              const legacyTemplates = JSON.parse(legacy) as ImportTemplate[];
-              if (legacyTemplates.length > 0) {
-                await Promise.all(
-                  legacyTemplates.map((t) =>
-                    fetch(apiBase, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        nome: t.nome,
-                        mapeamentos: t.mapeamentos,
-                        nivelCargoMap: t.nivelCargoMap,
-                      }),
-                    })
-                  )
-                );
-              }
-            } catch {
-              // Ignora falhas de migração — não bloqueia a UI
-            } finally {
-              localStorage.removeItem(LEGACY_STORAGE_KEY);
-            }
-          }
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
         }
 
+        // Carregar templates APENAS da API (origem confiável, segregada por session/tenant)
         const res = await fetch(apiBase);
         if (!res.ok || cancelled) return;
         const json = (await res.json()) as { templates: ImportTemplate[] };

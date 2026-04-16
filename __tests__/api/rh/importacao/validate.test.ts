@@ -44,7 +44,11 @@ const { parseSpreadsheetAllRows } = require('@/lib/importacao/dynamic-parser');
 const { validarDadosImportacao } = require('@/lib/importacao/data-validator');
 const { query } = require('@/lib/db');
 
-function makeRequest(file?: File, mapeamento?: object, rawMapeamento?: string): Request {
+function makeRequest(
+  file?: File,
+  mapeamento?: object,
+  rawMapeamento?: string
+): Request {
   const fd = new FormData();
   if (file) fd.append('file', file);
   if (rawMapeamento !== undefined) {
@@ -55,9 +59,7 @@ function makeRequest(file?: File, mapeamento?: object, rawMapeamento?: string): 
   return {
     headers: {
       get: (h: string) =>
-        h === 'content-type'
-          ? 'multipart/form-data; boundary=----jest'
-          : null,
+        h === 'content-type' ? 'multipart/form-data; boundary=----jest' : null,
     },
     formData: () => Promise.resolve(fd),
   } as unknown as Request;
@@ -65,7 +67,9 @@ function makeRequest(file?: File, mapeamento?: object, rawMapeamento?: string): 
 
 function makeNonMultipartRequest(): Request {
   return {
-    headers: { get: (h: string) => (h === 'content-type' ? 'application/json' : null) },
+    headers: {
+      get: (h: string) => (h === 'content-type' ? 'application/json' : null),
+    },
     formData: () => Promise.resolve(new FormData()),
   } as unknown as Request;
 }
@@ -159,7 +163,9 @@ describe('POST /api/rh/importacao/validate', () => {
   });
 
   it('retorna 400 quando mapeamento é JSON inválido', async () => {
-    const res = await POST(makeRequest(makeXlsxFile(), undefined, '{invalid json}'));
+    const res = await POST(
+      makeRequest(makeXlsxFile(), undefined, '{invalid json}')
+    );
     const body = await res.json();
     expect(res.status).toBe(400);
     expect(body.error).toContain('nválido');
@@ -247,12 +253,24 @@ describe('POST /api/rh/importacao/validate', () => {
     parseSpreadsheetAllRows.mockReturnValue({
       success: true,
       data: [
-        { cpf: '52998224725', nome: 'João', funcao: 'Analista', nivel_cargo: 'gestao' },
-        { cpf: '11122233344', nome: 'Maria', funcao: 'Analista', nivel_cargo: 'operacional' },
+        {
+          cpf: '52998224725',
+          nome: 'João',
+          funcao: 'Analista',
+          nivel_cargo: 'gestao',
+        },
+        {
+          cpf: '11122233344',
+          nome: 'Maria',
+          funcao: 'Analista',
+          nivel_cargo: 'operacional',
+        },
       ],
     });
 
-    const res = await POST(makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL));
+    const res = await POST(
+      makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL)
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -271,12 +289,24 @@ describe('POST /api/rh/importacao/validate', () => {
     parseSpreadsheetAllRows.mockReturnValue({
       success: true,
       data: [
-        { cpf: '52998224725', nome: 'João', funcao: 'Analista', nivel_cargo: 'gestao' },
-        { cpf: '11122233344', nome: 'Maria', funcao: 'Analista', nivel_cargo: 'operacional' },
+        {
+          cpf: '52998224725',
+          nome: 'João',
+          funcao: 'Analista',
+          nivel_cargo: 'gestao',
+        },
+        {
+          cpf: '11122233344',
+          nome: 'Maria',
+          funcao: 'Analista',
+          nivel_cargo: 'operacional',
+        },
       ],
     });
 
-    const res = await POST(makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL));
+    const res = await POST(
+      makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL)
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -291,21 +321,49 @@ describe('POST /api/rh/importacao/validate', () => {
     parseSpreadsheetAllRows.mockReturnValue({
       success: true,
       data: [
-        { cpf: '52998224725', nome: 'João', funcao: 'Analista', nivel_cargo: 'gestao' },
-        { cpf: '11122233344', nome: 'Maria', funcao: 'Assistente', nivel_cargo: 'operacional' },
-        { cpf: '33344455566', nome: 'Pedro', funcao: 'Estagiário', nivel_cargo: '' },
-        { cpf: '44455566677', nome: 'Ana', funcao: 'Desenvolvedor', nivel_cargo: '' },
+        {
+          cpf: '52998224725',
+          nome: 'João',
+          funcao: 'Analista',
+          nivel_cargo: 'gestao',
+        },
+        {
+          cpf: '11122233344',
+          nome: 'Maria',
+          funcao: 'Assistente',
+          nivel_cargo: 'operacional',
+        },
+        {
+          cpf: '33344455566',
+          nome: 'Pedro',
+          funcao: 'Estagiário',
+          nivel_cargo: '',
+        },
+        {
+          cpf: '44455566677',
+          nome: 'Ana',
+          funcao: 'Desenvolvedor',
+          nivel_cargo: '',
+        },
       ],
     });
 
     validarDadosImportacao.mockReturnValue({
       valido: true,
-      resumo: { totalLinhas: 4, linhasValidas: 4, linhasComErros: 0, cpfsUnicos: 4, linhasComAvisos: 0 },
+      resumo: {
+        totalLinhas: 4,
+        linhasValidas: 4,
+        linhasComErros: 0,
+        cpfsUnicos: 4,
+        linhasComAvisos: 0,
+      },
       erros: [],
       avisos: [],
     });
 
-    const res = await POST(makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL));
+    const res = await POST(
+      makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL)
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -350,23 +408,44 @@ describe('POST /api/rh/importacao/validate', () => {
     parseSpreadsheetAllRows.mockReturnValue({
       success: true,
       data: [
-        { cpf: '52998224725', nome: 'João', funcao: 'Zelador', nivel_cargo: 'gestao' },
-        { cpf: '11122233344', nome: 'Maria', funcao: 'Analista', nivel_cargo: '' },
+        {
+          cpf: '52998224725',
+          nome: 'João',
+          funcao: 'Zelador',
+          nivel_cargo: 'gestao',
+        },
+        {
+          cpf: '11122233344',
+          nome: 'Maria',
+          funcao: 'Analista',
+          nivel_cargo: '',
+        },
       ],
     });
 
     validarDadosImportacao.mockReturnValue({
       valido: true,
-      resumo: { totalLinhas: 2, linhasValidas: 2, linhasComErros: 0, cpfsUnicos: 2, linhasComAvisos: 0 },
+      resumo: {
+        totalLinhas: 2,
+        linhasValidas: 2,
+        linhasComErros: 0,
+        cpfsUnicos: 2,
+        linhasComAvisos: 0,
+      },
       erros: [],
       avisos: [],
     });
 
-    const res = await POST(makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL));
+    const res = await POST(
+      makeRequest(makeXlsxFile(), MOCK_MAPEAMENTO_COM_NIVEL)
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    const info = body.data.funcoesNivelInfo as Array<{ funcao: string; qtdSemNivelNaPlanilha: number }>;
+    const info = body.data.funcoesNivelInfo as Array<{
+      funcao: string;
+      qtdSemNivelNaPlanilha: number;
+    }>;
     const idxAnalista = info.findIndex((f) => f.funcao === 'Analista');
     const idxZelador = info.findIndex((f) => f.funcao === 'Zelador');
     expect(idxAnalista).toBeLessThan(idxZelador);

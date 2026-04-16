@@ -36,6 +36,7 @@ interface ContratosTableProps {
   endpoint: string;
   showQWork?: boolean;
   allowVincular?: boolean;
+  comercial?: boolean;
 }
 
 const fmtBRL = (v: string | number | null | undefined) => {
@@ -65,11 +66,13 @@ export function ContratosTable({
   endpoint,
   showQWork = false,
   allowVincular = false,
+  comercial = false,
 }: ContratosTableProps) {
   const [data, setData] = useState<ContratoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [drawerRow, setDrawerRow] = useState<ContratoRow | null>(null);
+  const [filtroRep, setFiltroRep] = useState<string>('');
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -130,116 +133,147 @@ export function ContratosTable({
           <p className="text-sm text-gray-400">Nenhum contrato encontrado.</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-          <div
-            className="overflow-x-auto"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-          >
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/80">
-                  <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                    Entidade/Clínica
-                    <br />
-                    <span className="font-normal text-xs text-gray-400">
-                      CNPJ
-                    </span>
-                  </th>
-                  <th className="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                    Representante
-                    <br />
-                    <span className="font-normal text-xs text-gray-400">
-                      CPF
-                    </span>
-                  </th>
-                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                    Lead
-                  </th>
-                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                    Contrato
-                  </th>
-                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                    Tempo
-                  </th>
-                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                    Tipo
-                  </th>
-                  <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                    Valor/%
-                  </th>
-                  <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                    Laudos
-                  </th>
-                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                    Aval.
-                  </th>
-                  <th className="text-right px-3 py-3 font-semibold text-gray-600">
-                    R$
-                  </th>
-                  <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                    Com. Com.
-                  </th>
-                  <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                    Com. Rep.
-                  </th>
-                  {showQWork && (
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600">
-                      QWork
-                    </th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((row, idx) => {
-                  const percComercial = row.perc_comercial
-                    ? parseFloat(row.perc_comercial).toFixed(1)
-                    : null;
-                  const percRep = row.perc_rep
-                    ? parseFloat(row.perc_rep).toFixed(1)
-                    : null;
-                  const isClinica = row.tipo_contratante === 'clinica';
-                  const isPercentual =
-                    row.tipo_comissionamento === 'percentual';
-                  const semRep = !row.rep_nome;
-                  const rowClickable = allowVincular && semRep;
-
-                  return (
-                    <tr
-                      key={`${row.vinculo_id}-${idx}`}
-                      onClick={rowClickable ? () => setDrawerRow(row) : undefined}
-                      className={`border-b border-gray-50 transition-colors ${
-                        idx === data.length - 1 ? 'border-b-0' : ''
-                      } ${
-                        rowClickable
-                          ? 'hover:bg-green-50/60 cursor-pointer'
-                          : 'hover:bg-gray-50/50'
-                      }`}
-                    >
-                      {/* Entidade/Clínica */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              isClinica
-                                ? 'bg-blue-50 text-blue-600'
-                                : 'bg-purple-50 text-purple-600'
-                            }`}
-                          >
-                            {isClinica ? 'CLÍ' : 'ENT'}
+        <>
+          {comercial &&
+            (() => {
+              const reps = Array.from(
+                new Set(data.map((r) => r.rep_nome).filter(Boolean))
+              ).sort() as string[];
+              return reps.length > 1 ? (
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-medium text-gray-500 shrink-0">
+                    Filtrar por representante
+                  </label>
+                  <select
+                    value={filtroRep}
+                    onChange={(e) => setFiltroRep(e.target.value)}
+                    className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer"
+                  >
+                    <option value="">Todos</option>
+                    {reps.map((n) => (
+                      <option key={n} value={n}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null;
+            })()}
+          <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div
+              className="overflow-x-auto"
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80">
+                    {comercial ? (
+                      <>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Representante
+                          <br />
+                          <span className="font-normal text-xs text-gray-400">
+                            CPF
                           </span>
-                          <div>
-                            <p className="font-semibold text-gray-900 text-xs leading-tight">
-                              {row.contratante_nome || '—'}
-                            </p>
-                            <p className="text-[11px] text-gray-400 font-mono">
-                              {row.contratante_cnpj || '—'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
+                        </th>
+                        <th className="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Entidade/Clínica
+                          <br />
+                          <span className="font-normal text-xs text-gray-400">
+                            CNPJ
+                          </span>
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Lead
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Contrato
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Tempo
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Tipo
+                        </th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Entidade/Clínica
+                          <br />
+                          <span className="font-normal text-xs text-gray-400">
+                            CNPJ
+                          </span>
+                        </th>
+                        <th className="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Representante
+                          <br />
+                          <span className="font-normal text-xs text-gray-400">
+                            CPF
+                          </span>
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Lead
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Contrato
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Tempo
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Tipo
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Valor/%
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Laudos
+                        </th>
+                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                          Aval.
+                        </th>
+                        <th className="text-right px-3 py-3 font-semibold text-gray-600">
+                          R$
+                        </th>
+                        <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Com. Com.
+                        </th>
+                        <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                          Com. Rep.
+                        </th>
+                        {showQWork && (
+                          <th className="text-right px-4 py-3 font-semibold text-gray-600">
+                            QWork
+                          </th>
+                        )}
+                      </>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(comercial && filtroRep
+                    ? data.filter((r) => r.rep_nome === filtroRep)
+                    : data
+                  ).map((row, idx) => {
+                    const visibleData =
+                      comercial && filtroRep
+                        ? data.filter((r) => r.rep_nome === filtroRep)
+                        : data;
+                    const percComercial = row.perc_comercial
+                      ? parseFloat(row.perc_comercial).toFixed(1)
+                      : null;
+                    const percRep = row.perc_rep
+                      ? parseFloat(row.perc_rep).toFixed(1)
+                      : null;
+                    const isClinica = row.tipo_contratante === 'clinica';
+                    const isPercentual =
+                      row.tipo_comissionamento === 'percentual';
+                    const semRep = !row.rep_nome;
+                    const rowClickable = allowVincular && semRep;
 
-                      {/* Representante */}
-                      <td className="px-3 py-3">
+                    const tdRep = (
+                      <td className="px-4 py-3">
                         {row.rep_nome ? (
                           <div>
                             <p className="font-medium text-gray-900 text-xs leading-tight">
@@ -263,166 +297,242 @@ export function ContratosTable({
                           <span className="text-gray-300 text-xs">—</span>
                         )}
                       </td>
+                    );
 
-                      {/* Lead date */}
-                      <td className="text-center px-3 py-3 text-xs text-gray-600">
-                        {fmtDate(row.lead_data)}
-                      </td>
-
-                      {/* Contrato date */}
-                      <td className="text-center px-3 py-3 text-xs text-gray-600">
-                        {fmtDate(row.contrato_data)}
-                      </td>
-
-                      {/* Tempo (dias) */}
-                      <td className="text-center px-3 py-3">
-                        {row.tempo_dias ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                            {Math.round(parseFloat(row.tempo_dias))}d
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      {/* Tipo comissionamento */}
-                      <td className="text-center px-3 py-3">
-                        {row.tipo_comissionamento ? (
+                    const tdEntidade = (
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-1.5">
                           <span
-                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                              isPercentual
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-amber-50 text-amber-700'
+                            className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              isClinica
+                                ? 'bg-blue-50 text-blue-600'
+                                : 'bg-purple-50 text-purple-600'
                             }`}
                           >
-                            {isPercentual ? '%' : 'Fixo'}
+                            {isClinica ? 'CLÍ' : 'ENT'}
                           </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      {/* Valor/% */}
-                      <td className="text-center px-3 py-3 text-xs">
-                        {isPercentual ? (
-                          <span className="font-semibold text-gray-900">
-                            {row.percentual_comissao
-                              ? `${parseFloat(row.percentual_comissao).toFixed(1)}%`
-                              : '—'}
-                          </span>
-                        ) : row.tipo_comissionamento === 'custo_fixo' ? (
-                          <div className="space-y-0.5">
-                            <p className="font-semibold text-gray-900">
-                              {fmtBRL(row.valor_negociado ?? row.valor_custo_fixo)}
-                              <span className="text-gray-400 font-normal">/avaliação</span>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-xs leading-tight">
+                              {row.contratante_nome || '—'}
                             </p>
-                            {row.valor_custo_fixo && row.valor_negociado && (
-                              <p className="text-[10px] text-amber-600">
-                                Custo: {fmtBRL(row.valor_custo_fixo)} → Rep: {fmtBRL(
-                                  String(
-                                    parseFloat(row.valor_negociado) -
-                                      parseFloat(row.valor_custo_fixo)
-                                  )
-                                )}
-                              </p>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="font-semibold text-gray-900">
-                            {fmtBRL(row.valor_negociado ?? row.valor_custo_fixo)}
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Laudos acumulados */}
-                      <td className="text-center px-3 py-3">
-                        {row.total_laudos && parseInt(row.total_laudos) > 0 ? (
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-mono font-semibold text-gray-700">
-                              {row.total_laudos}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-mono">
-                              {row.total_lotes} lot{parseInt(row.total_lotes ?? '0') !== 1 ? 'es' : 'e'}
+                            <p className="text-[11px] text-gray-400 font-mono">
+                              {row.contratante_cnpj || '—'}
                             </p>
                           </div>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      {/* Avaliações */}
-                      <td className="text-center px-3 py-3 text-xs">
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-gray-900">
-                            {row.avaliacoes_concluidas || '0'}
-                          </p>
-                          <p className="text-gray-400">
-                            {fmtBRL(row.valor_avaliacao)}
-                          </p>
                         </div>
                       </td>
+                    );
 
-                      {/* R$ total */}
-                      <td className="text-right px-3 py-3">
-                        <span className="font-bold text-gray-900 text-xs">
-                          {fmtBRL(row.valor_total)}
-                        </span>
-                      </td>
+                    return (
+                      <tr
+                        key={`${row.vinculo_id}-${idx}`}
+                        onClick={
+                          rowClickable ? () => setDrawerRow(row) : undefined
+                        }
+                        className={`border-b border-gray-50 transition-colors ${
+                          idx === visibleData.length - 1 ? 'border-b-0' : ''
+                        } ${
+                          rowClickable
+                            ? 'hover:bg-green-50/60 cursor-pointer'
+                            : 'hover:bg-gray-50/50'
+                        }`}
+                      >
+                        {comercial ? (
+                          <>
+                            {tdRep}
+                            {tdEntidade}
+                          </>
+                        ) : (
+                          <>
+                            {tdEntidade}
+                            {tdRep}
+                          </>
+                        )}
 
-                      {/* Com. Com. (comercial) */}
-                      <td className="text-right px-3 py-3 text-xs">
-                        <div className="space-y-0.5">
-                          {percComercial ? (
-                            <>
-                              <p className="font-semibold text-blue-700">
-                                {percComercial}%
-                              </p>
-                              <p className="text-blue-500">
-                                {fmtBRL(row.valor_comercial)}
-                              </p>
-                            </>
+                        {/* Lead date */}
+                        <td className="text-center px-3 py-3 text-xs text-gray-600">
+                          {fmtDate(row.lead_data)}
+                        </td>
+
+                        {/* Contrato date */}
+                        <td className="text-center px-3 py-3 text-xs text-gray-600">
+                          {fmtDate(row.contrato_data)}
+                        </td>
+
+                        {/* Tempo (dias) */}
+                        <td className="text-center px-3 py-3">
+                          {row.tempo_dias ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                              {Math.round(parseFloat(row.tempo_dias))}d
+                            </span>
                           ) : (
                             <span className="text-gray-300">—</span>
                           )}
-                        </div>
-                      </td>
-
-                      {/* Com. Rep. */}
-                      <td className="text-right px-3 py-3 text-xs">
-                        {percRep !== null ? (
-                          <div className="space-y-0.5">
-                            <p className="font-semibold text-green-700">
-                              {percRep}%
-                            </p>
-                            <p className="text-green-500">
-                              {fmtBRL(row.valor_rep)}
-                            </p>
-                          </div>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-
-                      {/* QWork (admin only) */}
-                      {showQWork && (
-                        <td className="text-right px-4 py-3 text-xs">
-                          <div className="space-y-0.5">
-                            <p className="font-bold text-gray-900">
-                              {fmtBRL(row.valor_qwork)}
-                            </p>
-                          </div>
                         </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+
+                        {/* Tipo comissionamento */}
+                        <td className="text-center px-3 py-3">
+                          {row.tipo_comissionamento ? (
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                                isPercentual
+                                  ? 'bg-green-50 text-green-700'
+                                  : 'bg-amber-50 text-amber-700'
+                              }`}
+                            >
+                              {isPercentual ? '%' : 'Fixo'}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+
+                        {!comercial && (
+                          <>
+                            {/* Valor/% */}
+                            <td className="text-center px-3 py-3 text-xs">
+                              {isPercentual ? (
+                                <span className="font-semibold text-gray-900">
+                                  {row.percentual_comissao
+                                    ? `${parseFloat(row.percentual_comissao).toFixed(1)}%`
+                                    : '—'}
+                                </span>
+                              ) : row.tipo_comissionamento === 'custo_fixo' ? (
+                                <div className="space-y-0.5">
+                                  <p className="font-semibold text-gray-900">
+                                    {fmtBRL(
+                                      row.valor_negociado ??
+                                        row.valor_custo_fixo
+                                    )}
+                                    <span className="text-gray-400 font-normal">
+                                      /avaliação
+                                    </span>
+                                  </p>
+                                  {row.valor_custo_fixo &&
+                                    row.valor_negociado && (
+                                      <p className="text-[10px] text-amber-600">
+                                        Custo: {fmtBRL(row.valor_custo_fixo)} →
+                                        Rep:{' '}
+                                        {fmtBRL(
+                                          String(
+                                            parseFloat(row.valor_negociado) -
+                                              parseFloat(row.valor_custo_fixo)
+                                          )
+                                        )}
+                                      </p>
+                                    )}
+                                </div>
+                              ) : (
+                                <span className="font-semibold text-gray-900">
+                                  {fmtBRL(
+                                    row.valor_negociado ?? row.valor_custo_fixo
+                                  )}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Laudos acumulados */}
+                            <td className="text-center px-3 py-3">
+                              {row.total_laudos &&
+                              parseInt(row.total_laudos) > 0 ? (
+                                <div className="space-y-0.5">
+                                  <p className="text-xs font-mono font-semibold text-gray-700">
+                                    {row.total_laudos}
+                                  </p>
+                                  <p className="text-[10px] text-gray-400 font-mono">
+                                    {row.total_lotes} lot
+                                    {parseInt(row.total_lotes ?? '0') !== 1
+                                      ? 'es'
+                                      : 'e'}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-300">—</span>
+                              )}
+                            </td>
+
+                            {/* Avaliações */}
+                            <td className="text-center px-3 py-3 text-xs">
+                              <div className="space-y-0.5">
+                                <p className="font-bold text-gray-900">
+                                  {row.avaliacoes_concluidas || '0'}
+                                </p>
+                                <p className="text-gray-400">
+                                  {fmtBRL(row.valor_avaliacao)}
+                                </p>
+                              </div>
+                            </td>
+
+                            {/* R$ total */}
+                            <td className="text-right px-3 py-3">
+                              <span className="font-bold text-gray-900 text-xs">
+                                {fmtBRL(row.valor_total)}
+                              </span>
+                            </td>
+
+                            {/* Com. Com. (comercial) */}
+                            <td className="text-right px-3 py-3 text-xs">
+                              <div className="space-y-0.5">
+                                {percComercial ? (
+                                  <>
+                                    <p className="font-semibold text-blue-700">
+                                      {percComercial}%
+                                    </p>
+                                    <p className="text-blue-500">
+                                      {fmtBRL(row.valor_comercial)}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Com. Rep. */}
+                            <td className="text-right px-3 py-3 text-xs">
+                              {percRep !== null ? (
+                                <div className="space-y-0.5">
+                                  <p className="font-semibold text-green-700">
+                                    {percRep}%
+                                  </p>
+                                  <p className="text-green-500">
+                                    {fmtBRL(row.valor_rep)}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-300">—</span>
+                              )}
+                            </td>
+
+                            {/* QWork (admin only) */}
+                            {showQWork && (
+                              <td className="text-right px-4 py-3 text-xs">
+                                <div className="space-y-0.5">
+                                  <p className="font-bold text-gray-900">
+                                    {fmtBRL(row.valor_qwork)}
+                                  </p>
+                                </div>
+                              </td>
+                            )}
+                          </>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-2 border-t border-gray-50 bg-gray-50/50 text-xs text-gray-400">
+              {
+                (comercial && filtroRep
+                  ? data.filter((r) => r.rep_nome === filtroRep)
+                  : data
+                ).length
+              }{' '}
+              registro{data.length !== 1 ? 's' : ''}
+            </div>
           </div>
-          <div className="px-4 py-2 border-t border-gray-50 bg-gray-50/50 text-xs text-gray-400">
-            {data.length} registro{data.length !== 1 ? 's' : ''}
-          </div>
-        </div>
+        </>
       )}
 
       {allowVincular && (
@@ -430,7 +540,8 @@ export function ContratosTable({
           vinculoId={drawerRow?.vinculo_id ?? null}
           contratanteId={drawerRow?.contratante_id ?? null}
           contratanteTipo={
-            (drawerRow?.tipo_contratante as 'clinica' | 'entidade' | null) ?? null
+            (drawerRow?.tipo_contratante as 'clinica' | 'entidade' | null) ??
+            null
           }
           contratanteNome={drawerRow?.contratante_nome ?? ''}
           onClose={() => setDrawerRow(null)}

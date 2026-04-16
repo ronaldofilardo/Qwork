@@ -23,8 +23,19 @@ import NivelCargoStep, {
 
 // Lucide icons mock leve — evita falha de render em ambiente jest
 jest.mock('lucide-react', () => {
-  const MockIcon = ({ size, className }: { size?: number; className?: string }) => (
-    <svg data-testid="mock-icon" width={size} height={size} className={className} />
+  const MockIcon = ({
+    size,
+    className,
+  }: {
+    size?: number;
+    className?: string;
+  }) => (
+    <svg
+      data-testid="mock-icon"
+      width={size}
+      height={size}
+      className={className}
+    />
   );
   return new Proxy({}, { get: () => MockIcon });
 });
@@ -90,7 +101,9 @@ describe('NivelCargoStep', () => {
       });
 
       // Deve mostrar o header da tabela, não a tela de skip
-      expect(screen.getByText('Classificar Nível de Cargo')).toBeInTheDocument();
+      expect(
+        screen.getByText('Classificar Nível de Cargo')
+      ).toBeInTheDocument();
     });
 
     it('exibe tela de mudanças (não a tabela principal) quando isMudancaRole=true e temNivelCargoDirecto=true', () => {
@@ -98,7 +111,11 @@ describe('NivelCargoStep', () => {
       // o componente exibe a tela 2 ("Nível de cargo mapeado + Alterações detectadas")
       renderStep({
         funcoesNivelInfo: [
-          makeFuncao({ funcao: 'Analista', isMudancaRole: true, qtdSemNivelNaPlanilha: 0 }),
+          makeFuncao({
+            funcao: 'Analista',
+            isMudancaRole: true,
+            qtdSemNivelNaPlanilha: 0,
+          }),
         ],
         temNivelCargoDirecto: true,
         nivelCargoMap: {},
