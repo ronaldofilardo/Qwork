@@ -102,8 +102,11 @@ export function groupMudancasByEmpresaAndFuncao(
 
   for (const funcaoInfo of funcoesNivelInfo) {
     const nivelAtualStr =
-      (funcaoInfo.niveisAtuais.filter(Boolean) as Array<'operacional' | 'gestao'>)
-        .join(' / ') || 'não definido';
+      (
+        funcaoInfo.niveisAtuais.filter(Boolean) as Array<
+          'operacional' | 'gestao'
+        >
+      ).join(' / ') || 'não definido';
 
     if (
       funcaoInfo.isMudancaRole &&
@@ -421,7 +424,13 @@ export default function NivelCargoStep({
       return funcoesSemNivelNaPlanilha.every((f) => !!nivelCargoMap[f.funcao]);
     }
     return classificadas === totalFuncoes;
-  }, [temNivelCargoDirecto, funcoesSemNivelNaPlanilha, nivelCargoMap, classificadas, totalFuncoes]);
+  }, [
+    temNivelCargoDirecto,
+    funcoesSemNivelNaPlanilha,
+    nivelCargoMap,
+    classificadas,
+    totalFuncoes,
+  ]);
 
   const autoClassificadas = useMemo(
     () =>
@@ -839,9 +848,11 @@ export default function NivelCargoStep({
               Classifique o nível para as funções com funcionários sem nível na
               planilha antes de prosseguir.{' '}
               <strong>
-                {funcoesSemNivelNaPlanilha.filter(
-                  (f) => !nivelCargoMap[f.funcao]
-                ).length}{' '}
+                {
+                  funcoesSemNivelNaPlanilha.filter(
+                    (f) => !nivelCargoMap[f.funcao]
+                  ).length
+                }{' '}
                 pendente
                 {funcoesSemNivelNaPlanilha.filter(
                   (f) => !nivelCargoMap[f.funcao]

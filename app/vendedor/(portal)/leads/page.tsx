@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import type { VendedorLead } from './types';
+import NovoLeadModal from './components/NovoLeadModal';
 
 function formatarCNPJ(cnpj: string | null): string {
   if (!cnpj) return '—';
@@ -25,6 +27,7 @@ export default function LeadsVendedor() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [showNovoLead, setShowNovoLead] = useState(false);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -48,14 +51,30 @@ export default function LeadsVendedor() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-800">Meus Leads</h1>
-        <span className="text-sm text-gray-500">{total} lead(s)</span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">{total} lead(s)</span>
+          <button
+            onClick={() => setShowNovoLead(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+          >
+            <Plus size={16} />
+            Novo Lead
+          </button>
+        </div>
       </div>
 
       {loading ? (
         <div className="text-center py-8 text-gray-400">Carregando...</div>
       ) : leads.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">
-          Nenhum lead encontrado.
+        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+          <p className="text-gray-400">Nenhum lead encontrado.</p>
+          <button
+            onClick={() => setShowNovoLead(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+          >
+            <Plus size={16} />
+            Cadastrar primeiro lead
+          </button>
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -132,6 +151,16 @@ export default function LeadsVendedor() {
             Próxima
           </button>
         </div>
+      )}
+
+      {showNovoLead && (
+        <NovoLeadModal
+          onClose={() => setShowNovoLead(false)}
+          onSuccess={() => {
+            setShowNovoLead(false);
+            void carregar();
+          }}
+        />
       )}
     </div>
   );

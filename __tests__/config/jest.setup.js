@@ -28,7 +28,10 @@ global.TransformStream = class TransformStream {
 };
 // === PROTEÇÃO DO BANCO DE TESTES ===
 // Garantia de segurança para testes - IMPEDE uso de nr-bps_db
-if (process.env.NODE_ENV === 'test') {
+// NOTA: .env (base) pode conter NODE_ENV=development, o que sobrescreve o NODE_ENV=test
+// definido pelo Jest antes dos setupFiles. Por isso, verificamos também JEST_WORKER_ID
+// que é sempre definido em workers Jest, independente do NODE_ENV.
+if (process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID) {
   // Carregar .env.test se não estiver carregado
   require('dotenv').config({ path: '.env.test' });
 

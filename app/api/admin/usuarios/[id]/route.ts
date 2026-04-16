@@ -51,7 +51,7 @@ export async function PATCH(
     }>(
       `SELECT id, cpf, nome, tipo_usuario, ativo
        FROM usuarios
-       WHERE id = $1 AND tipo_usuario IN ('suporte', 'comercial')
+       WHERE id = $1 AND tipo_usuario IN ('suporte', 'comercial', 'emissor')
        LIMIT 1`,
       [id],
       session

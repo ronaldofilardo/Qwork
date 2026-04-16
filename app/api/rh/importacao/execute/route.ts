@@ -371,11 +371,13 @@ export async function POST(request: Request): Promise<NextResponse> {
                 senhaHash = await bcrypt.hash('12345678', 10);
               }
 
+              // ARQUITETURA SEGREGADA: clinica_id removida de funcionarios pela migration 605
+              // Relacionamento clínica↔funcionário está em funcionarios_clinicas (inserido abaixo)
               const insertFunc = await client.query(
                 `INSERT INTO funcionarios (
                   cpf, nome, data_nascimento, setor, funcao, email,
-                  senha_hash, perfil, ativo, matricula, nivel_cargo, clinica_id, usuario_tipo
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,'funcionario_clinica'::usuario_tipo_enum)
+                  senha_hash, perfil, ativo, matricula, nivel_cargo, usuario_tipo
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,'funcionario_clinica'::usuario_tipo_enum)
                 RETURNING id`,
                 [
                   cpf,
@@ -387,7 +389,6 @@ export async function POST(request: Request): Promise<NextResponse> {
                   senhaHash,
                   matricula,
                   nivelCargo,
-                  clinicaId,
                 ]
               );
               funcionarioId = insertFunc.rows[0].id as number;

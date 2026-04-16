@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
-import { UsuariosContent } from '@/components/admin/UsuariosContent';
 import { VolumeContent } from '@/components/admin/VolumeContent';
 import { ContagemContent } from '@/components/admin/ContagemContent';
 import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
@@ -71,9 +70,6 @@ export default function AdminPage() {
     }
 
     if (activeSection === 'geral') {
-      if (activeSubSection === 'usuarios') {
-        return <UsuariosContent />;
-      }
       return <EmissoresContent />;
     }
 

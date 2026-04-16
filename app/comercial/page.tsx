@@ -8,7 +8,6 @@ import {
   ChevronRight,
   LayoutGrid,
   LayoutList,
-  CalendarCheck,
 } from 'lucide-react';
 import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
@@ -302,7 +301,7 @@ export default function ComercialPage() {
 
   const renderContent = () => {
     if (activeSection === 'contratos') {
-      return <ContratosTable endpoint="/api/comercial/contratos" />;
+      return <ContratosTable endpoint="/api/comercial/contratos" comercial />;
     }
 
     if (activeSection === 'comissoes') {
@@ -547,25 +546,14 @@ export default function ComercialPage() {
                         Representante
                       </th>
                       <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                        Tipo de Comissionamento
+                        Tipo
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600" />
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Valor/%
                       </th>
                       <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                        Negociação
-                      </th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                        Leads
-                      </th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                        Vínculos
-                      </th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                        Vendedores
-                      </th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                        Aceite Contrato
-                      </th>
-                      <th className="text-right px-4 py-3 font-semibold text-gray-600">
-                        Pendente
+                        Com. Com.
                       </th>
                       <th className="px-3 py-3" />
                     </tr>
@@ -613,30 +601,30 @@ export default function ComercialPage() {
                                 : '—'}
                           </span>
                         </td>
+                        {/* sub-tipo */}
+                        <td className="text-center px-3 py-3 text-xs text-gray-500">
+                          {r.modelo_comissionamento === 'custo_fixo' ? (
+                            <div className="space-y-1">
+                              <p>Ent.</p>
+                              <p>Cli.</p>
+                            </div>
+                          ) : null}
+                        </td>
+                        {/* valor/% */}
                         <td className="text-center px-3 py-3 text-xs">
                           {r.modelo_comissionamento === 'percentual' ? (
-                            <div className="space-y-0.5">
-                              <p className="font-semibold text-gray-900">
-                                Rep: {r.percentual_comissao?.toFixed(1) ?? '—'}%
-                              </p>
-                              <p className="text-gray-600">
-                                Com:{' '}
-                                {r.percentual_comissao_comercial?.toFixed(1) ??
-                                  '—'}
-                                %
-                              </p>
-                            </div>
+                            <span className="font-semibold text-gray-900">
+                              {r.percentual_comissao?.toFixed(1) ?? '—'}%
+                            </span>
                           ) : r.modelo_comissionamento === 'custo_fixo' ? (
-                            <div className="space-y-0.5">
+                            <div className="space-y-1">
                               <p className="font-semibold text-gray-900">
-                                Ent:{' '}
-                                {r.valor_custo_fixo_entidade?.toFixed(2)
+                                {r.valor_custo_fixo_entidade != null
                                   ? `R$ ${r.valor_custo_fixo_entidade.toFixed(2)}`
                                   : '—'}
                               </p>
                               <p className="text-gray-600">
-                                Cli:{' '}
-                                {r.valor_custo_fixo_clinica?.toFixed(2)
+                                {r.valor_custo_fixo_clinica != null
                                   ? `R$ ${r.valor_custo_fixo_clinica.toFixed(2)}`
                                   : '—'}
                               </p>
@@ -645,46 +633,15 @@ export default function ComercialPage() {
                             <span className="text-gray-400">—</span>
                           )}
                         </td>
-                        <td className="text-center px-3 py-3 font-bold text-gray-800">
-                          {r.leads_ativos + r.leads_mes}
-                        </td>
-                        <td className="text-center px-3 py-3 font-bold text-gray-800">
-                          {r.vinculos_ativos}
-                        </td>
-                        <td className="text-center px-3 py-3 font-bold text-gray-800">
-                          {r.vendedores_count > 0 ? (
-                            r.vendedores_count
-                          ) : (
-                            <span className="text-gray-300">—</span>
-                          )}
-                        </td>
-                        <td className="text-center px-3 py-3">
-                          {r.aceite_contrato_em ? (
-                            <span className="inline-flex items-center gap-1 text-green-700 font-medium">
-                              <CalendarCheck
-                                size={13}
-                                className="text-green-500"
-                              />
-                              {new Date(
-                                r.aceite_contrato_em
-                              ).toLocaleDateString('pt-BR')}
+                        {/* com. com. */}
+                        <td className="text-center px-3 py-3 text-xs">
+                          {r.percentual_comissao_comercial != null ? (
+                            <span className="font-semibold text-gray-900">
+                              {r.percentual_comissao_comercial.toFixed(1)}%
                             </span>
                           ) : (
-                            <span className="text-gray-300">—</span>
+                            <span className="text-gray-400">—</span>
                           )}
-                        </td>
-                        <td className="text-right px-4 py-3">
-                          <span
-                            className={`font-bold ${
-                              r.valor_pendente > 0
-                                ? 'text-amber-600'
-                                : 'text-gray-300'
-                            }`}
-                          >
-                            {r.valor_pendente > 0
-                              ? fmtBRL(r.valor_pendente)
-                              : '—'}
-                          </span>
                         </td>
                         <td className="px-3 py-3">
                           <ChevronRight size={16} className="text-gray-300" />

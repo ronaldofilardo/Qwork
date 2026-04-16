@@ -178,7 +178,7 @@ export default function ContaSection() {
           Informações da Conta
         </h1>
         <p className="text-sm text-gray-600 mt-1">
-          Dados cadastrais da empresa e gestores
+          Dados cadastrais da entidade
         </p>
       </div>
 
@@ -192,7 +192,7 @@ export default function ContaSection() {
               </div>
               <div className="flex-1">
                 <h2 className="text-lg font-semibold text-gray-900">
-                  Dados da Empresa
+                  Dados da Entidade
                 </h2>
                 <p className="text-sm text-gray-600">Informações cadastrais</p>
               </div>
@@ -331,7 +331,7 @@ export default function ContaSection() {
               </div>
             ) : (
               <p className="text-sm text-gray-500">
-                Informações da empresa não disponíveis
+                Informações da entidade não disponíveis
               </p>
             )}
           </div>

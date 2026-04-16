@@ -15,7 +15,10 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import { calcularRequerAprovacao, CUSTO_POR_AVALIACAO } from '@/lib/leads-config';
+import {
+  calcularRequerAprovacao,
+  CUSTO_POR_AVALIACAO,
+} from '@/lib/leads-config';
 import { NotificationService } from '@/lib/notification-service';
 
 export const dynamic = 'force-dynamic';
@@ -105,7 +108,9 @@ const novoLeadSchema = z.object({
   contato_email: z.string().email().optional().nullable(),
   contato_telefone: z.string().optional().nullable(),
   cnpj: z.string().min(1, 'CNPJ é obrigatório'),
-  valor_negociado: z.number().positive().optional().nullable(),
+  valor_negociado: z
+    .number()
+    .positive('Valor negociado é obrigatório e deve ser maior que zero'),
   observacoes: z.string().max(1000).optional().nullable(),
   tipo_cliente: z.enum(['entidade', 'clinica']).optional().default('entidade'),
   num_vidas_estimado: z.number().int().positive().optional().nullable(),
@@ -236,12 +241,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       [representanteId]
     );
     const percRep = Number(repPercentuais.rows[0]?.percentual_comissao ?? 0);
-    const percCom = Number(repPercentuais.rows[0]?.percentual_comissao_comercial ?? 0);
+    const percCom = Number(
+      repPercentuais.rows[0]?.percentual_comissao_comercial ?? 0
+    );
     const modeloCom = repPercentuais.rows[0]?.modelo_comissionamento ?? null;
     const valorNeg = data.valor_negociado ?? 0;
-    const valorQWork = modeloCom !== 'custo_fixo' && valorNeg > 0
-      ? valorNeg * (1 - (percRep + percCom) / 100)
-      : valorNeg;
+    const valorQWork =
+      modeloCom !== 'custo_fixo' && valorNeg > 0
+        ? valorNeg * (1 - (percRep + percCom) / 100)
+        : valorNeg;
     const requerAprovacaoSuporteCalc =
       requerAprovacao && valorQWork < CUSTO_POR_AVALIACAO[data.tipo_cliente];
 
