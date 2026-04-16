@@ -1,58 +1,88 @@
 /**
- * @file __tests__/api/suporte/contratos.test.ts
+ * @file __tests__/api/admin/contratos.test.ts
  *
- * Testes para GET /api/suporte/contratos
- * Lista todos os vínculos (com ou sem laudos/representantes) para perfil suporte.
- * Diferença do comercial: inclui valor_custo_fixo_snapshot e NÃO inclui valor_qwork.
+ * Testes para GET /api/admin/contratos
+ * Lista todos os vínculos (com ou sem laudos/representantes) para perfil admin.
+ * Diferença dos outros perfis: inclui valor_qwork e valor_custo_fixo_snapshot.
  */
 
 jest.mock('@/lib/db', () => ({ query: jest.fn() }));
 jest.mock('@/lib/session', () => ({
   requireRole: jest.fn().mockResolvedValue({
     cpf: '00011122233',
-    nome: 'Suporte Dev',
-    perfil: 'suporte',
+    nome: 'Admin Dev',
+    perfil: 'admin',
   }),
 }));
 
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import { GET } from '@/app/api/suporte/contratos/route';
+import { GET } from '@/app/api/admin/contratos/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 
-/** Vínculo com laudo, representante e custo_fixo_snapshot */
+/** Vínculo com laudo, representante PF (cpf preenchido) */
 const vinculoComLaudo = {
-  contratante_nome: 'Entidade Teste',
+  contratante_nome: 'Clínica Admin Teste',
   contratante_cnpj: '11222333000100',
   contratante_id: 10,
   vinculo_id: 1,
-  tipo_contratante: 'entidade',
-  rep_nome: 'Maria Rep',
-  rep_cpf: '98765432100',
-  rep_codigo: 'XYZ789',
-  lead_data: '2026-01-10T00:00:00.000Z',
-  contrato_data: '2026-02-05',
-  tempo_dias: '26',
-  tipo_comissionamento: 'custo_fixo',
-  percentual_comissao: null,
-  valor_custo_fixo: '50.00',
-  valor_negociado: '1000.00',
-  total_laudos: '1',
-  total_lotes: '1',
-  avaliacoes_concluidas: '1',
-  valor_avaliacao: '60.00',
-  valor_total: '60.00',
-  perc_comercial: '5.00',
-  valor_comercial: '2.00',
-  perc_rep: null,
-  valor_rep: '58.00',
+  tipo_contratante: 'clinica',
+  rep_nome: 'Carlos Rep',
+  rep_cpf: '11122233344',
+  rep_codigo: 'REP001',
+  lead_data: '2026-01-05T00:00:00.000Z',
+  contrato_data: '2026-01-20',
+  tempo_dias: '15',
+  tipo_comissionamento: 'percentual',
+  percentual_comissao: '12.00',
+  valor_custo_fixo: null,
+  valor_negociado: '2000.00',
+  total_laudos: '2',
+  total_lotes: '2',
+  avaliacoes_concluidas: '5',
+  valor_avaliacao: '10.00',
+  valor_total: '100.00',
+  perc_comercial: '8.00',
+  valor_comercial: '8.00',
+  perc_rep: '12.00',
+  valor_rep: '12.00',
+  valor_qwork: '80.00',
 };
 
-/** Vínculo sem laudo e sem representante — deve aparecer na listagem */
-const vinculoSemLaudo = {
-  contratante_nome: 'Clínica Sem Vinculo',
+/** Vínculo com representante PJ (cpf_responsavel_pj retornado via COALESCE como rep_cpf) */
+const vinculoPJ = {
+  contratante_nome: 'Entidade PJ Teste',
+  contratante_cnpj: '55666777000188',
+  contratante_id: 15,
+  vinculo_id: 3,
+  tipo_contratante: 'entidade',
+  rep_nome: 'Empresa Rep LTDA',
+  rep_cpf: '99988877766', // cpf_responsavel_pj via COALESCE
+  rep_codigo: 'PJ001',
+  lead_data: '2026-02-01T00:00:00.000Z',
+  contrato_data: '2026-02-15',
+  tempo_dias: '14',
+  tipo_comissionamento: 'custo_fixo',
+  percentual_comissao: null,
+  valor_custo_fixo: '100.00',
+  valor_negociado: null,
+  total_laudos: '0',
+  total_lotes: '0',
+  avaliacoes_concluidas: '0',
+  valor_avaliacao: null,
+  valor_total: null,
+  perc_comercial: null,
+  valor_comercial: null,
+  perc_rep: null,
+  valor_rep: null,
+  valor_qwork: null,
+};
+
+/** Vínculo sem laudo e sem representante */
+const vinculoSemRep = {
+  contratante_nome: 'Clínica Sem Rep',
   contratante_cnpj: '33444555000122',
   contratante_id: 30,
   vinculo_id: 5,
@@ -76,9 +106,10 @@ const vinculoSemLaudo = {
   valor_comercial: null,
   perc_rep: null,
   valor_rep: null,
+  valor_qwork: null,
 };
 
-describe('GET /api/suporte/contratos', () => {
+describe('GET /api/admin/contratos', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('retorna 401 quando não autenticado', async () => {
@@ -113,38 +144,50 @@ describe('GET /api/suporte/contratos', () => {
     expect(body.contratos).toEqual([]);
   });
 
-  it('retorna contratos com vínculos que possuem laudos e representante', async () => {
+  it('retorna contrato com laudos, rep PF e valor_qwork', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [vinculoComLaudo] } as never);
     const res = await GET();
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.contratos).toHaveLength(1);
     const c = body.contratos[0];
-    expect(c.contratante_nome).toBe('Entidade Teste');
-    expect(c.tipo_contratante).toBe('entidade');
-    expect(c.rep_nome).toBe('Maria Rep');
-    expect(c.rep_cpf).toBe('98765432100');
-    expect(c.total_laudos).toBe('1');
-    expect(c.valor_custo_fixo).toBe('50.00');
+    expect(c.contratante_nome).toBe('Clínica Admin Teste');
+    expect(c.rep_nome).toBe('Carlos Rep');
+    expect(c.rep_cpf).toBe('11122233344');
+    expect(c.rep_codigo).toBe('REP001');
+    expect(c.total_laudos).toBe('2');
+    expect(c.valor_qwork).toBe('80.00');
   });
 
-  it('retorna vínculos sem laudo e sem representante (não filtra fora)', async () => {
+  it('retorna rep PJ com CPF via COALESCE(cpf, cpf_responsavel_pj)', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [vinculoPJ] } as never);
+    const res = await GET();
+    const body = await res.json();
+    const c = body.contratos[0];
+    expect(c.rep_cpf).toBe('99988877766');
+    expect(c.rep_nome).toBe('Empresa Rep LTDA');
+  });
+
+  it('retorna vínculos sem representante com rep_cpf null', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [vinculoSemRep] } as never);
+    const res = await GET();
+    const body = await res.json();
+    const c = body.contratos[0];
+    expect(c.rep_nome).toBeNull();
+    expect(c.rep_cpf).toBeNull();
+    expect(c.total_laudos).toBe('0');
+  });
+
+  it('retorna múltiplos vínculos incluindo sem rep e sem laudo', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [vinculoComLaudo, vinculoSemLaudo],
+      rows: [vinculoComLaudo, vinculoPJ, vinculoSemRep],
     } as never);
     const res = await GET();
-    expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.contratos).toHaveLength(2);
-    const semLaudo = body.contratos.find(
-      (c: { vinculo_id: number }) => c.vinculo_id === 5
-    );
-    expect(semLaudo).toBeDefined();
-    expect(semLaudo.rep_nome).toBeNull();
-    expect(semLaudo.total_laudos).toBe('0');
+    expect(body.contratos).toHaveLength(3);
   });
 
-  it('a query usa vinculos_comissao como tabela principal (LEFT JOIN)', async () => {
+  it('a query usa vinculos_comissao como tabela principal com LEFT JOINs', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     expect(mockQuery).toHaveBeenCalledTimes(1);
@@ -152,29 +195,29 @@ describe('GET /api/suporte/contratos', () => {
     expect(sql).toContain('from public.vinculos_comissao');
     expect(sql).toContain('left join public.comissoes_laudo');
     expect(sql).toContain('left join public.representantes');
-    // COALESCE para CPF de PF e PJ
+    // COALESCE para CPF PF e PJ
     expect(sql).toContain('cpf_responsavel_pj');
     // Agrega por vínculo
     expect(sql).toContain('count(distinct cl.laudo_id)');
   });
 
-  it('não inclui campo valor_qwork na query', async () => {
+  it('inclui valor_qwork na query (diferença do comercial/suporte)', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
-    expect(sql).not.toContain('valor_qwork');
+    expect(sql).toContain('valor_qwork');
   });
 
-  it('inclui valor_custo_fixo_snapshot (diferença do comercial)', async () => {
+  it('inclui valor_custo_fixo_snapshot na query', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
     expect(sql).toContain('valor_custo_fixo_snapshot');
   });
 
-  it('usa requireRole com perfil suporte', async () => {
+  it('usa requireRole com perfil admin', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
-    expect(mockRequireRole).toHaveBeenCalledWith('suporte', false);
+    expect(mockRequireRole).toHaveBeenCalledWith('admin', false);
   });
 });

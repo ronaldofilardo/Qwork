@@ -8,11 +8,11 @@ interface ContratoRow {
   contratante_nome: string;
   contratante_cnpj: string;
   contratante_id: number;
+  vinculo_id: number;
   tipo_contratante: string;
   rep_nome: string | null;
   rep_codigo: string | null;
   rep_cpf: string | null;
-  vinculo_id: number | null;
   lead_data: string | null;
   contrato_data: string | null;
   tempo_dias: string | null;
@@ -20,8 +20,8 @@ interface ContratoRow {
   percentual_comissao: string | null;
   valor_custo_fixo: string | null;
   valor_negociado: string | null;
-  laudo_id: number | null;
-  lote_id: number | null;
+  total_laudos: string | null;
+  total_lotes: string | null;
   avaliacoes_concluidas: string;
   valor_avaliacao: string | null;
   valor_total: string | null;
@@ -99,7 +99,7 @@ export function ContratosTable({
         <div>
           <h2 className="text-lg font-bold text-gray-900">Contratos</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Vínculos com laudos emitidos e split de comissão
+            Um registro por tomador — laudos e comissões acumulados
           </p>
         </div>
         <button
@@ -168,7 +168,7 @@ export function ContratosTable({
                     Valor/%
                   </th>
                   <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                    Laudos/Lotes
+                    Laudos
                   </th>
                   <th className="text-center px-3 py-3 font-semibold text-gray-600">
                     Aval.
@@ -205,7 +205,7 @@ export function ContratosTable({
 
                   return (
                     <tr
-                      key={`${row.contratante_id}-${row.laudo_id ?? 'nl'}-${idx}`}
+                      key={`${row.vinculo_id}-${idx}`}
                       onClick={rowClickable ? () => setDrawerRow(row) : undefined}
                       className={`border-b border-gray-50 transition-colors ${
                         idx === data.length - 1 ? 'border-b-0' : ''
@@ -241,18 +241,18 @@ export function ContratosTable({
                       {/* Representante */}
                       <td className="px-3 py-3">
                         {row.rep_nome ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500 font-mono">
-                              {row.rep_codigo || '—'}
-                            </span>
-                            <div>
-                              <p className="font-medium text-gray-900 text-xs leading-tight">
-                                {row.rep_nome}
-                              </p>
-                              <p className="text-[11px] text-gray-400 font-mono">
-                                {fmtCpf(row.rep_cpf)}
-                              </p>
-                            </div>
+                          <div>
+                            <p className="font-medium text-gray-900 text-xs leading-tight">
+                              {row.rep_nome}
+                              {row.rep_codigo && (
+                                <span className="ml-1 text-[10px] font-mono font-semibold text-gray-500">
+                                  [{row.rep_codigo}]
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                              {fmtCpf(row.rep_cpf)}
+                            </p>
                           </div>
                         ) : allowVincular ? (
                           <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-700">
@@ -334,15 +334,15 @@ export function ContratosTable({
                         )}
                       </td>
 
-                      {/* Laudos/Lotes */}
+                      {/* Laudos acumulados */}
                       <td className="text-center px-3 py-3">
-                        {row.laudo_id != null ? (
+                        {row.total_laudos && parseInt(row.total_laudos) > 0 ? (
                           <div className="space-y-0.5">
-                            <p className="text-xs font-mono text-gray-600">
-                              #{row.laudo_id}
+                            <p className="text-xs font-mono font-semibold text-gray-700">
+                              {row.total_laudos}
                             </p>
                             <p className="text-[10px] text-gray-400 font-mono">
-                              #{row.lote_id}
+                              {row.total_lotes} lot{parseInt(row.total_lotes ?? '0') !== 1 ? 'es' : 'e'}
                             </p>
                           </div>
                         ) : (
