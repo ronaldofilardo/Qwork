@@ -326,6 +326,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       novosCpfs: Set<string>;
       existentesCpfs: Set<string>;
       niveisSet: Set<NivelCargoValue>;
+      semNivelNaPlanilha: Set<string>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -339,10 +340,23 @@ export async function POST(request: Request): Promise<NextResponse> {
           novosCpfs: new Set(),
           existentesCpfs: new Set(),
           niveisSet: new Set(),
+          semNivelNaPlanilha: new Set(),
         });
       }
       const info = funcaoInfoMap.get(funcaoRow)!;
       info.cpfs.add(cpfRow);
+
+      if (temNivelCargoDirecto) {
+        const nivelPlanilhaRaw = ((row.nivel_cargo as string | undefined) ?? '')
+          .trim()
+          .toLowerCase();
+        if (
+          nivelPlanilhaRaw !== 'gestao' &&
+          nivelPlanilhaRaw !== 'operacional'
+        ) {
+          info.semNivelNaPlanilha.add(cpfRow);
+        }
+      }
 
       if (existingFuncaoMap.has(cpfRow)) {
         info.existentesCpfs.add(cpfRow);
@@ -366,12 +380,15 @@ export async function POST(request: Request): Promise<NextResponse> {
         isMudancaNivel: funcoesComMudancaNivel.has(funcao),
         temNivelNuloExistente:
           info.niveisSet.has(null) && info.existentesCpfs.size > 0,
+        qtdSemNivelNaPlanilha: info.semNivelNaPlanilha.size,
         funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
         funcionariosComMudancaNivel: mudancaNivelDetalhesMap.get(funcao) ?? [],
       }))
       .sort((a, b) => {
         if (a.isMudancaRole !== b.isMudancaRole)
           return a.isMudancaRole ? -1 : 1;
+        if ((a.qtdSemNivelNaPlanilha > 0) !== (b.qtdSemNivelNaPlanilha > 0))
+          return a.qtdSemNivelNaPlanilha > 0 ? -1 : 1;
         const aRequerAtencao = a.qtdNovos > 0 || a.temNivelNuloExistente;
         const bRequerAtencao = b.qtdNovos > 0 || b.temNivelNuloExistente;
         if (aRequerAtencao !== bRequerAtencao) return aRequerAtencao ? -1 : 1;
