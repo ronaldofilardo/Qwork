@@ -81,6 +81,15 @@ function PaymentInfo({
   formatCurrency: (v: number | null) => string;
   formatDate: (d: string | null) => string;
 }) {
+  // Oculta para aguardando_cobranca sem valor definido — evita mostrar R$ 0,00 confuso
+  const hasValor =
+    (solicitacao.valor_negociado_vinculo ??
+      solicitacao.valor_por_funcionario ??
+      0) > 0;
+  if (solicitacao.status_pagamento === 'aguardando_cobranca' && !hasValor) {
+    return null;
+  }
+
   return (
     <div className="bg-gray-50 rounded-lg p-4 mb-4">
       <div className="grid grid-cols-3 gap-4">
@@ -243,107 +252,159 @@ function StatusActions({
       solicitacao.lead_valor_negociado > 0;
     const modelo = solicitacao.modelo_comissionamento;
     const isCustoFixo = modelo === 'custo_fixo';
+    const temRep = !!solicitacao.representante_id;
+
+    // Calcula preview do total com base no input atual
+    const rawNum = (valorInput[loteId] || '').replace(/\D/g, '');
+    const valorDigitado = rawNum ? Number(rawNum) / 100 : 0;
+    const numAvaliacoes = solicitacao.num_avaliacoes_concluidas || 0;
+    const totalPreview = valorDigitado * numAvaliacoes;
+
+    const modeloBadge = modelo ? (
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+          isCustoFixo
+            ? 'bg-orange-100 text-orange-700 border border-orange-200'
+            : 'bg-blue-100 text-blue-700 border border-blue-200'
+        }`}
+      >
+        {isCustoFixo
+          ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` · R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
+          : [
+              solicitacao.representante_percentual_comissao != null
+                ? `Rep ${solicitacao.representante_percentual_comissao}%`
+                : null,
+              solicitacao.representante_percentual_comissao_comercial != null
+                ? `Com. ${solicitacao.representante_percentual_comissao_comercial}%`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+      </span>
+    ) : null;
+
     return (
-      <div className="space-y-2">
-        {temSugestao && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-xs text-emerald-600">
-              Valor negociado:{' '}
-              <strong>
-                R${' '}
-                {Number(solicitacao.lead_valor_negociado).toLocaleString(
-                  'pt-BR',
-                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                )}
-              </strong>
-            </p>
-            {modelo && (
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  isCustoFixo
-                    ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                    : 'bg-blue-100 text-blue-700 border border-blue-300'
-                }`}
-              >
-                {isCustoFixo
-                  ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
-                  : [
-                      solicitacao.representante_percentual_comissao != null
-                        ? `Rep ${solicitacao.representante_percentual_comissao}%`
-                        : '% Rep ?',
-                      solicitacao.representante_percentual_comissao_comercial !=
-                      null
-                        ? `Com. ${solicitacao.representante_percentual_comissao_comercial}%`
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
+      <div className="mt-1 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-4">
+        {/* Título da seção */}
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-amber-600" />
+          <span className="text-sm font-semibold text-amber-800">
+            Definir Valor de Cobrança
+          </span>
+        </div>
+
+        {/* Info rep + modelo + negociado — linha compacta */}
+        {(temRep || temSugestao || modelo) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-white rounded-lg px-3 py-2.5 border border-amber-100">
+            {temRep && (
+              <span className="flex items-center gap-1.5 text-sm">
+                <UserCheck className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+                <span className="font-medium text-gray-800">
+                  {solicitacao.representante_nome}
+                </span>
+                <span className="text-gray-400 text-xs">
+                  · Cód: {solicitacao.representante_codigo}
+                  {solicitacao.representante_tipo_pessoa && (
+                    <>
+                      {' '}
+                      ({solicitacao.representante_tipo_pessoa.toUpperCase()})
+                    </>
+                  )}
+                </span>
+              </span>
+            )}
+            {modeloBadge}
+            {temSugestao && (
+              <span className="text-sm text-emerald-700 font-medium">
+                Negociado:{' '}
+                <strong>
+                  R${' '}
+                  {Number(solicitacao.lead_valor_negociado).toLocaleString(
+                    'pt-BR',
+                    { minimumFractionDigits: 2 }
+                  )}
+                </strong>
               </span>
             )}
           </div>
         )}
-        {!temSugestao && modelo && (
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-              isCustoFixo
-                ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                : 'bg-blue-100 text-blue-700 border border-blue-300'
-            }`}
-          >
-            {isCustoFixo
-              ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
-              : [
-                  solicitacao.representante_percentual_comissao != null
-                    ? `Rep ${solicitacao.representante_percentual_comissao}%`
-                    : '% Percentual',
-                  solicitacao.representante_percentual_comissao_comercial !=
-                  null
-                    ? `Com. ${solicitacao.representante_percentual_comissao_comercial}%`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ')}
-          </span>
-        )}
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="R$ 0,00"
-            value={valorInput[loteId] || ''}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '');
-              const formatted = (Number(value) / 100).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              });
-              setValorInput((prev) => ({
-                ...prev,
-                [loteId]: `R$ ${formatted}`,
-              }));
-            }}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isProcessando}
-          />
-          <button
-            onClick={() => onDefinirValor(loteId)}
-            disabled={isProcessando || !valorInput[loteId]}
-            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            <DollarSign className="w-4 h-4" />
-            Definir Valor
-          </button>
-          {solicitacao.valor_por_funcionario &&
-            solicitacao.valor_por_funcionario > 0 && (
-              <button
-                onClick={() => onGerarLink(loteId)}
-                disabled={isProcessando}
-                className="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                <Link2 className="w-4 h-4" />
-                Gerar Link
-              </button>
+
+        {/* Input de valor + botão */}
+        <div className="flex items-end gap-3">
+          <div className="flex-1 min-w-0">
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Valor por avaliação
+            </label>
+            <input
+              type="text"
+              placeholder="R$ 0,00"
+              value={valorInput[loteId] || ''}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '');
+                const formatted = (Number(value) / 100).toLocaleString(
+                  'pt-BR',
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                );
+                setValorInput((prev) => ({
+                  ...prev,
+                  [loteId]: `R$ ${formatted}`,
+                }));
+              }}
+              className="w-full px-4 py-2.5 border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium"
+              disabled={isProcessando}
+            />
+            {temSugestao && (
+              <p className="mt-1 text-xs text-gray-500">
+                Sugestão do lead: R${' '}
+                {Number(solicitacao.lead_valor_negociado).toLocaleString(
+                  'pt-BR',
+                  { minimumFractionDigits: 2 }
+                )}
+              </p>
             )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => onDefinirValor(loteId)}
+              disabled={isProcessando || !valorInput[loteId]}
+              className="px-5 py-2.5 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              <DollarSign className="w-4 h-4" />
+              {isProcessando ? 'Salvando...' : 'Definir Valor'}
+            </button>
+            {solicitacao.valor_por_funcionario != null &&
+              solicitacao.valor_por_funcionario > 0 && (
+                <button
+                  onClick={() => onGerarLink(loteId)}
+                  disabled={isProcessando}
+                  className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                  <Link2 className="w-4 h-4" />
+                  Gerar Link
+                </button>
+              )}
+          </div>
         </div>
+
+        {/* Preview do total */}
+        {valorDigitado > 0 && numAvaliacoes > 0 && (
+          <div className="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-amber-200">
+            <span className="text-gray-500">
+              {numAvaliacoes} {numAvaliacoes === 1 ? 'avaliação' : 'avaliações'}{' '}
+              &times; R${' '}
+              {valorDigitado.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+            <span className="text-gray-400">=</span>
+            <span className="font-bold text-gray-900">
+              R${' '}
+              {totalPreview.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -710,11 +771,24 @@ function ComissaoSection({
   );
 }
 
+const STATUS_BORDER: Record<string, string> = {
+  aguardando_cobranca: 'border-l-4 border-l-amber-400',
+  aguardando_pagamento: 'border-l-4 border-l-blue-400',
+  pago: 'border-l-4 border-l-green-400',
+};
+
 export function SolicitacaoCard(props: SolicitacaoCardProps) {
   const { solicitacao, formatCurrency, formatDate } = props;
+  const isAguardandoCobranca =
+    solicitacao.status_pagamento === 'aguardando_cobranca';
+  const borderClass =
+    STATUS_BORDER[solicitacao.status_pagamento] ??
+    'border-l-4 border-l-gray-300';
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+    <div
+      className={`bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow ${borderClass}`}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
@@ -767,14 +841,17 @@ export function SolicitacaoCard(props: SolicitacaoCardProps) {
 
       <StatusActions {...props} />
 
-      <ComissaoSection
-        solicitacao={solicitacao}
-        processando={props.processando}
-        codigoRepInput={props.codigoRepInput}
-        setCodigoRepInput={props.setCodigoRepInput}
-        onVincularRepresentante={props.onVincularRepresentante}
-        formatCurrency={formatCurrency}
-      />
+      {/* ComissaoSection: omitida para aguardando_cobranca (info inline no StatusActions) */}
+      {!isAguardandoCobranca && (
+        <ComissaoSection
+          solicitacao={solicitacao}
+          processando={props.processando}
+          codigoRepInput={props.codigoRepInput}
+          setCodigoRepInput={props.setCodigoRepInput}
+          onVincularRepresentante={props.onVincularRepresentante}
+          formatCurrency={formatCurrency}
+        />
+      )}
     </div>
   );
 }
