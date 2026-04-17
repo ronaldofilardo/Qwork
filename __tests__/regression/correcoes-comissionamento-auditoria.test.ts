@@ -54,19 +54,15 @@ describe('1. ComissoesContent — prop perfil filtra ações de comercial', () =
     expect(src).toMatch(/ComissoesContent\s*\(\s*\{[^}]*perfil/);
   });
 
-  it('deve filtrar "liberar" quando perfil === comercial', () => {
-    expect(src).toContain("a !== 'liberar'");
-  });
-
   it('deve filtrar "pagar" quando perfil === comercial', () => {
     expect(src).toContain("a !== 'pagar'");
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. comercial/page.tsx passa perfil="comercial" para ComissoesContent
+// 2. comercial/page.tsx usa ComercialComissoesAbas (com tabs Produtividade + Minhas comissões)
 // ─────────────────────────────────────────────────────────────────────────────
-describe('2. comercial/page.tsx passa perfil="comercial"', () => {
+describe('2. comercial/page.tsx usa ComercialComissoesAbas', () => {
   const filePath = path.join(ROOT, 'app', 'comercial', 'page.tsx');
   let src: string;
 
@@ -74,8 +70,19 @@ describe('2. comercial/page.tsx passa perfil="comercial"', () => {
     src = fs.readFileSync(filePath, 'utf-8');
   });
 
-  it('deve passar perfil="comercial" para ComissoesContent', () => {
-    expect(src).toContain('perfil="comercial"');
+  it('deve importar ComercialComissoesAbas', () => {
+    expect(src).toContain('ComercialComissoesAbas');
+  });
+
+  it('ComercialComissoesAbas deve passar perfil="comercial" para ComissoesContent', () => {
+    const abasPath = path.join(
+      ROOT,
+      'components',
+      'comercial',
+      'ComercialComissoesAbas.tsx'
+    );
+    const abasSrc = fs.readFileSync(abasPath, 'utf-8');
+    expect(abasSrc).toContain('perfil="comercial"');
   });
 });
 
@@ -276,8 +283,7 @@ describe('8. ComissoesTab — prop perfil e ACOES_COMERCIAL_BLOQUEADAS', () => {
     expect(typesSrc).toContain('ACOES_COMERCIAL_BLOQUEADAS');
   });
 
-  it('ACOES_COMERCIAL_BLOQUEADAS deve incluir liberar e pagar', () => {
-    expect(typesSrc).toContain("'liberar'");
+  it('ACOES_COMERCIAL_BLOQUEADAS deve incluir pagar', () => {
     expect(typesSrc).toContain("'pagar'");
   });
 

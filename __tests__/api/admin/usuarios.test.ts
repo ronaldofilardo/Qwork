@@ -322,5 +322,93 @@ describe('admin usuários do sistema', () => {
       expect(res.status).toBe(500);
       expect(data.error).toBeDefined();
     });
+
+    it('deve atualizar asaas_wallet_id de usuário admin', async () => {
+      // Arrange
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              cpf: '00000000000',
+              nome: 'Admin Dev',
+              tipo_usuario: 'admin',
+              asaas_wallet_id: null,
+            },
+          ],
+          rowCount: 1,
+        } as any)
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+
+      // Act
+      const res = await PATCH(
+        makePatchRequest({ asaas_wallet_id: '8y9y78y87-y87t76t7-y87y87' }),
+        { params: { id: '1' } }
+      );
+      const data = await res.json();
+
+      // Assert
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.asaas_wallet_id).toBe('8y9y78y87-y87t76t7-y87y87');
+    });
+
+    it('deve atualizar asaas_wallet_id de usuário comercial', async () => {
+      // Arrange
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 2,
+              cpf: '22222222222',
+              nome: 'Comercial Dev',
+              tipo_usuario: 'comercial',
+              asaas_wallet_id: null,
+            },
+          ],
+          rowCount: 1,
+        } as any)
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+
+      // Act
+      const res = await PATCH(
+        makePatchRequest({ asaas_wallet_id: '4rrt453-re534tre-erert34t34' }),
+        { params: { id: '2' } }
+      );
+      const data = await res.json();
+
+      // Assert
+      expect(res.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.asaas_wallet_id).toBe('4rrt453-re534tre-erert34t34');
+    });
+
+    it('deve retornar 404 ao tentar atualizar wallet de usuário suporte', async () => {
+      // Arrange — suporte não pode ter wallet
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+      // Act
+      const res = await PATCH(
+        makePatchRequest({ asaas_wallet_id: 'algum-wallet-id' }),
+        { params: { id: '5' } }
+      );
+      const data = await res.json();
+
+      // Assert
+      expect(res.status).toBe(404);
+      expect(data.error).toBeDefined();
+    });
+
+    it('deve retornar 400 para asaas_wallet_id vazio', async () => {
+      // Act
+      const res = await PATCH(makePatchRequest({ asaas_wallet_id: '' }), {
+        params: { id: '1' },
+      });
+      const data = await res.json();
+
+      // Assert
+      expect(res.status).toBe(400);
+      expect(data.error).toBeDefined();
+    });
   });
 });

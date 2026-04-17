@@ -54,9 +54,15 @@ export async function POST(request: NextRequest) {
     const dados = verificacao.rows[0];
 
     // Bloquear se pagamento já foi confirmado
-    if (dados.tomador_status === 'pago' || dados.tomador_status === 'confirmado') {
+    if (
+      dados.tomador_status === 'pago' ||
+      dados.tomador_status === 'confirmado'
+    ) {
       return NextResponse.json(
-        { error: 'Pagamento já confirmado. Não é possível gerar link de retomada.' },
+        {
+          error:
+            'Pagamento já confirmado. Não é possível gerar link de retomada.',
+        },
         { status: 400 }
       );
     }
