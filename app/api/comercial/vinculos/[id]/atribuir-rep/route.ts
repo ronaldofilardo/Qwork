@@ -43,6 +43,20 @@ export async function PATCH(
 
     const data = parsed.data;
 
+    // Ownership check: comercial só pode atribuir representantes gerenciados por ele
+    if (session.perfil === 'comercial') {
+      const owned = await query<{ id: number }>(
+        `SELECT 1 AS id FROM representantes WHERE id = $1 AND gestor_comercial_cpf = $2 LIMIT 1`,
+        [data.representante_id, session.cpf]
+      );
+      if (owned.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Representante não encontrado' },
+          { status: 404 }
+        );
+      }
+    }
+
     // Verificar que o vínculo existe e está sem representante
     const vinculo = await query<{
       id: number;
