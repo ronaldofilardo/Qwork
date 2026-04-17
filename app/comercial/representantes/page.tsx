@@ -14,6 +14,8 @@ import {
   ToggleLeft,
   ToggleRight,
   Loader2,
+  UserCheck,
+  Clock,
 } from 'lucide-react';
 import CadastrarRepresentanteModal from './CadastrarRepresentanteModal';
 
@@ -34,25 +36,41 @@ interface RepMetrica {
   asaas_wallet_id?: string | null;
 }
 
-type Aba = 'ativos' | 'inativos';
+interface RepSemGestor {
+  id: number;
+  nome: string;
+  email: string;
+  status: string;
+  codigo: string;
+  tipo_pessoa: string;
+  criado_em: string;
+  leads_ativos: number;
+  vinculos_ativos: number;
+}
+
+type Aba = 'ativos' | 'inativos' | 'sem_gestor';
 
 export default function ComercialRepresentantesPage() {
   const router = useRouter();
   const [ativos, setAtivos] = useState<RepMetrica[]>([]);
   const [inativos, setInativos] = useState<RepMetrica[]>([]);
+  const [semGestor, setSemGestor] = useState<RepSemGestor[]>([]);
   const [aba, setAba] = useState<Aba>('ativos');
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [showCadastrar, setShowCadastrar] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const [erroToggle, setErroToggle] = useState<string | null>(null);
+  const [assumindoId, setAssumindoId] = useState<number | null>(null);
+  const [erroAssumir, setErroAssumir] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const [resAtivos, resInativos] = await Promise.all([
+      const [resAtivos, resInativos, resSemGestor] = await Promise.all([
         fetch('/api/comercial/representantes/metricas'),
         fetch('/api/comercial/representantes/metricas?status=desativado'),
+        fetch('/api/comercial/representantes/sem-gestor'),
       ]);
       if (resAtivos.ok) {
         const d = await resAtivos.json();
@@ -61,6 +79,10 @@ export default function ComercialRepresentantesPage() {
       if (resInativos.ok) {
         const d = await resInativos.json();
         setInativos(d.representantes ?? []);
+      }
+      if (resSemGestor.ok) {
+        const d = await resSemGestor.json();
+        setSemGestor(d.representantes ?? []);
       }
     } catch (e) {
       console.error('Erro ao buscar representantes:', e);
@@ -103,7 +125,41 @@ export default function ComercialRepresentantesPage() {
     }
   };
 
-  const lista = aba === 'ativos' ? ativos : inativos;
+  const assumir = async (r: RepSemGestor, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setAssumindoId(r.id);
+    setErroAssumir(null);
+    try {
+      const res = await fetch(
+        `/api/comercial/representantes/${r.id}/assumir`,
+        { method: 'POST' }
+      );
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(d.error ?? 'Erro ao assumir representante');
+      }
+      await carregar();
+      setAba('ativos');
+    } catch (error: unknown) {
+      setErroAssumir(
+        error instanceof Error ? error.message : 'Erro desconhecido'
+      );
+    } finally {
+      setAssumindoId(null);
+    }
+  };
+
+  const lista = aba === 'ativos' ? ativos : aba === 'inativos' ? inativos : [];
+
+  const filtradosSemGestor = semGestor.filter((r) => {
+    if (!busca) return true;
+    const q = busca.toLowerCase();
+    return (
+      r.nome.toLowerCase().includes(q) ||
+      r.email.toLowerCase().includes(q) ||
+      (r.codigo ?? '').toLowerCase().includes(q)
+    );
+  });
 
   const filtrados = lista.filter((r) => {
     if (!busca) return true;
@@ -210,6 +266,31 @@ export default function ComercialRepresentantesPage() {
             </span>
           )}
         </button>
+        <button
+          onClick={() => {
+            setAba('sem_gestor');
+            setBusca('');
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            aba === 'sem_gestor'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <UserCheck size={14} />
+          Sem Gestor
+          {semGestor.length > 0 && (
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                aba === 'sem_gestor'
+                  ? 'bg-amber-100 text-amber-700'
+                  : 'bg-gray-200 text-gray-500'
+              }`}
+            >
+              {semGestor.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {erroToggle && (
@@ -217,6 +298,18 @@ export default function ComercialRepresentantesPage() {
           <span className="font-medium">Erro:</span> {erroToggle}
           <button
             onClick={() => setErroToggle(null)}
+            className="ml-auto text-red-400 hover:text-red-600"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {erroAssumir && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <span className="font-medium">Erro:</span> {erroAssumir}
+          <button
+            onClick={() => setErroAssumir(null)}
             className="ml-auto text-red-400 hover:text-red-600"
           >
             ×
@@ -233,6 +326,98 @@ export default function ComercialRepresentantesPage() {
             />
           ))}
         </div>
+      ) : aba === 'sem_gestor' ? (
+        filtradosSemGestor.length === 0 ? (
+          <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
+            <UserCheck size={32} className="text-gray-200 mx-auto mb-2" />
+            <p className="text-sm text-gray-400 font-medium">
+              {busca
+                ? 'Nenhum resultado para a busca.'
+                : 'Todos os representantes já possuem gestor atribuído.'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filtradosSemGestor.map((r) => (
+              <div
+                key={r.id}
+                className="group bg-white rounded-2xl border border-amber-100 p-5 transition-all flex flex-col h-full hover:border-amber-300 hover:shadow-xl hover:shadow-amber-900/[0.04]"
+              >
+                <div className="absolute top-0 right-0 hidden">
+                  {/* badge não necessário aqui */}
+                </div>
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-gray-900 truncate text-base mb-0.5">
+                      {r.nome}
+                    </h4>
+                    <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
+                      {r.codigo || 'S/ COD'}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate mt-0.5">
+                      {r.email}
+                    </p>
+                  </div>
+                  <span
+                    className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ml-2 ${
+                      r.status === 'ativo'
+                        ? 'bg-green-500'
+                        : r.status === 'aguardando_senha'
+                          ? 'bg-blue-400'
+                          : 'bg-gray-300'
+                    }`}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-amber-50/50 rounded-xl p-3 border border-transparent">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider text-center">
+                      Leads Ativos
+                    </p>
+                    <div className="flex items-center justify-center gap-1">
+                      <Activity size={12} className="text-purple-400" />
+                      <p className="text-lg font-black text-gray-800">
+                        {r.leads_ativos}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="bg-amber-50/50 rounded-xl p-3 border border-transparent">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider text-center">
+                      Vínculos
+                    </p>
+                    <div className="flex items-center justify-center gap-1">
+                      <Users size={12} className="text-blue-400" />
+                      <p className="text-lg font-black text-gray-800">
+                        {r.vinculos_ativos}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-auto flex items-center gap-1.5 text-xs text-gray-400 mb-3">
+                  <Clock size={11} />
+                  <span>
+                    Cadastro:{' '}
+                    {new Date(r.criado_em).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+
+                <button
+                  onClick={(e) => void assumir(r, e)}
+                  disabled={assumindoId === r.id}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed bg-amber-500 text-white hover:bg-amber-600 active:scale-[0.98]"
+                >
+                  {assumindoId === r.id ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <UserCheck size={14} />
+                  )}
+                  {assumindoId === r.id ? 'Assumindo...' : 'Gerenciar'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )
       ) : filtrados.length === 0 ? (
         <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
           <Users size={32} className="text-gray-200 mx-auto mb-2" />
