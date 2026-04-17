@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await requireRole(['suporte', 'admin'], false);
 
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = new URL(request.url).searchParams;
     const filtroTipo = searchParams.get('tipo'); // 'clinica' ou 'entidade' ou null (todos)
 
     // ARQUITETURA SEGREGADA:
@@ -46,6 +46,9 @@ export async function GET(request: NextRequest) {
           cl.responsavel_nome,
           cl.responsavel_cpf,
           cl.responsavel_email,
+          cl.cartao_cnpj_path,
+          cl.contrato_social_path,
+          cl.doc_identificacao_path,
           vc.id AS vinculo_id,
           vc.valor_negociado AS vinculo_valor_negociado,
           r.id AS representante_id,
@@ -115,6 +118,9 @@ export async function GET(request: NextRequest) {
             e.responsavel_nome,
             e.responsavel_cpf,
             e.responsavel_email,
+            NULL as cartao_cnpj_path,
+            NULL as contrato_social_path,
+            NULL as doc_identificacao_path,
             vc.id AS vinculo_id,
             vc.valor_negociado AS vinculo_valor_negociado,
             r.id AS representante_id,
@@ -146,6 +152,9 @@ export async function GET(request: NextRequest) {
             cl.responsavel_nome,
             cl.responsavel_cpf,
             cl.responsavel_email,
+            cl.cartao_cnpj_path,
+            cl.contrato_social_path,
+            cl.doc_identificacao_path,
             vc.id AS vinculo_id,
             vc.valor_negociado AS vinculo_valor_negociado,
             r.id AS representante_id,
@@ -160,7 +169,7 @@ export async function GET(request: NextRequest) {
           ) vc ON true
           LEFT JOIN representantes r ON r.id = vc.representante_id
         )
-        ORDER BY tipo, nome
+        ORDER BY criado_em DESC
       `;
     }
 
@@ -203,6 +212,11 @@ export async function GET(request: NextRequest) {
         email: row.email,
         ativo: row.ativa,
         created_at: row.criado_em,
+        tem_documentos: {
+          cartao_cnpj: !!row.cartao_cnpj_path,
+          contrato_social: !!row.contrato_social_path,
+          doc_identificacao: !!row.doc_identificacao_path,
+        },
         gestor,
         representante,
       };
