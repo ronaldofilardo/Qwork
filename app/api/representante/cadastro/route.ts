@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
 
     // Status inicial: 'ativo'
     const statusInicial = 'ativo';
+    // gestor_comercial_cpf = NULL por padrão; comercial atribui manualmente via dashboard
 
     const result = await query(
       `INSERT INTO representantes (
