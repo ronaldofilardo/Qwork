@@ -130,47 +130,11 @@ export type AuditoriaSubTab =
   | 'laudos'
   | 'operacionais'
   | 'aceites'
-  | 'acesso-comercial'
-  | 'acesso-representante'
-  | 'acesso-vendedor'
   | 'delecao';
 
-// ── Acesso por Perfil Operacional (Suporte/Comercial/Representante/Vendedor) ──
+// ── Acesso Suporte ────────────────────────────────────────────────────────────
 
 export interface AcessoSuporte {
-  id: number;
-  cpf: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string | null;
-  user_agent: string | null;
-  nome: string | null;
-}
-
-export interface AcessoComercial {
-  id: number;
-  cpf: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string | null;
-  user_agent: string | null;
-  nome: string | null;
-}
-
-export interface AcessoRepresentante {
-  id: number;
-  cpf: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string | null;
-  user_agent: string | null;
-  representante_nome: string | null;
-}
-
-export interface AcessoVendedor {
   id: number;
   cpf: string;
   login_timestamp: string;

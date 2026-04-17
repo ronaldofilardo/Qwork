@@ -10,48 +10,54 @@ import {
   ChevronUp,
   Loader2,
   FileText,
+  DollarSign,
 } from 'lucide-react';
 
 interface CicloRow {
   id: number;
-  mes_ano: string;
-  valor_total_recebido: string | number;
+  mes_referencia: string;
+  valor_total: string | number;
+  qtd_comissoes: number;
   status: string;
-  nf_rpa_path?: string | null;
-  nf_rpa_nome_arquivo?: string | null;
-  data_envio_nf_rpa?: string | null;
-  data_validacao_suporte?: string | null;
-  data_bloqueio?: string | null;
+  nf_path?: string | null;
+  nf_nome_arquivo?: string | null;
+  nf_enviada_em?: string | null;
+  nf_aprovada_em?: string | null;
+  nf_rejeitada_em?: string | null;
+  nf_motivo_rejeicao?: string | null;
+  data_pagamento?: string | null;
+  fechado_em?: string | null;
 }
 
 interface Resumo {
-  valor_pendente?: string | number;
-  valor_validado?: string | number;
   valor_total?: string | number;
+  valor_pago?: string | number;
+  qtd_ciclos?: number;
+  qtd_pagos?: number;
 }
 
 const STATUS_LABEL: Record<string, string> = {
   aberto: 'Em andamento',
-  aguardando_nf_rpa: 'Enviar NF/RPA',
-  nf_rpa_enviada: 'NF/RPA Enviada',
-  validado: 'Validado',
-  vencido: 'Vencido',
+  fechado: 'Enviar NF/RPA',
+  nf_enviada: 'NF/RPA Enviada',
+  nf_aprovada: 'Aprovada',
+  pago: 'Pago',
 };
 
-const STATUS_ICON = {
+const STATUS_ICON: Record<string, React.ReactNode> = {
   aberto: <Clock size={14} className="text-blue-500" />,
-  aguardando_nf_rpa: <AlertTriangle size={14} className="text-yellow-500" />,
-  nf_rpa_enviada: <FileText size={14} className="text-purple-500" />,
-  validado: <CheckCircle2 size={14} className="text-green-500" />,
-  vencido: <AlertTriangle size={14} className="text-red-500" />,
+  fechado: <AlertTriangle size={14} className="text-yellow-500" />,
+  nf_enviada: <FileText size={14} className="text-purple-500" />,
+  nf_aprovada: <CheckCircle2 size={14} className="text-green-500" />,
+  pago: <DollarSign size={14} className="text-green-600" />,
 };
 
 const STATUS_COR: Record<string, string> = {
   aberto: 'bg-blue-100 text-blue-700',
-  aguardando_nf_rpa: 'bg-yellow-100 text-yellow-700',
-  nf_rpa_enviada: 'bg-purple-100 text-purple-700',
-  validado: 'bg-green-100 text-green-700',
-  vencido: 'bg-red-100 text-red-700',
+  fechado: 'bg-yellow-100 text-yellow-700',
+  nf_enviada: 'bg-purple-100 text-purple-700',
+  nf_aprovada: 'bg-green-100 text-green-700',
+  pago: 'bg-green-200 text-green-800',
 };
 
 function fmtBRL(v: string | number | null | undefined): string {
@@ -101,7 +107,7 @@ export default function FinanceiroRepresentantePage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/representante/financeiro/ciclos?limit=24');
+      const res = await fetch('/api/representante/ciclos?limit=24');
       if (!res.ok) return;
       const data = await res.json();
       setCiclos(data.ciclos ?? []);
@@ -122,9 +128,8 @@ export default function FinanceiroRepresentantePage() {
     setUploadSucesso('');
     try {
       const fd = new FormData();
-      fd.append('ciclo_id', String(cicloId));
-      fd.append('arquivo', file);
-      const res = await fetch('/api/representante/financeiro/nf-rpa', {
+      fd.append('nf', file);
+      const res = await fetch(`/api/representante/ciclos/${cicloId}/nf`, {
         method: 'POST',
         body: fd,
       });
@@ -168,22 +173,22 @@ export default function FinanceiroRepresentantePage() {
         <div className="grid grid-cols-3 gap-4">
           {[
             {
-              label: 'Pendente',
-              value: fmtBRL(resumo.valor_pendente),
-              cor: 'text-yellow-700',
-              bg: 'bg-yellow-50 border-yellow-200',
+              label: 'Total',
+              value: fmtBRL(resumo.valor_total),
+              cor: 'text-blue-700',
+              bg: 'bg-blue-50 border-blue-200',
             },
             {
-              label: 'Validado',
-              value: fmtBRL(resumo.valor_validado),
+              label: 'Pago',
+              value: fmtBRL(resumo.valor_pago),
               cor: 'text-green-700',
               bg: 'bg-green-50 border-green-200',
             },
             {
-              label: 'Total Acumulado',
-              value: fmtBRL(resumo.valor_total),
-              cor: 'text-blue-700',
-              bg: 'bg-blue-50 border-blue-200',
+              label: 'Ciclos',
+              value: String(resumo.qtd_ciclos ?? 0),
+              cor: 'text-gray-700',
+              bg: 'bg-gray-50 border-gray-200',
             },
           ].map((c) => (
             <div key={c.label} className={`border rounded-xl p-4 ${c.bg}`}>
@@ -235,11 +240,9 @@ export default function FinanceiroRepresentantePage() {
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  {STATUS_ICON[c.status as keyof typeof STATUS_ICON] ?? (
-                    <Clock size={14} />
-                  )}
+                  {STATUS_ICON[c.status] ?? <Clock size={14} />}
                   <span className="font-semibold text-gray-800">
-                    {fmtMesAno(c.mes_ano)}
+                    {fmtMesAno(c.mes_referencia)}
                   </span>
                   <span
                     className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COR[c.status] ?? 'bg-gray-100 text-gray-600'}`}
@@ -249,7 +252,7 @@ export default function FinanceiroRepresentantePage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-sm font-bold text-gray-800">
-                    {fmtBRL(c.valor_total_recebido)}
+                    {fmtBRL(c.valor_total)}
                   </span>
                   {expandedId === c.id ? (
                     <ChevronUp size={16} className="text-gray-400" />
@@ -264,37 +267,57 @@ export default function FinanceiroRepresentantePage() {
                 <div className="px-4 pb-4 border-t pt-3 space-y-3">
                   <div className="grid grid-cols-2 gap-3 text-xs text-gray-600">
                     <div>
-                      <span className="text-gray-400">NF/RPA enviada em:</span>
-                      <p className="font-medium">
-                        {fmtDate(c.data_envio_nf_rpa)}
-                      </p>
+                      <span className="text-gray-400">Comissões:</span>
+                      <p className="font-medium">{c.qtd_comissoes}</p>
                     </div>
                     <div>
-                      <span className="text-gray-400">Validado em:</span>
-                      <p className="font-medium">
-                        {fmtDate(c.data_validacao_suporte)}
-                      </p>
+                      <span className="text-gray-400">Fechado em:</span>
+                      <p className="font-medium">{fmtDate(c.fechado_em)}</p>
                     </div>
-                    {c.nf_rpa_nome_arquivo && (
-                      <div className="col-span-2">
-                        <span className="text-gray-400">Arquivo:</span>
-                        <p className="font-medium truncate">
-                          {c.nf_rpa_nome_arquivo}
+                    {c.nf_enviada_em && (
+                      <div>
+                        <span className="text-gray-400">NF enviada em:</span>
+                        <p className="font-medium">
+                          {fmtDate(c.nf_enviada_em)}
                         </p>
                       </div>
                     )}
-                    {c.data_bloqueio && (
+                    {c.nf_aprovada_em && (
+                      <div>
+                        <span className="text-gray-400">NF aprovada em:</span>
+                        <p className="font-medium">
+                          {fmtDate(c.nf_aprovada_em)}
+                        </p>
+                      </div>
+                    )}
+                    {c.nf_nome_arquivo && (
                       <div className="col-span-2">
-                        <span className="text-red-500">Bloqueado em:</span>
+                        <span className="text-gray-400">Arquivo:</span>
+                        <p className="font-medium truncate">
+                          {c.nf_nome_arquivo}
+                        </p>
+                      </div>
+                    )}
+                    {c.data_pagamento && (
+                      <div className="col-span-2">
+                        <span className="text-green-500">Pago em:</span>
+                        <p className="font-medium text-green-700">
+                          {fmtDate(c.data_pagamento)}
+                        </p>
+                      </div>
+                    )}
+                    {c.nf_motivo_rejeicao && (
+                      <div className="col-span-2">
+                        <span className="text-red-500">Motivo rejeição:</span>
                         <p className="font-medium text-red-600">
-                          {fmtDate(c.data_bloqueio)}
+                          {c.nf_motivo_rejeicao}
                         </p>
                       </div>
                     )}
                   </div>
 
-                  {/* Ação de upload */}
-                  {c.status === 'aguardando_nf_rpa' && (
+                  {/* Ação de upload — status fechado = aguardando envio de NF */}
+                  {c.status === 'fechado' && (
                     <button
                       onClick={() => triggerUpload(c.id)}
                       disabled={uploading === c.id}
@@ -309,17 +332,24 @@ export default function FinanceiroRepresentantePage() {
                     </button>
                   )}
 
-                  {c.status === 'nf_rpa_enviada' && (
+                  {c.status === 'nf_enviada' && (
                     <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 text-purple-700 rounded-lg px-3 py-2 text-xs">
                       <FileText size={13} />
                       NF/RPA enviada. Aguardando validação do Suporte.
                     </div>
                   )}
 
-                  {c.status === 'validado' && (
+                  {c.status === 'nf_aprovada' && (
                     <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-lg px-3 py-2 text-xs">
                       <CheckCircle2 size={13} />
-                      NF/RPA validada. Repasse confirmado.
+                      NF/RPA aprovada. Pagamento em processamento.
+                    </div>
+                  )}
+
+                  {c.status === 'pago' && (
+                    <div className="flex items-center gap-2 bg-green-100 border border-green-300 text-green-800 rounded-lg px-3 py-2 text-xs">
+                      <DollarSign size={13} />
+                      Pagamento confirmado.
                     </div>
                   )}
                 </div>

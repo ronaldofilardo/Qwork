@@ -29,14 +29,6 @@ export interface Resumo {
 
 export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
   retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
-  pendente_consolidacao: {
-    label: 'No Ciclo',
-    cor: 'bg-blue-100 text-blue-700',
-  },
-  congelada_rep_suspenso: {
-    label: 'Congelada',
-    cor: 'bg-orange-100 text-orange-700',
-  },
   congelada_aguardando_admin: {
     label: 'Aguardando Admin',
     cor: 'bg-yellow-100 text-yellow-700',

@@ -33,8 +33,6 @@ export async function getComissoesByRepresentante(
 
   const statusValidos: StatusComissao[] = [
     'retida',
-    'pendente_consolidacao',
-    'congelada_rep_suspenso',
     'congelada_aguardando_admin',
     'liberada',
     'paga',
@@ -54,13 +52,12 @@ export async function getComissoesByRepresentante(
 
   const resumo = await query(
     `SELECT
-       COUNT(*) FILTER (WHERE c.status::text IN ('pendente_nf','nf_em_analise','retida','pendente_consolidacao'))      AS pendentes,
+       COUNT(*) FILTER (WHERE c.status::text = 'retida')                                        AS pendentes,
        COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                      AS liberadas,
        COUNT(*) FILTER (WHERE c.status::text = 'paga')                                          AS pagas,
-       -- valor_pendente: apenas comissões ativas no pipeline (parcela já paga ou à vista)
+       -- valor_pendente: comissões retidas com parcela já paga
        COALESCE(SUM(c.valor_comissao) FILTER (WHERE
-         c.status::text IN ('pendente_nf','nf_em_analise','pendente_consolidacao')
-         OR (c.status::text = 'retida' AND c.parcela_confirmada_em IS NOT NULL)
+         c.status::text = 'retida' AND c.parcela_confirmada_em IS NOT NULL
        ), 0) AS valor_pendente,
        -- valor_futuro: comissões provisionadas aguardando pagamento da parcela
        COALESCE(SUM(c.valor_comissao) FILTER (WHERE
@@ -111,13 +108,11 @@ export async function atualizarStatusComissao(
 
   if (novoStatus === 'liberada') {
     setClauses.push(`data_liberacao = NOW()`);
-    setClauses.push(`nf_rpa_aprovada_em = NOW()`);
   }
   if (novoStatus === 'paga') setClauses.push(`data_pagamento = NOW()`);
 
   if (
-    (novoStatus === 'congelada_aguardando_admin' ||
-      novoStatus === 'congelada_rep_suspenso') &&
+    novoStatus === 'congelada_aguardando_admin' &&
     extras?.motivo_congelamento
   ) {
     setClauses.push(`motivo_congelamento = $${i++}`);
@@ -129,15 +124,9 @@ export async function atualizarStatusComissao(
     params.push(extras.comprovante_pagamento_path);
   }
 
-  // Limpar campos ao descongelar (F-13: forçar reenvio de NF)
-  if (novoStatus === 'pendente_nf' || novoStatus === 'pendente_consolidacao') {
+  // Limpar motivo ao descongelar
+  if (novoStatus === 'retida') {
     setClauses.push(`motivo_congelamento = NULL`);
-    setClauses.push(`nf_rpa_enviada_em = NULL`);
-    setClauses.push(`nf_rpa_aprovada_em = NULL`);
-    setClauses.push(`nf_rpa_rejeitada_em = NULL`);
-    setClauses.push(`nf_rpa_motivo_rejeicao = NULL`);
-    setClauses.push(`nf_path = NULL`);
-    setClauses.push(`nf_nome_arquivo = NULL`);
   }
 
   const result = await query(
@@ -347,11 +336,8 @@ export async function criarComissaoAdmin(params: {
         100
       : 0;
 
-  // Status inicial:
-  //   forcar_retida=true → sempre retida (provisionamento antecipado de parcelas futuras)
-  //   novo fluxo: apto → pendente_consolidacao (aguarda fechamento do ciclo mensal)
-  const statusInicial: StatusComissao =
-    forcar_retida || rep.status !== 'apto' ? 'retida' : 'pendente_consolidacao';
+  // Status inicial: sempre retida — admin promove manualmente para liberada → paga
+  const statusInicial: StatusComissao = 'retida';
 
   // Mês de emissão e pagamento
   const agora = new Date();
@@ -375,7 +361,7 @@ export async function criarComissaoAdmin(params: {
        $7, $8, $9,
        $10, $11,
        $12::status_comissao, $13::date, $14::date, NOW(),
-       CASE WHEN $12::status_comissao = 'pendente_consolidacao' THEN NOW() ELSE NULL END,
+       NULL,
        $15, $16, $17
      ) RETURNING *`,
     [
@@ -481,18 +467,15 @@ export async function ativarComissaoParcelaPaga(params: {
 
     const repApto = comissao.rep_status === 'apto';
     const statusAnterior: string = comissao.status;
-    const statusNovo: StatusComissao = repApto
-      ? 'pendente_consolidacao'
-      : 'retida';
+    const statusNovo: StatusComissao = 'retida';
 
     await query(
       `UPDATE comissoes_laudo
        SET parcela_confirmada_em = NOW(),
            atualizado_em = NOW(),
-           status = CASE WHEN $2::boolean THEN 'pendente_consolidacao'::status_comissao ELSE status END,
-           data_aprovacao = CASE WHEN $2::boolean THEN NOW() ELSE data_aprovacao END
+           data_aprovacao = NOW()
        WHERE id = $1`,
-      [comissao.id, repApto]
+      [comissao.id]
     );
 
     await registrarAuditoria({
@@ -503,8 +486,8 @@ export async function ativarComissaoParcelaPaga(params: {
       triggador: 'sistema',
       motivo: `Parcela ${parcela_numero} confirmada como paga via webhook${
         repApto
-          ? ' — transicionada para pendente_consolidacao'
-          : ' — mantida retida (rep não apto ainda)'
+          ? ' — retida (rep apto, aguarda liberação admin)'
+          : ' — mantida retida (rep não apto)'
       }`,
     });
 

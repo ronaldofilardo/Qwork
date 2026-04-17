@@ -94,20 +94,6 @@ describe('2. AuditoriasContent — cache, error state, lastUpdated e novas abas'
     expect(src).toContain('Atualizado às');
   });
 
-  it('deve ter endpoint e case para acesso-comercial', () => {
-    expect(src).toContain("'acesso-comercial'");
-    expect(src).toContain('/api/admin/auditorias/acesso-comercial');
-  });
-
-  it('deve ter endpoint e case para acesso-representante', () => {
-    expect(src).toContain("'acesso-representante'");
-    expect(src).toContain('/api/admin/auditorias/acesso-representante');
-  });
-
-  it('deve ter endpoint e case para acesso-vendedor', () => {
-    expect(src).toContain("'acesso-vendedor'");
-    expect(src).toContain('/api/admin/auditorias/acesso-vendedor');
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -135,33 +121,6 @@ describe('3. auditorias/types.ts — novas interfaces e tipos', () => {
     expect(src).toContain('AcessoSuporte');
   });
 
-  it('deve exportar interface AcessoComercial', () => {
-    expect(src).toContain('AcessoComercial');
-  });
-
-  it('deve exportar interface AcessoRepresentante', () => {
-    expect(src).toContain('AcessoRepresentante');
-  });
-
-  it('deve exportar interface AcessoVendedor', () => {
-    expect(src).toContain('AcessoVendedor');
-  });
-
-  it('AuditoriaSubTab deve incluir acesso-comercial', () => {
-    expect(src).toContain("'acesso-comercial'");
-  });
-
-  it('AuditoriaSubTab deve incluir acesso-representante', () => {
-    expect(src).toContain("'acesso-representante'");
-  });
-
-  it('AuditoriaSubTab deve incluir acesso-vendedor', () => {
-    expect(src).toContain("'acesso-vendedor'");
-  });
-
-  it('AcessoRepresentante deve ter campo representante_nome', () => {
-    expect(src).toContain('representante_nome');
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -185,28 +144,12 @@ describe('4. AuditoriaSubNav — tabs Suporte, Comercial, Representantes, Vended
     expect(fs.existsSync(navPath)).toBe(true);
   });
 
-  it("deve ter tab com key 'acesso-comercial'", () => {
-    expect(src).toContain("'acesso-comercial'");
+  it("deve ter tab com key 'acesso-suporte'", () => {
+    expect(src).toContain("'acesso-suporte'");
   });
 
-  it("deve ter tab com key 'acesso-representante'", () => {
-    expect(src).toContain("'acesso-representante'");
-  });
-
-  it("deve ter tab com key 'acesso-vendedor'", () => {
-    expect(src).toContain("'acesso-vendedor'");
-  });
-
-  it("deve ter label 'Comercial'", () => {
-    expect(src).toContain('Comercial');
-  });
-
-  it("deve ter label 'Representantes'", () => {
-    expect(src).toContain('Representantes');
-  });
-
-  it("deve ter label 'Vendedores'", () => {
-    expect(src).toContain('Vendedores');
+  it("deve ter label 'Suporte'", () => {
+    expect(src).toContain('Suporte');
   });
 });
 
@@ -235,27 +178,8 @@ describe('5. AuditoriaTables — novos componentes de tabela', () => {
     expect(src).toContain('TabelaAcessosSuporte');
   });
 
-  it('deve exportar TabelaAcessosComercial', () => {
-    expect(src).toContain('TabelaAcessosComercial');
-  });
-
-  it('deve exportar TabelaAcessosRepresentante', () => {
-    expect(src).toContain('TabelaAcessosRepresentante');
-  });
-
-  it('deve exportar TabelaAcessosVendedor', () => {
-    expect(src).toContain('TabelaAcessosVendedor');
-  });
-
-  it('deve importar os tipos AcessoSuporte, AcessoComercial, AcessoRepresentante, AcessoVendedor', () => {
+  it('deve importar o tipo AcessoSuporte', () => {
     expect(src).toContain('AcessoSuporte');
-    expect(src).toContain('AcessoComercial');
-    expect(src).toContain('AcessoRepresentante');
-    expect(src).toContain('AcessoVendedor');
-  });
-
-  it('coluna Representante deve aparecer na tabela de representantes', () => {
-    expect(src).toContain('representante_nome');
   });
 });
 
@@ -340,120 +264,6 @@ describe('7. GET /api/admin/auditorias/acessos-rh — query direta sem VIEW', ()
 
   it('deve fazer JOIN com clinicas', () => {
     expect(src).toContain('JOIN clinicas');
-  });
-
-  it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin'");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 8b. GET /api/admin/auditorias/acesso-comercial — nova rota
-// ---------------------------------------------------------------------------
-describe('8b. GET /api/admin/auditorias/acesso-comercial — nova rota', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'admin',
-    'auditorias',
-    'acesso-comercial',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it("deve filtrar por perfil = 'comercial'", () => {
-    expect(src).toContain("perfil = 'comercial'");
-  });
-
-  it('deve fazer JOIN com funcionarios', () => {
-    expect(src).toContain('JOIN funcionarios');
-  });
-
-  it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin'");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 8c. GET /api/admin/auditorias/acesso-representante — nova rota
-// ---------------------------------------------------------------------------
-describe('8c. GET /api/admin/auditorias/acesso-representante — nova rota', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'admin',
-    'auditorias',
-    'acesso-representante',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it("deve filtrar por perfil = 'representante'", () => {
-    expect(src).toContain("perfil = 'representante'");
-  });
-
-  it('deve fazer JOIN com representantes por cpf ou cpf_responsavel_pj', () => {
-    expect(src).toContain('representantes r');
-    expect(src).toContain('cpf_responsavel_pj');
-  });
-
-  it('deve retornar representante_nome via COALESCE', () => {
-    expect(src).toContain('COALESCE');
-    expect(src).toContain('representante_nome');
-  });
-
-  it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin'");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 8d. GET /api/admin/auditorias/acesso-vendedor — nova rota
-// ---------------------------------------------------------------------------
-describe('8d. GET /api/admin/auditorias/acesso-vendedor — nova rota', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'admin',
-    'auditorias',
-    'acesso-vendedor',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it("deve filtrar por perfil = 'vendedor'", () => {
-    expect(src).toContain("perfil = 'vendedor'");
-  });
-
-  it('deve fazer JOIN com funcionarios', () => {
-    expect(src).toContain('JOIN funcionarios');
   });
 
   it('deve proteger com requireRole admin', () => {
