@@ -20,8 +20,8 @@ import {
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
 describe('Constantes de negócio', () => {
-  it('CUSTO_MINIMO.entidade deve ser 15', () => {
-    expect(CUSTO_MINIMO.entidade).toBe(15);
+  it('CUSTO_MINIMO.entidade deve ser 12', () => {
+    expect(CUSTO_MINIMO.entidade).toBe(12);
   });
 
   it('CUSTO_MINIMO.clinica deve ser 5', () => {
@@ -53,7 +53,7 @@ describe('calcularSplit() — modelo percentual', () => {
   });
 
   it('deve marcar inviável quando valorQWork < CUSTO_MINIMO.entidade', () => {
-    // valor=20, 80% → valorRep=16, valorQWork=4 < 15 → inviável
+    // valor=20, 80% → valorRep=16, valorQWork=4 < 12 → inviável
     const res = calcularSplit('percentual', 20, 'entidade', 80);
     expect(res.viavel).toBe(false);
   });
@@ -83,7 +83,7 @@ describe('calcularSplit() — modelo percentual', () => {
   });
 
   it('percentual máximo (40%) deve ser viável para entidade com valor > 25', () => {
-    // valor=30, 40% → valorRep=12, valorQWork=18 > 15 → viável
+    // valor=30, 40% → valorRep=12, valorQWork=18 > 12 → viável
     const res = calcularSplit('percentual', 30, 'entidade', 40);
     expect(res.viavel).toBe(true);
   });
@@ -95,8 +95,8 @@ describe('calcularSplit() — modelo custo_fixo', () => {
   it('deve calcular corretamente (entidade)', () => {
     const res = calcularSplit('custo_fixo', 100, 'entidade');
     expect(res.modelo).toBe('custo_fixo');
-    expect(res.valorQWork).toBe(15);
-    expect(res.valorRepresentante).toBe(85);
+    expect(res.valorQWork).toBe(12);
+    expect(res.valorRepresentante).toBe(88);
     expect(res.viavel).toBe(true);
   });
 
@@ -109,7 +109,7 @@ describe('calcularSplit() — modelo custo_fixo', () => {
 
   it('deve ser viável quando valorLaudo === CUSTO_MINIMO (zero para representante)', () => {
     // valorRep = 0, viavel porque valorRep >= 0
-    const res = calcularSplit('custo_fixo', 15, 'entidade');
+    const res = calcularSplit('custo_fixo', 12, 'entidade');
     expect(res.valorRepresentante).toBe(0);
     expect(res.viavel).toBe(true);
   });
@@ -146,7 +146,7 @@ describe('montarSplitAsaas()', () => {
   });
 
   it('deve retornar null se valorRepresentante <= 0', () => {
-    const split = calcularSplit('custo_fixo', 15, 'entidade');
+    const split = calcularSplit('custo_fixo', 12, 'entidade');
     // valorRepresentante = 0
     expect(montarSplitAsaas('wallet_123', split)).toBeNull();
   });

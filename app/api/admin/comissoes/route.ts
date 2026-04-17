@@ -66,12 +66,13 @@ export async function GET(request: NextRequest) {
     const resumo = await query(
       `SELECT
          COUNT(*)                                                                          AS total_comissoes,
-         COUNT(*) FILTER (WHERE c.status::text = 'retida')                                        AS pendentes_retidas,
+         COUNT(*) FILTER (WHERE c.status::text = 'retida')                                        AS pendentes_consolidacao,
          COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                    AS liberadas,
          COUNT(*) FILTER (WHERE c.status::text = 'paga')                                        AS pagas,
          COUNT(*) FILTER (WHERE c.status::text LIKE 'congelada%')                               AS congeladas,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'retida'),0)              AS valor_retido,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'),0)                AS valor_pago_total
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'retida'),0)              AS valor_a_pagar,
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'),0)                AS valor_pago_total,
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'),0)            AS valor_liberado
        FROM comissoes_laudo c`
     );
 

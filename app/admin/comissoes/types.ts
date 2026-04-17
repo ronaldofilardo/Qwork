@@ -36,6 +36,7 @@ export interface Resumo {
   congeladas: string;
   valor_a_pagar: string;
   valor_pago_total: string;
+  valor_liberado: string;
 }
 
 export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
@@ -83,6 +84,6 @@ export const ACAO_LABEL: Record<string, string> = {
   descongelar: '🔓 Descongelar',
 };
 
-export function fmt(v: string | number) {
-  return `R$ ${parseFloat(String(v) || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+export function fmt(v: string | number | null | undefined) {
+  return `R$ ${parseFloat(String(v ?? '0') || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 }
