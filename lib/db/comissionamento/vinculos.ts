@@ -44,7 +44,7 @@ export async function getVinculosByRepresentante(
        v.percentual_comissao_representante,
        COUNT(c.id)                  AS total_comissoes,
        COALESCE(SUM(CASE WHEN c.status::text = 'paga' THEN c.valor_comissao ELSE 0 END), 0) AS valor_total_pago,
-       COALESCE(SUM(CASE WHEN c.status::text IN ('pendente_consolidacao','liberada') THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente,
+       COALESCE(SUM(CASE WHEN c.status::text = 'retida' AND c.parcela_confirmada_em IS NOT NULL THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente,
        (v.data_expiracao - CURRENT_DATE) AS dias_para_expirar
      FROM vinculos_comissao v
      JOIN entidades e ON e.id = v.entidade_id

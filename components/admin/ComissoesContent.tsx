@@ -48,7 +48,10 @@ interface Resumo {
 
 const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
   retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
-  pendente_consolidacao: { label: 'No Ciclo', cor: 'bg-blue-100 text-blue-700' },
+  pendente_consolidacao: {
+    label: 'No Ciclo',
+    cor: 'bg-blue-100 text-blue-700',
+  },
   congelada_rep_suspenso: {
     label: 'Congelada (Suspensão)',
     cor: 'bg-orange-100 text-orange-700',
@@ -63,7 +66,6 @@ const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
 };
 
 const ACOES_POR_STATUS: Record<string, string[]> = {
-  pendente_consolidacao: ['congelar', 'cancelar'],
   liberada: ['pagar', 'congelar', 'cancelar'],
   congelada_aguardando_admin: ['descongelar', 'cancelar'],
   congelada_rep_suspenso: ['descongelar', 'cancelar'],

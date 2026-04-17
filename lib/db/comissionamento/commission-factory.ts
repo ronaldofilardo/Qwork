@@ -52,7 +52,7 @@ export interface ComissaoCalculada {
 export function calcularComissao(
   params: ComissaoBaseParams,
   percentual: number,
-  repStatus: string
+  _repStatus: string
 ): ComissaoCalculada {
   const parcela_numero = params.parcela_numero ?? 1;
   const total_parcelas = params.total_parcelas ?? 1;

@@ -178,7 +178,7 @@ export async function criarComissaoAdmin(params: {
     clinica_id,
     laudo_id,
     valor_laudo,
-    valor_parcela = null,
+    valor_parcela: _valor_parcela = null,
     parcela_numero = 1,
     total_parcelas = 1,
     admin_cpf,
@@ -270,7 +270,7 @@ export async function criarComissaoAdmin(params: {
   let baseCalculoFinal = 0;
 
   if (isCustoFixo) {
-    // Custo fixo: comissão = (valor_negociado - custo_fixo) × avaliações / parcelas
+    // Custo fixo: comissão = (valorRep / negociado) × bruto_por_parcela
     // Determina tipo de cliente para obter o custo mínimo correto
     const tipoCliente: TipoCliente = entId ? 'entidade' : 'clinica';
     const custoFixoRep: number =
@@ -282,7 +282,7 @@ export async function criarComissaoAdmin(params: {
           ? parseFloat(rep.valor_custo_fixo_clinica)
           : null) ?? CUSTO_POR_AVALIACAO[tipoCliente];
 
-    // Usa valor_negociado do vínculo; fallback para valor_laudo/num_avaliacoes estimado
+    // Usa valor_negociado do vínculo; fallback para valor_laudo
     const negociado = valorNegociadoVinculo ?? valor_laudo;
     const { valorRep, abaixoMinimo } = calcularComissaoCustoFixo(
       negociado,
@@ -295,18 +295,16 @@ export async function criarComissaoAdmin(params: {
         erro: `Valor negociado (R$ ${negociado.toFixed(2)}) é inferior ao custo fixo por avaliação (R$ ${custoFixoRep.toFixed(2)}).`,
       };
     }
-    // valorRep é por avaliação — para o lote inteiro distribui pela parcela
-    const baseCalculo =
-      valor_parcela != null && valor_parcela > 0
-        ? valor_parcela
-        : valor_laudo / totalParc;
-    // Proporcional: rep ganha (valorRep / negociado) × baseCalculo
+    // L2 fix: base sempre BRUTA (valor_laudo / totalParc), nunca netValue do Asaas
+    const brutoPerParcel = valor_laudo / totalParc;
+    // Proporcional: rep ganha (valorRep / negociado) × brutoPerParcel
     const ratioRep = negociado > 0 ? valorRep / negociado : 0;
-    valorComissao = Math.round(ratioRep * baseCalculo * 100) / 100;
+    valorComissao = Math.round(ratioRep * brutoPerParcel * 100) / 100;
     percentualRep = null; // custo_fixo não usa percentual
-    baseCalculoFinal = baseCalculo;
+    // L2 fix custo_fixo comercial: base = o que sobra do bruto após o rep
+    baseCalculoFinal = Math.max(0, brutoPerParcel - valorComissao);
   } else {
-    // Percentual: lógica original
+    // Percentual: L2 fix — base sempre BRUTA (valor_laudo / totalParc)
     percentualRep =
       percVinculo != null
         ? parseFloat(percVinculo)
@@ -320,24 +318,32 @@ export async function criarComissaoAdmin(params: {
       };
     }
 
-    const baseCalculo =
-      valor_parcela != null && valor_parcela > 0
-        ? valor_parcela
-        : valor_laudo / totalParc;
+    // L2 fix: sempre usar valor bruto por parcela como base de cálculo
+    const brutoPerParcel = valor_laudo / totalParc;
     valorComissao =
-      Math.round(((baseCalculo * percentualRep) / 100) * 100) / 100;
-    baseCalculoFinal = baseCalculo;
+      Math.round(((brutoPerParcel * percentualRep) / 100) * 100) / 100;
+    // Para modelo %, comercial também calcula sobre o bruto (não sobre o residual)
+    baseCalculoFinal = brutoPerParcel;
   }
 
-  // Comissão do comercial: % aplicado sobre baseCalculo (igual para ambos os modelos)
+  // Comissão do comercial sobre baseCalculoFinal
+  // custo_fixo: baseCalculoFinal = bruto - rep (residual)
+  // percentual:  baseCalculoFinal = bruto
   const valorComissaoComercial: number =
     percComercialVinculo > 0
       ? Math.round(((baseCalculoFinal * percComercialVinculo) / 100) * 100) /
         100
       : 0;
 
-  // Status inicial: sempre retida — admin promove manualmente para liberada → paga
-  const statusInicial: StatusComissao = 'retida';
+  // L10 fix: status inicial depende se parcela está confirmada E se rep é apto
+  // - forcar_retida = true → sempre retida (provisionamento antecipado de parcelas futuras)
+  // - parcela_confirmada_em = null → retida (parcela ainda não paga)
+  // - parcela confirmada + rep apto/apto_bloqueado → paga (split já foi executado)
+  const repApto = rep.status === 'apto' || rep.status === 'apto_bloqueado';
+  const parcelaEfetivamentePaga =
+    !forcar_retida && parcela_confirmada_em != null;
+  const statusInicial: StatusComissao =
+    parcelaEfetivamentePaga && repApto ? 'paga' : 'retida';
 
   // Mês de emissão e pagamento
   const agora = new Date();
@@ -355,14 +361,16 @@ export async function criarComissaoAdmin(params: {
        valor_laudo, percentual_comissao, valor_comissao,
        percentual_comissao_comercial, valor_comissao_comercial,
        status, mes_emissao, mes_pagamento, data_emissao_laudo,
-       data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em
+       data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em,
+       data_pagamento, asaas_split_executado, asaas_split_confirmado_em
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9,
        $10, $11,
        $12::status_comissao, $13::date, $14::date, NOW(),
        NULL,
-       $15, $16, $17
+       $15, $16, $17,
+       $18, $19, $20
      ) RETURNING *`,
     [
       vinculo_id,
@@ -384,6 +392,10 @@ export async function criarComissaoAdmin(params: {
       parcela_confirmada_em != null
         ? parcela_confirmada_em.toISOString()
         : null,
+      // L10: quando paga, gravar data_pagamento e flags de split executado
+      statusInicial === 'paga' ? new Date().toISOString() : null,
+      statusInicial === 'paga',
+      statusInicial === 'paga' ? new Date().toISOString() : null,
     ]
   );
 
@@ -399,14 +411,16 @@ export async function criarComissaoAdmin(params: {
       triggador: 'admin_action',
       motivo:
         admin_cpf === 'WEBHOOK'
-          ? `Comissão automática parcela ${parcelaNum}/${totalParc} via webhook — lote ${lote_pagamento_id}`
+          ? `Comissão automática parcela ${parcelaNum}/${totalParc} via webhook — lote ${lote_pagamento_id} — base bruta R$${(valor_laudo / totalParc).toFixed(2)}`
           : `Comissão parcela ${parcelaNum}/${totalParc} gerada pelo admin — lote ${lote_pagamento_id}`,
       dados_extras: {
         valor_laudo,
+        base_calculo_bruto: valor_laudo / totalParc,
         percentual_comissao: percentualRep,
         valor_comissao: valorComissao,
         percentual_comissao_comercial: percComercialVinculo,
         valor_comissao_comercial: valorComissaoComercial,
+        status_inicial: statusInicial,
       },
       criado_por_cpf: admin_cpf ?? null,
     });
@@ -422,12 +436,12 @@ export async function criarComissaoAdmin(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Ativação de parcela paga (retida → pendente_consolidacao)
+// Ativação de parcela paga (retida → paga)
 // ---------------------------------------------------------------------------
 
 /**
  * Ativa a comissão de uma parcela específica ao confirmar o seu pagamento.
- * Transição: retida → pendente_consolidacao (se rep apto) ou retida + parcela_confirmada_em (se rep não apto).
+ * Transição: retida → paga (se rep apto/apto_bloqueado) ou apenas parcela_confirmada_em (se rep não apto).
  *
  * Idempotente: se parcela_confirmada_em já está preenchida, retorna ok:true/ja_ativada.
  * Nunca lança exceção.
@@ -465,18 +479,37 @@ export async function ativarComissaoParcelaPaga(params: {
       return { ok: true, motivo: 'ja_ativada' };
     }
 
-    const repApto = comissao.rep_status === 'apto';
+    // L10 fix: rep apto ou apto_bloqueado → paga direto (split Asaas já executado)
+    const repApto =
+      comissao.rep_status === 'apto' ||
+      comissao.rep_status === 'apto_bloqueado';
     const statusAnterior: string = comissao.status;
-    const statusNovo: StatusComissao = 'retida';
+    const statusNovo: StatusComissao = repApto ? 'paga' : 'retida';
 
-    await query(
-      `UPDATE comissoes_laudo
-       SET parcela_confirmada_em = NOW(),
-           atualizado_em = NOW(),
-           data_aprovacao = NOW()
-       WHERE id = $1`,
-      [comissao.id]
-    );
+    if (repApto) {
+      await query(
+        `UPDATE comissoes_laudo
+         SET parcela_confirmada_em = NOW(),
+             status = 'paga'::status_comissao,
+             data_pagamento = NOW(),
+             asaas_split_executado = TRUE,
+             asaas_split_confirmado_em = NOW(),
+             atualizado_em = NOW(),
+             data_aprovacao = NOW()
+         WHERE id = $1`,
+        [comissao.id]
+      );
+    } else {
+      // Rep não apto: registra confirmação da parcela, mantém retida
+      await query(
+        `UPDATE comissoes_laudo
+         SET parcela_confirmada_em = NOW(),
+             atualizado_em = NOW(),
+             data_aprovacao = NOW()
+         WHERE id = $1`,
+        [comissao.id]
+      );
+    }
 
     await registrarAuditoria({
       tabela: 'comissoes_laudo',
@@ -484,11 +517,9 @@ export async function ativarComissaoParcelaPaga(params: {
       status_anterior: statusAnterior,
       status_novo: statusNovo,
       triggador: 'sistema',
-      motivo: `Parcela ${parcela_numero} confirmada como paga via webhook${
-        repApto
-          ? ' — retida (rep apto, aguarda liberação admin)'
-          : ' — mantida retida (rep não apto)'
-      }`,
+      motivo: repApto
+        ? `Parcela ${parcela_numero} paga via webhook — status paga (split Asaas executado)`
+        : `Parcela ${parcela_numero} confirmada via webhook — rep não apto, mantida retida`,
     });
 
     console.log(

@@ -38,7 +38,6 @@ export async function GET(request: NextRequest) {
 
     const statusValidos = [
       'retida',
-      'pendente_consolidacao',
       'congelada_rep_suspenso',
       'congelada_aguardando_admin',
       'liberada',
@@ -62,10 +61,10 @@ export async function GET(request: NextRequest) {
     const [resumo, countResult] = await Promise.all([
       query(
         `SELECT
-           COUNT(*) FILTER (WHERE c.status::text IN ('pendente_consolidacao','retida'))                               AS pendentes,
+           COUNT(*) FILTER (WHERE c.status::text = 'retida')                                                         AS pendentes,
            COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                                         AS liberadas,
            COUNT(*) FILTER (WHERE c.status::text = 'paga')                                                             AS pagas,
-           COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text IN ('pendente_consolidacao','retida')), 0)       AS valor_pendente,
+           COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'retida'), 0)                                 AS valor_pendente,
            COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'), 0)                               AS valor_liberado,
            COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'), 0)                                   AS valor_pago_total
          FROM comissoes_laudo c
