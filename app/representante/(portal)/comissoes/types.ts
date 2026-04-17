@@ -22,7 +22,6 @@ export interface Resumo {
   liberadas: string;
   pagas: string;
   valor_pendente: string;
-  valor_futuro: string;
   valor_liberado: string;
   valor_pago_total: string;
 }
@@ -38,6 +37,6 @@ export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
   cancelada: { label: 'Cancelada', cor: 'bg-red-100 text-red-600' },
 };
 
-export function fmt(v: string | number) {
-  return `R$ ${parseFloat(String(v) || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+export function fmt(v: string | number | null | undefined) {
+  return `R$ ${parseFloat(String(v ?? '0') || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 }

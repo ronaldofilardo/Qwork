@@ -34,7 +34,6 @@ interface SolicitacaoCardProps {
   onVerificarPagamento: (loteId: number) => void;
   onDisponibilizarLink: (loteId: number) => void;
   onVincularRepresentante: (loteId: number) => void;
-  onGerarComissao: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
   formatDate: (dateString: string | null) => string;
 }
@@ -234,7 +233,6 @@ function StatusActions({
   | 'codigoRepInput'
   | 'setCodigoRepInput'
   | 'onVincularRepresentante'
-  | 'onGerarComissao'
 >) {
   const loteId = solicitacao.lote_id;
   const isProcessando = processando === loteId;
@@ -469,7 +467,6 @@ function ComissaoSection({
   codigoRepInput,
   setCodigoRepInput,
   onVincularRepresentante,
-  onGerarComissao,
   formatCurrency,
 }: {
   solicitacao: Solicitacao;
@@ -479,7 +476,6 @@ function ComissaoSection({
     React.SetStateAction<Record<number, string>>
   >;
   onVincularRepresentante: (loteId: number) => void;
-  onGerarComissao: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
 }) {
   const loteId = solicitacao.lote_id;
@@ -594,23 +590,12 @@ function ComissaoSection({
                   );
                 }
 
-                // Fallback: lote antigo sem provisionamento automático — botão visível
+                // Lote sem provisionamento automático — aguardando webhook
                 return (
-                  <div className="flex flex-col items-end gap-1">
-                    {geradas > 0 && (
-                      <span className="text-xs text-purple-600">
-                        {geradas}/{totalParcelas} com comissão
-                      </span>
-                    )}
-                    <button
-                      onClick={() => onGerarComissao(loteId)}
-                      disabled={isProcessando}
-                      className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                    >
-                      <Coins className="w-4 h-4" />
-                      {isProcessando ? 'Gerando...' : 'Gerar Comissão'}
-                    </button>
-                  </div>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                    <Clock className="w-3.5 h-3.5" />
+                    Aguardando confirmação via gateway
+                  </span>
                 );
               })()}
           </div>
@@ -788,7 +773,6 @@ export function SolicitacaoCard(props: SolicitacaoCardProps) {
         codigoRepInput={props.codigoRepInput}
         setCodigoRepInput={props.setCodigoRepInput}
         onVincularRepresentante={props.onVincularRepresentante}
-        onGerarComissao={props.onGerarComissao}
         formatCurrency={formatCurrency}
       />
     </div>

@@ -14,47 +14,51 @@ describe('calcularComissaoCustoFixo — modelo custo_fixo', () => {
     // Act — percComercial omitido (default=0)
     const result = calcularComissaoCustoFixo(valorNegociado, valorCustoFixo);
 
-    // Assert — rep recebe diferença inteira; comercial=0; qwork=custo_fixo
-    expect(result.valorRep).toBe(50);          // 100 - 50
-    expect(result.valorComercial).toBe(0);      // 0% de 50
-    expect(result.valorQWork).toBe(50);         // 50 - 0
+    // Assert — margem = 50; comercial=0; qwork=margem
+    expect(result.valorRep).toBe(50); // margem = 100 - 50
+    expect(result.valorComercial).toBe(0); // 0% da margem
+    expect(result.valorQWork).toBe(50); // margem - 0
     expect(result.abaixoMinimo).toBe(false);
   });
 
-  it('deve calcular com percentual_comercial=10 distribuindo corretamente', () => {
-    // Arrange — custo_fixo=100, negociado=150, comercial pega 10% do custo_fixo
+  it('deve calcular com percentual_comercial=10: comercial recebe % da margem', () => {
+    // Arrange — custo_fixo=100, negociado=150, margem=50, comercial pega 10% da margem
     const valorNegociado = 150;
     const valorCustoFixo = 100;
     const percComercial = 10;
 
     // Act
-    const result = calcularComissaoCustoFixo(valorNegociado, valorCustoFixo, percComercial);
+    const result = calcularComissaoCustoFixo(
+      valorNegociado,
+      valorCustoFixo,
+      percComercial
+    );
 
     // Assert
-    expect(result.valorRep).toBe(50);          // 150 - 100
-    expect(result.valorComercial).toBe(10);    // 10% de 100
-    expect(result.valorQWork).toBe(90);        // 100 - 10
+    expect(result.valorRep).toBe(50); // margem = 150 - 100
+    expect(result.valorComercial).toBe(5); // 10% de 50 (margem)
+    expect(result.valorQWork).toBe(45); // 50 - 5
     expect(result.abaixoMinimo).toBe(false);
   });
 
   it('deve marcar abaixoMinimo=true quando valorNegociado < valorCustoFixo', () => {
-    // Arrange — negociado menor que custo_fixo (rep ficaria no negativo)
+    // Arrange — negociado menor que custo_fixo (margem negativa)
     const valorNegociado = 30;
     const valorCustoFixo = 50;
 
     // Act
     const result = calcularComissaoCustoFixo(valorNegociado, valorCustoFixo, 5);
 
-    // Assert — rep=0 (clampado), abaixoMinimo=true
+    // Assert — valorRep=0 (clamped), abaixoMinimo=true
     expect(result.valorRep).toBe(0);
     expect(result.abaixoMinimo).toBe(true);
   });
 
   it('deve clampear percComercial no máximo de 40%', () => {
-    // Arrange — percComercial=50 deve ser reduzido para 40
+    // Arrange — percComercial=50 deve ser reduzido para 40; margem=100
     const result = calcularComissaoCustoFixo(200, 100, 50);
 
-    // Assert — 40% de 100 = 40
+    // Assert — 40% de margem(100) = 40
     expect(result.valorComercial).toBe(40);
     expect(result.valorQWork).toBe(60); // 100 - 40
   });
@@ -76,9 +80,9 @@ describe('calcularValoresComissao — modelo percentual', () => {
     const result = calcularValoresComissao(200, 10, 5, 'clinica');
 
     // Assert
-    expect(result.valorRep).toBe(20);          // 10% de 200
-    expect(result.valorComercial).toBe(10);    // 5% de 200
-    expect(result.valorQWork).toBe(170);       // 200 - 20 - 10
+    expect(result.valorRep).toBe(20); // 10% de 200
+    expect(result.valorComercial).toBe(10); // 5% de 200
+    expect(result.valorQWork).toBe(170); // 200 - 20 - 10
     expect(result.percentualTotal).toBe(15);
   });
 
@@ -110,7 +114,9 @@ describe('calcularValoresComissao — modelo percentual', () => {
     // valorNegociado=19, rep=40% → qwork=11.4 < 12
     const abaixoMenor = calcularValoresComissao(19, 40, 0, 'entidade');
     expect(abaixoMenor.abaixoCusto).toBe(true);
-    expect(abaixoMenor.valorQWork).toBeLessThan(CUSTO_POR_AVALIACAO['entidade']);
+    expect(abaixoMenor.valorQWork).toBeLessThan(
+      CUSTO_POR_AVALIACAO['entidade']
+    );
   });
 });
 

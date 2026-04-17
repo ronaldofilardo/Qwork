@@ -11,10 +11,12 @@ jest.mock('@/lib/db/comissionamento');
 import { POST } from '@/app/api/admin/comissoes/gerar/route';
 import { criarComissaoAdmin } from '@/lib/db/comissionamento';
 import { requireRole } from '@/lib/session';
+import { query } from '@/lib/db';
 import { NextRequest } from 'next/server';
 
 const mockCriar = criarComissaoAdmin;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
+const mockQuery = query as jest.MockedFunction<typeof query>;
 
 const BASE_BODY = {
   lote_pagamento_id: 24,
@@ -45,6 +47,10 @@ describe('POST /api/admin/comissoes/gerar', () => {
       cpf: '00000000000',
       role: 'admin',
     } as any);
+    // Mock DB guards: lote pago + sem duplicata
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ status_pagamento: 'pago' }] } as any)
+      .mockResolvedValueOnce({ rows: [] } as any);
   });
 
   // ── Auth ────────────────────────────────────────────────────────────────
