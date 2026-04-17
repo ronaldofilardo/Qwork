@@ -9,17 +9,18 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 BEGIN;
 
 -- Set session context para triggers de auditoria
-PERFORM set_config('app.current_user_cpf', '00000000000', true);
-PERFORM set_config('app.current_user_perfil', 'admin', true);
+SELECT set_config('app.current_user_cpf', '00000000000', true);
+SELECT set_config('app.current_user_perfil', 'admin', true);
 
 -- Admin
-INSERT INTO usuarios (cpf, nome, tipo_usuario, senha_hash, ativo, criado_em, atualizado_em)
+INSERT INTO usuarios (cpf, nome, tipo_usuario, senha_hash, ativo, asaas_wallet_id, criado_em, atualizado_em)
 VALUES (
   '00000000000',
   'Admin Dev',
   'admin'::usuario_tipo_enum,
   crypt('0000', gen_salt('bf')),
   true,
+  '8y9y78y87-y87t76t7-y87y87',
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 )
@@ -28,6 +29,7 @@ SET nome = EXCLUDED.nome,
     tipo_usuario = EXCLUDED.tipo_usuario,
     senha_hash = EXCLUDED.senha_hash,
     ativo = EXCLUDED.ativo,
+    asaas_wallet_id = EXCLUDED.asaas_wallet_id,
     atualizado_em = CURRENT_TIMESTAMP;
 
 -- Suporte
@@ -49,13 +51,14 @@ SET nome = EXCLUDED.nome,
     atualizado_em = CURRENT_TIMESTAMP;
 
 -- Comercial
-INSERT INTO usuarios (cpf, nome, tipo_usuario, senha_hash, ativo, criado_em, atualizado_em)
+INSERT INTO usuarios (cpf, nome, tipo_usuario, senha_hash, ativo, asaas_wallet_id, criado_em, atualizado_em)
 VALUES (
   '22222222222',
   'Comercial Dev',
   'comercial'::usuario_tipo_enum,
   crypt('2222', gen_salt('bf')),
   true,
+  '4rrt453-re534tre-erert34t34',
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 )
@@ -64,6 +67,7 @@ SET nome = EXCLUDED.nome,
     tipo_usuario = EXCLUDED.tipo_usuario,
     senha_hash = EXCLUDED.senha_hash,
     ativo = EXCLUDED.ativo,
+    asaas_wallet_id = EXCLUDED.asaas_wallet_id,
     atualizado_em = CURRENT_TIMESTAMP;
 
 -- Emissor

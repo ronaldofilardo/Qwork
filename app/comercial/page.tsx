@@ -12,7 +12,7 @@ import {
 import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
 import { useComercial } from './comercial-context';
-import { ComissoesContent } from '@/components/admin/ComissoesContent';
+import { ComercialComissoesAbas } from '@/components/comercial/ComercialComissoesAbas';
 import { ContratosTable } from '@/components/shared/ContratosTable';
 import ComercialLeadsAprovacaoPage from './leads/page';
 import type { Lead } from '@/app/admin/representantes/types';
@@ -305,7 +305,7 @@ export default function ComercialPage() {
     }
 
     if (activeSection === 'comissoes') {
-      return <ComissoesContent perfil="comercial" />;
+      return <ComercialComissoesAbas />;
     }
 
     if (activeSection === 'leads') {

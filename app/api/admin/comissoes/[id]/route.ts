@@ -91,17 +91,11 @@ export async function PATCH(
       },
       cancelar: {
         novoStatus: 'cancelada',
-        statusPermitidos: [
-          'retida',
-          'liberada',
-          'congelada_aguardando_admin',
-        ],
+        statusPermitidos: ['retida', 'liberada', 'congelada_aguardando_admin'],
       },
       descongelar: {
         novoStatus: 'retida',
-        statusPermitidos: [
-          'congelada_aguardando_admin',
-        ],
+        statusPermitidos: ['congelada_aguardando_admin'],
         extraSet: ', motivo_congelamento = NULL',
       },
     };
