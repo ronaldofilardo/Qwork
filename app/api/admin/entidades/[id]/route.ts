@@ -195,7 +195,7 @@ export async function PATCH(
       });
     }
 
-    // Fluxo padrão: apenas toggle ativa
+    // Fluxo padrão: toggle ativa
     const result = await query(
       `UPDATE entidades 
        SET ativa = $1, atualizado_em = CURRENT_TIMESTAMP 
@@ -210,6 +210,13 @@ export async function PATCH(
         { status: 404 }
       );
     }
+
+    // Sincronizar usuarios.ativo com o novo estado da entidade
+    await query(
+      `UPDATE usuarios SET ativo = $1, atualizado_em = CURRENT_TIMESTAMP
+       WHERE entidade_id = $2 AND tipo_usuario = 'gestor'`,
+      [ativa, entidadeId]
+    );
 
     return NextResponse.json({ success: true, entidade: result.rows[0] });
   } catch (error) {

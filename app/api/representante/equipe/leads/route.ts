@@ -42,10 +42,6 @@ export async function GET(request: NextRequest) {
     const mesFiltro = searchParams.get('mes') === 'true';
     const statusFiltro = searchParams.get('status') ?? undefined;
 
-    const statusExcluidos = ['expirado', 'convertido'];
-    // Quando vem filtro de status explícito, não excluímos
-    const excluirStatus = !statusFiltro;
-
     // ---- Leads dos vendedores da equipe ----
     const equipeWheres: string[] = [
       `hc.representante_id = $1`,
@@ -60,12 +56,6 @@ export async function GET(request: NextRequest) {
     if (statusFiltro) {
       equipeWheres.push(`lr.status = $${idx++}`);
       equipeParams.push(statusFiltro);
-    } else if (excluirStatus) {
-      equipeWheres.push(
-        `lr.status NOT IN (${statusExcluidos.map((_, i) => `$${idx + i}`).join(', ')})`
-      );
-      statusExcluidos.forEach((s) => equipeParams.push(s));
-      idx += statusExcluidos.length;
     }
 
     const equipeResult = await query<
@@ -143,11 +133,6 @@ export async function GET(request: NextRequest) {
     if (statusFiltro) {
       diretosWheres.push(`lr.status = $${didx++}`);
       diretosParams.push(statusFiltro);
-    } else if (excluirStatus) {
-      diretosWheres.push(
-        `lr.status NOT IN (${statusExcluidos.map((_, i) => `$${didx + i}`).join(', ')})`
-      );
-      statusExcluidos.forEach((s) => diretosParams.push(s));
     }
 
     const diretosResult = await query<LeadRow>(
