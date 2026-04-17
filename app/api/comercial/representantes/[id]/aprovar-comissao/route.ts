@@ -110,10 +110,12 @@ export async function POST(
     const valorCFEntidade = parsed.data.valor_custo_fixo_entidade ?? null;
     const valorCFClinica = parsed.data.valor_custo_fixo_clinica ?? null;
 
-    // Verificar que o representante existe e está em status elegível
+    // Verificar que o representante existe, está em status elegível, e pertence ao comercial
     const existing = await query(
-      `SELECT id, nome, status FROM representantes WHERE id = $1 LIMIT 1`,
-      [id]
+      `SELECT id, nome, status FROM representantes
+       WHERE id = $1 AND ($2::varchar IS NULL OR gestor_comercial_cpf = $2)
+       LIMIT 1`,
+      [id, session.perfil === 'comercial' ? session.cpf : null]
     );
     if (existing.rows.length === 0) {
       return NextResponse.json(

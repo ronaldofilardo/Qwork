@@ -28,23 +28,8 @@ const PatchSchema = z.object({
       'aprovacao_comercial',
     ])
     .optional(),
-  percentual_comissao: z.number().min(0).max(100).optional().nullable(),
-  modelo_comissionamento: z
-    .enum(['percentual', 'custo_fixo'])
-    .optional()
-    .nullable(),
-  asaas_wallet_id: z.string().max(50).optional().nullable(),
-  // Dados bancários do representante (campos opcionais)
-  banco_codigo: z.string().max(10).optional().nullable(),
-  agencia: z.string().max(20).optional().nullable(),
-  conta: z.string().max(30).optional().nullable(),
-  tipo_conta: z.enum(['corrente', 'poupanca']).optional().nullable(),
-  titular_conta: z.string().max(200).optional().nullable(),
-  pix_chave: z.string().max(200).optional().nullable(),
-  pix_tipo: z
-    .enum(['cpf', 'cnpj', 'email', 'telefone', 'aleatoria'])
-    .optional()
-    .nullable(),
+  // Dados bancários, comissão e wallet são SOMENTE LEITURA para suporte.
+  // Alterações nesses campos devem ser feitas via perfil 'comercial' ou 'admin'.
 });
 
 type PatchInput = z.infer<typeof PatchSchema>;
@@ -146,28 +131,12 @@ export async function PATCH(
 
     const data: PatchInput = parsed.data;
 
-    // Campos da tabela representantes
+    // Campos operacionais permitidos para suporte
     const repFields: Record<string, unknown> = {};
     if (data.nome !== undefined) repFields['nome'] = data.nome;
     if (data.email !== undefined) repFields['email'] = data.email;
     if (data.telefone !== undefined) repFields['telefone'] = data.telefone;
     if (data.status !== undefined) repFields['status'] = data.status;
-    if (data.percentual_comissao !== undefined)
-      repFields['percentual_comissao'] = data.percentual_comissao;
-    if (data.modelo_comissionamento !== undefined)
-      repFields['modelo_comissionamento'] = data.modelo_comissionamento;
-    if (data.asaas_wallet_id !== undefined)
-      repFields['asaas_wallet_id'] = data.asaas_wallet_id;
-    if (data.banco_codigo !== undefined)
-      repFields['banco_codigo'] = data.banco_codigo;
-    if (data.agencia !== undefined) repFields['agencia'] = data.agencia;
-    if (data.conta !== undefined) repFields['conta'] = data.conta;
-    if (data.tipo_conta !== undefined)
-      repFields['tipo_conta'] = data.tipo_conta;
-    if (data.titular_conta !== undefined)
-      repFields['titular_conta'] = data.titular_conta;
-    if (data.pix_chave !== undefined) repFields['pix_chave'] = data.pix_chave;
-    if (data.pix_tipo !== undefined) repFields['pix_tipo'] = data.pix_tipo;
 
     if (Object.keys(repFields).length === 0) {
       return NextResponse.json(
@@ -184,7 +153,7 @@ export async function PATCH(
       `UPDATE representantes
        SET ${setClauses}, atualizado_em = NOW()
        WHERE id = $${keys.length + 1}
-       RETURNING id, nome, email, status, codigo, percentual_comissao, modelo_comissionamento, asaas_wallet_id, atualizado_em`,
+       RETURNING id, nome, email, status, codigo, atualizado_em`,
       [...values, id]
     );
 
