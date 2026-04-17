@@ -47,7 +47,7 @@ describe('Backblaze client', () => {
   it('uploadToBackblaze should call S3 client and return metadata', async () => {
     process.env.BACKBLAZE_PROVIDER = 's2';
     process.env.BACKBLAZE_S2_ENDPOINT = 'https://s3.test';
-    process.env.BACKBLAZE_KEY_ID = 'KEY';
+    process.env.BACKBLAZE_KEY_ID = '00KEY0000000000000001';
     process.env.BACKBLAZE_APPLICATION_KEY = 'SECRET';
     process.env.BACKBLAZE_BUCKET = 'my-bucket';
 
@@ -70,7 +70,7 @@ describe('Backblaze client', () => {
   it('supports legacy env var names (BACKBLAZE_ACCESS_KEY_ID/BACKBLAZE_SECRET_ACCESS_KEY)', async () => {
     process.env.BACKBLAZE_PROVIDER = 's2';
     process.env.BACKBLAZE_S2_ENDPOINT = 'https://s3.test';
-    process.env.BACKBLAZE_ACCESS_KEY_ID = '2a8144c04121';
+    process.env.BACKBLAZE_ACCESS_KEY_ID = '002a8144c041210000001';
     process.env.BACKBLAZE_SECRET_ACCESS_KEY =
       '0054395081c91b2750422e6bdad80497a90bbd20fe';
     process.env.BACKBLAZE_BUCKET = 'laudos-qwork';
@@ -98,7 +98,7 @@ describe('Backblaze client', () => {
     // Simulate swapped variables: long secret placed in KEY_ID and short KeyID in APPLICATION_KEY
     process.env.BACKBLAZE_KEY_ID =
       'superlong-application-secret-that-looks-like-a-secret-xxxxxxxxxxxxxxxxxxxx';
-    process.env.BACKBLAZE_APPLICATION_KEY = '0052a8144c04121';
+    process.env.BACKBLAZE_APPLICATION_KEY = '0052a8144c04121def56';
     process.env.BACKBLAZE_BUCKET = 'swap-bucket';
 
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
@@ -130,7 +130,7 @@ describe('Backblaze client', () => {
   it('downloadFromBackblaze should stream and return buffer', async () => {
     process.env.BACKBLAZE_PROVIDER = 's2';
     process.env.BACKBLAZE_S2_ENDPOINT = 'https://s3.test';
-    process.env.BACKBLAZE_KEY_ID = 'KEY';
+    process.env.BACKBLAZE_KEY_ID = '00KEY0000000000000001';
     process.env.BACKBLAZE_APPLICATION_KEY = 'SECRET';
     process.env.BACKBLAZE_BUCKET = 'my-bucket';
 
@@ -151,7 +151,7 @@ describe('Backblaze client', () => {
   it('checkBackblazeFileExists should return false on 404', async () => {
     process.env.BACKBLAZE_PROVIDER = 's2';
     process.env.BACKBLAZE_S2_ENDPOINT = 'https://s3.test';
-    process.env.BACKBLAZE_KEY_ID = 'KEY';
+    process.env.BACKBLAZE_KEY_ID = '00KEY0000000000000001';
     process.env.BACKBLAZE_APPLICATION_KEY = 'SECRET';
     process.env.BACKBLAZE_BUCKET = 'my-bucket';
 

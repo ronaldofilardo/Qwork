@@ -89,7 +89,8 @@ describe('2. comercial/page.tsx usa ComercialComissoesAbas', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. ciclos.ts — assinaturas com executorPerfil
 // ─────────────────────────────────────────────────────────────────────────────
-describe('3. ciclos.ts — funções aceitam executorPerfil', () => {
+// SKIP: ciclos.ts foi removido do sistema — comissões agora são diretas (sem ciclo NF)
+describe.skip('3. ciclos.ts — funções aceitam executorPerfil', () => {
   const ciclosPath = path.join(
     ROOT,
     'lib',
@@ -123,7 +124,8 @@ describe('3. ciclos.ts — funções aceitam executorPerfil', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 4. ciclos.ts — triggador dinâmico suporte_action vs admin_action
 // ─────────────────────────────────────────────────────────────────────────────
-describe('4. ciclos.ts — triggador dinâmico', () => {
+// SKIP: ciclos.ts foi removido do sistema
+describe.skip('4. ciclos.ts — triggador dinâmico', () => {
   const ciclosPath = path.join(
     ROOT,
     'lib',
@@ -153,7 +155,8 @@ describe('4. ciclos.ts — triggador dinâmico', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. route PATCH ciclos — passa session.perfil às funções
 // ─────────────────────────────────────────────────────────────────────────────
-describe('5. PATCH /api/comissionamento/ciclos/[id] — passa session.perfil', () => {
+// SKIP: app/api/comissionamento/ciclos foi removido do sistema
+describe.skip('5. PATCH /api/comissionamento/ciclos/[id] — passa session.perfil', () => {
   const routePath = path.join(
     ROOT,
     'app',

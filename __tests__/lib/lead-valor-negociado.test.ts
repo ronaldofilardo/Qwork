@@ -7,7 +7,6 @@
  * - Interface Solicitacao com lead_valor_negociado
  * - Pré-preenchimento de valor na tela de cobrança admin
  */
-import { describe, test, expect } from 'vitest';
 
 /* ─── Helpers de tipo ─────────────────────────────────────── */
 
