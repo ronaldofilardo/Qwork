@@ -54,8 +54,9 @@ export async function PATCH(
               r.modelo_comissionamento
        FROM public.leads_representante lr
        JOIN public.representantes r ON r.id = lr.representante_id
-       WHERE lr.id = $1`,
-      [leadId]
+       WHERE lr.id = $1
+         AND ($2::varchar IS NULL OR r.gestor_comercial_cpf = $2)`,
+      [leadId, session.perfil === 'comercial' ? session.cpf : null]
     );
 
     if (existing.rows.length === 0) {

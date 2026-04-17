@@ -58,8 +58,10 @@ export async function PATCH(
       `SELECT c.*, r.nome AS representante_nome
        FROM comissoes_laudo c
        JOIN representantes r ON r.id = c.representante_id
-       WHERE c.id = $1 LIMIT 1`,
-      [comissaoId]
+       WHERE c.id = $1
+         AND ($2::varchar IS NULL OR r.gestor_comercial_cpf = $2)
+       LIMIT 1`,
+      [comissaoId, session.perfil === 'comercial' ? session.cpf : null]
     );
     if (comissaoResult.rows.length === 0) {
       return NextResponse.json(

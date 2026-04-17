@@ -6,6 +6,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/session';
+import { query } from '@/lib/db';
 import { atualizarPercentualComissaoRep } from '@/lib/db/comissionamento';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('comercial', false);
+    const session = await requireRole('comercial', false);
 
     const id = parseInt(params.id, 10);
     if (isNaN(id))
@@ -35,6 +36,18 @@ export async function PATCH(
       return NextResponse.json(
         { error: 'percentual deve estar entre 0 e 100' },
         { status: 400 }
+      );
+    }
+
+    // Ownership check: comercial só pode alterar representantes atribuídos a ele
+    const owned = await query<{ id: number }>(
+      `SELECT 1 AS id FROM representantes WHERE id = $1 AND gestor_comercial_cpf = $2 LIMIT 1`,
+      [id, session.cpf]
+    );
+    if (owned.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Representante não encontrado' },
+        { status: 404 }
       );
     }
 
