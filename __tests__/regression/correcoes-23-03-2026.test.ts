@@ -266,8 +266,9 @@ describe('6. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery'
     expect(src).toContain('c.representante_id = $1');
   });
 
-  it('deve incluir statusValidos com pendente_consolidacao (novo ciclo)', () => {
-    expect(src).toContain('pendente_consolidacao');
+  it('deve incluir statusValidos com retida e paga (pendente_consolidacao removido)', () => {
+    expect(src).toContain("'retida'");
+    expect(src).toContain("'paga'");
     expect(src).not.toContain('pendente_nf');
     expect(src).not.toContain('nf_em_analise');
   });
@@ -578,8 +579,8 @@ describe('13. Comissões Minhas Vendas — reutiliza componentes de comissoes', 
     expect(src).toContain('/api/representante/minhas-vendas/comissoes');
   });
 
-  it('deve ter filtro por pendente_consolidacao (No Ciclo)', () => {
-    expect(src).toContain('pendente_consolidacao');
+  it('deve ter filtro por status retida/paga (pendente_consolidacao removido)', () => {
+    expect(src).toContain("'retida'");
     expect(src).not.toContain('pendente_nf');
   });
 });

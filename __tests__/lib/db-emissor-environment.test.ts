@@ -34,6 +34,7 @@ jest.mock('@/lib/db/environment-guard', () => ({
 
 jest.mock('@/lib/rate-limit', () => ({
   rateLimit: jest.fn().mockReturnValue(() => null),
+  rateLimitAsync: jest.fn().mockResolvedValue(null),
   RATE_LIMIT_CONFIGS: { auth: {} },
 }));
 

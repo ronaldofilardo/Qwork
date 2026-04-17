@@ -4,14 +4,17 @@
  * Cobre:
  * - Correção 06/03/2026: SQL usa `::status_comissao` nas duas ocorrências de $12
  *   para evitar o erro PostgreSQL 42P08 "tipos inconsistentes deduzidos do parâmetro $12"
- * - Lógica de status inicial: 'pendente_consolidacao' para rep.status='apto', 'retida' para demais
+ * - Lógica de status inicial: 'retida' por padrão; 'paga' quando rep apto + parcela_confirmada_em preenchida + forcar_retida=false
  * - Guards de negócio: duplicata, percentual nulo, vínculo inválido, sem entidade/clínica
  * - Adições 15/03/2026 (migration 532):
- *   - forcar_retida=true → status sempre 'retida' mesmo com rep apto
+ *   - forcar_retida=true → status sempre 'retida' mesmo com rep apto + parcela paga
  *   - parcela_confirmada_em=$17: NULL para futuras, Date para pagas
  * - Adições 15/04/2026 (migration 1209):
  *   - percentual_comissao_comercial=$10 e valor_comissao_comercial=$11 no INSERT
  *   - status_comissao moveu de $10 para $12
+ * - Adições 2026 (Plano v2):
+ *   - base de cálculo sempre BRUTA (valor_laudo/totalParc), não netValue do Asaas
+ *   - status 'paga' direto quando rep apto + parcela confirmada + !forcar_retida
  */
 
 jest.mock('@/lib/db/query', () => ({
@@ -49,7 +52,13 @@ function mockFluxoCompleto({
     } as any)
     // 4. Busca percentual/valor_negociado/perc_comercial do vínculo
     .mockResolvedValueOnce({
-      rows: [{ percentual_comissao_representante: percentual, valor_negociado: null, percentual_comissao_comercial: 0 }],
+      rows: [
+        {
+          percentual_comissao_representante: percentual,
+          valor_negociado: null,
+          percentual_comissao_comercial: 0,
+        },
+      ],
       rowCount: 1,
     } as any)
     // 5. INSERT comissão
@@ -57,7 +66,7 @@ function mockFluxoCompleto({
       rows: [
         {
           id: 99,
-          status: repStatus === 'apto' ? 'pendente_consolidacao' : 'retida',
+          status: 'retida',
           valor_comissao: '3.30',
           percentual_comissao: percentual,
         },
@@ -87,7 +96,7 @@ describe('criarComissaoAdmin', () => {
 
   // ── Bug fix 06/03/2026: cast explícito ::status_comissao ─────────────────
   describe('correção 42P08 — cast ::status_comissao no INSERT', () => {
-    it('deve usar ::status_comissao nas duas ocorrências de $10 no SQL do INSERT', async () => {
+    it('deve usar ::status_comissao no parâmetro $12 no SQL do INSERT', async () => {
       mockFluxoCompleto();
 
       await criarComissaoAdmin(BASE_PARAMS);
@@ -96,34 +105,47 @@ describe('criarComissaoAdmin', () => {
       const insertCallArgs = mockQuery.mock.calls[4];
       const sql: string = insertCallArgs[0];
 
-      // Verifica que $12 é castado para o enum em ambos os usos
+      // Verifica que $12 é castado para o enum
       expect(sql).toMatch(/\$12::status_comissao/);
-      // Garante que o CASE WHEN também usa o cast (e não texto puro)
-      expect(sql).not.toMatch(/CASE WHEN \$12 = /);
-      expect(sql).toMatch(/CASE WHEN \$12::status_comissao = /);
     });
 
-    it('o valor passado para $10 deve ser string do enum, não objeto', async () => {
+    it('o valor passado para $12 deve ser string do enum (retida por default sem parcela_confirmada_em)', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
       await criarComissaoAdmin(BASE_PARAMS);
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      // $12 é o 12º parâmetro (índice 11), valor 'pendente_consolidacao'
-      expect(insertCallValues[11]).toBe('pendente_consolidacao');
+      // Sem parcela_confirmada_em → parcelaEfetivamentePaga=false → status='retida'
+      expect(insertCallValues[11]).toBe('retida');
       expect(typeof insertCallValues[11]).toBe('string');
     });
   });
 
   // ── Status inicial ────────────────────────────────────────────────────────
   describe('status inicial', () => {
-    it('deve usar status "pendente_consolidacao" quando representante.status = "apto"', async () => {
+    it('deve usar status "retida" quando rep apto mas sem parcela_confirmada_em (provisionamento futuro)', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
       await criarComissaoAdmin(BASE_PARAMS);
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      expect(insertCallValues[11]).toBe('pendente_consolidacao');
+      // parcela_confirmada_em não fornecido → parcelaEfetivamentePaga=false → 'retida'
+      expect(insertCallValues[11]).toBe('retida');
+    });
+
+    it('deve usar status "paga" quando rep apto + parcela_confirmada_em preenchida + forcar_retida=false', async () => {
+      mockFluxoCompleto({ repStatus: 'apto' });
+
+      const agora = new Date('2026-03-15T10:00:00.000Z');
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_confirmada_em: agora,
+        forcar_retida: false,
+      });
+
+      const insertCallValues = mockQuery.mock.calls[4][1];
+      // rep apto + parcela confirmada + não forçado → 'paga'
+      expect(insertCallValues[11]).toBe('paga');
     });
 
     it('deve usar status "retida" quando representante.status = "suspenso"', async () => {
@@ -145,22 +167,28 @@ describe('criarComissaoAdmin', () => {
     });
 
     // ── forcar_retida (migration 532) ──────────────────────────────────────
-    it('deve usar status "retida" quando forcar_retida=true mesmo com rep apto', async () => {
+    it('deve usar status "retida" quando forcar_retida=true mesmo com rep apto + parcela confirmada', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
-      await criarComissaoAdmin({ ...BASE_PARAMS, forcar_retida: true });
+      const agora = new Date('2026-03-15T10:00:00.000Z');
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        forcar_retida: true,
+        parcela_confirmada_em: agora,
+      });
 
       const insertCallValues = mockQuery.mock.calls[4][1];
       expect(insertCallValues[11]).toBe('retida');
     });
 
-    it('deve usar status "pendente_consolidacao" quando forcar_retida=false e rep apto', async () => {
+    it('deve usar status "retida" quando forcar_retida=false e rep apto mas sem parcela_confirmada_em', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
       await criarComissaoAdmin({ ...BASE_PARAMS, forcar_retida: false });
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      expect(insertCallValues[11]).toBe('pendente_consolidacao');
+      // Sem parcela_confirmada_em → parcelaEfetivamentePaga=false → 'retida'
+      expect(insertCallValues[11]).toBe('retida');
     });
   });
 
@@ -273,11 +301,20 @@ describe('criarComissaoAdmin', () => {
           rowCount: 1,
         } as any)
         .mockResolvedValueOnce({
-          rows: [{ id: 6, status: 'apto', percentual_comissao: null, modelo_comissionamento: null }],
+          rows: [
+            {
+              id: 6,
+              status: 'apto',
+              percentual_comissao: null,
+              modelo_comissionamento: null,
+            },
+          ],
           rowCount: 1,
         } as any)
         .mockResolvedValueOnce({
-          rows: [{ percentual_comissao_representante: null, valor_negociado: null }],
+          rows: [
+            { percentual_comissao_representante: null, valor_negociado: null },
+          ],
           rowCount: 1,
         } as any);
 

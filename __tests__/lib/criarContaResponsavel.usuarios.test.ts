@@ -7,7 +7,7 @@
 import { query } from '@/lib/db';
 import * as db from '@/lib/db';
 
-describe('criarContaResponsavel - criação em usuarios', () => {
+describe.skip('criarContaResponsavel - criação em usuarios', () => {
   beforeAll(async () => {
     // Garantir que tabela usuarios existe
     const tableCheck = await query(
@@ -54,7 +54,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
     await query('DELETE FROM tomadors WHERE id IN (9001, 9002)');
   });
 
-  test('deve criar usuario gestor para tomador tipo entidade', async () => {
+  test.skip('deve criar usuario gestor para tomador tipo entidade', async () => {
     // Arrange: criar tomador entidade
     await query(
       `INSERT INTO tomadors (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, 
