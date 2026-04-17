@@ -40,9 +40,10 @@ export interface Resumo {
 
 export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
   retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
+  // pendente_consolidacao: mantido como legado para exibir dados antigos do DB
   pendente_consolidacao: {
-    label: 'No Ciclo',
-    cor: 'bg-blue-100 text-blue-700',
+    label: 'Legado (Ciclo)',
+    cor: 'bg-gray-200 text-gray-500',
   },
   pendente_nf: {
     label: 'Legado (NF)',
@@ -66,7 +67,6 @@ export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
 };
 
 export const ACOES_POR_STATUS: Record<string, string[]> = {
-  pendente_consolidacao: ['congelar', 'cancelar'],
   liberada: ['pagar', 'congelar', 'cancelar'],
   congelada_aguardando_admin: ['descongelar', 'cancelar'],
   congelada_rep_suspenso: ['descongelar', 'cancelar'],

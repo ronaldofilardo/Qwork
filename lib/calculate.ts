@@ -265,3 +265,22 @@ export function getTextoCategoria(
     return 'Precisa Melhorar';
   }
 }
+
+export function detectarAnomalias(
+  score: number,
+  _tipo: 'positiva' | 'negativa'
+): { isAnomalous: boolean; adjustedScore?: number; reason?: string } {
+  if (score < 0) {
+    return { isAnomalous: true, adjustedScore: 0 };
+  }
+  if (score > 100) {
+    return { isAnomalous: true, adjustedScore: 100 };
+  }
+  if (score % 25 === 0) {
+    return {
+      isAnomalous: true,
+      reason: 'Possível padrão de resposta uniforme',
+    };
+  }
+  return { isAnomalous: false };
+}

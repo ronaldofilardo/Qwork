@@ -368,7 +368,7 @@ function gerarCardsEtapa3(etapa3: InterpretacaoRecomendacoes): string {
         <div class="resumo-card resumo-card-verde">
           <div style="display: flex; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 16pt; margin-right: 8px;">🟢</span>
-            <h4 style="color: #15803d;">1. Risco Psicossocial Baixo (menor que 33%)</h4>
+            <h4 style="color: #15803d;">Risco Psicossocial Baixo (menor que 33%)</h4>
           </div>
           <p style="color: #166534; font-weight: 600; margin-bottom: 8px;">Consideração final detalhada:</p>
           <p style="color: #166534; font-size: 9pt; line-height: 1.4; margin-bottom: 8px;">
@@ -408,7 +408,7 @@ function gerarCardsEtapa3(etapa3: InterpretacaoRecomendacoes): string {
         <div class="resumo-card resumo-card-amarelo">
           <div style="display: flex; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 16pt; margin-right: 8px;">🟡</span>
-            <h4 style="color: #a16207;">2. Risco Psicossocial Moderado (entre 33% e 66%)</h4>
+            <h4 style="color: #a16207;">Risco Psicossocial Moderado (entre 33% e 66%)</h4>
           </div>
           <p style="color: #a16207; font-weight: 600; margin-bottom: 8px;">Consideração final detalhada:</p>
           <p style="color: #a16207; font-size: 9pt; line-height: 1.4; margin-bottom: 8px;">
@@ -448,7 +448,7 @@ function gerarCardsEtapa3(etapa3: InterpretacaoRecomendacoes): string {
         <div class="resumo-card resumo-card-vermelho">
           <div style="display: flex; align-items: center; margin-bottom: 8px;">
             <span style="font-size: 16pt; margin-right: 8px;">🔴</span>
-            <h4 style="color: #b91c1c;">3. Risco Psicossocial Elevado (maior que 66%)</h4>
+            <h4 style="color: #b91c1c;">Risco Psicossocial Elevado (maior que 66%)</h4>
           </div>
           <p style="color: #b91c1c; font-weight: 600; margin-bottom: 8px;">Consideração final detalhada:</p>
           <p style="color: #b91c1c; font-size: 9pt; line-height: 1.4; margin-bottom: 8px;">

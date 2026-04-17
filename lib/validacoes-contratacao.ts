@@ -91,6 +91,11 @@ export function validarMetodoPagamento(metodo: string | null): boolean {
   return metodo !== null && ['pix', 'boleto', 'cartao'].includes(metodo);
 }
 
+// Validação de plano selecionado
+export function validarPlano(plano: number | null | undefined): boolean {
+  return plano != null && typeof plano === 'number' && plano > 0;
+}
+
 // Formatação de CNPJ
 export function formatarCNPJ(cnpj: string): string {
   const cnpjLimpo = cnpj.replace(/\D/g, '');
@@ -186,6 +191,7 @@ export const MENSAGENS_ERRO = {
   ARQUIVO_TIPO: 'Tipo de arquivo não permitido',
   METODO_PAGAMENTO_OBRIGATORIO: 'Selecione um método de pagamento',
   VALOR_INVALIDO: 'Valor inválido',
+  PLANO_OBRIGATORIO: 'Selecione um plano',
 };
 
 // Validação completa de formulário de tomador

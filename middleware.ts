@@ -144,6 +144,7 @@ const PUBLIC_API_ROUTES = [
   '/api/public',
   '/api/contrato/', // Rotas de visualização de contrato
   '/api/pagamento/iniciar', // Rota de iniciar pagamento (após aceite de contrato)
+  '/api/pagamento/asaas/criar', // Checkout Asaas — acessado de páginas públicas de pagamento via token
   '/api/tomador/verificar-pagamento', // Verificar status de pagamento
   '/api/cadastro',
   '/api/auth/login',
