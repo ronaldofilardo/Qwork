@@ -5,8 +5,7 @@ import { NextRequest } from 'next/server';
 import type { AsaasWebhookPayload, AsaasWebhookEvent } from './types';
 import { mapAsaasStatusToLocal } from './mappers';
 import { transaction, query as dbQuery } from '@/lib/db';
-// TODO: refatorar modelo de comissões — import congelado até nova implementação
-// import { criarComissaoAutomatica } from '@/lib/db/comissionamento';
+import { criarComissaoAutomatica } from '@/lib/db/comissionamento';
 
 /**
  * Validar se o webhook veio realmente do Asaas
@@ -193,12 +192,12 @@ export async function activateSubscription(
   });
 
   // Variáveis capturadas para geração de comissões após commit da transação
-  let _lotesAtualizados: number[] = [];
-  let _entidadeId: number | null = null;
-  let _clinicaId: number | null = null;
-  let _valorLote: number = 0;
-  let _numeroParcela: number = 1;
-  let _totalParcelas: number = 1;
+  let lotesAtualizados: number[] = [];
+  let comissaoEntidadeId: number | null = null;
+  let comissaoClinicaId: number | null = null;
+  let valorLote: number = 0;
+  let comissaoNumeroParcela: number = 1;
+  let comissaoTotalParcelas: number = 1;
 
   try {
     await transaction(async (client) => {
@@ -338,11 +337,11 @@ export async function activateSubscription(
         }
 
         // Capturar dados mínimos para o log (sem lotes)
-        _entidadeId = entidade_id ?? null;
-        _clinicaId = clinica_id ?? null;
-        _valorLote = valor;
-        _numeroParcela = numeroParcela;
-        _totalParcelas = parcelasReais;
+        comissaoEntidadeId = entidade_id ?? null;
+        comissaoClinicaId = clinica_id ?? null;
+        valorLote = valor;
+        comissaoNumeroParcela = numeroParcela;
+        comissaoTotalParcelas = parcelasReais;
         return; // Encerra a transação sem processar lotes
       }
 
@@ -472,12 +471,12 @@ export async function activateSubscription(
       }
 
       // Capturar dados para geração de comissões após commit
-      _lotesAtualizados = lotesResult.rows.map((r: any) => r.id);
-      _entidadeId = entidade_id ?? null;
-      _clinicaId = clinica_id ?? null;
-      _valorLote = valor;
-      _numeroParcela = numeroParcela;
-      _totalParcelas = parcelasReais;
+      lotesAtualizados = lotesResult.rows.map((r: any) => r.id);
+      comissaoEntidadeId = entidade_id ?? null;
+      comissaoClinicaId = clinica_id ?? null;
+      valorLote = valor;
+      comissaoNumeroParcela = numeroParcela;
+      comissaoTotalParcelas = parcelasReais;
 
       // 4. transaction() fará COMMIT automaticamente ao final do callback.
       // O logWebhookProcessed é feito DEPOIS pelo chamador (handlePaymentWebhook).
@@ -496,25 +495,24 @@ export async function activateSubscription(
     throw error;
   }
 
-  // TODO: refatorar modelo de comissões — geração automática congelada até nova implementação
-  // for (const loteId of _lotesAtualizados) {
-  //   try {
-  //     await criarComissaoAutomatica({
-  //       lote_id: loteId,
-  //       entidade_id: _entidadeId,
-  //       clinica_id: _clinicaId,
-  //       valor_total_lote: _valorLote,
-  //       valor_parcela_liquida: paymentData.netValue ?? paymentData.value,
-  //       parcela_numero: _numeroParcela,
-  //       total_parcelas: _totalParcelas,
-  //     });
-  //   } catch (errComissao) {
-  //     console.error(
-  //       `[Asaas Webhook] Erro ao gerar comissão automática para lote ${loteId}:`,
-  //       errComissao
-  //     );
-  //   }
-  // }
+  for (const loteId of lotesAtualizados) {
+    try {
+      await criarComissaoAutomatica({
+        lote_id: loteId,
+        entidade_id: comissaoEntidadeId,
+        clinica_id: comissaoClinicaId,
+        valor_total_lote: valorLote,
+        valor_parcela_liquida: paymentData.netValue ?? paymentData.value,
+        parcela_numero: comissaoNumeroParcela,
+        total_parcelas: comissaoTotalParcelas,
+      });
+    } catch (errComissao) {
+      console.error(
+        `[Asaas Webhook] Erro ao gerar comissão automática para lote ${loteId}:`,
+        errComissao
+      );
+    }
+  }
 }
 
 /**
@@ -593,22 +591,6 @@ export async function handlePaymentWebhook(
         console.log('[Asaas Webhook] 🔄 Executando: activateSubscription...');
 
         await activateSubscription(payment.id, payment, event);
-
-        // Confirmar repasse_split pendente para este payment
-        try {
-          await dbQuery(
-            `UPDATE repasses_split
-             SET status = 'confirmado',
-                 data_confirmacao = NOW()
-             WHERE asaas_payment_id = $1 AND status = 'pendente'`,
-            [payment.id]
-          );
-        } catch (splitErr) {
-          console.error(
-            '[Asaas Webhook] Erro ao confirmar repasse_split:',
-            splitErr
-          );
-        }
 
         console.log(
           '[Asaas Webhook] ✅ PAYMENT_CONFIRMED processado com sucesso'

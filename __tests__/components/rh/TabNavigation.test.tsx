@@ -19,7 +19,6 @@ describe('TabNavigation', () => {
       <TabNavigation
         activeTab="lotes"
         onTabChange={mockOnTabChange}
-        anomaliasCount={0}
       />
     );
 
@@ -36,7 +35,6 @@ describe('TabNavigation', () => {
       <TabNavigation
         activeTab="lotes"
         onTabChange={mockOnTabChange}
-        anomaliasCount={0}
       />
     );
 
@@ -51,7 +49,6 @@ describe('TabNavigation', () => {
       <TabNavigation
         activeTab="lotes"
         onTabChange={mockOnTabChange}
-        anomaliasCount={0}
       />
     );
 
@@ -61,26 +58,11 @@ describe('TabNavigation', () => {
     expect(mockOnTabChange).toHaveBeenCalledWith('funcionarios');
   });
 
-  it('deve exibir badge de anomalias quando houver pendências', () => {
+  it('não deve exibir badge na aba de pendências', () => {
     render(
       <TabNavigation
         activeTab="lotes"
         onTabChange={mockOnTabChange}
-        anomaliasCount={5}
-      />
-    );
-
-    const badge = screen.getByText('5');
-    expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-red-500', 'text-white');
-  });
-
-  it('não deve exibir badge quando não houver anomalias', () => {
-    render(
-      <TabNavigation
-        activeTab="lotes"
-        onTabChange={mockOnTabChange}
-        anomaliasCount={0}
       />
     );
 
@@ -93,7 +75,6 @@ describe('TabNavigation', () => {
       <TabNavigation
         activeTab="lotes"
         onTabChange={mockOnTabChange}
-        anomaliasCount={0}
       />
     );
 
@@ -106,12 +87,10 @@ describe('TabNavigation', () => {
       fireEvent.click(screen.getByText(texto));
       expect(mockOnTabChange).toHaveBeenCalledWith(id);
 
-      // Simular mudança de aba
       rerender(
         <TabNavigation
           activeTab={id as any}
           onTabChange={mockOnTabChange}
-          anomaliasCount={0}
         />
       );
     });

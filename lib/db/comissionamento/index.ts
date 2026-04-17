@@ -9,6 +9,5 @@ export * from './representantes';
 export * from './leads';
 export * from './vinculos';
 export * from './comissoes';
-export * from './ciclos';
 export * from './auditoria';
 export * from './utils';

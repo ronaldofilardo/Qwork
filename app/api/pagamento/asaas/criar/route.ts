@@ -303,54 +303,8 @@ export async function POST(request: NextRequest) {
             if (splits) {
               await asaasClient.adicionarSplitAoPayment(payment.id, splits);
             }
-
-            // Registrar repasse_split
-            const mesAnoAtual = new Date().toISOString().slice(0, 7); // YYYY-MM
-
-            // Garantir ciclo mensal existe
-            await query(
-              `INSERT INTO ciclos_comissao_mensal (representante_id, mes_ano, valor_total_recebido, status)
-               VALUES ($1, $2, 0, 'aberto')
-               ON CONFLICT (representante_id, mes_ano) DO NOTHING`,
-              [v.representante_id, mesAnoAtual]
-            );
-
-            const cicloRes = await query(
-              `SELECT id FROM ciclos_comissao_mensal
-               WHERE representante_id = $1 AND mes_ano = $2 LIMIT 1`,
-              [v.representante_id, mesAnoAtual]
-            );
-            const cicloId = cicloRes.rows[0]?.id as number | undefined;
-
-            if (cicloId) {
-              await query(
-                `INSERT INTO repasses_split
-                   (representante_id, ciclo_id, vinculo_id, asaas_payment_id,
-                    valor_total_laudo, valor_qwork, valor_representante,
-                    modelo_utilizado, percentual_aplicado, status)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pendente')`,
-                [
-                  v.representante_id,
-                  cicloId,
-                  v.vinculo_id,
-                  payment.id,
-                  Number(valor_total),
-                  splitResult.valorQWork,
-                  splitResult.valorRepresentante,
-                  v.modelo_comissionamento,
-                  splitResult.percentualAplicado ?? null,
-                ]
-              );
-
-              // Acumular no ciclo
-              await query(
-                `UPDATE ciclos_comissao_mensal
-                 SET valor_total_recebido = valor_total_recebido + $1,
-                     atualizado_em = NOW()
-                 WHERE id = $2`,
-                [splitResult.valorRepresentante, cicloId]
-              );
-            }
+            // Comissão será criada automaticamente pelo webhook (criarComissaoAutomatica)
+            // quando o pagamento for confirmado no Asaas
           }
         }
       } catch (splitErr) {

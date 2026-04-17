@@ -47,7 +47,6 @@ const STATUS_BADGE: Record<string, string> = {
   ativo: 'bg-blue-100 text-blue-700',
   apto: 'bg-green-100 text-green-700',
   apto_pendente: 'bg-yellow-100 text-yellow-700',
-  apto_bloqueado: 'bg-orange-100 text-orange-700',
   suspenso: 'bg-red-100 text-red-700',
   desativado: 'bg-gray-100 text-gray-600',
 };

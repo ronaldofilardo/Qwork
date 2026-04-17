@@ -10,7 +10,6 @@ type TabType =
 interface TabNavigationProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
-  anomaliasCount?: number;
 }
 
 /**
@@ -19,7 +18,6 @@ interface TabNavigationProps {
 export function TabNavigation({
   activeTab,
   onTabChange,
-  anomaliasCount = 0,
 }: TabNavigationProps) {
   const tabs = [
     {
@@ -36,7 +34,7 @@ export function TabNavigation({
     {
       id: 'pendencias' as TabType,
       label: '⚠️ Pendências',
-      badge: anomaliasCount > 0 ? anomaliasCount : null,
+      badge: null,
     },
   ];
 

@@ -77,8 +77,7 @@ export function calcularComissao(
       ? Math.round(((baseCalculo * percComercial) / 100) * 100) / 100
       : 0;
 
-  const statusInicial: StatusComissao =
-    params.forcar_retida || repStatus !== 'apto' ? 'retida' : 'pendente_consolidacao';
+  const statusInicial: StatusComissao = 'retida';
 
   const agora = new Date();
   const mesEmissao = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`;

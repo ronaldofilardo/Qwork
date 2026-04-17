@@ -286,7 +286,8 @@ describe('5. POST /api/suporte/representantes/[id]/ativar', () => {
 // 6. GET /api/suporte/comissionamento/ciclos — Fase 5
 // ---------------------------------------------------------------------------
 
-describe('6. GET /api/suporte/comissionamento/ciclos', () => {
+// SKIP: endpoint removido na consolidação (migration 1212)
+describe.skip('6. GET /api/suporte/comissionamento/ciclos [REMOVIDO]', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -331,7 +332,8 @@ describe('6. GET /api/suporte/comissionamento/ciclos', () => {
 // 7. POST /api/suporte/comissionamento/ciclos/[id]/validar — Fase 5
 // ---------------------------------------------------------------------------
 
-describe('7. POST /api/suporte/comissionamento/ciclos/[id]/validar', () => {
+// SKIP: endpoint removido na consolidação (migration 1212)
+describe.skip('7. POST /api/suporte/comissionamento/ciclos/[id]/validar [REMOVIDO]', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -423,7 +425,8 @@ describe('8. POST /api/suporte/comissionamento/representantes/[id]/desbloquear',
 // 9. GET /api/representante/financeiro/ciclos — Fase 6
 // ---------------------------------------------------------------------------
 
-describe('9. GET /api/representante/financeiro/ciclos', () => {
+// SKIP: endpoint substituído por /api/representante/ciclos (migration 1212)
+describe.skip('9. GET /api/representante/financeiro/ciclos [REMOVIDO]', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -465,7 +468,8 @@ describe('9. GET /api/representante/financeiro/ciclos', () => {
 // 10. POST /api/representante/financeiro/nf-rpa — Fase 6
 // ---------------------------------------------------------------------------
 
-describe('10. POST /api/representante/financeiro/nf-rpa', () => {
+// SKIP: endpoint substituído por /api/representante/ciclos/[id]/nf (migration 1212)
+describe.skip('10. POST /api/representante/financeiro/nf-rpa [REMOVIDO]', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -527,7 +531,8 @@ describe('10. POST /api/representante/financeiro/nf-rpa', () => {
 // 11. POST /api/suporte/jobs/fechar-ciclo — Fase 8
 // ---------------------------------------------------------------------------
 
-describe('11. POST /api/suporte/jobs/fechar-ciclo', () => {
+// SKIP: endpoint substituído por /api/suporte/jobs/fechar-ciclos-mensais (migration 1212)
+describe.skip('11. POST /api/suporte/jobs/fechar-ciclo [REMOVIDO]', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -570,7 +575,8 @@ describe('11. POST /api/suporte/jobs/fechar-ciclo', () => {
 // 12. POST /api/suporte/jobs/verificar-vencimento-nf-rpa — Fase 8
 // ---------------------------------------------------------------------------
 
-describe('12. POST /api/suporte/jobs/verificar-vencimento-nf-rpa', () => {
+// SKIP: endpoint removido na consolidação (migration 1212)
+describe.skip('12. POST /api/suporte/jobs/verificar-vencimento-nf-rpa [REMOVIDO]', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -645,16 +651,16 @@ describe('13. page.tsx /representante/(portal)/financeiro', () => {
     expect(fs.existsSync(pagePath)).toBe(true);
   });
 
-  it('deve buscar ciclos da API', () => {
-    expect(src).toContain('/api/representante/financeiro/ciclos');
+  it('deve buscar ciclos da nova API', () => {
+    expect(src).toContain('/api/representante/ciclos');
   });
 
-  it('deve exibir status dos ciclos', () => {
-    expect(src).toMatch(/aguardando_nf_rpa|nf_rpa_enviada|validado/);
+  it('deve exibir status dos ciclos do novo sistema', () => {
+    expect(src).toMatch(/fechado|nf_enviada|nf_aprovada|pago/);
   });
 
   it('deve ter opção de upload de NF/RPA', () => {
-    expect(src).toMatch(/upload|NF|RPA|nf-rpa/i);
+    expect(src).toMatch(/upload|NF|RPA|nf/i);
   });
 });
 
@@ -662,12 +668,13 @@ describe('13. page.tsx /representante/(portal)/financeiro', () => {
 // 14. CiclosComissaoContent — Fase 5 UI (Suporte)
 // ---------------------------------------------------------------------------
 
-describe('14. components/suporte/CiclosComissaoContent', () => {
+// Atualizado: CiclosComissaoContent substituído por CiclosComissaoNovo (migration 1212)
+describe('14. components/suporte/CiclosComissaoNovo', () => {
   const componentPath = path.join(
     ROOT,
     'components',
     'suporte',
-    'CiclosComissaoContent.tsx'
+    'CiclosComissaoNovo.tsx'
   );
   let src: string;
 
@@ -679,12 +686,13 @@ describe('14. components/suporte/CiclosComissaoContent', () => {
     expect(fs.existsSync(componentPath)).toBe(true);
   });
 
-  it('deve buscar ciclos da API', () => {
-    expect(src).toContain('/api/suporte/comissionamento/ciclos');
+  it('deve usar hook useCiclosComissoes', () => {
+    expect(src).toContain('useCiclosComissoes');
   });
 
-  it('deve ter ação de validar e rejeitar', () => {
-    expect(src).toMatch(/validar|rejeitar/i);
+  it('deve renderizar CiclosTabela e CiclosHeader', () => {
+    expect(src).toContain('CiclosTabela');
+    expect(src).toContain('CiclosHeader');
   });
 
   it('deve estar no sidebar do suporte', () => {

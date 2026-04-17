@@ -9,9 +9,6 @@ import {
   TabelaLaudos,
   TabelaOperacionais,
   TabelaAceites,
-  TabelaAcessosComercial,
-  TabelaAcessosRepresentante,
-  TabelaAcessosVendedor,
 } from './auditorias/AuditoriaTables';
 import { LaudoDetalheDrawer } from './auditorias/LaudoDetalheDrawer';
 import { DelecaoTomadorContent } from './auditorias/DelecaoTomadorContent';
@@ -23,9 +20,6 @@ import type {
   AuditoriaLote,
   AuditoriaLaudo,
   AceiteUsuario,
-  AcessoComercial,
-  AcessoRepresentante,
-  AcessoVendedor,
 } from './auditorias/types';
 
 const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
@@ -35,9 +29,6 @@ const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
   laudos: '/api/admin/auditorias/laudos',
   operacionais: '/api/admin/auditorias/operacionais',
   aceites: '/api/admin/auditorias/aceites',
-  'acesso-comercial': '/api/admin/auditorias/acesso-comercial',
-  'acesso-representante': '/api/admin/auditorias/acesso-representante',
-  'acesso-vendedor': '/api/admin/auditorias/acesso-vendedor',
 };
 
 export function AuditoriasContent() {
@@ -53,9 +44,6 @@ export function AuditoriasContent() {
   const [laudos, setLaudos] = useState<AuditoriaLaudo[]>([]);
   const [operacionais, setOperacionais] = useState<AcessoOperacional[]>([]);
   const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
-  const [acessosComercial, setAcessosComercial] = useState<AcessoComercial[]>([]);
-  const [acessosRepresentante, setAcessosRepresentante] = useState<AcessoRepresentante[]>([]);
-  const [acessosVendedor, setAcessosVendedor] = useState<AcessoVendedor[]>([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
     if (tab === 'delecao') return;
@@ -89,15 +77,6 @@ export function AuditoriasContent() {
           break;
         case 'aceites':
           setAceites(json.aceites ?? []);
-          break;
-        case 'acesso-comercial':
-          setAcessosComercial(json.acessos ?? []);
-          break;
-        case 'acesso-representante':
-          setAcessosRepresentante(json.acessos ?? []);
-          break;
-        case 'acesso-vendedor':
-          setAcessosVendedor(json.acessos ?? []);
           break;
       }
       setLastUpdated(new Date());
@@ -174,27 +153,6 @@ export function AuditoriasContent() {
           data={aceites}
           onAtualizar={() => fetchTab('aceites')}
           loading={loading && activeTab === 'aceites'}
-        />
-      )}
-      {activeTab === 'acesso-comercial' && (
-        <TabelaAcessosComercial
-          data={acessosComercial}
-          onAtualizar={() => fetchTab('acesso-comercial')}
-          loading={loading && activeTab === 'acesso-comercial'}
-        />
-      )}
-      {activeTab === 'acesso-representante' && (
-        <TabelaAcessosRepresentante
-          data={acessosRepresentante}
-          onAtualizar={() => fetchTab('acesso-representante')}
-          loading={loading && activeTab === 'acesso-representante'}
-        />
-      )}
-      {activeTab === 'acesso-vendedor' && (
-        <TabelaAcessosVendedor
-          data={acessosVendedor}
-          onAtualizar={() => fetchTab('acesso-vendedor')}
-          loading={loading && activeTab === 'acesso-vendedor'}
         />
       )}
       {activeTab === 'delecao' && <DelecaoTomadorContent />}

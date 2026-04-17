@@ -132,7 +132,7 @@ export default function MinhasVendasComissoesPage() {
           Pipeline de Pagamento
         </h2>
         <div className="flex items-center gap-1 flex-wrap">
-          {['retida', 'pendente_consolidacao', 'liberada', 'paga'].map(
+          {['retida', 'liberada', 'paga'].map(
             (s, i, arr) => (
               <div key={s} className="flex items-center gap-1">
                 <button
@@ -152,7 +152,6 @@ export default function MinhasVendasComissoesPage() {
           )}
           <span className="text-gray-200 mx-2">|</span>
           {[
-            'congelada_rep_suspenso',
             'congelada_aguardando_admin',
             'cancelada',
           ].map((s) => (

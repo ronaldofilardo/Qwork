@@ -44,6 +44,14 @@ export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
     label: 'No Ciclo',
     cor: 'bg-blue-100 text-blue-700',
   },
+  pendente_nf: {
+    label: 'Legado (NF)',
+    cor: 'bg-gray-200 text-gray-500',
+  },
+  nf_em_analise: {
+    label: 'Legado (Análise)',
+    cor: 'bg-gray-200 text-gray-500',
+  },
   congelada_rep_suspenso: {
     label: 'Congelada (Suspensão)',
     cor: 'bg-orange-100 text-orange-700',

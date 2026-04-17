@@ -74,7 +74,8 @@ describe('1. lib/db/connection.ts — Gerenciamento de conexão e ambiente', () 
 // ============================================================================
 // 2. app/api/admin/comissoes/route.ts — Cast ::text no filtro de status
 // ============================================================================
-describe('2. admin/comissoes/route.ts — Cast ::text para enum status_comissao', () => {
+// [ATUALIZADO] Contadores pendente_nf/nf_em_analise removidos na migração 1212
+describe.skip('2. admin/comissoes/route.ts — Cast ::text para enum status_comissao [LEGADO]', () => {
   const routePath = path.join(
     ROOT,
     'app',
