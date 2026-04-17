@@ -17,7 +17,6 @@ const TRANSICOES_VALIDAS: Record<string, string[]> = {
   ativo: ['apto', 'apto_pendente', 'suspenso', 'desativado', 'rejeitado'],
   apto_pendente: ['apto', 'ativo', 'suspenso', 'desativado', 'rejeitado'],
   apto: ['suspenso', 'desativado'],
-  apto_bloqueado: ['apto', 'suspenso', 'desativado', 'rejeitado'],
   suspenso: ['apto', 'ativo', 'desativado'],
   desativado: [], // terminal
   rejeitado: [], // terminal
@@ -40,7 +39,6 @@ export async function PATCH(
       'ativo',
       'apto_pendente',
       'apto',
-      'apto_bloqueado',
       'suspenso',
       'desativado',
       'rejeitado',
@@ -98,10 +96,10 @@ export async function PATCH(
 
     // Efeitos colaterais por tipo de transição
     if (novo_status === 'apto') {
-      // Liberar comissões retidas (status retida → pendente_consolidacao)
+      // Liberar comissões retidas (status retida → liberada)
       await query(
         `UPDATE comissoes_laudo
-         SET status = 'pendente_consolidacao', data_aprovacao = NOW()
+         SET status = 'liberada', data_aprovacao = NOW()
          WHERE representante_id = $1 AND status = 'retida'`,
         [repId]
       );
@@ -119,11 +117,11 @@ export async function PATCH(
     }
 
     if (novo_status === 'suspenso') {
-      // Congelar comissões em pendente_consolidacao/liberada → congelada_rep_suspenso
+      // Congelar comissões em retida/liberada → congelada_aguardando_admin
       await query(
         `UPDATE comissoes_laudo
-         SET status = 'congelada_rep_suspenso', motivo_congelamento = 'rep_suspenso'
-         WHERE representante_id = $1 AND status IN ('pendente_consolidacao', 'liberada')`,
+         SET status = 'congelada_aguardando_admin', motivo_congelamento = 'rep_suspenso'
+         WHERE representante_id = $1 AND status IN ('retida', 'liberada')`,
         [repId]
       );
       // Suspender vínculos ativos
@@ -145,7 +143,7 @@ export async function PATCH(
       await query(
         `UPDATE comissoes_laudo
          SET status = 'cancelada'
-         WHERE representante_id = $1 AND status IN ('retida','pendente_consolidacao','congelada_rep_suspenso')`,
+         WHERE representante_id = $1 AND status IN ('retida','congelada_aguardando_admin')`,
         [repId]
       );
     }
@@ -161,10 +159,10 @@ export async function PATCH(
       );
       await query(
         `UPDATE comissoes_laudo
-         SET status = CASE WHEN $2::text = 'apto' THEN 'pendente_consolidacao' ELSE 'retida' END,
+         SET status = 'liberada',
              motivo_congelamento = NULL
-         WHERE representante_id = $1 AND status = 'congelada_rep_suspenso'`,
-        [repId, novo_status]
+         WHERE representante_id = $1 AND status = 'congelada_aguardando_admin'`,
+        [repId]
       );
     }
 

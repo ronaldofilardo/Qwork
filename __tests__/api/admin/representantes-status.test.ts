@@ -129,15 +129,17 @@ describe('PATCH /api/admin/representantes/[id]/status', () => {
     } as any);
     // liberar comissões retidas
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 3 } as any);
+    // atualizar dados_bancarios_status
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
     const res = await PATCH(makeReq({ novo_status: 'apto' }), {
       params: { id: '1' },
     } as any);
     expect(res.status).toBe(200);
     // Verifica que comissões retidas foram liberadas
-    expect(mockQuery).toHaveBeenCalledTimes(3);
+    expect(mockQuery).toHaveBeenCalledTimes(4);
     const liberarCall = mockQuery.mock.calls[2][0];
-    expect(liberarCall).toContain("status = 'aprovada'");
+    expect(liberarCall).toContain("status = 'liberada'");
     expect(liberarCall).toContain("status = 'retida'");
   });
 
@@ -205,6 +207,8 @@ describe('PATCH /api/admin/representantes/[id]/status', () => {
     } as any);
     // liberar comissões retidas (novo_status === 'apto' branch)
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // atualizar dados_bancarios_status (novo_status === 'apto' branch)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // reativar vínculos (statusAtual === 'suspenso' branch)
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
     // restaurar comissões congeladas
@@ -215,7 +219,7 @@ describe('PATCH /api/admin/representantes/[id]/status', () => {
       { params: { id: '1' } } as any
     );
     expect(res.status).toBe(200);
-    // 5 queries: select, update rep, liberar retidas, reativar vínculos, restaurar congeladas
-    expect(mockQuery).toHaveBeenCalledTimes(5);
+    // 6 queries: select, update rep, liberar retidas, dados_bancarios, reativar vínculos, restaurar congeladas
+    expect(mockQuery).toHaveBeenCalledTimes(6);
   });
 });

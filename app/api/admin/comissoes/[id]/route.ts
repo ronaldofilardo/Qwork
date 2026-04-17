@@ -85,25 +85,22 @@ export async function PATCH(
       },
       congelar: {
         novoStatus: 'congelada_aguardando_admin',
-        statusPermitidos: ['pendente_consolidacao', 'liberada'],
+        statusPermitidos: ['retida', 'liberada'],
         exigirMotivo: true,
         extraSet: ', motivo_congelamento = $3',
       },
       cancelar: {
         novoStatus: 'cancelada',
         statusPermitidos: [
-          'pendente_consolidacao',
+          'retida',
           'liberada',
           'congelada_aguardando_admin',
-          'congelada_rep_suspenso',
-          'retida',
         ],
       },
       descongelar: {
-        novoStatus: 'pendente_consolidacao',
+        novoStatus: 'retida',
         statusPermitidos: [
           'congelada_aguardando_admin',
-          'congelada_rep_suspenso',
         ],
         extraSet: ', motivo_congelamento = NULL',
       },
