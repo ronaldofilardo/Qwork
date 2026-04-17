@@ -93,6 +93,7 @@ export async function converterLeadEmRepresentante(
 
     // 3. Inserir representante (trigger gera código automaticamente)
     // Status 'aguardando_senha': representante deve criar sua senha via link de convite
+    // gestor_comercial_cpf = NULL por padrão; comercial atribui manualmente via dashboard
     const insertResult = await client.query<{
       id: number;
       codigo: string;
