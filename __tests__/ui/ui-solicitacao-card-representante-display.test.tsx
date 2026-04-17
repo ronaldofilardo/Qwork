@@ -71,7 +71,6 @@ const createMockProps = (solicitacao: Solicitacao) => ({
   onVerLink: () => {},
   onVerificarPagamento: () => {},
   onVincularRepresentante: () => {},
-  onGerarComissao: () => {},
   formatCurrency: (val: number | null) =>
     val != null ? `R$ ${val.toLocaleString('pt-BR')}` : 'R$ 0,00',
   formatDate: (str: string | null) => str?.split('T')[0] || '',

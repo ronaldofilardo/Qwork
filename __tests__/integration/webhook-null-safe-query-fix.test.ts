@@ -19,8 +19,8 @@ describe('Webhook NULL-safe Query Fix', () => {
 
     // Setup: Criar uma clínica primeiro
     const clinicaRes = await query(
-      `INSERT INTO clinicas (nome, ativa) 
-       VALUES ('Clínica Test Base', true)
+      `INSERT INTO clinicas (nome, cnpj, ativa) 
+       VALUES ('Clínica Test Base', '11222333000100', true)
        RETURNING id`
     );
     const clinicaBaseId = clinicaRes.rows[0].id;
@@ -35,8 +35,8 @@ describe('Webhook NULL-safe Query Fix', () => {
     empresaId = empresaRes.rows[0].id;
 
     const clinicaRes2 = await query(
-      `INSERT INTO clinicas (nome, ativa) 
-       VALUES ('Clínica Teste NULL Fix', true)
+      `INSERT INTO clinicas (nome, cnpj, ativa) 
+       VALUES ('Clínica Teste NULL Fix', '44555666000100', true)
        RETURNING id`
     );
     clinicaId = clinicaRes2.rows[0].id;

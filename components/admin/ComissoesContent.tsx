@@ -44,6 +44,7 @@ interface Resumo {
   congeladas: string;
   valor_a_pagar: string;
   valor_pago_total: string;
+  valor_liberado: string;
 }
 
 const STATUS_BADGE: Record<string, { label: string; cor: string }> = {

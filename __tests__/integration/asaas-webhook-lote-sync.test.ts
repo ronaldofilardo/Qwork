@@ -20,8 +20,8 @@ describe('Asaas Webhook - Sincronização de Lote', () => {
   beforeAll(async () => {
     // Criar uma entidade de teste
     const entidadeResult = await query(
-      `INSERT INTO entidades (nome, cnpj, email)
-       VALUES ('Test Company', '12345678000199', 'test@company.com')
+      `INSERT INTO entidades (nome, cnpj, email, telefone)
+       VALUES ('Test Company', '12345678000199', 'test@company.com', '11999990000')
        RETURNING id`
     );
     const entidadeId = entidadeResult.rows[0].id;

@@ -99,27 +99,44 @@ export function calcularValoresComissao(
 
 /** Resultado do cálculo de comissão no modelo custo_fixo */
 export interface ValoresComissaoCustoFixo {
-  /** Valor que fica para o representante (R$): valorNegociado − valorCustoFixo */
+  /** Margem do representante (R$): valorNegociado − valorCustoFixo. Usado para cálculo proporcional nas parcelas. */
   valorRep: number;
-  /** Valor da comissão do comercial (R$): percComercial% do custo fixo bruto */
+  /** Valor da comissão do comercial (R$): percComercial% da margem (valorNeg − custoFixo) */
   valorComercial: number;
-  /** Valor líquido que fica para o QWork (R$): valorCustoFixo − valorComercial */
+  /** Valor líquido que fica para o QWork (R$): margem − valorComercial */
   valorQWork: number;
-  /** true quando valorNegociado < valorCustoFixo (rep ficaria com valor negativo) */
+  /** true quando valorNegociado ≤ valorCustoFixo (margem ≤ 0) */
   abaixoMinimo: boolean;
+}
+
+/**
+ * Retorna a margem mínima por avaliação necessária para que o QWork receba
+ * ao menos CUSTO_POR_AVALIACAO[tipo] após pagar a comissão do comercial.
+ *
+ * Fórmula usada: margem_mín = custo_mín × (1 + percComercial/100)
+ * Exemplo: R$12 × 1,20 = R$14,40 (entidade, 20% comercial)
+ */
+export function minimoCustoFixoPorEval(
+  tipoCliente: TipoCliente,
+  percComercial: number
+): number {
+  const min = CUSTO_POR_AVALIACAO[tipoCliente];
+  const perc = Math.max(0, Math.min(40, percComercial));
+  return Math.round(min * (1 + perc / 100) * 100) / 100;
 }
 
 /**
  * Calcula comissão no modelo custo_fixo.
  *
  * Distribuição:
- * - **Representante** recebe: `valorNegociado − valorCustoFixo` (diferença inteira).
- * - **Comercial** recebe: `percComercial% × valorCustoFixo`.
- * - **QWork** recebe (líquido): `valorCustoFixo − valorComercial`.
+ * - **Representante** recebe via split Asaas: custoFixo × numAvaliacoes (não rastreado aqui).
+ *   `valorRep` retornado = margem (valorNeg − custoFixo), usado para cálculo proporcional de parcelas.
+ * - **Comercial** recebe: `percComercial% × margem` (percComercial% da diferença negociado−custo).
+ * - **QWork** recebe (líquido): `margem − valorComercial`.
  *
- * Se valorNegociado < valorCustoFixo, abaixoMinimo=true e valorRep=0.
+ * Se valorNegociado ≤ valorCustoFixo, abaixoMinimo=true e valorRep=0.
  *
- * @param percComercial Percentual do comercial sobre o custo fixo (0–40). Default = 0.
+ * @param percComercial Percentual do comercial sobre a margem (0–40). Default = 0.
  */
 export function calcularComissaoCustoFixo(
   valorNegociado: number,
@@ -130,17 +147,17 @@ export function calcularComissaoCustoFixo(
     return {
       valorRep: 0,
       valorComercial: 0,
-      valorQWork: valorCustoFixo,
+      valorQWork: 0,
       abaixoMinimo: true,
     };
   }
   const percCom = Math.max(0, Math.min(40, percComercial));
-  const valorComercial =
-    Math.round(((valorCustoFixo * percCom) / 100) * 100) / 100;
-  const valorQWork = Math.round((valorCustoFixo - valorComercial) * 100) / 100;
   const valorRep = Math.round((valorNegociado - valorCustoFixo) * 100) / 100;
+  const margem = Math.max(0, valorRep);
+  const valorComercial = Math.round(((margem * percCom) / 100) * 100) / 100;
+  const valorQWork = Math.round((margem - valorComercial) * 100) / 100;
   return {
-    valorRep: Math.max(0, valorRep),
+    valorRep: margem,
     valorComercial,
     valorQWork,
     abaixoMinimo: valorRep < 0,

@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/session';
 import { criarComissaoAdmin } from '@/lib/db/comissionamento';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'parcela_numero não pode ser maior que total_parcelas' },
         { status: 400 }
+      );
+    }
+
+    // Guard: lote deve estar pago no banco (não confiar apenas na UI)
+    const loteCheck = await query<{ status_pagamento: string }>(
+      `SELECT status_pagamento FROM lotes_avaliacao WHERE id = $1 LIMIT 1`,
+      [lote_pagamento_id]
+    );
+    if (loteCheck.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Lote não encontrado' },
+        { status: 404 }
+      );
+    }
+    if (loteCheck.rows[0].status_pagamento !== 'pago') {
+      return NextResponse.json(
+        { error: 'Lote ainda não está com pagamento confirmado' },
+        { status: 422 }
+      );
+    }
+
+    // Guard: comissão para esta parcela já existe
+    const dupCheck = await query<{ id: number }>(
+      `SELECT id FROM comissoes_laudo WHERE lote_pagamento_id = $1 AND parcela_numero = $2 LIMIT 1`,
+      [lote_pagamento_id, parcelaNum]
+    );
+    if (dupCheck.rows.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Comissão para parcela ${parcelaNum} já existe (id ${dupCheck.rows[0].id})`,
+        },
+        { status: 409 }
       );
     }
 
