@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getSession } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 
 /**
  * API GET /api/recibo/[id]/verificar
@@ -11,6 +11,8 @@ import { getSession } from '@/lib/session';
  * - Status de integridade (íntegro/comprometido)
  * - Hash armazenado e hash calculado
  * - Metadados do recibo
+ *
+ * Acesso restrito a perfis de back-office: admin, suporte, comercial.
  */
 
 export async function GET(
@@ -18,14 +20,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar autenticação
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Autenticação requerida' },
-        { status: 401 }
-      );
-    }
+    // Apenas perfis de back-office podem verificar integridade de recibos
+    await requireRole(['admin', 'suporte', 'comercial'], false);
 
     const reciboId = parseInt(params.id);
 
@@ -84,12 +80,15 @@ export async function GET(
       verificado_em: new Date().toISOString(),
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message === 'Não autenticado' || error.message === 'Sem permissão')
+    ) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     console.error('Erro ao verificar integridade do recibo:', error);
     return NextResponse.json(
-      {
-        error: 'Erro ao verificar integridade',
-        detalhes: error instanceof Error ? error.message : 'Erro desconhecido',
-      },
+      { error: 'Erro ao verificar integridade' },
       { status: 500 }
     );
   }

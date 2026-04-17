@@ -16,7 +16,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole(['comercial', 'admin'], false);
+    const session = await requireRole(['comercial', 'admin'], false);
 
     const id = parseInt(params.id, 10);
     if (isNaN(id))
@@ -54,8 +54,9 @@ export async function GET(
        LEFT JOIN vinculos_comissao   v ON v.representante_id = r.id
        LEFT JOIN comissoes_laudo     c ON c.representante_id = r.id
        WHERE r.id = $1
+         AND ($2::varchar IS NULL OR r.gestor_comercial_cpf = $2)
        GROUP BY r.id`,
-      [id]
+      [id, session.perfil === 'comercial' ? session.cpf : null]
     );
 
     if (result.rows.length === 0)
@@ -158,10 +159,12 @@ export async function PATCH(
         );
       }
 
-      // Verificar representante atual
+      // Verificar representante atual (com ownership check)
       const repCheck = await query<{ status: string; nome: string }>(
-        `SELECT status, nome FROM representantes WHERE id = $1 LIMIT 1`,
-        [id]
+        `SELECT status, nome FROM representantes
+         WHERE id = $1 AND ($2::varchar IS NULL OR gestor_comercial_cpf = $2)
+         LIMIT 1`,
+        [id, session.perfil === 'comercial' ? session.cpf : null]
       );
       if (repCheck.rows.length === 0) {
         return NextResponse.json(
@@ -295,9 +298,11 @@ export async function PATCH(
 
     fields.push(`atualizado_em = NOW()`);
     values.push(id);
+    // Ownership: comercial só pode atualizar representantes atribuídos a ele
+    values.push(session.perfil === 'comercial' ? session.cpf : null);
 
     await query(
-      `UPDATE representantes SET ${fields.join(', ')} WHERE id = $${idx}`,
+      `UPDATE representantes SET ${fields.join(', ')} WHERE id = $${idx} AND ($${idx + 1}::varchar IS NULL OR gestor_comercial_cpf = $${idx + 1})`,
       values
     );
 

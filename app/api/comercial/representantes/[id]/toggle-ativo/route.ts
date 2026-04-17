@@ -42,7 +42,7 @@ export async function PATCH(
 
     const { ativo } = parsed.data;
 
-    // Buscar representante antes de alterar (auditoria + validação)
+    // Buscar representante antes de alterar (auditoria + validação + ownership)
     const existingRes = await query<{
       id: number;
       cpf: string | null;
@@ -53,8 +53,9 @@ export async function PATCH(
       `SELECT id, cpf, nome, status, ativo
        FROM representantes
        WHERE id = $1
+         AND ($2::varchar IS NULL OR gestor_comercial_cpf = $2)
        LIMIT 1`,
-      [id],
+      [id, session.perfil === 'comercial' ? session.cpf : null],
       session
     );
 
