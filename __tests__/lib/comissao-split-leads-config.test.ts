@@ -265,18 +265,18 @@ describe('calcularValoresComissao — fórmula direta (sem redistribuição)', (
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('calcularComissaoCustoFixo', () => {
-  test('caso normal — rep recebe diferença positiva', () => {
+  test('caso normal — margem é valorNeg - custoFixo', () => {
     const r = calcularComissaoCustoFixo(100, 12);
-    expect(r.valorRep).toBe(88);
-    expect(r.valorQWork).toBe(12);
+    expect(r.valorRep).toBe(88); // margem = 100 - 12
+    expect(r.valorQWork).toBe(88); // margem - 0 comercial
     expect(r.valorComercial).toBe(0);
     expect(r.abaixoMinimo).toBe(false);
   });
 
-  test('valorNeg === custoFixo — rep recebe zero', () => {
+  test('valorNeg === custoFixo — margem zero', () => {
     const r = calcularComissaoCustoFixo(12, 12);
     expect(r.valorRep).toBe(0);
-    expect(r.valorQWork).toBe(12);
+    expect(r.valorQWork).toBe(0);
     expect(r.valorComercial).toBe(0);
     expect(r.abaixoMinimo).toBe(false);
   });
@@ -285,52 +285,54 @@ describe('calcularComissaoCustoFixo', () => {
     const r = calcularComissaoCustoFixo(10, 12);
     expect(r.abaixoMinimo).toBe(true);
     expect(r.valorRep).toBe(0);
-    expect(r.valorQWork).toBe(12);
+    expect(r.valorQWork).toBe(0);
     expect(r.valorComercial).toBe(0);
   });
 
-  test('valorQWork é sempre == custoFixo quando percComercial = 0', () => {
-    const cases: [number, number][] = [
-      [50, 12],
-      [12, 12],
-      [8, 12],
-      [200, 10],
+  test('sem comercial: valorQWork === margem (valorNeg - custoFixo)', () => {
+    const cases: [number, number, number][] = [
+      [50, 12, 38], // margem=38
+      [12, 12, 0], // margem=0
+      [8, 12, 0], // abaixoMinimo, margem clamped to 0
+      [200, 10, 190], // margem=190
     ];
-    for (const [valorNeg, custoFixo] of cases) {
+    for (const [valorNeg, custoFixo, esperado] of cases) {
       const r = calcularComissaoCustoFixo(valorNeg, custoFixo);
-      expect(r.valorQWork).toBe(custoFixo);
+      expect(r.valorQWork).toBe(esperado);
     }
   });
 
   test('clinica — custo fixo 10, valor 50', () => {
     const r = calcularComissaoCustoFixo(50, 10);
-    expect(r.valorRep).toBe(40);
-    expect(r.valorQWork).toBe(10);
+    expect(r.valorRep).toBe(40); // margem = 40
+    expect(r.valorQWork).toBe(40); // margem - 0
     expect(r.valorComercial).toBe(0);
     expect(r.abaixoMinimo).toBe(false);
   });
 
-  test('com percComercial — rep 118: custo R$15, negociado R$25, comercial 10%', () => {
+  test('com percComercial 10%: comercial recebe % da margem', () => {
+    // custo R$15, negociado R$25, margem=R$10, comercial 10%
     const r = calcularComissaoCustoFixo(25, 15, 10);
-    expect(r.valorRep).toBe(10); // 25 - 15
-    expect(r.valorComercial).toBe(1.5); // 10% de 15
-    expect(r.valorQWork).toBe(13.5); // 15 - 1.5
+    expect(r.valorRep).toBe(10); // margem = 25 - 15
+    expect(r.valorComercial).toBe(1); // 10% da margem R$10
+    expect(r.valorQWork).toBe(9); // margem - comercial
     expect(r.abaixoMinimo).toBe(false);
   });
 
   test('com percComercial = 40% — máximo permitido', () => {
+    // valorNeg=100, custo=20, margem=80, comercial 40%
     const r = calcularComissaoCustoFixo(100, 20, 40);
-    expect(r.valorRep).toBe(80); // 100 - 20
-    expect(r.valorComercial).toBe(8); // 40% de 20
-    expect(r.valorQWork).toBe(12); // 20 - 8
+    expect(r.valorRep).toBe(80); // margem = 80
+    expect(r.valorComercial).toBe(32); // 40% de 80
+    expect(r.valorQWork).toBe(48); // 80 - 32
     expect(r.abaixoMinimo).toBe(false);
   });
 
   test('percComercial é capped a 40% no máximo (regra de negócio)', () => {
-    // Mesmo passando 100%, a função usa max 40%
+    // valorNeg=50, custo=12, margem=38, percComercial=100 → capped 40%
     const r = calcularComissaoCustoFixo(50, 12, 100);
-    expect(r.valorComercial).toBe(4.8); // 40% de 12 (capped)
-    expect(r.valorQWork).toBe(7.2); // 12 - 4.8
+    expect(r.valorComercial).toBe(15.2); // 40% de 38
+    expect(r.valorQWork).toBe(22.8); // 38 - 15.2
     expect(r.abaixoMinimo).toBe(false);
   });
 });

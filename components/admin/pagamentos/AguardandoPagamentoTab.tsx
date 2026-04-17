@@ -175,7 +175,6 @@ interface AguardandoPagamentoTabProps {
   onVerificarPagamento: (loteId: number) => void;
   onDisponibilizarLink: (loteId: number) => void;
   onVincularRepresentante: (loteId: number) => void;
-  onGerarComissao: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
   formatDate: (dateString: string | null) => string;
 }
@@ -193,7 +192,6 @@ export function AguardandoPagamentoTab({
   onVerificarPagamento,
   onDisponibilizarLink,
   onVincularRepresentante,
-  onGerarComissao,
   formatCurrency,
   formatDate,
 }: AguardandoPagamentoTabProps) {
@@ -360,7 +358,6 @@ export function AguardandoPagamentoTab({
                   onVerificarPagamento={onVerificarPagamento}
                   onDisponibilizarLink={onDisponibilizarLink}
                   onVincularRepresentante={onVincularRepresentante}
-                  onGerarComissao={onGerarComissao}
                   formatCurrency={formatCurrency}
                   formatDate={formatDate}
                 />

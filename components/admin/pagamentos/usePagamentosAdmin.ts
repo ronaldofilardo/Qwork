@@ -289,118 +289,6 @@ export function usePagamentosAdmin() {
     }
   };
 
-  /** Gerar comissão para um lote pago */
-  const handleGerarComissao = async (loteId: number) => {
-    const solicitacao = solicitacoes.find((s) => s.lote_id === loteId);
-    if (!solicitacao) return;
-    if (!solicitacao.vinculo_id || !solicitacao.representante_id) {
-      alert('Vincule um representante primeiro.');
-      return;
-    }
-
-    const totalParcelas = solicitacao.pagamento_parcelas ?? 1;
-    const geradas = solicitacao.comissoes_geradas_count ?? 0;
-
-    if (geradas >= totalParcelas) {
-      alert('Todas as comissões já foram geradas para este lote.');
-      return;
-    }
-    if (
-      !solicitacao.valor_total_calculado ||
-      solicitacao.valor_total_calculado <= 0
-    ) {
-      alert('Valor total não definido.');
-      return;
-    }
-
-    const isCustoFixo = solicitacao.modelo_comissionamento === 'custo_fixo';
-    const percRep = solicitacao.representante_percentual_comissao;
-
-    if (!isCustoFixo && percRep == null) {
-      alert(
-        'Percentual de comissão não definido para este representante.\n\n' +
-          'Defina o percentual na página do representante antes de gerar comissões.'
-      );
-      return;
-    }
-
-    // A próxima parcela a gerar é geradas + 1
-    const proximaParcela = geradas + 1;
-    // Number() garante coerção segura: PostgreSQL retorna NUMERIC como string em runtime
-    const valorTotal = Number(solicitacao.valor_total_calculado);
-    const valorPorParcela = valorTotal / totalParcelas;
-
-    let valorComissao: number;
-    let comissaoInfo: string;
-
-    if (isCustoFixo) {
-      // custo_fixo: (valorNegociado - custoFixo) / valorNegociado × parcelaBase
-      const negociado =
-        solicitacao.valor_negociado_vinculo ??
-        solicitacao.lead_valor_negociado ??
-        valorPorParcela;
-      const custo = solicitacao.valor_custo_fixo_snapshot ?? 0;
-      const ratioRep = negociado > 0 ? (negociado - custo) / negociado : 0;
-      valorComissao = Math.round(ratioRep * valorPorParcela * 100) / 100;
-      comissaoInfo =
-        `Modelo: Custo Fixo\n` +
-        `Valor negociado: R$ ${negociado.toFixed(2)} | Custo: R$ ${custo.toFixed(2)}\n` +
-        `Rep recebe: R$ ${(negociado - custo).toFixed(2)}/avaliação → R$ ${valorComissao.toFixed(2)} esta parcela`;
-    } else {
-      valorComissao = valorPorParcela * (percRep! / 100);
-      comissaoInfo = `Comissão (${percRep}%): R$ ${valorComissao.toFixed(2)}`;
-    }
-
-    const parcelaInfo =
-      totalParcelas > 1
-        ? `Parcela ${proximaParcela}/${totalParcelas} (R$ ${valorPorParcela.toFixed(2)})`
-        : `Pagamento à vista (R$ ${valorTotal.toFixed(2)})`;
-
-    const confirmar = confirm(
-      `Gerar comissão para o representante ${solicitacao.representante_nome}?\n\n` +
-        `${parcelaInfo}\n` +
-        `${comissaoInfo}\n\n` +
-        `Confirmar?`
-    );
-    if (!confirmar) return;
-
-    try {
-      setProcessando(loteId);
-      // Determina origem: gestor (entidade_id) ou clínica pura (clinica_id)
-      const gerarPayload: Record<string, unknown> = {
-        lote_pagamento_id: loteId,
-        vinculo_id: solicitacao.vinculo_id,
-        representante_id: solicitacao.representante_id,
-        laudo_id: solicitacao.laudo_id || null,
-        valor_laudo: valorTotal,
-        parcela_numero: proximaParcela,
-        total_parcelas: totalParcelas,
-      };
-      if (solicitacao.entidade_id) {
-        gerarPayload.entidade_id = solicitacao.entidade_id;
-      } else {
-        gerarPayload.clinica_id = solicitacao.clinica_id;
-      }
-      const response = await fetch('/api/admin/comissoes/gerar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gerarPayload),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        alert(data.error || 'Erro ao gerar comissão');
-        return;
-      }
-      alert(`Comissão de R$ ${valorComissao.toFixed(2)} gerada com sucesso!`);
-      await carregarSolicitacoes();
-    } catch (error) {
-      console.error('Erro ao gerar comissão:', error);
-      alert('Erro ao gerar comissão');
-    } finally {
-      setProcessando(null);
-    }
-  };
-
   return {
     solicitacoes,
     loading,
@@ -420,7 +308,6 @@ export function usePagamentosAdmin() {
     handleVerificarPagamento,
     handleDisponibilizarLink,
     handleVincularRepresentante,
-    handleGerarComissao,
     getSolicitacoesFiltradas,
     getTabCount,
   };

@@ -297,12 +297,12 @@ export async function criarComissaoAdmin(params: {
     }
     // L2 fix: base sempre BRUTA (valor_laudo / totalParc), nunca netValue do Asaas
     const brutoPerParcel = valor_laudo / totalParc;
-    // Proporcional: rep ganha (valorRep / negociado) × brutoPerParcel
+    // Proporcional: margem por parcela = (valorRep / negociado) × brutoPerParcel
     const ratioRep = negociado > 0 ? valorRep / negociado : 0;
     valorComissao = Math.round(ratioRep * brutoPerParcel * 100) / 100;
-    percentualRep = null; // custo_fixo não usa percentual
-    // L2 fix custo_fixo comercial: base = o que sobra do bruto após o rep
-    baseCalculoFinal = Math.max(0, brutoPerParcel - valorComissao);
+    percentualRep = 0; // custo_fixo não usa percentual; 0 pois coluna é NOT NULL
+    // custo_fixo: comercial recebe % da MARGEM (não do bruto total)
+    baseCalculoFinal = Math.max(0, valorComissao);
   } else {
     // Percentual: L2 fix — base sempre BRUTA (valor_laudo / totalParc)
     percentualRep =
@@ -430,6 +430,34 @@ export async function criarComissaoAdmin(params: {
       `UPDATE vinculos_comissao SET ultimo_laudo_em = NOW(), status = CASE WHEN status = 'inativo' THEN 'ativo' ELSE status END WHERE id = $1`,
       [vinculo_id]
     );
+
+    // Se comissão já paga, upsert ciclo mensal (best-effort)
+    if (statusInicial === 'paga') {
+      try {
+        const mesRef = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`;
+        const upsertResult = await query<{ id: number }>(
+          `INSERT INTO ciclos_comissao (representante_id, mes_referencia, valor_total, qtd_comissoes, status)
+           VALUES ($1, $2::date, $3, 1, 'fechado')
+           ON CONFLICT (representante_id, mes_referencia) DO UPDATE
+             SET valor_total   = ciclos_comissao.valor_total + EXCLUDED.valor_total,
+                 qtd_comissoes = ciclos_comissao.qtd_comissoes + 1
+           WHERE ciclos_comissao.status NOT IN ('nf_enviada', 'nf_aprovada', 'pago')
+           RETURNING id`,
+          [comissaoCriada.representante_id, mesRef, valorComissao]
+        );
+        if (upsertResult.rows[0]) {
+          await query(
+            `UPDATE comissoes_laudo SET ciclo_id = $1 WHERE id = $2`,
+            [upsertResult.rows[0].id, comissaoCriada.id]
+          );
+        }
+      } catch (cicloErr) {
+        console.warn(
+          '[criarComissaoAdmin] Falha ao upsert ciclo (best-effort):',
+          cicloErr
+        );
+      }
+    }
   }
 
   return { comissao: comissaoCriada };
@@ -499,6 +527,26 @@ export async function ativarComissaoParcelaPaga(params: {
          WHERE id = $1`,
         [comissao.id]
       );
+
+      // Upsert ciclo_comissao: parcelas 2..N precisam consolidar o ciclo assim como a 1ª
+      const mesRef = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const cicloResult = await query<{ id: number }>(
+        `INSERT INTO ciclos_comissao (representante_id, mes_referencia, status, valor_total, qtd_comissoes, criado_em, atualizado_em)
+         SELECT cl.representante_id, $1, 'aberto', cl.valor_comissao, 1, NOW(), NOW()
+         FROM comissoes_laudo cl WHERE cl.id = $2
+         ON CONFLICT (representante_id, mes_referencia) DO UPDATE
+           SET valor_total    = ciclos_comissao.valor_total + EXCLUDED.valor_total,
+               qtd_comissoes  = ciclos_comissao.qtd_comissoes + 1,
+               atualizado_em  = NOW()
+         RETURNING id`,
+        [mesRef, comissao.id]
+      );
+      if (cicloResult.rows.length > 0) {
+        await query(`UPDATE comissoes_laudo SET ciclo_id = $1 WHERE id = $2`, [
+          cicloResult.rows[0].id,
+          comissao.id,
+        ]);
+      }
     } else {
       // Rep não apto: registra confirmação da parcela, mantém retida
       await query(
@@ -583,11 +631,12 @@ export async function criarComissaoAutomatica(params: {
       return { ok: false, motivo: 'sem_entidade_clinica' };
     }
 
-    // Buscar vínculo ativo para a entidade ou clínica
+    // Buscar vínculo ativo ou inativo para a entidade ou clínica
+    // Aceita 'inativo' também: alinhado com criarComissaoAdmin (90 dias sem laudo não bloqueia comissão)
     const vinculoResult = await query(
       `SELECT vc.id, vc.representante_id, vc.entidade_id, vc.clinica_id, vc.num_vidas_estimado
        FROM vinculos_comissao vc
-       WHERE vc.status = 'ativo'
+       WHERE vc.status IN ('ativo', 'inativo')
          AND vc.data_expiracao > CURRENT_DATE
          AND (
            ($1::int IS NOT NULL AND vc.entidade_id = $1)

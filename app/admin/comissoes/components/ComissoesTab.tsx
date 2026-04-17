@@ -50,6 +50,12 @@ export function ComissoesTab({
               cor: 'text-blue-700',
             },
             {
+              label: 'Liberado',
+              value: fmt(resumo.valor_liberado),
+              icon: '🟢',
+              cor: 'text-purple-700',
+            },
+            {
               label: 'Total Pago',
               value: fmt(resumo.valor_pago_total),
               icon: '✅',

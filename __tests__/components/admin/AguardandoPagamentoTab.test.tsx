@@ -43,7 +43,6 @@ const defaultProps = {
   onVerificarPagamento: jest.fn(),
   onDisponibilizarLink: jest.fn(),
   onVincularRepresentante: jest.fn(),
-  onGerarComissao: jest.fn(),
   formatCurrency: (v: number | null) => `R$ ${v ?? 0}`,
   formatDate: (d: string | null) => d ?? '',
 };
