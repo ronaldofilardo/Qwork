@@ -1,10 +1,11 @@
 import { requireAuth } from '@/lib/session';
 import { queryWithContext } from '@/lib/db-security';
 import { NextResponse } from 'next/server';
-import { assertRoles, ROLES } from '@/lib/authorization/policies';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 export const POST = async (_req: Request) => {
+  try {
   const user = await requireAuth();
   assertRoles(user, [ROLES.RH]);
 
@@ -38,4 +39,13 @@ export const POST = async (_req: Request) => {
     { criadas, total: funcs.rowCount, success: true, detalhes },
     { status: 200 }
   );
+  } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
+    }
+    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
+  }
 };

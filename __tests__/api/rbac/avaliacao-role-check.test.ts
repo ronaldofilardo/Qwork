@@ -49,7 +49,16 @@ function sessionFor(perfil: string) {
   return { cpf: '99999999999', nome: 'Test', perfil } as any;
 }
 
-const BLOCKED_PERFIS = ['admin', 'rh', 'gestor', 'emissor', 'suporte', 'comercial', 'vendedor', 'representante'];
+const BLOCKED_PERFIS = [
+  'admin',
+  'rh',
+  'gestor',
+  'emissor',
+  'suporte',
+  'comercial',
+  'vendedor',
+  'representante',
+];
 
 describe('RBAC: /api/avaliacao/* exige perfil=funcionario', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -60,7 +69,10 @@ describe('RBAC: /api/avaliacao/* exige perfil=funcionario', () => {
     it('200 para funcionario', async () => {
       mockRequireAuth.mockResolvedValue(sessionFor('funcionario'));
       const { queryWithContext } = require('@/lib/db-security');
-      (queryWithContext as jest.Mock).mockResolvedValue({ rows: [], rowCount: 0 });
+      (queryWithContext as jest.Mock).mockResolvedValue({
+        rows: [],
+        rowCount: 0,
+      });
       const res = await GET();
       expect(res.status).toBe(200);
     });
@@ -97,7 +109,9 @@ describe('RBAC: /api/avaliacao/* exige perfil=funcionario', () => {
 
     it.each(BLOCKED_PERFIS)('403 para perfil=%s', async (perfil) => {
       mockRequireAuth.mockResolvedValue(sessionFor(perfil));
-      const res = await GET(makeRequest('http://localhost/api/avaliacao/resultados'));
+      const res = await GET(
+        makeRequest('http://localhost/api/avaliacao/resultados')
+      );
       expect(res.status).toBe(403);
     });
   });
@@ -107,7 +121,9 @@ describe('RBAC: /api/avaliacao/* exige perfil=funcionario', () => {
 
     it.each(BLOCKED_PERFIS)('403 para perfil=%s', async (perfil) => {
       mockRequireAuth.mockResolvedValue(sessionFor(perfil));
-      const res = await GET(makeRequest('http://localhost/api/avaliacao/respostas-all'));
+      const res = await GET(
+        makeRequest('http://localhost/api/avaliacao/respostas-all')
+      );
       expect(res.status).toBe(403);
     });
   });
