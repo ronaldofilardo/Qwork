@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { registrarAuditoria } from '@/lib/db/comissionamento';
 import { requireRole } from '@/lib/session';
+import { validateComissaoTransition } from '@/lib/state-machine/comissao-state';
+import type { StatusComissao } from '@/lib/types/comissionamento';
 
 export const dynamic = 'force-dynamic';
 
@@ -108,6 +110,19 @@ export async function PATCH(
         {
           error: `Ação '${acao}' não pode ser aplicada a comissão com status '${comissao.status}'.`,
         },
+        { status: 422 }
+      );
+    }
+
+    // Validação via state machine centralizada
+    const transicao = validateComissaoTransition(
+      comissao.status as StatusComissao,
+      config.novoStatus as StatusComissao,
+      { admin_cpf: session.cpf, motivo: motivo ?? undefined }
+    );
+    if (!transicao.valido) {
+      return NextResponse.json(
+        { error: transicao.erro },
         { status: 422 }
       );
     }

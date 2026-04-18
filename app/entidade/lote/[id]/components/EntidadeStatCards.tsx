@@ -3,9 +3,7 @@
 import React from 'react';
 import { Users, CheckCircle, Clock } from 'lucide-react';
 import type { EstatisticasEntidade } from '../types';
-
-/** Percentual mínimo para emissão do laudo (deve coincidir com PERCENTUAL_MINIMO_EMISSAO no backend) */
-const PERCENTUAL_MINIMO_EMISSAO = 70;
+import { PERCENTUAL_MINIMO_EMISSAO } from '@/lib/config/business-rules';
 
 interface EntidadeStatCardsProps {
   estatisticas: EstatisticasEntidade;

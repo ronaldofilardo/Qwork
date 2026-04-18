@@ -83,32 +83,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[Asaas Webhook] 📨 ========== WEBHOOK RECEBIDO ==========');
-    console.log('[Asaas Webhook] 🕒 Timestamp:', new Date().toISOString());
-    console.log('[Asaas Webhook] 📍 IP:', ip);
-    console.log('[Asaas Webhook] 🔑 Event:', payload.event);
-    console.log('[Asaas Webhook] 💳 Payment ID:', payload.payment?.id);
-    console.log('[Asaas Webhook] 📊 Status:', payload.payment?.status);
-    console.log(
-      '[Asaas Webhook] 🏷️  External Ref:',
-      payload.payment?.externalReference
-    );
-    console.log('[Asaas Webhook] 💰 Valor:', payload.payment?.value);
-    console.log(
-      '[Asaas Webhook] 📦 Payload completo:',
-      JSON.stringify(payload, null, 2)
-    );
-    console.log(
-      '[Asaas Webhook] ================================================'
-    );
-
-    // 6. Processar o webhook de forma assíncrona
-    // Importante: Respondemos RAPIDAMENTE (< 30s) para não causar timeout no Asaas
-    // O processamento real acontece em background
-
-    // Para desenvolvimento, processamos de forma síncrona para facilitar debug
-    // Em produção, considere usar fila (Bull, BullMQ, SQS, etc)
     const isDev = process.env.NODE_ENV === 'development';
+
+    // Logging: apenas dados seguros (sem dados pessoais)
+    console.log('[Asaas Webhook] Recebido:', {
+      event: payload.event,
+      paymentId: payload.payment?.id,
+      status: payload.payment?.status,
+      externalRef: payload.payment?.externalReference,
+      valor: payload.payment?.value,
+      ip,
+      timestamp: new Date().toISOString(),
+    });
+    // Payload completo apenas em DEV (pode conter dados sensíveis)
+    if (isDev) {
+      console.log(
+        '[Asaas Webhook] Payload completo:',
+        JSON.stringify(payload, null, 2)
+      );
+    }
 
     if (isDev) {
       // Modo dev: processa de forma síncrona (mais fácil de debugar)
@@ -185,20 +178,6 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   }
-}
-
-/**
- * GET /api/webhooks/asaas
- * Endpoint de health check (não usado pelo Asaas, apenas para testes)
- */
-export function GET() {
-  return NextResponse.json({
-    service: 'Asaas Webhook Handler',
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV,
-    webhookSecretConfigured: !!process.env.ASAAS_WEBHOOK_SECRET,
-  });
 }
 
 /**
