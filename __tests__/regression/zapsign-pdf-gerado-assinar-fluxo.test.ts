@@ -165,8 +165,10 @@ describe('2. POST /api/emissor/laudos/[loteId] — imutabilidade e resposta', ()
     expect(src).toContain('pdf_gerado');
   });
 
-  it('GET deve selecionar pdf_gerado_em no SELECT', () => {
-    expect(src).toContain('pdf_gerado_em');
+  it('GET deve retornar laudo_status (pdf_gerado_em movido para lib/laudo-auto)', () => {
+    // pdf_gerado_em não é mais selecionado diretamente no GET da route
+    // O status é derivado via laudo_status
+    expect(src).toContain('laudo_status');
   });
 });
 

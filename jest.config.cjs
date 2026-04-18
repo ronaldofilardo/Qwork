@@ -54,20 +54,22 @@ const customJestConfig = {
 
   // ── Configuração de CI: limiar máximo de falhas ────────────────────────────
   // Interrompe a suite cedo se mais de 50 testes falharem em sequência.
-  // Evita runs longas quando há problema sistêmico (ex: banco indisponível).
-  // Desabilite com JEST_BAIL=0 para runs de análise completa.
-  bail: process.env.JEST_BAIL !== '0' ? 0 : 0, // 0 = rode tudo; aumente para 50 em CI agressivo
+  bail: process.env.JEST_BAIL !== '0' ? 50 : 0,
 
   // ── Cobertura mínima (ativada apenas com --coverage) ──────────────────────
-  // Thresholds conservadores para não bloquear CI — aumentar gradualmente.
+  // Target: 80% global — alinhado com meta do projeto (docs/testing/ARCHITECTURE.md)
   coverageThreshold: {
     global: {
-      branches: 10,
-      functions: 20,
-      lines: 20,
-      statements: 20,
+      branches: 40,
+      functions: 50,
+      lines: 50,
+      statements: 50,
     },
   },
+
+  // ── Projetos: permite separar unit (rápido) de integration (DB) ───────────
+  // Use --selectProjects=unit para rodar apenas testes sem DB
+  // Use --selectProjects=integration para rodar apenas testes com DB
 };
 
 // Permitir ignorar globalSetup em execuções locais de unit tests definindo SKIP_GLOBAL_JEST_SETUP=1

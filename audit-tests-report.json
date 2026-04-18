@@ -1,0 +1,1540 @@
+{
+  "timestamp": "2026-04-18T15:50:42.573Z",
+  "counts": {
+    "api": {
+      "files": 214,
+      "paths": [
+        "__tests__/api/admin/auditorias-laudos.test.ts",
+        "__tests__/api/admin/auditorias.test.ts",
+        "__tests__/api/admin/clinicas-reativar.test.ts",
+        "__tests__/api/admin/clinicas.test.ts",
+        "__tests__/api/admin/comissoes-acao.test.ts",
+        "__tests__/api/admin/comissoes-comprovante-upload.test.ts",
+        "__tests__/api/admin/comissoes-gerar.test.ts",
+        "__tests__/api/admin/comissoes-list.test.ts",
+        "__tests__/api/admin/contratos.test.ts",
+        "__tests__/api/admin/dashboard-counts.test.ts",
+        "__tests__/api/admin/emissoes-dedup.test.ts",
+        "__tests__/api/admin/emissores.test.ts",
+        "__tests__/api/admin/entidades-reativar.test.ts",
+        "__tests__/api/admin/entidades-tomadores.test.ts",
+        "__tests__/api/admin/funcionarios.test.ts",
+        "__tests__/api/admin/gerar-link-retomada.test.ts",
+        "__tests__/api/admin/gestores-rh.test.ts",
+        "__tests__/api/admin/leads-documentos.test.ts",
+        "__tests__/api/admin/manutencao/aguardando-quitacao.test.ts",
+        "__tests__/api/admin/manutencao/confirmar-empresa.test.ts",
+        "__tests__/api/admin/manutencao/confirmar-entidade.test.ts",
+        "__tests__/api/admin/manutencao/pagamentos-disponibilizar.test.ts",
+        "__tests__/api/admin/manutencao/pagamentos-gerar-link.test.ts",
+        "__tests__/api/admin/manutencao/pagamentos-verificar.test.ts",
+        "__tests__/api/admin/manutencao/relatorio.test.ts",
+        "__tests__/api/admin/representantes-busca.test.ts",
+        "__tests__/api/admin/representantes-list.test.ts",
+        "__tests__/api/admin/representantes-status.test.ts",
+        "__tests__/api/admin/reset-senha-confirmar.test.ts",
+        "__tests__/api/admin/reset-senha-validar.test.ts",
+        "__tests__/api/admin/reset-senha.test.ts",
+        "__tests__/api/admin/tomadores-documentos.test.ts",
+        "__tests__/api/admin/usuarios.test.ts",
+        "__tests__/api/admin/vincular-representante.test.ts",
+        "__tests__/api/admin/volume.test.ts",
+        "__tests__/api/admin-tomadores-documentos.test.ts",
+        "__tests__/api/alteracoes-baseurl.test.ts",
+        "__tests__/api/auth/login-compat.test.ts",
+        "__tests__/api/auth/login-emissor.test.ts",
+        "__tests__/api/auth/login-gestor.test.ts",
+        "__tests__/api/auth/login-helpers.test.ts",
+        "__tests__/api/auth/login.test.ts",
+        "__tests__/api/auth/logout.test.ts",
+        "__tests__/api/auth/session.test.ts",
+        "__tests__/api/auth/trocar-senha.test.ts",
+        "__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts",
+        "__tests__/api/avaliacao/cascata.test.ts",
+        "__tests__/api/avaliacao/check-sync.test.ts",
+        "__tests__/api/avaliacao/conclusao-migracao-165.test.ts",
+        "__tests__/api/avaliacao/finalizar.test.ts",
+        "__tests__/api/avaliacao/inativar.test.ts",
+        "__tests__/api/avaliacao/liberar-massa.test.ts",
+        "__tests__/api/avaliacao/respostas-all.test.ts",
+        "__tests__/api/avaliacao/respostas.test.ts",
+        "__tests__/api/avaliacao/resultados.test.ts",
+        "__tests__/api/avaliacao/salvar.test.ts",
+        "__tests__/api/avaliacao/save.test.ts",
+        "__tests__/api/avaliacao/status.test.ts",
+        "__tests__/api/avaliacoes-status-iniciada.test.ts",
+        "__tests__/api/cadastro-tomador-api.test.ts",
+        "__tests__/api/cadastro-tomador-route.unit.test.ts",
+        "__tests__/api/clinica/relatorio-pdf.test.ts",
+        "__tests__/api/comercial/contratos.test.ts",
+        "__tests__/api/comercial/minhas-comissoes.test.ts",
+        "__tests__/api/comercial/representantes-assumir.test.ts",
+        "__tests__/api/comercial/representantes-busca.test.ts",
+        "__tests__/api/comercial/representantes-codigo-sequencial.test.ts",
+        "__tests__/api/comercial/representantes-documentos-visualizar.test.ts",
+        "__tests__/api/comercial/representantes-sem-gestor.test.ts",
+        "__tests__/api/comercial/representantes-toggle-ativo.test.ts",
+        "__tests__/api/comercial/vinculos-atribuir-rep.test.ts",
+        "__tests__/api/comercial-metricas.test.ts",
+        "__tests__/api/comercial-vendedores.test.ts",
+        "__tests__/api/consentimento.test.ts",
+        "__tests__/api/dashboard/org-info.test.ts",
+        "__tests__/api/emissor/fluxo-emissao-laudo.test.ts",
+        "__tests__/api/emissor/laudos/hash-sha256-laudo.test.ts",
+        "__tests__/api/emissor/laudos/laudos-emissor.test.ts",
+        "__tests__/api/emissor/laudos.test.ts",
+        "__tests__/api/emissor/lotes-download-safety.test.ts",
+        "__tests__/api/emissor/lotes-hash-removal.test.ts",
+        "__tests__/api/emissor/lotes.test.ts",
+        "__tests__/api/emissor/notificacoes.test.ts",
+        "__tests__/api/emissor/pdf.test.ts",
+        "__tests__/api/emissor/progresso.test.ts",
+        "__tests__/api/emissor/reprocessar-laudo.test.ts",
+        "__tests__/api/emissor/reprocessar.test.ts",
+        "__tests__/api/emissor/upload-laudo-bucket.test.ts",
+        "__tests__/api/emissor/validacao-acesso-lotes.test.ts",
+        "__tests__/api/entidade/account-info.enum-fallback.test.ts",
+        "__tests__/api/entidade/account-info.test.ts",
+        "__tests__/api/entidade/configuracoes.test.ts",
+        "__tests__/api/entidade/dashboard.test.ts",
+        "__tests__/api/entidade/funcionarios/import.route.test.ts",
+        "__tests__/api/entidade/funcionarios-auth.test.ts",
+        "__tests__/api/entidade/funcionarios-status-negocio.test.ts",
+        "__tests__/api/entidade/funcionarios-status.test.ts",
+        "__tests__/api/entidade/funcionarios.denorm.test.ts",
+        "__tests__/api/entidade/funcionarios.test.ts",
+        "__tests__/api/entidade/importacao/analyze.test.ts",
+        "__tests__/api/entidade/importacao/execute.test.ts",
+        "__tests__/api/entidade/importacao/validate.test.ts",
+        "__tests__/api/entidade/laudos/verify-hash.test.ts",
+        "__tests__/api/entidade/laudos-download-backblaze-proxy.test.ts",
+        "__tests__/api/entidade/laudos-verify-hash-no-filesystem.test.ts",
+        "__tests__/api/entidade/liberar-lote.test.ts",
+        "__tests__/api/entidade/logo.test.ts",
+        "__tests__/api/entidade/lote-avaliacoes-inativar.test.ts",
+        "__tests__/api/entidade/lote-detalhes-grupos.test.ts",
+        "__tests__/api/entidade/lote-detalhes-inativacao.test.ts",
+        "__tests__/api/entidade/lote-inativar-avaliacao.test.ts",
+        "__tests__/api/entidade/lotes-avaliacoes-reset.test.ts",
+        "__tests__/api/entidade/lotes-fila-emissao-compat.test.ts",
+        "__tests__/api/entidade/lotes-listing-no-filesystem.test.ts",
+        "__tests__/api/entidade/lotes.test.ts",
+        "__tests__/api/entidade/migration-1008-corrections.test.ts",
+        "__tests__/api/entidade/pagamentos-laudos.test.ts",
+        "__tests__/api/entidade/parcelas-download-recibo.test.ts",
+        "__tests__/api/entidade/parcelas-gerar-recibo.test.ts",
+        "__tests__/api/entidade/parcelas.test.ts",
+        "__tests__/api/entidade/relatorio-individual-pdf-corrections.test.ts",
+        "__tests__/api/entidade/relatorio-individual-pdf.test.ts",
+        "__tests__/api/entidade/relatorio-lote-pdf-corrections.test.ts",
+        "__tests__/api/entidade/relatorio-setor-pdf.test.ts",
+        "__tests__/api/entidade/reset-security-context.test.ts",
+        "__tests__/api/esc1-route-auth-migrations.test.ts",
+        "__tests__/api/funcionarios-inativos.test.ts",
+        "__tests__/api/funcionarios-usuario-tipo.test.ts",
+        "__tests__/api/jobs/process-pdf-disabled.test.ts",
+        "__tests__/api/jobs/process-pdf.test.ts",
+        "__tests__/api/novo-modelo-comissionamento.test.ts",
+        "__tests__/api/pagamento/confirmar-bytea.test.ts",
+        "__tests__/api/pagamento/iniciar.test.ts",
+        "__tests__/api/pagamento/manutencao-info.test.ts",
+        "__tests__/api/pagamento-confirmar.test.ts",
+        "__tests__/api/pagamento-simular.test.ts",
+        "__tests__/api/pagamento-tomador-flow.test.ts",
+        "__tests__/api/pagamentos-laudos.test.ts",
+        "__tests__/api/pdf-client-generation-apis.test.ts",
+        "__tests__/api/pendencias/lote.route.test.ts",
+        "__tests__/api/public/representantes/cadastro/helpers.test.ts",
+        "__tests__/api/public/representantes/cadastro/notificacoes-comercial.test.ts",
+        "__tests__/api/public-config.test.ts",
+        "__tests__/api/rbac/avaliacao-role-check.test.ts",
+        "__tests__/api/recibo/gerar.test.ts",
+        "__tests__/api/recibo/pdf-bytea.test.ts",
+        "__tests__/api/recibo-gerar.test.ts",
+        "__tests__/api/relatorio-setor-pdf.test.ts",
+        "__tests__/api/representante/aceitar-termos.test.ts",
+        "__tests__/api/representante/cadastro.test.ts",
+        "__tests__/api/representante/comissoes-comprovante.test.ts",
+        "__tests__/api/representante/comissoes.test.ts",
+        "__tests__/api/representante/equipe-cadastrar-codigo-sequencial.test.ts",
+        "__tests__/api/representante/equipe-leads.test.ts",
+        "__tests__/api/representante/equipe-reenviar-convite.test.ts",
+        "__tests__/api/representante/equipe-vendedores-documentos-visualizar.test.ts",
+        "__tests__/api/representante/equipe-vendedores-lista.test.ts",
+        "__tests__/api/representante/leads-token.test.ts",
+        "__tests__/api/representante/leads.test.ts",
+        "__tests__/api/representante/logout.test.ts",
+        "__tests__/api/representante/me.test.ts",
+        "__tests__/api/representante/vinculos-renovar.test.ts",
+        "__tests__/api/representante/vinculos.test.ts",
+        "__tests__/api/representante-equipe-cadastro-fix.test.ts",
+        "__tests__/api/rh/account-info.test.ts",
+        "__tests__/api/rh/dashboard.test.ts",
+        "__tests__/api/rh/empresas-ativacao-isolated.test.ts",
+        "__tests__/api/rh/empresas-ativacao.test.ts",
+        "__tests__/api/rh/empresas-security-validation.test.ts",
+        "__tests__/api/rh/empresas.test.ts",
+        "__tests__/api/rh/funcionarios/import.route.test.ts",
+        "__tests__/api/rh/funcionarios-access-map.test.ts",
+        "__tests__/api/rh/funcionarios-create.test.ts",
+        "__tests__/api/rh/funcionarios-edit.test.ts",
+        "__tests__/api/rh/funcionarios-status-batch.test.ts",
+        "__tests__/api/rh/funcionarios-status.test.ts",
+        "__tests__/api/rh/funcionarios.block-admin.test.ts",
+        "__tests__/api/rh/funcionarios.route.test.ts",
+        "__tests__/api/rh/importacao/execute.test.ts",
+        "__tests__/api/rh/importacao/validate.test.ts",
+        "__tests__/api/rh/laudos-download-backblaze-proxy.test.ts",
+        "__tests__/api/rh/laudos-download-remote.test.ts",
+        "__tests__/api/rh/laudos-download.test.ts",
+        "__tests__/api/rh/laudos.test.ts",
+        "__tests__/api/rh/liberar-lote-permissions.test.ts",
+        "__tests__/api/rh/logo.test.ts",
+        "__tests__/api/rh/lotes-avaliacoes-inativar-cancelado.test.ts",
+        "__tests__/api/rh/lotes-avaliacoes-inativar.test.ts",
+        "__tests__/api/rh/lotes-avaliacoes-reset.test.ts",
+        "__tests__/api/rh/lotes-detalhes.test.ts",
+        "__tests__/api/rh/lotes-fila-emissao-compat.test.ts",
+        "__tests__/api/rh/lotes-funcionarios.test.ts",
+        "__tests__/api/rh/lotes-inativar-avaliacao.test.ts",
+        "__tests__/api/rh/lotes.test.ts",
+        "__tests__/api/rh/notificacoes.test.ts",
+        "__tests__/api/rh/pendencias.block-admin.test.ts",
+        "__tests__/api/rh/relatorio-individual-pdf-corrections.test.ts",
+        "__tests__/api/rh/relatorio-individual-pdf.test.ts",
+        "__tests__/api/rh/relatorio-lote-pdf-corrections.test.ts",
+        "__tests__/api/rh/reset-security-context.test.ts",
+        "__tests__/api/storage.test.ts",
+        "__tests__/api/suporte/contratos.test.ts",
+        "__tests__/api/suporte/leads-aprovacao.test.ts",
+        "__tests__/api/suporte/pre-cadastro-delete.test.ts",
+        "__tests__/api/suporte/pre-cadastro.test.ts",
+        "__tests__/api/suporte/representantes-reset-senha.test.ts",
+        "__tests__/api/termos/registrar-hotfix.test.ts",
+        "__tests__/api/test/session.test.ts",
+        "__tests__/api/tomador/contrato-pdf.test.ts",
+        "__tests__/api/vendedor/dados-bancarios.test.ts",
+        "__tests__/api/vendedor/dados-codigo.test.ts",
+        "__tests__/api/vendedor/leads.test.ts",
+        "__tests__/api/verificar-pagamento.test.ts",
+        "__tests__/api/webhooks-asaas.test.ts"
+      ]
+    },
+    "integration": {
+      "files": 48,
+      "paths": [
+        "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts",
+        "__tests__/integration/asaas-payment-integration.test.ts",
+        "__tests__/integration/asaas-webhook-lote-sync.test.ts",
+        "__tests__/integration/avaliacao-q37-modal.test.tsx",
+        "__tests__/integration/backfill-recibos-retroativos.test.ts",
+        "__tests__/integration/cadastro-endpoints-criticos.test.ts",
+        "__tests__/integration/ciclo-completo-emissao-laudo.test.ts",
+        "__tests__/integration/cleanup-seed-payment-flow.test.ts",
+        "__tests__/integration/clinica-criacao-rh-fluxo-corrigido.test.ts",
+        "__tests__/integration/clinicas-rh.test.ts",
+        "__tests__/integration/correcao-autenticacao.test.ts",
+        "__tests__/integration/correcoes-completas.test.ts",
+        "__tests__/integration/delete-clinica-fallback.test.ts",
+        "__tests__/integration/emissor/emissao-manual-fluxo.test.ts",
+        "__tests__/integration/emissor-banco-validacao.test.ts",
+        "__tests__/integration/empresa-dashboard-refatorada.test.tsx",
+        "__tests__/integration/empresa-modal-interaction.test.tsx",
+        "__tests__/integration/empresa-status-display.test.tsx",
+        "__tests__/integration/ensure-admin-password.test.ts",
+        "__tests__/integration/entidade-create-funcionario.e2e.test.ts",
+        "__tests__/integration/entidade-lotes-contratante.integration.test.ts",
+        "__tests__/integration/entidade-lotes-tomador.integration.test.ts",
+        "__tests__/integration/entidades-gestores.test.ts",
+        "__tests__/integration/fluxo-pagamento-aguardando-conta.test.ts",
+        "__tests__/integration/fluxo-pagamento-emissao.test.ts",
+        "__tests__/integration/funcionario-entidade-create.integration.test.ts",
+        "__tests__/integration/gestor/gestor-refactoring.test.ts",
+        "__tests__/integration/imutabilidade-laudo.test.ts",
+        "__tests__/integration/isolamento-entidade-clinica.test.ts",
+        "__tests__/integration/isolamento-entidades-clinicas.test.ts",
+        "__tests__/integration/liberar-lote-atomicity.test.ts",
+        "__tests__/integration/liberar-lote-rh-resilience.test.ts",
+        "__tests__/integration/liberar-lote-rh.integration.test.ts",
+        "__tests__/integration/login-system-accounts.test.ts",
+        "__tests__/integration/maquina-estado-transicoes.test.ts",
+        "__tests__/integration/pagamento-iniciar-fallback.test.ts",
+        "__tests__/integration/representante-flows.test.ts",
+        "__tests__/integration/rls-isolamento-rh-gestor.test.ts",
+        "__tests__/integration/savepoint-laudo-duplicate.test.ts",
+        "__tests__/integration/seed-admin.test.ts",
+        "__tests__/integration/sistema-pagamento-emissao.test.ts",
+        "__tests__/integration/testes-basicos-estado.test.ts",
+        "__tests__/integration/transaction-audit-context.test.ts",
+        "__tests__/integration/validacao-constraints.test.ts",
+        "__tests__/integration/validacao-enum-estados.test.ts",
+        "__tests__/integration/validacao-lote-bloqueante.test.ts",
+        "__tests__/integration/webhook/correcao-webhook-remocao-codigo-obsoleto.test.ts",
+        "__tests__/integration/webhook-null-safe-query-fix.test.ts"
+      ]
+    },
+    "database": {
+      "files": 41,
+      "paths": [
+        "__tests__/database/audit-log-with-context.test.ts",
+        "__tests__/database/audit-trigger.test.ts",
+        "__tests__/database/clinica-consistency.test.ts",
+        "__tests__/database/comissionamento-schema.test.ts",
+        "__tests__/database/comissionamento-triggers.test.ts",
+        "__tests__/database/continuous-ids-sequence.test.ts",
+        "__tests__/database/data-integrity.test.ts",
+        "__tests__/database/database-migrations-schema.test.ts",
+        "__tests__/database/database-reset.test.ts",
+        "__tests__/database/db-comissionamento-duplicate-vinculos.test.ts",
+        "__tests__/database/detectar-anomalias-indice.test.ts",
+        "__tests__/database/enforce-usuarios-only.test.ts",
+        "__tests__/database/entidade-tabela-correcao.test.ts",
+        "__tests__/database/fix-resultados-faltantes.test.ts",
+        "__tests__/database/fluxo-pagamento-aguardando-conta.test.ts",
+        "__tests__/database/fluxo-pagamento-emissao.test.ts",
+        "__tests__/database/funcionarios-constraint.test.ts",
+        "__tests__/database/gestor_emissor_constraint.test.ts",
+        "__tests__/database/laudo-columns.test.ts",
+        "__tests__/database/laudos-schema.test.ts",
+        "__tests__/database/laudos-storage-protection.test.ts",
+        "__tests__/database/migracao-165-trigger-fix.test.ts",
+        "__tests__/database/migracao-laudo-enviado-em.test.ts",
+        "__tests__/database/migration-300.test.ts",
+        "__tests__/database/migration-527-primeiro-acesso.test.ts",
+        "__tests__/database/migration-data.test.ts",
+        "__tests__/database/migrations/remocao-automacao.test.ts",
+        "__tests__/database/migrations-1144-1145-laudos-emissor-cpf-fk.test.ts",
+        "__tests__/database/migrations-database-correcoes.integration.test.ts",
+        "__tests__/database/migrations-integrity.test.ts",
+        "__tests__/database/perfil-cadastro-super-removed.test.ts",
+        "__tests__/database/rls-emissor-granular.test.ts",
+        "__tests__/database/role-gestor-entidade.test.ts",
+        "__tests__/database/schema-smoke-test.test.ts",
+        "__tests__/database/seed-users.test.ts",
+        "__tests__/database/status-constraints.test.ts",
+        "__tests__/database/trigger-hash-backfill.test.ts",
+        "__tests__/database/triggers/reservar-laudo-on-lote.test.ts",
+        "__tests__/database/valor-servico-migration.test.ts",
+        "__tests__/database/view-solicitacoes-emissao-entidade-coverage.test.ts",
+        "__tests__/database/vw_funcionarios_por_lote.test.ts"
+      ]
+    },
+    "regression": {
+      "files": 29,
+      "paths": [
+        "__tests__/regression/correcoes-01-04-2026-migration-1139-not-null.test.ts",
+        "__tests__/regression/correcoes-01-04-2026-remocao-pagamento-cadastro.test.ts",
+        "__tests__/regression/correcoes-03-04-2026.test.ts",
+        "__tests__/regression/correcoes-04-03-2026.test.ts",
+        "__tests__/regression/correcoes-04-04-2026-status-pagamento-cards.test.ts",
+        "__tests__/regression/correcoes-04-04-2026-ultima-avaliacao.test.ts",
+        "__tests__/regression/correcoes-05-04-2026-cadastro-clinica-vinculo-comissao.test.ts",
+        "__tests__/regression/correcoes-05-04-2026-fix-fn-next-lote-id.test.ts",
+        "__tests__/regression/correcoes-05-04-2026-fix-liberado-por-fkey-e-reset-entidade.test.ts",
+        "__tests__/regression/correcoes-05-04-2026-remocao-data-liberacao-login.test.ts",
+        "__tests__/regression/correcoes-06-03-2026.test.ts",
+        "__tests__/regression/correcoes-08-02-2026.test.ts",
+        "__tests__/regression/correcoes-08-04-2026-nome-completo-nivel-cargo.test.ts",
+        "__tests__/regression/correcoes-09-02-2026-entidade-id.test.ts",
+        "__tests__/regression/correcoes-17-03-2026.test.ts",
+        "__tests__/regression/correcoes-18-03-2026.test.ts",
+        "__tests__/regression/correcoes-20-03-2026.test.ts",
+        "__tests__/regression/correcoes-22-03-2026.test.ts",
+        "__tests__/regression/correcoes-23-03-2026.test.ts",
+        "__tests__/regression/correcoes-26-03-2026-mudanca-funcao-importacao.test.ts",
+        "__tests__/regression/correcoes-27-02-2026.test.ts",
+        "__tests__/regression/correcoes-28-02-2026.test.ts",
+        "__tests__/regression/correcoes-31-01-2026.test.ts",
+        "__tests__/regression/correcoes-comissionamento-auditoria.test.ts",
+        "__tests__/regression/correcoes-ux-27-02-2026.test.ts",
+        "__tests__/regression/mudancas-agrupadas.test.ts",
+        "__tests__/regression/nivel-cargo-auto-modal.test.ts",
+        "__tests__/regression/remocao-sistema-personalizado-01-04-2026.test.ts",
+        "__tests__/regression/zapsign-pdf-gerado-assinar-fluxo.test.ts"
+      ]
+    },
+    "unit": {
+      "files": 5,
+      "paths": [
+        "__tests__/unit/leads-config-comissao-comercial.test.ts",
+        "__tests__/unit/migracao-1206-trigger-fix.test.ts",
+        "__tests__/unit/migracao-165-simple-validation.test.ts",
+        "__tests__/unit/parcelas-helper-normalizar.test.ts",
+        "__tests__/unit/perfil-usuario-enum.test.ts"
+      ]
+    },
+    "lib": {
+      "files": 93,
+      "paths": [
+        "__tests__/lib/audit-logger.test.ts",
+        "__tests__/lib/auditoria.test.ts",
+        "__tests__/lib/auth-require.test.ts",
+        "__tests__/lib/backblaze-client.test.ts",
+        "__tests__/lib/build-grupos-from-respostas.test.ts",
+        "__tests__/lib/business-rules.test.ts",
+        "__tests__/lib/cadastro-storage.test.ts",
+        "__tests__/lib/calculate.test.ts",
+        "__tests__/lib/classificacao-risco.test.ts",
+        "__tests__/lib/comissao-split-leads-config.test.ts",
+        "__tests__/lib/comissionamento-ativar-parcela.test.ts",
+        "__tests__/lib/comissionamento-criar-admin.test.ts",
+        "__tests__/lib/comissoes-calculos.test.ts",
+        "__tests__/lib/copsoq-grupos-texto.test.ts",
+        "__tests__/lib/cpf-utils.test.ts",
+        "__tests__/lib/criarContaResponsavel.clinica-creation.test.ts",
+        "__tests__/lib/criarContaResponsavel.integration.test.ts",
+        "__tests__/lib/database-configuration.test.ts",
+        "__tests__/lib/date-formatting.test.ts",
+        "__tests__/lib/db-admin-scripts.test.ts",
+        "__tests__/lib/db-core-functions.test.ts",
+        "__tests__/lib/db-data-access-patterns.test.ts",
+        "__tests__/lib/db-emissor-environment.test.ts",
+        "__tests__/lib/db-emissor.test.ts",
+        "__tests__/lib/db-entidades.test.ts",
+        "__tests__/lib/db-environment-guard.test.ts",
+        "__tests__/lib/db-gestor.test.ts",
+        "__tests__/lib/db-multi-tenant.test.ts",
+        "__tests__/lib/db-security-extended.test.ts",
+        "__tests__/lib/db-security.test.ts",
+        "__tests__/lib/db-transaction.test.ts",
+        "__tests__/lib/exibicao-condicional-boxes.test.ts",
+        "__tests__/lib/health-check.test.ts",
+        "__tests__/lib/helpers/destinatario-tipo.test.ts",
+        "__tests__/lib/hooks/useAnomalias.test.ts",
+        "__tests__/lib/hooks/useEmpresa.test.ts",
+        "__tests__/lib/hooks/useFuncionarios.test.ts",
+        "__tests__/lib/hooks/useLaudo.test.ts",
+        "__tests__/lib/hooks/useLaudos.test.ts",
+        "__tests__/lib/hooks/useLotesAvaliacao.test.ts",
+        "__tests__/lib/importacao-dinamica.test.ts",
+        "__tests__/lib/importacao-template-manager.test.ts",
+        "__tests__/lib/instrumentation.test.ts",
+        "__tests__/lib/interpretacao-grupos-alto-risco.test.ts",
+        "__tests__/lib/laudo-adjustments.test.ts",
+        "__tests__/lib/laudo-auto.test.ts",
+        "__tests__/lib/laudo-calculos.test.ts",
+        "__tests__/lib/laudo-design-updates.test.ts",
+        "__tests__/lib/laudo-guard.test.ts",
+        "__tests__/lib/laudo-storage-fallback.test.ts",
+        "__tests__/lib/laudo-storage.test.ts",
+        "__tests__/lib/laudo-titulos-classificacao.test.ts",
+        "__tests__/lib/lead-valor-negociado.test.ts",
+        "__tests__/lib/leads-tipo-cliente-aprovacao.test.ts",
+        "__tests__/lib/legacy-profiles.test.ts",
+        "__tests__/lib/logs-cleanup.test.ts",
+        "__tests__/lib/lote/types.test.ts",
+        "__tests__/lib/lote/utils.test.ts",
+        "__tests__/lib/lote-id-allocator.test.ts",
+        "__tests__/lib/manutencao-taxa.test.ts",
+        "__tests__/lib/migracao-165-simple-validation.test.ts",
+        "__tests__/lib/num-vidas-equipe-leads.test.ts",
+        "__tests__/lib/parcelas-helper-normalizar.test.ts",
+        "__tests__/lib/parcelas-helper.test.ts",
+        "__tests__/lib/pdf/relatorio-helpers.test.ts",
+        "__tests__/lib/pdf/timezone-helper.test.ts",
+        "__tests__/lib/pdf-laudo-generator.test.ts",
+        "__tests__/lib/pdf-relatorio-generator.test.ts",
+        "__tests__/lib/perfil-usuario-enum.test.ts",
+        "__tests__/lib/policies.test.ts",
+        "__tests__/lib/questoes.test.ts",
+        "__tests__/lib/rate-limit.test.ts",
+        "__tests__/lib/recalculo-emissao-inativadas.test.ts",
+        "__tests__/lib/receipt-generator.test.ts",
+        "__tests__/lib/relatorio-dados.test.ts",
+        "__tests__/lib/relatorio-lote-pdf-conteudo.test.ts",
+        "__tests__/lib/relatorio-setor-pdf.test.ts",
+        "__tests__/lib/representante-storage-vendedor.test.ts",
+        "__tests__/lib/requireRHWithEmpresaAccess.test.ts",
+        "__tests__/lib/schema-validation-utils.test.ts",
+        "__tests__/lib/session-representante.test.ts",
+        "__tests__/lib/session.test.ts",
+        "__tests__/lib/state-machine-comissao.test.ts",
+        "__tests__/lib/state-machine-representante.test.ts",
+        "__tests__/lib/status-aprovacao-type.test.ts",
+        "__tests__/lib/termos/registrar-aceite-hotfix.test.ts",
+        "__tests__/lib/timezone-helper.test.ts",
+        "__tests__/lib/validacoes-avancadas.test.ts",
+        "__tests__/lib/validacoes-contratacao.test.ts",
+        "__tests__/lib/validate-session-context.test.ts",
+        "__tests__/lib/validators-representante.test.ts",
+        "__tests__/lib/validators.test.ts",
+        "__tests__/lib/xlsxParser.test.ts"
+      ]
+    },
+    "components": {
+      "files": 116,
+      "paths": [
+        "__tests__/components/AccountInfoContent.test.tsx",
+        "__tests__/components/admin/AdminSidebar-logout.test.tsx",
+        "__tests__/components/admin/AdminSidebar.test.tsx",
+        "__tests__/components/admin/AguardandoPagamentoTab.test.tsx",
+        "__tests__/components/admin/AuditoriasContent.test.tsx",
+        "__tests__/components/admin/AuditoriaTables.test.tsx",
+        "__tests__/components/admin/ModalReativarTomador.test.tsx",
+        "__tests__/components/admin/novos-cadastros-estados.test.tsx",
+        "__tests__/components/admin/novos-cadastros-interacao.test.tsx",
+        "__tests__/components/admin/novos-cadastros-renderizacao.test.tsx",
+        "__tests__/components/admin/NovoscadastrosContent.test.tsx",
+        "__tests__/components/admin/PagamentosContent.test.tsx",
+        "__tests__/components/admin/RegenerarHashesButton.test.tsx",
+        "__tests__/components/admin/TabelaAceites.test.tsx",
+        "__tests__/components/admin/TomadoresContent.test.tsx",
+        "__tests__/components/admin/VolumeContent.test.tsx",
+        "__tests__/components/AvaliacaoConcluida.test.tsx",
+        "__tests__/components/avaliacoes-modal-portal.test.tsx",
+        "__tests__/components/BarraProgressoEmissao.test.tsx",
+        "__tests__/components/BotaoSolicitarEmissao.test.tsx",
+        "__tests__/components/CadastrarRepresentanteModal.test.tsx",
+        "__tests__/components/CheckoutAsaas-boleto.test.tsx",
+        "__tests__/components/clinica/ClinicaSidebar.test.tsx",
+        "__tests__/components/clinica/ContaSection.test.tsx",
+        "__tests__/components/clinica/EmpresaFormModal.test.tsx",
+        "__tests__/components/clinica/EmpresasSection.test.tsx",
+        "__tests__/components/clinica/LaudosSection.test.tsx",
+        "__tests__/components/ClinicasContent.test.tsx",
+        "__tests__/components/ComissoesContent.test.tsx",
+        "__tests__/components/CompletionModal.test.tsx",
+        "__tests__/components/ConditionalHeader.test.tsx",
+        "__tests__/components/ConfirmacaoStep.indicacao.test.tsx",
+        "__tests__/components/ConfirmacaoStep.test.tsx",
+        "__tests__/components/CPFMascarado.test.tsx",
+        "__tests__/components/DadosStep.test.tsx",
+        "__tests__/components/Dashboard.test.tsx",
+        "__tests__/components/DetalhesFuncionario-acesso.test.tsx",
+        "__tests__/components/DetalhesFuncionario.test.tsx",
+        "__tests__/components/EditEmployeeModal.test.tsx",
+        "__tests__/components/EmissorDashboard.test.tsx",
+        "__tests__/components/entidade/ContaSection.test.tsx",
+        "__tests__/components/EntidadesContent.test.tsx",
+        "__tests__/components/EntidadeStatCards.test.tsx",
+        "__tests__/components/ErrorBoundary.test.tsx",
+        "__tests__/components/ErrorCard.test.tsx",
+        "__tests__/components/FlowStepsExplainer.test.tsx",
+        "__tests__/components/FormGroup.test.tsx",
+        "__tests__/components/funcionarios/FuncionariosSection.elegibilidade.test.tsx",
+        "__tests__/components/GerenciarEmpresas.test.tsx",
+        "__tests__/components/hash-display-ui.test.tsx",
+        "__tests__/components/HashVisualizer.test.tsx",
+        "__tests__/components/Header.test.tsx",
+        "__tests__/components/importacao-template-manager.test.ts",
+        "__tests__/components/ImportacaoFlowGuide.test.tsx",
+        "__tests__/components/ImportEmpresasModal.test.tsx",
+        "__tests__/components/LaudosSection.test.tsx",
+        "__tests__/components/LiberarAvaliacoes.test.tsx",
+        "__tests__/components/lote/LoteStatCards.test.tsx",
+        "__tests__/components/LotesGrid.test.tsx",
+        "__tests__/components/modal-portals.test.tsx",
+        "__tests__/components/modal-setor-relatorio-pdf.test.tsx",
+        "__tests__/components/ModalAdicionarFuncionarioEntidade.test.tsx",
+        "__tests__/components/ModalBoasVindasCadastro.test.tsx",
+        "__tests__/components/ModalCadastrotomador.contractAcceptance.test.tsx",
+        "__tests__/components/ModalCadastrotomador.indicacao.test.tsx",
+        "__tests__/components/ModalCadastrotomador.integration.test.tsx",
+        "__tests__/components/ModalCadastrotomador.precoString.test.tsx",
+        "__tests__/components/ModalCadastrotomador.test.tsx",
+        "__tests__/components/ModalConfirmacaoSolicitar.test.tsx",
+        "__tests__/components/ModalInativarAvaliacao.test.tsx",
+        "__tests__/components/ModalInserirFuncionario.test.tsx",
+        "__tests__/components/ModalPagamento.simular.test.tsx",
+        "__tests__/components/ModalResetarAvaliacao.test.tsx",
+        "__tests__/components/ModalResetarSenha.test.tsx",
+        "__tests__/components/modals/LiberarLoteModal.test.tsx",
+        "__tests__/components/modals/ModalLinkPagamentoEmissao.test.tsx",
+        "__tests__/components/ModalSetorRelatorioPDF.test.tsx",
+        "__tests__/components/NavigationButtons.test.tsx",
+        "__tests__/components/NivelCargoStep.test.tsx",
+        "__tests__/components/NotificationCenter.test.tsx",
+        "__tests__/components/NotificationCenterClinica.test.tsx",
+        "__tests__/components/NotificationsSection.test.tsx",
+        "__tests__/components/NovoLeadVendedorModal.test.tsx",
+        "__tests__/components/payments/ParcelItem.test.tsx",
+        "__tests__/components/payments/PaymentItem.test.tsx",
+        "__tests__/components/payments/PaymentSummaryCard.test.tsx",
+        "__tests__/components/PaymentSimulator.test.tsx",
+        "__tests__/components/pdf-client-generation.test.tsx",
+        "__tests__/components/PreviewLaudoCard.test.tsx",
+        "__tests__/components/ProgressBar.test.tsx",
+        "__tests__/components/PWAInitializer.test.tsx",
+        "__tests__/components/PWAMenuItem.test.tsx",
+        "__tests__/components/QuestionCard.test.tsx",
+        "__tests__/components/QuestionModal.test.tsx",
+        "__tests__/components/QuestionModalAutoAdvance.test.tsx",
+        "__tests__/components/QuestionModalExit.test.tsx",
+        "__tests__/components/QuestionModalReset.test.tsx",
+        "__tests__/components/RadioScale.test.tsx",
+        "__tests__/components/representante/RepresentanteSidebar.test.tsx",
+        "__tests__/components/ResponsavelStep.test.tsx",
+        "__tests__/components/ResultadosChart.test.tsx",
+        "__tests__/components/rh/EmpresaHeader.test.tsx",
+        "__tests__/components/rh/LotesGrid.test.tsx",
+        "__tests__/components/rh/TabNavigation.test.tsx",
+        "__tests__/components/RHLoteStatCards.test.tsx",
+        "__tests__/components/shared/ModalRecibo.test.tsx",
+        "__tests__/components/shared/PagamentosFinanceiros.test.tsx",
+        "__tests__/components/shared/SidebarLayout.test.tsx",
+        "__tests__/components/snapshots/critical-components.test.tsx",
+        "__tests__/components/suporte/PreCadastroContent.test.tsx",
+        "__tests__/components/SwipeGesture.test.tsx",
+        "__tests__/components/TemplateManager.security.test.tsx",
+        "__tests__/components/ui-solicitacao-card-representante-display.test.tsx",
+        "__tests__/components/UploadArea.accessibility.test.tsx",
+        "__tests__/components/UploadLaudoButton.upload-disable.test.tsx",
+        "__tests__/components/vendedor/VendedorPortalSidebar.test.tsx"
+      ]
+    },
+    "hooks": {
+      "files": 7,
+      "paths": [
+        "__tests__/hooks/lote/useLoteFiltros.test.ts",
+        "__tests__/hooks/useCadastroTomador.test.tsx",
+        "__tests__/hooks/useFocusTrap.test.tsx",
+        "__tests__/hooks/useLiberarLote.test.ts",
+        "__tests__/hooks/useOrgInfo.test.ts",
+        "__tests__/hooks/usePWAInstall.test.ts",
+        "__tests__/hooks/useReprocessarLaudo.test.tsx"
+      ]
+    },
+    "e2e-jest": {
+      "files": 3,
+      "paths": [
+        "__tests__/e2e/fluxo-completo-lote.test.ts",
+        "__tests__/e2e/funcionario-avaliacao-completa.test.ts",
+        "__tests__/e2e/rls-integration.spec.ts"
+      ]
+    },
+    "security": {
+      "files": 20,
+      "paths": [
+        "__tests__/security/admin/admin-sem-acesso-operacional.test.ts",
+        "__tests__/security/audit-logs.test.ts",
+        "__tests__/security/audit-senior-implementations.test.ts",
+        "__tests__/security/authorization-policies.test.ts",
+        "__tests__/security/csrf.test.ts",
+        "__tests__/security/db-isolation-corrections-18-03-2026.test.ts",
+        "__tests__/security/db-no-hardcoded-credentials.test.ts",
+        "__tests__/security/db-security-fix-validation.test.ts",
+        "__tests__/security/plan-perf-seguranca-prod.test.ts",
+        "__tests__/security/rate-limiting.test.ts",
+        "__tests__/security/rbac.test.ts",
+        "__tests__/security/rls-context-visibility.test.ts",
+        "__tests__/security/roles-config.test.ts",
+        "__tests__/security/route-auth-guards.test.ts",
+        "__tests__/security/sanitization.test.ts",
+        "__tests__/security/security-audit-2026-03-26.test.ts",
+        "__tests__/security/segregacao-perfis-cards-v2.test.ts",
+        "__tests__/security/session-mfa-security.test.ts",
+        "__tests__/security/sql-injection.test.ts",
+        "__tests__/security/tenant-validation.test.ts"
+      ]
+    },
+    "rls-rbac": {
+      "files": 20,
+      "paths": [
+        "__tests__/security/admin/admin-sem-acesso-operacional.test.ts",
+        "__tests__/security/audit-logs.test.ts",
+        "__tests__/security/audit-senior-implementations.test.ts",
+        "__tests__/security/authorization-policies.test.ts",
+        "__tests__/security/csrf.test.ts",
+        "__tests__/security/db-isolation-corrections-18-03-2026.test.ts",
+        "__tests__/security/db-no-hardcoded-credentials.test.ts",
+        "__tests__/security/db-security-fix-validation.test.ts",
+        "__tests__/security/plan-perf-seguranca-prod.test.ts",
+        "__tests__/security/rate-limiting.test.ts",
+        "__tests__/security/rbac.test.ts",
+        "__tests__/security/rls-context-visibility.test.ts",
+        "__tests__/security/roles-config.test.ts",
+        "__tests__/security/route-auth-guards.test.ts",
+        "__tests__/security/sanitization.test.ts",
+        "__tests__/security/security-audit-2026-03-26.test.ts",
+        "__tests__/security/segregacao-perfis-cards-v2.test.ts",
+        "__tests__/security/session-mfa-security.test.ts",
+        "__tests__/security/sql-injection.test.ts",
+        "__tests__/security/tenant-validation.test.ts"
+      ]
+    },
+    "cypress": {
+      "files": 49,
+      "paths": [
+        "cypress/e2e/admin/clinicas-delete.cy.ts",
+        "cypress/e2e/admin/cobranca.cy.ts",
+        "cypress/e2e/auth/autenticacao-completa.cy.ts",
+        "cypress/e2e/auth/login-system-accounts.cy.ts",
+        "cypress/e2e/avaliacao/fluxo-avaliacao.cy.ts",
+        "cypress/e2e/avaliacao/inativar-avaliacao.cy.ts",
+        "cypress/e2e/avaliacao-auto-conclusao.cy.ts",
+        "cypress/e2e/cadastro/cadastro-entidade.cy.ts",
+        "cypress/e2e/contratante-erros.cy.ts",
+        "cypress/e2e/contratante-plano-fixo-responsavel.cy.ts",
+        "cypress/e2e/contratante_cadastro_ativacao.cy.ts",
+        "cypress/e2e/dashboard/dashboard-navegacao.cy.ts",
+        "cypress/e2e/emissao/fluxo-emissao.cy.ts",
+        "cypress/e2e/entidade/entidade-importacao-massa.cy.ts",
+        "cypress/e2e/entidade/gestao-funcionarios.cy.ts",
+        "cypress/e2e/entidade/inativar-avaliacao-e2e.cy.ts",
+        "cypress/e2e/entidade/inativar-avaliacao.cy.ts",
+        "cypress/e2e/entidade/recibo.cy.ts",
+        "cypress/e2e/entidade-conta-fluxo-completo.cy.ts",
+        "cypress/e2e/entidade-liberacao-lote.cy.ts",
+        "cypress/e2e/entidade-lote-grupos.cy.ts",
+        "cypress/e2e/entidade-lote-no-horizontal-scroll.cy.ts",
+        "cypress/e2e/fluxo-cadastro-entidade-senha.cy.ts",
+        "cypress/e2e/fluxo-funcionario-lote-emissao.cy.ts",
+        "cypress/e2e/funcionario/completo.cy.ts",
+        "cypress/e2e/funcionario/gestor_entidade_login.cy.ts",
+        "cypress/e2e/funcionario/mobile.cy.ts",
+        "cypress/e2e/indice-avaliacao.cy.ts",
+        "cypress/e2e/liberacao-lote.cy.ts",
+        "cypress/e2e/lote-permission.cy.ts",
+        "cypress/e2e/lote-reset.cy.ts",
+        "cypress/e2e/modal-portals.cy.ts",
+        "cypress/e2e/novos-perfis/comercial.cy.ts",
+        "cypress/e2e/novos-perfis/suporte.cy.ts",
+        "cypress/e2e/novos-perfis/vendedor.cy.ts",
+        "cypress/e2e/offline.cy.ts",
+        "cypress/e2e/pagamento/fluxo-pagamento.cy.ts",
+        "cypress/e2e/regressao/fluxo-cadastro-regressao.cy.ts",
+        "cypress/e2e/representante-onboarding.cy.ts",
+        "cypress/e2e/rh/emitir-bloquear-inativacao.cy.ts",
+        "cypress/e2e/rh/liberar-nova-avaliacao.cy.ts",
+        "cypress/e2e/rh/recibo.cy.ts",
+        "cypress/e2e/rh-dashboard-bulk-liberar.cy.ts",
+        "cypress/e2e/rls-integration.cy.ts",
+        "cypress/e2e/rota-antiga.cy.ts",
+        "cypress/e2e/security-rbac.cy.ts",
+        "cypress/e2e/seguranca/rbac-operacoes-criticas.cy.ts",
+        "cypress/e2e/smoke-tests.cy.ts",
+        "cypress/e2e/solicitacao-manual-emissao.cy.ts"
+      ]
+    }
+  },
+  "skips": [
+    {
+      "file": "__tests__/api/admin/leads-documentos.test.ts",
+      "line": 174,
+      "type": "it.skip",
+      "description": "deve retornar 401 para não autenticado"
+    },
+    {
+      "file": "__tests__/api/admin/leads-documentos.test.ts",
+      "line": 178,
+      "type": "it.skip",
+      "description": "deve retornar 403 para não admin"
+    },
+    {
+      "file": "__tests__/api/admin/leads-documentos.test.ts",
+      "line": 182,
+      "type": "it.skip",
+      "description": "deve retornar 400 para ID inválido"
+    },
+    {
+      "file": "__tests__/api/auth/login-gestor.test.ts",
+      "line": 48,
+      "type": "it.skip",
+      "description": "deve autenticar gestor via entidades_senhas e retornar perfil gestor (temporariamente skiped - depende de cookie/session mocks)"
+    },
+    {
+      "file": "__tests__/api/entidade/lote-detalhes-grupos.test.ts",
+      "line": 209,
+      "type": "it.skip",
+      "description": "deve calcular corretamente grupos para avaliação concluída"
+    },
+    {
+      "file": "__tests__/api/rh/funcionarios-edit.test.ts",
+      "line": 131,
+      "type": "it.skip",
+      "description": "deve atualizar funcionário com sucesso"
+    },
+    {
+      "file": "__tests__/api/rh/funcionarios-edit.test.ts",
+      "line": 177,
+      "type": "it.skip",
+      "description": "deve retornar erro quando funcionário não existe"
+    },
+    {
+      "file": "__tests__/auth/login.test.tsx",
+      "line": 466,
+      "type": "it.skip",
+      "description": "deve focar no primeiro campo com erro"
+    },
+    {
+      "file": "__tests__/clinica/clinica-spa-integration.test.tsx",
+      "line": 116,
+      "type": "it.skip",
+      "description": "toggles sidebar collapse state (feature not implemented)"
+    },
+    {
+      "file": "__tests__/components/admin/ModalReativarTomador.test.tsx",
+      "line": 496,
+      "type": "it.skip",
+      "description": "deve chamar clipboard.writeText ao copiar login"
+    },
+    {
+      "file": "__tests__/components/admin/ModalReativarTomador.test.tsx",
+      "line": 518,
+      "type": "it.skip",
+      "description": "deve chamar clipboard.writeText ao copiar senha"
+    },
+    {
+      "file": "__tests__/components/clinica/EmpresaFormModal.test.tsx",
+      "line": 257,
+      "type": "it.skip",
+      "description": "valida formato de email do representante"
+    },
+    {
+      "file": "__tests__/components/EmissorDashboard.test.tsx",
+      "line": 492,
+      "type": "it.skip",
+      "description": "deve fazer download do PDF quando botão "
+    },
+    {
+      "file": "__tests__/components/NotificationCenterClinica.test.tsx",
+      "line": 282,
+      "type": "it.skip",
+      "description": "deve aplicar ícones corretos para cada tipo de notificação"
+    },
+    {
+      "file": "__tests__/components/NotificationCenterClinica.test.tsx",
+      "line": 362,
+      "type": "it.skip",
+      "description": "deve fechar painel após navegar"
+    },
+    {
+      "file": "__tests__/database/migrations-database-correcoes.integration.test.ts",
+      "line": 67,
+      "type": "it.skip",
+      "description": "função deve declarar v_emissor_cpf"
+    },
+    {
+      "file": "__tests__/database/migrations-database-correcoes.integration.test.ts",
+      "line": 71,
+      "type": "it.skip",
+      "description": "função deve buscar emissor com WHERE ativo = true"
+    },
+    {
+      "file": "__tests__/database/migrations-database-correcoes.integration.test.ts",
+      "line": 75,
+      "type": "it.skip",
+      "description": "função deve ter fallback para notificacoes_admin"
+    },
+    {
+      "file": "__tests__/emissor/emissor-vercel-pdf-integration.test.ts",
+      "line": 298,
+      "type": "it.skip",
+      "description": "deve existir ANALYSIS-VERCEL-PDF-ISSUE.md"
+    },
+    {
+      "file": "__tests__/emissor/emissor-vercel-pdf-integration.test.ts",
+      "line": 311,
+      "type": "it.skip",
+      "description": "deve existir IMPLEMENTATION-CLIENT-SIDE-PDF.md"
+    },
+    {
+      "file": "__tests__/emissor/emissor-workflow-improvements.test.ts",
+      "line": 115,
+      "type": "describe.skip",
+      "description": "Frontend - Página de Detalhes do Lote (Entidade)"
+    },
+    {
+      "file": "__tests__/emissor/emissor-workflow-improvements.test.ts",
+      "line": 166,
+      "type": "describe.skip",
+      "description": "Backend - API /api/entidade/lote/[id]"
+    },
+    {
+      "file": "__tests__/emissor/emissor-workflow-improvements.test.ts",
+      "line": 233,
+      "type": "describe.skip",
+      "description": "Integração - Validação de Estrutura"
+    },
+    {
+      "file": "__tests__/emissor/laudo-hash-display.test.tsx",
+      "line": 51,
+      "type": "it.skip",
+      "description": "deve exibir hash SHA-256 quando laudo está emitido"
+    },
+    {
+      "file": "__tests__/emissor/laudo-hash-display.test.tsx",
+      "line": 191,
+      "type": "it.skip",
+      "description": "deve exibir hash quando laudo foi enviado (para auditoria histórica)"
+    },
+    {
+      "file": "__tests__/emissor/laudo-hash-display.test.tsx",
+      "line": 255,
+      "type": "it.skip",
+      "description": "deve exibir botões corretos quando laudo está emitido"
+    },
+    {
+      "file": "__tests__/emissor/laudo-hash-display.test.tsx",
+      "line": 317,
+      "type": "it.skip",
+      "description": "deve bloquear edição e emissão quando API indicar bloqueio (emissão automática)"
+    },
+    {
+      "file": "__tests__/entidade/lote-detalhes.test.tsx",
+      "line": 92,
+      "type": "it.skip",
+      "description": "bloqueia inativação quando lote foi emitido e não mostra opção de forçar"
+    },
+    {
+      "file": "__tests__/lib/criarContaResponsavel.integration.test.ts",
+      "line": 17,
+      "type": "it.skip",
+      "description": "Deve inserir senha e criar funcionário quando não existir (DB real)"
+    },
+    {
+      "file": "__tests__/lib/criarContaResponsavel.integration.test.ts",
+      "line": 96,
+      "type": "it.skip",
+      "description": "Deve atualizar senha quando já existir (DB real)"
+    },
+    {
+      "file": "__tests__/lib/db-admin-scripts.test.ts",
+      "line": 115,
+      "type": "describe.skip",
+      "description": "atualizarSenhaAdmin"
+    },
+    {
+      "file": "__tests__/lib/db-admin-scripts.test.ts",
+      "line": 154,
+      "type": "it.skip",
+      "description": "deve atualizar a senha com sucesso"
+    },
+    {
+      "file": "__tests__/lib/db-emissor.test.ts",
+      "line": 22,
+      "type": "it.skip",
+      "description": "deve criar emissor com clinica_id NULL"
+    },
+    {
+      "file": "__tests__/lib/db-transaction.test.ts",
+      "line": 95,
+      "type": "it.skip",
+      "description": "deve fazer rollback automático se callback lançar erro"
+    },
+    {
+      "file": "__tests__/lib/db-transaction.test.ts",
+      "line": 158,
+      "type": "it.skip",
+      "description": "deve fazer commit se callback completar com sucesso"
+    },
+    {
+      "file": "__tests__/lib/laudo-calculos.test.ts",
+      "line": 380,
+      "type": "it.skip",
+      "description": "deve lançar erro se lote não encontrado"
+    },
+    {
+      "file": "__tests__/lib/relatorio-dados.test.ts",
+      "line": 163,
+      "type": "it.skip",
+      "description": "deve mencionar COPSOQ em recomendações de acompanhamento"
+    },
+    {
+      "file": "__tests__/lib/requireRHWithEmpresaAccess.test.ts",
+      "line": 207,
+      "type": "describe.skip",
+      "description": "requireRHWithEmpresaAccess - Controle de Acesso Seguro"
+    },
+    {
+      "file": "__tests__/lib/session-representante.test.ts",
+      "line": 53,
+      "type": "describe.skip",
+      "description": "criarSessaoRepresentante"
+    },
+    {
+      "file": "__tests__/representante/representantes-leads-cadastro.test.ts",
+      "line": 1030,
+      "type": "it.skip",
+      "description": "busca representantes ativos para o badge"
+    },
+    {
+      "file": "__tests__/representante/representantes-leads-cadastro.test.ts",
+      "line": 1035,
+      "type": "it.skip",
+      "description": "badge de leads pendentes está na página de representantes (não no admin geral)"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard-ui.test.tsx",
+      "line": 186,
+      "type": "describe.skip",
+      "description": "Paginação Inteligente"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard-ui.test.tsx",
+      "line": 329,
+      "type": "describe.skip",
+      "description": "Busca em Tempo Real"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard-ui.test.tsx",
+      "line": 499,
+      "type": "describe.skip",
+      "description": "Contadores Dinâmicos"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard-ui.test.tsx",
+      "line": 632,
+      "type": "describe.skip",
+      "description": "Estados de Loading"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard-ui.test.tsx",
+      "line": 755,
+      "type": "it.skip",
+      "description": "deve adaptar layout para mobile"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard-ui.test.tsx",
+      "line": 780,
+      "type": "it.skip",
+      "description": "deve exibir paginação em mobile"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard.test.tsx",
+      "line": 198,
+      "type": "it.skip",
+      "description": "deve exibir header com layout horizontal responsivo"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard.test.tsx",
+      "line": 286,
+      "type": "it.skip",
+      "description": "deve exibir lista de funcionários da empresa"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard.test.tsx",
+      "line": 345,
+      "type": "it.skip",
+      "description": "deve usar ID da empresa da URL"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard.test.tsx",
+      "line": 434,
+      "type": "it.skip",
+      "description": "deve filtrar funcionários por empresa específica"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard.test.tsx",
+      "line": 438,
+      "type": "it.skip",
+      "description": "deve atualizar dashboard quando empresa muda"
+    },
+    {
+      "file": "__tests__/rh/empresa-dashboard.test.tsx",
+      "line": 533,
+      "type": "describe.skip",
+      "description": "Tabela de funcionários otimizada"
+    },
+    {
+      "file": "__tests__/rh/funcionarios-bulk.test.tsx",
+      "line": 186,
+      "type": "it.skip",
+      "description": "combina múltiplos filtros (setor + nível de cargo)"
+    },
+    {
+      "file": "__tests__/rh/funcionarios-bulk.test.tsx",
+      "line": 275,
+      "type": "it.skip",
+      "description": "preserva filtros ao navegar entre páginas"
+    },
+    {
+      "file": "__tests__/rh/funcionarios-bulk.test.tsx",
+      "line": 383,
+      "type": "it.skip",
+      "description": "processa mais de 50 funcionários em massa sem limite"
+    },
+    {
+      "file": "__tests__/rh/funcionarios-bulk.test.tsx",
+      "line": 498,
+      "type": "it.skip",
+      "description": "exibe mensagem de erro quando operação em massa falha"
+    },
+    {
+      "file": "__tests__/rh/funcionarios-bulk.test.tsx",
+      "line": 725,
+      "type": "it.skip",
+      "description": "exibe cards individuais de empresas com estatísticas corretas"
+    },
+    {
+      "file": "__tests__/rh/lote-detalhes.test.tsx",
+      "line": 232,
+      "type": "it.skip",
+      "description": "deve carregar dados do lote após verificação de sessão"
+    },
+    {
+      "file": "__tests__/rh/lote-detalhes.test.tsx",
+      "line": 336,
+      "type": "describe.skip",
+      "description": "Filtros e Busca"
+    },
+    {
+      "file": "__tests__/rh/lote-detalhes.test.tsx",
+      "line": 423,
+      "type": "it.skip",
+      "description": "deve voltar para dashboard ao clicar em Voltar"
+    },
+    {
+      "file": "__tests__/rh/lote-detalhes.test.tsx",
+      "line": 447,
+      "type": "describe.skip",
+      "description": "Geração de Relatório"
+    },
+    {
+      "file": "__tests__/rh/lote-detalhes.test.tsx",
+      "line": 506,
+      "type": "describe.skip",
+      "description": "Tratamento de Erros"
+    },
+    {
+      "file": "__tests__/rh/lote-detalhes.test.tsx",
+      "line": 584,
+      "type": "describe.skip",
+      "description": "Campos Opcionais"
+    },
+    {
+      "file": "__tests__/rh/lote-relatorio-funcionario.test.tsx",
+      "line": 147,
+      "type": "it.skip",
+      "description": "deve renderizar coluna de Ações com botões de relatório"
+    },
+    {
+      "file": "__tests__/rh/lote-relatorio-funcionario.test.tsx",
+      "line": 159,
+      "type": "it.skip",
+      "description": "deve habilitar botão PDF apenas para avaliações concluídas"
+    },
+    {
+      "file": "__tests__/rh/lote-relatorio-funcionario.test.tsx",
+      "line": 180,
+      "type": "it.skip",
+      "description": "deve gerar relatório individual quando botão PDF é clicado"
+    },
+    {
+      "file": "__tests__/rh/lote-relatorio-funcionario.test.tsx",
+      "line": 212,
+      "type": "it.skip",
+      "description": "não deve gerar relatório se usuário cancelar confirmação"
+    },
+    {
+      "file": "__tests__/rh/lote-relatorio-funcionario.test.tsx",
+      "line": 241,
+      "type": "it.skip",
+      "description": "deve criar link de download com nome correto do arquivo"
+    },
+    {
+      "file": "__tests__/rh/lote-relatorio-funcionario.test.tsx",
+      "line": 283,
+      "type": "it.skip",
+      "description": "deve mostrar tooltip explicativo em botões desabilitados"
+    },
+    {
+      "file": "__tests__/rh/lote-relatorio-funcionario.test.tsx",
+      "line": 301,
+      "type": "it.skip",
+      "description": "deve exibir alerta em caso de erro na geração do relatório"
+    },
+    {
+      "file": "__tests__/rh/lotes-avaliacao.test.tsx",
+      "line": 189,
+      "type": "it.skip",
+      "description": "deve exibir lotes recentes na sidebar"
+    },
+    {
+      "file": "__tests__/ui/responsividade-funcionario.test.tsx",
+      "line": 61,
+      "type": "it.skip",
+      "description": "deve ter campo data de nascimento com inputMode="
+    }
+  ],
+  "obsolete": [
+    {
+      "file": "__tests__/regression/zapsign-pdf-gerado-assinar-fluxo.test.ts",
+      "reason": "Marcado como @deprecated/OBSOLETO"
+    },
+    {
+      "file": "__tests__/security/audit-senior-implementations.test.ts",
+      "reason": "Marcado como @deprecated/OBSOLETO"
+    },
+    {
+      "file": "__tests__/security/route-auth-guards.test.ts",
+      "reason": "Marcado como @deprecated/OBSOLETO"
+    }
+  ],
+  "duplicates": [
+    {
+      "endpoint": "/api/rh/relatorio-individual-pdf",
+      "apiFiles": [
+        "__tests__/api/rh/relatorio-individual-pdf.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/rh/relatorio-individual-pdf/route",
+      "apiFiles": [
+        "__tests__/api/rh/relatorio-individual-pdf.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/rh/relatorio-lote-pdf",
+      "apiFiles": [
+        "__tests__/api/rh/relatorio-lote-pdf-corrections.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/rh/relatorio-lote-pdf/route",
+      "apiFiles": [
+        "__tests__/api/rh/relatorio-lote-pdf-corrections.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/relatorio-individual-pdf",
+      "apiFiles": [
+        "__tests__/api/entidade/migration-1008-corrections.test.ts",
+        "__tests__/api/entidade/relatorio-individual-pdf.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/relatorio-individual-pdf/route",
+      "apiFiles": [
+        "__tests__/api/entidade/relatorio-individual-pdf-corrections.test.ts",
+        "__tests__/api/entidade/relatorio-individual-pdf.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/relatorio-lote-pdf",
+      "apiFiles": [
+        "__tests__/api/entidade/migration-1008-corrections.test.ts",
+        "__tests__/api/entidade/relatorio-lote-pdf-corrections.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/lote/",
+      "apiFiles": [
+        "__tests__/api/entidade/lote-avaliacoes-inativar.test.ts",
+        "__tests__/api/entidade/lote-detalhes-grupos.test.ts",
+        "__tests__/api/entidade/lote-detalhes-inativacao.test.ts",
+        "__tests__/api/entidade/lote-inativar-avaliacao.test.ts",
+        "__tests__/api/entidade/migration-1008-corrections.test.ts",
+        "__tests__/api/entidade/reset-security-context.test.ts",
+        "__tests__/api/esc1-route-auth-migrations.test.ts",
+        "__tests__/api/pdf-client-generation-apis.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/relatorio-lote-pdf/route",
+      "apiFiles": [
+        "__tests__/api/entidade/relatorio-lote-pdf-corrections.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
+    },
+    {
+      "endpoint": "/api/auth/session",
+      "apiFiles": [
+        "__tests__/api/auth/session.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/avaliacao-q37-modal.test.tsx"
+    },
+    {
+      "endpoint": "/api/avaliacao/todas",
+      "apiFiles": [
+        "__tests__/api/rbac/avaliacao-role-check.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/avaliacao-q37-modal.test.tsx"
+    },
+    {
+      "endpoint": "/api/avaliacao/status",
+      "apiFiles": [
+        "__tests__/api/avaliacao/status.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/avaliacao-q37-modal.test.tsx"
+    },
+    {
+      "endpoint": "/api/avaliacao/respostas-all",
+      "apiFiles": [
+        "__tests__/api/avaliacao/respostas-all.test.ts",
+        "__tests__/api/rbac/avaliacao-role-check.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/avaliacao-q37-modal.test.tsx"
+    },
+    {
+      "endpoint": "/api/pagamento/iniciar",
+      "apiFiles": [
+        "__tests__/api/pagamento/iniciar.test.ts",
+        "__tests__/api/pagamento-tomador-flow.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/cleanup-seed-payment-flow.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/account-info/route",
+      "apiFiles": [
+        "__tests__/api/entidade/account-info.enum-fallback.test.ts",
+        "__tests__/api/entidade/account-info.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/correcoes-completas.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/account-info",
+      "apiFiles": [
+        "__tests__/api/entidade/account-info.enum-fallback.test.ts",
+        "__tests__/api/entidade/account-info.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/correcoes-completas.test.ts"
+    },
+    {
+      "endpoint": "/api/emissor/laudos/",
+      "apiFiles": [
+        "__tests__/api/emissor/fluxo-emissao-laudo.test.ts",
+        "__tests__/api/emissor/laudos/hash-sha256-laudo.test.ts",
+        "__tests__/api/emissor/laudos/laudos-emissor.test.ts",
+        "__tests__/api/emissor/laudos.test.ts",
+        "__tests__/api/emissor/pdf.test.ts",
+        "__tests__/api/emissor/progresso.test.ts",
+        "__tests__/api/emissor/reprocessar-laudo.test.ts",
+        "__tests__/api/emissor/reprocessar.test.ts",
+        "__tests__/api/emissor/upload-laudo-bucket.test.ts",
+        "__tests__/api/pdf-client-generation-apis.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/emissor/emissao-manual-fluxo.test.ts"
+    },
+    {
+      "endpoint": "/api/auth/session",
+      "apiFiles": [
+        "__tests__/api/auth/session.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-dashboard-refatorada.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/empresas",
+      "apiFiles": [
+        "__tests__/api/rh/empresas-security-validation.test.ts",
+        "__tests__/api/rh/empresas.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-dashboard-refatorada.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/dashboard",
+      "apiFiles": [
+        "__tests__/api/rh/dashboard.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-dashboard-refatorada.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/funcionarios",
+      "apiFiles": [
+        "__tests__/api/rh/funcionarios-access-map.test.ts",
+        "__tests__/api/rh/funcionarios-create.test.ts",
+        "__tests__/api/rh/funcionarios-edit.test.ts",
+        "__tests__/api/rh/funcionarios.block-admin.test.ts",
+        "__tests__/api/rh/funcionarios.route.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-dashboard-refatorada.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/lotes",
+      "apiFiles": [
+        "__tests__/api/rh/lotes-fila-emissao-compat.test.ts",
+        "__tests__/api/rh/lotes.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-dashboard-refatorada.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/laudos",
+      "apiFiles": [
+        "__tests__/api/rh/laudos.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-dashboard-refatorada.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/pendencias",
+      "apiFiles": [
+        "__tests__/api/rh/pendencias.block-admin.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-dashboard-refatorada.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/empresas",
+      "apiFiles": [
+        "__tests__/api/rh/empresas-security-validation.test.ts",
+        "__tests__/api/rh/empresas.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-modal-interaction.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/dashboard",
+      "apiFiles": [
+        "__tests__/api/rh/dashboard.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-modal-interaction.test.tsx"
+    },
+    {
+      "endpoint": "/api/auth/session",
+      "apiFiles": [
+        "__tests__/api/auth/session.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-status-display.test.tsx"
+    },
+    {
+      "endpoint": "/api/rh/empresas",
+      "apiFiles": [
+        "__tests__/api/rh/empresas-security-validation.test.ts",
+        "__tests__/api/rh/empresas.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/empresa-status-display.test.tsx"
+    },
+    {
+      "endpoint": "/api/entidade/funcionarios/route",
+      "apiFiles": [
+        "__tests__/api/entidade/funcionarios-auth.test.ts",
+        "__tests__/api/entidade/funcionarios.denorm.test.ts",
+        "__tests__/api/entidade/funcionarios.test.ts",
+        "__tests__/api/funcionarios-usuario-tipo.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/entidade-create-funcionario.e2e.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/funcionarios",
+      "apiFiles": [
+        "__tests__/api/entidade/funcionarios-auth.test.ts",
+        "__tests__/api/entidade/funcionarios.denorm.test.ts",
+        "__tests__/api/entidade/funcionarios.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/entidade-create-funcionario.e2e.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/lotes/route",
+      "apiFiles": [
+        "__tests__/api/entidade/lotes-fila-emissao-compat.test.ts",
+        "__tests__/api/entidade/lotes-listing-no-filesystem.test.ts",
+        "__tests__/api/entidade/lotes.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/entidade-lotes-contratante.integration.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/lotes/route",
+      "apiFiles": [
+        "__tests__/api/entidade/lotes-fila-emissao-compat.test.ts",
+        "__tests__/api/entidade/lotes-listing-no-filesystem.test.ts",
+        "__tests__/api/entidade/lotes.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/entidade-lotes-tomador.integration.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/liberar-lote",
+      "apiFiles": [
+        "__tests__/api/entidade/liberar-lote.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/gestor/gestor-refactoring.test.ts"
+    },
+    {
+      "endpoint": "/api/entidade/liberar-lote/route",
+      "apiFiles": [
+        "__tests__/api/avaliacoes-status-iniciada.test.ts",
+        "__tests__/api/entidade/liberar-lote.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/gestor/gestor-refactoring.test.ts"
+    },
+    {
+      "endpoint": "/api/rh/liberar-lote/route",
+      "apiFiles": [
+        "__tests__/api/avaliacoes-status-iniciada.test.ts",
+        "__tests__/api/rh/liberar-lote-permissions.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/liberar-lote-rh-resilience.test.ts"
+    },
+    {
+      "endpoint": "/api/pagamento/iniciar",
+      "apiFiles": [
+        "__tests__/api/pagamento/iniciar.test.ts",
+        "__tests__/api/pagamento-tomador-flow.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/pagamento-iniciar-fallback.test.ts"
+    },
+    {
+      "endpoint": "/api/pagamento/iniciar/route",
+      "apiFiles": [
+        "__tests__/api/pagamento/iniciar.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/pagamento-iniciar-fallback.test.ts"
+    },
+    {
+      "endpoint": "/api/representante/cadastro/route",
+      "apiFiles": [
+        "__tests__/api/representante/cadastro.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/representante/cadastro",
+      "apiFiles": [
+        "__tests__/api/representante/cadastro.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/representante/me/route",
+      "apiFiles": [
+        "__tests__/api/representante/me.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/representante/leads/route",
+      "apiFiles": [
+        "__tests__/api/representante/leads.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/representante/leads",
+      "apiFiles": [
+        "__tests__/api/representante/leads.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/admin/representantes/",
+      "apiFiles": [
+        "__tests__/api/admin/representantes-status.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/admin/representantes/1/status",
+      "apiFiles": [
+        "__tests__/api/admin/representantes-status.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/admin/comissoes/",
+      "apiFiles": [
+        "__tests__/api/admin/comissoes-acao.test.ts",
+        "__tests__/api/admin/comissoes-comprovante-upload.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    },
+    {
+      "endpoint": "/api/admin/comissoes/1",
+      "apiFiles": [
+        "__tests__/api/admin/comissoes-acao.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/representante-flows.test.ts"
+    }
+  ],
+  "summary": {
+    "totalFiles": 645,
+    "totalSkips": 73,
+    "describeSkips": 15,
+    "itSkips": 58,
+    "obsoleteFiles": 3,
+    "duplicateEndpoints": 46
+  }
+}

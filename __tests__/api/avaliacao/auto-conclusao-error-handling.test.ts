@@ -66,7 +66,12 @@ describe('Auto-conclusão com Error Handling', () => {
 
       const request = new Request('http://localhost/api/avaliacao/respostas', {
         method: 'POST',
-        body: JSON.stringify({ avaliacaoId: 1, item: 'Q1', valor: 75, grupo: 1 }),
+        body: JSON.stringify({
+          avaliacaoId: 1,
+          item: 'Q1',
+          valor: 75,
+          grupo: 1,
+        }),
       });
 
       await POST(request);
@@ -99,7 +104,12 @@ describe('Auto-conclusão com Error Handling', () => {
 
       const request = new Request('http://localhost/api/avaliacao/respostas', {
         method: 'POST',
-        body: JSON.stringify({ avaliacaoId: 1, item: 'Q37', valor: 75, grupo: 1 }),
+        body: JSON.stringify({
+          avaliacaoId: 1,
+          item: 'Q37',
+          valor: 75,
+          grupo: 1,
+        }),
       });
 
       const response = await POST(request);
@@ -132,7 +142,12 @@ describe('Auto-conclusão com Error Handling', () => {
 
       const request = new Request('http://localhost/api/avaliacao/respostas', {
         method: 'POST',
-        body: JSON.stringify({ avaliacaoId: 1, item: 'Q36', valor: 75, grupo: 1 }),
+        body: JSON.stringify({
+          avaliacaoId: 1,
+          item: 'Q36',
+          valor: 75,
+          grupo: 1,
+        }),
       });
 
       const response = await POST(request);
@@ -162,7 +177,12 @@ describe('Auto-conclusão com Error Handling', () => {
 
       const request = new Request('http://localhost/api/avaliacao/respostas', {
         method: 'POST',
-        body: JSON.stringify({ avaliacaoId: 1, item: 'Q37', valor: 75, grupo: 1 }),
+        body: JSON.stringify({
+          avaliacaoId: 1,
+          item: 'Q37',
+          valor: 75,
+          grupo: 1,
+        }),
       });
 
       const response = await POST(request);
@@ -179,7 +199,12 @@ describe('Auto-conclusão com Error Handling', () => {
 
       const request = new Request('http://localhost/api/avaliacao/respostas', {
         method: 'POST',
-        body: JSON.stringify({ avaliacaoId: 42, item: 'Q1', valor: 75, grupo: 1 }),
+        body: JSON.stringify({
+          avaliacaoId: 42,
+          item: 'Q1',
+          valor: 75,
+          grupo: 1,
+        }),
       });
 
       await POST(request);
@@ -227,7 +252,12 @@ describe('Auto-conclusão com Error Handling', () => {
 
       const request = new Request('http://localhost/api/avaliacao/respostas', {
         method: 'POST',
-        body: JSON.stringify({ avaliacaoId: 1, item: 'Q1', valor: 75, grupo: 1 }),
+        body: JSON.stringify({
+          avaliacaoId: 1,
+          item: 'Q1',
+          valor: 75,
+          grupo: 1,
+        }),
       });
 
       await POST(request);
@@ -250,7 +280,12 @@ describe('Auto-conclusão com Error Handling', () => {
 
       const request = new Request('http://localhost/api/avaliacao/respostas', {
         method: 'POST',
-        body: JSON.stringify({ avaliacaoId: 1, item: 'Q1', valor: 75, grupo: 1 }),
+        body: JSON.stringify({
+          avaliacaoId: 1,
+          item: 'Q1',
+          valor: 75,
+          grupo: 1,
+        }),
       });
 
       await POST(request);

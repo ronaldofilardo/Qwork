@@ -144,12 +144,10 @@ describe('4. AuditoriaSubNav — tabs Suporte, Comercial, Representantes, Vended
     expect(fs.existsSync(navPath)).toBe(true);
   });
 
-  it("deve ter tab com key 'acesso-suporte'", () => {
-    expect(src).toContain("'acesso-suporte'");
-  });
-
-  it("deve ter label 'Suporte'", () => {
-    expect(src).toContain('Suporte');
+  it('NÃO deve ter tab acesso-suporte (removida em refatoração)', () => {
+    // Tab 'acesso-suporte' foi removida — AuditoriaSubNav agora tem:
+    // gestores, avaliacoes, lotes, laudos, operacionais, aceites, delecao
+    expect(src).not.toContain("'acesso-suporte'");
   });
 });
 
