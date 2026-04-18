@@ -230,15 +230,6 @@ export function ContratosTable({
                         <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
                           Valor/%
                         </th>
-                        <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                          Laudos
-                        </th>
-                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                          Aval.
-                        </th>
-                        <th className="text-right px-3 py-3 font-semibold text-gray-600">
-                          R$
-                        </th>
                         <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
                           Com. Com.
                         </th>
@@ -475,45 +466,6 @@ export function ContratosTable({
                                   )}
                                 </span>
                               )}
-                            </td>
-
-                            {/* Laudos acumulados */}
-                            <td className="text-center px-3 py-3">
-                              {row.total_laudos &&
-                              parseInt(row.total_laudos) > 0 ? (
-                                <div className="space-y-0.5">
-                                  <p className="text-xs font-mono font-semibold text-gray-700">
-                                    {row.total_laudos}
-                                  </p>
-                                  <p className="text-[10px] text-gray-400 font-mono">
-                                    {row.total_lotes} lot
-                                    {parseInt(row.total_lotes ?? '0') !== 1
-                                      ? 'es'
-                                      : 'e'}
-                                  </p>
-                                </div>
-                              ) : (
-                                <span className="text-gray-300">—</span>
-                              )}
-                            </td>
-
-                            {/* Avaliações */}
-                            <td className="text-center px-3 py-3 text-xs">
-                              <div className="space-y-0.5">
-                                <p className="font-bold text-gray-900">
-                                  {row.avaliacoes_concluidas || '0'}
-                                </p>
-                                <p className="text-gray-400">
-                                  {fmtBRL(row.valor_avaliacao)}
-                                </p>
-                              </div>
-                            </td>
-
-                            {/* R$ total */}
-                            <td className="text-right px-3 py-3">
-                              <span className="font-bold text-gray-900 text-xs">
-                                {fmtBRL(row.valor_total)}
-                              </span>
                             </td>
 
                             {/* Com. Com. (comercial) */}

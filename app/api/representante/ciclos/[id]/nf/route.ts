@@ -115,11 +115,11 @@ export async function POST(
 
     const resultado = await uploadDocumentoRepresentante(
       buffer,
-      'rpa',
+      'nf',
       identificador,
       mimeType,
       tipoPessoa,
-      'RPA'
+      'COMP'
     );
 
     // Atualizar ciclo

@@ -160,7 +160,6 @@ export default function CadastroRepresentante() {
             </label>
             <div className="flex gap-3">
               {[
-                { value: 'pf' as TipoPessoa, label: 'Pessoa Física (RPA)' },
                 { value: 'pj' as TipoPessoa, label: 'Pessoa Jurídica (NF)' },
               ].map((opt) => (
                 <button

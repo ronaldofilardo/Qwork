@@ -6,7 +6,7 @@
  *
  * Query params:
  *   - tipo: 'identificacao' (doc do representante)
- *           | 'vendedor_cad' | 'vendedor_nf_rpa' (docs de vendedores)
+ *           | 'vendedor_cad' | 'vendedor_nf' (docs de vendedores)
  *   - vendedor_id: (obrigatório quando tipo começa com 'vendedor_')
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -45,7 +45,7 @@ export async function GET(
     const tipo = request.nextUrl.searchParams.get('tipo');
     if (
       !tipo ||
-      !['identificacao', 'vendedor_cad', 'vendedor_nf_rpa'].includes(tipo)
+      !['identificacao', 'vendedor_cad', 'vendedor_nf'].includes(tipo)
     )
       return NextResponse.json({ error: 'Tipo inválido' }, { status: 400 });
 
@@ -73,7 +73,7 @@ export async function GET(
 
       // Verifica que vendedor está vinculado ao representante
       const coluna =
-        tipo === 'vendedor_cad' ? 'vp.doc_cad_path' : 'vp.doc_nf_rpa_path';
+        tipo === 'vendedor_cad' ? 'vp.doc_cad_path' : 'vp.doc_nf_path';
       const result = await query(
         `SELECT ${coluna} AS doc_path
          FROM hierarquia_comercial hc

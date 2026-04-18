@@ -230,7 +230,7 @@ export async function criarComissaoAdmin(params: {
   // Verificar representante — buscar modelo_comissionamento e campos custo_fixo
   const repResult = await query(
     `SELECT id, status, percentual_comissao, modelo_comissionamento,
-            valor_custo_fixo_entidade, valor_custo_fixo_clinica
+            valor_custo_fixo_entidade, valor_custo_fixo_clinica, asaas_wallet_id
      FROM representantes WHERE id = $1 LIMIT 1`,
     [representante_id]
   );
@@ -335,15 +335,16 @@ export async function criarComissaoAdmin(params: {
         100
       : 0;
 
-  // L10 fix: status inicial depende se parcela está confirmada E se rep é apto
+  // L10 fix: status inicial depende se parcela está confirmada E se rep tem wallet Asaas
   // - forcar_retida = true → sempre retida (provisionamento antecipado de parcelas futuras)
   // - parcela_confirmada_em = null → retida (parcela ainda não paga)
-  // - parcela confirmada + rep apto/apto_bloqueado → paga (split já foi executado)
-  const repApto = rep.status === 'apto' || rep.status === 'apto_bloqueado';
+  // - parcela confirmada + rep tem wallet → paga (split já foi executado)
+  // - parcela confirmada + rep sem wallet → retida (sem split, aguarda configuração)
+  const repTemWallet = !!rep.asaas_wallet_id;
   const parcelaEfetivamentePaga =
     !forcar_retida && parcela_confirmada_em != null;
   const statusInicial: StatusComissao =
-    parcelaEfetivamentePaga && repApto ? 'paga' : 'retida';
+    parcelaEfetivamentePaga && repTemWallet ? 'paga' : 'retida';
 
   // Mês de emissão e pagamento
   const agora = new Date();
@@ -482,7 +483,8 @@ export async function ativarComissaoParcelaPaga(params: {
 
   try {
     const result = await query(
-      `SELECT cl.id, cl.status, cl.parcela_confirmada_em, r.status AS rep_status
+      `SELECT cl.id, cl.status, cl.parcela_confirmada_em,
+              r.status AS rep_status, r.asaas_wallet_id
        FROM comissoes_laudo cl
        JOIN representantes r ON r.id = cl.representante_id
        WHERE cl.lote_pagamento_id = $1 AND cl.parcela_numero = $2
@@ -507,14 +509,13 @@ export async function ativarComissaoParcelaPaga(params: {
       return { ok: true, motivo: 'ja_ativada' };
     }
 
-    // L10 fix: rep apto ou apto_bloqueado → paga direto (split Asaas já executado)
-    const repApto =
-      comissao.rep_status === 'apto' ||
-      comissao.rep_status === 'apto_bloqueado';
+    // Retida = rep não tem wallet_id configurada no Asaas
+    // Se tem wallet, comissão é paga (split já executado pelo Asaas)
+    const repTemWallet = !!comissao.asaas_wallet_id;
     const statusAnterior: string = comissao.status;
-    const statusNovo: StatusComissao = repApto ? 'paga' : 'retida';
+    const statusNovo: StatusComissao = repTemWallet ? 'paga' : 'retida';
 
-    if (repApto) {
+    if (repTemWallet) {
       await query(
         `UPDATE comissoes_laudo
          SET parcela_confirmada_em = NOW(),
@@ -548,7 +549,7 @@ export async function ativarComissaoParcelaPaga(params: {
         ]);
       }
     } else {
-      // Rep não apto: registra confirmação da parcela, mantém retida
+      // Rep sem wallet: registra confirmação da parcela, mantém retida
       await query(
         `UPDATE comissoes_laudo
          SET parcela_confirmada_em = NOW(),
@@ -565,9 +566,9 @@ export async function ativarComissaoParcelaPaga(params: {
       status_anterior: statusAnterior,
       status_novo: statusNovo,
       triggador: 'sistema',
-      motivo: repApto
+      motivo: repTemWallet
         ? `Parcela ${parcela_numero} paga via webhook — status paga (split Asaas executado)`
-        : `Parcela ${parcela_numero} confirmada via webhook — rep não apto, mantida retida`,
+        : `Parcela ${parcela_numero} confirmada via webhook — rep sem wallet Asaas, mantida retida`,
     });
 
     console.log(

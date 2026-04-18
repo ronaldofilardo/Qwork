@@ -10,6 +10,7 @@ interface EmpresasTableProps {
   selecionadas: Set<number>;
   onToggle: (id: number) => void;
   onToggleAll: () => void;
+  onEditEmpresa: (empresaId: number) => void;
 }
 
 export default function EmpresasTable({
@@ -17,6 +18,7 @@ export default function EmpresasTable({
   selecionadas,
   onToggle,
   onToggleAll,
+  onEditEmpresa,
 }: EmpresasTableProps) {
   const router = useRouter();
 
@@ -105,9 +107,13 @@ export default function EmpresasTable({
                   {/* Empresa */}
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium text-gray-900 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => onEditEmpresa(empresa.id)}
+                        className="font-medium text-primary-600 hover:text-primary-800 hover:underline text-sm text-left"
+                      >
                         {empresa.nome}
-                      </p>
+                      </button>
                       <p className="text-xs text-gray-400">{empresa.cnpj}</p>
                     </div>
                   </td>

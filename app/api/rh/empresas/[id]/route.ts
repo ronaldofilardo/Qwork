@@ -3,6 +3,148 @@ import { query } from '@/lib/db';
 import { requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
 
 /**
+ * GET /api/rh/empresas/[id]
+ *
+ * Retorna os dados completos de uma empresa para edição.
+ */
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const empresaId = parseInt(params.id);
+    if (isNaN(empresaId)) {
+      return NextResponse.json(
+        { error: 'ID da empresa inválido' },
+        { status: 400 }
+      );
+    }
+
+    await requireRHWithEmpresaAccess(empresaId);
+
+    const result = await query(
+      `SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+              representante_nome, representante_fone, representante_email, ativa
+       FROM empresas_clientes
+       WHERE id = $1`,
+      [empresaId]
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Empresa não encontrada' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ empresa: result.rows[0] });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Sem permissão') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+    }
+    console.error('Erro ao buscar empresa:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT /api/rh/empresas/[id]
+ *
+ * Atualiza os dados cadastrais de uma empresa.
+ * CNPJ não pode ser alterado (chave de negócio).
+ */
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const empresaId = parseInt(params.id);
+    if (isNaN(empresaId)) {
+      return NextResponse.json(
+        { error: 'ID da empresa inválido' },
+        { status: 400 }
+      );
+    }
+
+    const session = await requireRHWithEmpresaAccess(empresaId);
+
+    const body = await request.json();
+    const {
+      nome,
+      email,
+      telefone,
+      endereco,
+      cidade,
+      estado,
+      cep,
+      representante_nome,
+      representante_fone,
+      representante_email,
+    } = body;
+
+    if (!nome || nome.trim().length < 3) {
+      return NextResponse.json(
+        { error: 'Nome da empresa deve ter no mínimo 3 caracteres' },
+        { status: 400 }
+      );
+    }
+
+    const result = await query(
+      `UPDATE empresas_clientes
+       SET nome = $1,
+           email = $2,
+           telefone = $3,
+           endereco = $4,
+           cidade = $5,
+           estado = $6,
+           cep = $7,
+           representante_nome = $8,
+           representante_fone = $9,
+           representante_email = $10,
+           atualizado_em = CURRENT_TIMESTAMP
+       WHERE id = $11
+       RETURNING id, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+                 representante_nome, representante_fone, representante_email, ativa`,
+      [
+        nome.trim(),
+        email?.trim() || null,
+        telefone?.trim() || null,
+        endereco?.trim() || null,
+        cidade?.trim() || null,
+        estado?.trim()?.toUpperCase() || null,
+        cep?.trim() || null,
+        representante_nome?.trim() || null,
+        representante_fone?.trim() || null,
+        representante_email?.trim() || null,
+        empresaId,
+      ],
+      session
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Empresa não encontrada' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true, empresa: result.rows[0] });
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Sem permissão') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+    }
+    console.error('Erro ao atualizar empresa:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * PATCH /api/rh/empresas/[id]
  *
  * Ativa ou inativa uma empresa (apenas para perfil RH ou superior)

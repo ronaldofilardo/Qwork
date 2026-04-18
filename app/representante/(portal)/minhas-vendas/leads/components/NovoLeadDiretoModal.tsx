@@ -82,6 +82,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
   const [erros, setErros] = useState<Erros>(ERROS_INICIAL);
   const [salvando, setSalvando] = useState(false);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
   const [percRep, setPercRep] = useState(0);
   const [percComercial, setPercComercial] = useState(0);
   const [modeloComissionamento, setModeloComissionamento] = useState<
@@ -272,7 +273,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     <div
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) setMostrarConfirmacao(true);
       }}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto">
@@ -658,6 +659,39 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
           </button>
         </div>
       </div>
+
+      {/* Modal de Confirmação */}
+      {mostrarConfirmacao && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Deseja encerrar o cadastro do lead?
+              </h3>
+            </div>
+            <p className="px-6 py-4 text-sm text-gray-600">
+              Os dados preenchidos serão descartados.
+            </p>
+            <div className="flex gap-3 px-6 pb-6">
+              <button
+                onClick={() => setMostrarConfirmacao(false)}
+                className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Não, continuar
+              </button>
+              <button
+                onClick={() => {
+                  setMostrarConfirmacao(false);
+                  onClose();
+                }}
+                className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Sim, encerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

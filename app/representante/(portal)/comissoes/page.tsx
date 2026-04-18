@@ -1,8 +1,10 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { useComissoes } from './hooks/useComissoes';
 import { fmt, STATUS_BADGE } from './types';
 import ComissoesTable from './components/ComissoesTable';
+import { Upload, CheckCircle2, Loader2, AlertCircle, FileText } from 'lucide-react';
 
 export default function ComissoesRepresentante() {
   const {
@@ -17,6 +19,39 @@ export default function ComissoesRepresentante() {
     erro,
   } = useComissoes();
 
+  // NF Upload
+  const [nfUploading, setNfUploading] = useState(false);
+  const [nfMes, setNfMes] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [nfErro, setNfErro] = useState<string | null>(null);
+  const [nfSucesso, setNfSucesso] = useState<string | null>(null);
+
+  const handleNfUpload = useCallback(async (file: File) => {
+    setNfUploading(true);
+    setNfErro(null);
+    setNfSucesso(null);
+    try {
+      const fd = new FormData();
+      fd.append('mes', nfMes);
+      fd.append('arquivo', file);
+      const res = await fetch('/api/representante/comissoes/nf-upload', {
+        method: 'POST',
+        body: fd,
+      });
+      const data = await res.json() as { success?: boolean; error?: string };
+      if (!res.ok) {
+        setNfErro(data.error ?? 'Erro ao enviar NF.');
+      } else {
+        setNfSucesso('NF enviada com sucesso! Aguardando análise.');
+      }
+    } catch {
+      setNfErro('Erro de conexão.');
+    }
+    setNfUploading(false);
+  }, [nfMes]);
+
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold text-gray-900">Minhas Comissões</h1>
@@ -28,8 +63,17 @@ export default function ComissoesRepresentante() {
       )}
 
       {resumo && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           {[
+            {
+              label: 'Provisionado',
+              value: fmt(resumo.valor_futuro),
+              icon: '📋',
+              cor: 'text-amber-700',
+              bg: 'bg-amber-50',
+              borderCor: 'border-amber-200',
+              title: 'Comissões retidas aguardando pagamento da parcela pelo cliente',
+            },
             {
               label: 'A Receber',
               value: fmt(resumo.valor_pendente),
@@ -125,6 +169,56 @@ export default function ComissoesRepresentante() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* NF Mensal Upload */}
+      <div className="bg-white rounded-xl border p-5 space-y-3">
+        <div className="flex items-center gap-2">
+          <FileText size={16} className="text-blue-600" />
+          <h2 className="text-sm font-semibold text-gray-700">Nota Fiscal Mensal</h2>
+        </div>
+        <p className="text-xs text-gray-500">
+          Envie a NF referente às comissões do mês para compliance.
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          <input
+            type="month"
+            value={nfMes}
+            onChange={(e) => setNfMes(e.target.value)}
+            className="border rounded-lg px-3 py-1.5 text-sm"
+          />
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              disabled={nfUploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void handleNfUpload(f);
+                e.target.value = '';
+              }}
+            />
+            <span className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-medium rounded-lg border transition-colors ${
+              nfUploading
+                ? 'bg-gray-100 text-gray-400 border-gray-200'
+                : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+            }`}>
+              {nfUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+              Enviar NF (PDF)
+            </span>
+          </label>
+        </div>
+        {nfErro && (
+          <div className="flex items-center gap-2 text-xs text-red-600">
+            <AlertCircle size={13} /> {nfErro}
+          </div>
+        )}
+        {nfSucesso && (
+          <div className="flex items-center gap-2 text-xs text-green-600">
+            <CheckCircle2 size={13} /> {nfSucesso}
+          </div>
+        )}
       </div>
 
       <ComissoesTable

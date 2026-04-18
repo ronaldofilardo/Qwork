@@ -1,5 +1,5 @@
 /**
- * GET /api/representante/equipe/vendedores/[id]/documentos/visualizar?tipo=cad|nf_rpa
+ * GET /api/representante/equipe/vendedores/[id]/documentos/visualizar?tipo=cad|nf
  *
  * Serve o documento do vendedor vinculado ao representante autenticado.
  * Valida propriedade via hierarquia_comercial antes de servir o arquivo.
@@ -28,9 +28,9 @@ export async function GET(
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
 
     const tipo = request.nextUrl.searchParams.get('tipo');
-    if (!tipo || !['cad', 'nf_rpa'].includes(tipo))
+    if (!tipo || !['cad', 'nf'].includes(tipo))
       return NextResponse.json(
-        { error: 'Tipo inválido (cad ou nf_rpa)' },
+        { error: 'Tipo inválido (cad ou nf)' },
         { status: 400 }
       );
 
@@ -41,7 +41,7 @@ export async function GET(
       representante_id: sess.representante_id,
     };
 
-    const coluna = tipo === 'cad' ? 'vp.doc_cad_path' : 'vp.doc_nf_rpa_path';
+    const coluna = tipo === 'cad' ? 'vp.doc_cad_path' : 'vp.doc_nf_path';
     const result = await query(
       `SELECT ${coluna} AS doc_path
        FROM hierarquia_comercial hc
