@@ -101,7 +101,7 @@ export default function SuportePage() {
         return <PreCadastroContent />;
       }
       if (activeSubSection === 'contratos') {
-        return <ContratosTable endpoint="/api/suporte/contratos" />;
+        return <ContratosTable endpoint="/api/suporte/contratos" allowGerarContrato />;
       }
       return <TomadoresContent activeSubSection={activeSubSection} />;
     }
