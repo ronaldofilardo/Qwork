@@ -177,7 +177,7 @@ interface VendedorCompleto {
   cnpj: string | null;
   razao_social: string | null;
   doc_cad_path: string | null;
-  doc_nf_rpa_path: string | null;
+  doc_nf_path: string | null;
 }
 
 function EditarVendedorDrawer({
@@ -332,7 +332,7 @@ function EditarVendedorDrawer({
   const isOpen = vendedor !== null;
 
   const handleDocUpload = async (
-    tipo: 'cad' | 'nf_rpa',
+    tipo: 'cad' | 'nf',
     file: File
   ): Promise<void> => {
     if (!vendedor) return;
@@ -602,7 +602,7 @@ function EditarVendedorDrawer({
                   {/* Doc NF/RPA */}
                   <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg px-4 py-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      {dadosCompletos.doc_nf_rpa_path ? (
+                      {dadosCompletos.doc_nf_path ? (
                         <CheckCircle2
                           size={16}
                           className="text-green-600 shrink-0"
@@ -612,19 +612,17 @@ function EditarVendedorDrawer({
                       )}
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-gray-700">
-                          Doc. NF / RPA
+                          Doc. NF
                         </p>
                         <p className="text-[11px] text-gray-400 truncate">
-                          {dadosCompletos.doc_nf_rpa_path
-                            ? 'Enviado'
-                            : 'Pendente'}
+                          {dadosCompletos.doc_nf_path ? 'Enviado' : 'Pendente'}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {dadosCompletos.doc_nf_rpa_path && (
+                      {dadosCompletos.doc_nf_path && (
                         <a
-                          href={`/api/representante/equipe/vendedores/${vendedor?.vendedor_id}/documentos/visualizar?tipo=nf_rpa`}
+                          href={`/api/representante/equipe/vendedores/${vendedor?.vendedor_id}/documentos/visualizar?tipo=nf`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
@@ -640,25 +638,23 @@ function EditarVendedorDrawer({
                           disabled={uploadingDoc !== null}
                           onChange={(e) => {
                             const f = e.target.files?.[0];
-                            if (f) void handleDocUpload('nf_rpa', f);
+                            if (f) void handleDocUpload('nf', f);
                             e.target.value = '';
                           }}
                         />
                         <span
                           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                            uploadingDoc === 'nf_rpa'
+                            uploadingDoc === 'nf'
                               ? 'bg-gray-100 text-gray-400 border-gray-200'
                               : 'border-blue-200 text-blue-600 hover:bg-blue-50'
                           }`}
                         >
-                          {uploadingDoc === 'nf_rpa' ? (
+                          {uploadingDoc === 'nf' ? (
                             <Loader2 size={12} className="animate-spin" />
                           ) : (
                             <Upload size={12} />
                           )}
-                          {dadosCompletos.doc_nf_rpa_path
-                            ? 'Reenviar'
-                            : 'Enviar'}
+                          {dadosCompletos.doc_nf_path ? 'Reenviar' : 'Enviar'}
                         </span>
                       </label>
                     </div>

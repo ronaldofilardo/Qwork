@@ -296,7 +296,9 @@ export async function POST(request: NextRequest) {
                   r.asaas_wallet_id,
                   r.modelo_comissionamento,
                   r.percentual_comissao,
-                  r.status AS rep_status
+                  r.status AS rep_status,
+                  r.valor_custo_fixo_clinica,
+                  r.valor_custo_fixo_entidade
            FROM vinculos_comissao vc
            JOIN representantes r ON r.id = vc.representante_id
            WHERE (vc.entidade_id = $1 OR vc.clinica_id = $1)
@@ -318,10 +320,22 @@ export async function POST(request: NextRequest) {
             modelo_comissionamento: 'percentual' | 'custo_fixo';
             percentual_comissao?: number | null;
             rep_status: string;
+            valor_custo_fixo_clinica?: number | null;
+            valor_custo_fixo_entidade?: number | null;
           };
 
           const tipoProduto =
             tomador.tipo === 'clinica' ? 'clinica' : 'entidade';
+
+          // Custo fixo do rep para o tipo de produto atual
+          const custoFixoRep =
+            tipoProduto === 'clinica'
+              ? v.valor_custo_fixo_clinica != null
+                ? Number(v.valor_custo_fixo_clinica)
+                : undefined
+              : v.valor_custo_fixo_entidade != null
+                ? Number(v.valor_custo_fixo_entidade)
+                : undefined;
 
           // L3 fix: split deve ser calculado sobre o valor POR PARCELA, não o total.
           // O Asaas aplica fixedValue a cada parcela individualmente, portanto se
@@ -331,12 +345,22 @@ export async function POST(request: NextRequest) {
             valorParcela,
             tipoProduto,
             v.percentual_comissao ?? undefined,
-            v.percentual_comissao_comercial ?? undefined
+            v.percentual_comissao_comercial ?? undefined,
+            custoFixoRep
           );
 
           if (splitResult.viavel) {
+            // Buscar walletId do comercial (gestor_comercial) do DB
+            const comercialRes = await query(
+              `SELECT u.asaas_wallet_id
+               FROM usuarios u
+               WHERE u.perfil = 'gestor_comercial'
+                 AND u.asaas_wallet_id IS NOT NULL
+                 AND u.ativo = true
+               LIMIT 1`
+            );
             const comercialWalletId =
-              process.env.ASAAS_COMERCIAL_WALLET_ID ?? null;
+              comercialRes.rows[0]?.asaas_wallet_id ?? null;
             const splits = montarSplitAsaas(
               v.asaas_wallet_id,
               splitResult,

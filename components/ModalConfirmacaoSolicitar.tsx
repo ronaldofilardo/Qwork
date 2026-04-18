@@ -117,26 +117,26 @@ export function ModalConfirmacaoSolicitar({
       />
 
       {/* Painel */}
-      <div className="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Cabeçalho verde */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-4 text-white flex-shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-3xl" aria-hidden="true">
+            <span className="text-2xl" aria-hidden="true">
               ✅
             </span>
             <div>
-              <h2 id="modal-titulo" className="text-xl font-bold leading-tight">
+              <h2 id="modal-titulo" className="text-lg font-bold leading-tight">
                 Solicitação Recebida com Sucesso!
               </h2>
-              <p className="text-sm text-green-100 mt-0.5">
+              <p className="text-xs text-green-100 mt-0.5">
                 Lote #{loteId} · Emissão em análise
               </p>
             </div>
           </div>
         </div>
 
-        {/* Corpo */}
-        <div className="px-6 py-5 space-y-5">
+        {/* Corpo — rolável em telas pequenas */}
+        <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
           {/* Seção: Dados do Tomador (Clínica) */}
           {tomadorInfo && (
             <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 space-y-2">
@@ -310,10 +310,10 @@ export function ModalConfirmacaoSolicitar({
         </div>
 
         {/* Rodapé */}
-        <div className="px-6 pb-6">
+        <div className="px-5 pb-5 pt-2 flex-shrink-0">
           <button
             onClick={onClose}
-            className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold text-base hover:from-green-700 hover:to-emerald-700 active:scale-[0.98] transition-all duration-150 shadow-md"
+            className="w-full px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold text-sm hover:from-green-700 hover:to-emerald-700 active:scale-[0.98] transition-all duration-150 shadow-md"
             autoFocus
           >
             Entendi, Fechar

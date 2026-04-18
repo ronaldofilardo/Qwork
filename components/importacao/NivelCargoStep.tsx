@@ -41,6 +41,8 @@ export interface FuncaoNivelInfo {
     nivelProposto: 'gestao' | 'operacional' | null;
     empresa?: string;
   }>;
+  /** Detalhes dos funcionários sem nivel_cargo válido na planilha (agrupados por empresa no step 4) */
+  funcionariosSemNivel?: Array<{ nome: string; empresa: string }>;
 }
 
 interface NivelCargoStepProps {
@@ -361,6 +363,223 @@ function MudancasAgrupadas({
   );
 }
 
+/**
+ * Agrupa funcionários sem nível de cargo na planilha por empresa → função.
+ * Exibido quando temNivelCargoDirecto=true e há células de nivel_cargo vazias.
+ */
+function SemNivelAgrupados({
+  funcoesNivelInfo,
+  nivelCargoMap,
+  onChange,
+}: {
+  funcoesNivelInfo: FuncaoNivelInfo[];
+  nivelCargoMap: Record<string, NivelCargo>;
+  onChange: (funcao: string, nivel: NivelCargo) => void;
+}) {
+  const grouped = useMemo(() => {
+    const map = new Map<
+      string,
+      Map<string, { qtd: number; nomes: string[] }>
+    >();
+    for (const funcaoInfo of funcoesNivelInfo) {
+      if (!funcaoInfo.funcionariosSemNivel?.length) continue;
+      for (const entry of funcaoInfo.funcionariosSemNivel) {
+        const empresa = entry.empresa || '(sem empresa)';
+        if (!map.has(empresa)) map.set(empresa, new Map());
+        const funcaoMap = map.get(empresa)!;
+        if (!funcaoMap.has(funcaoInfo.funcao)) {
+          funcaoMap.set(funcaoInfo.funcao, { qtd: 0, nomes: [] });
+        }
+        const e = funcaoMap.get(funcaoInfo.funcao)!;
+        e.qtd++;
+        if (entry.nome) e.nomes.push(entry.nome);
+      }
+    }
+    return map;
+  }, [funcoesNivelInfo]);
+
+  // Fallback: sem dados de empresa → lista flat
+  if (grouped.size === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="divide-y divide-gray-50">
+          {funcoesNivelInfo.map((info) => {
+            const nivel = nivelCargoMap[info.funcao] ?? '';
+            return (
+              <div
+                key={info.funcao}
+                className="flex items-center gap-3 px-4 py-2.5"
+              >
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm font-medium text-gray-800">
+                    {info.funcao === 'Não informado'
+                      ? 'Sem função'
+                      : info.funcao}
+                  </span>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {info.qtdSemNivelNaPlanilha ?? 0} sem nível
+                  </p>
+                </div>
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <button
+                    onClick={() =>
+                      onChange(info.funcao, nivel === 'gestao' ? '' : 'gestao')
+                    }
+                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                      nivel === 'gestao'
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                    }`}
+                  >
+                    G
+                  </button>
+                  <button
+                    onClick={() =>
+                      onChange(
+                        info.funcao,
+                        nivel === 'operacional' ? '' : 'operacional'
+                      )
+                    }
+                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                      nivel === 'operacional'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                    }`}
+                  >
+                    O
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {Array.from(grouped.entries()).map(([empresa, funcaoMap]) => (
+        <div
+          key={empresa}
+          className="bg-white border border-gray-300 rounded-lg overflow-hidden"
+        >
+          {/* Cabeçalho por Empresa */}
+          <div className="px-4 py-3 bg-gray-100 border-b border-gray-300 font-semibold text-sm text-gray-800">
+            {empresa}
+          </div>
+
+          <div className="divide-y divide-gray-200">
+            {Array.from(funcaoMap.entries()).map(([funcao, { qtd, nomes }]) => {
+              const nivel = nivelCargoMap[funcao] ?? '';
+              const semFuncao = funcao === 'Não informado';
+              return (
+                <div key={funcao} className="p-4">
+                  {/* Função + status */}
+                  <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
+                    <div className="flex-1">
+                      {semFuncao ? (
+                        <p className="text-sm font-semibold text-amber-700 flex items-center gap-1">
+                          <AlertTriangle size={13} className="inline" /> Sem
+                          função definida
+                        </p>
+                      ) : (
+                        <p className="text-sm font-semibold text-gray-800">
+                          {funcao}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        {qtd} funcionário{qtd !== 1 ? 's' : ''} sem nível
+                        definido
+                      </p>
+                    </div>
+                    {nivel && (
+                      <div className="flex-shrink-0 ml-4 flex items-center gap-2">
+                        {nivel === 'gestao' ? (
+                          <>
+                            <CheckCircle
+                              size={14}
+                              className="text-purple-600"
+                            />
+                            <span className="text-xs font-medium text-purple-700">
+                              Gestão
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle size={14} className="text-blue-600" />
+                            <span className="text-xs font-medium text-blue-700">
+                              Operacional
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Nomes dos funcionários */}
+                  {nomes.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {nomes.map((nome, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs bg-gray-50 border border-gray-200 text-gray-700 px-2 py-0.5 rounded-full"
+                        >
+                          {nome}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Botões de classificação */}
+                  <div className="border-t border-gray-100 pt-3">
+                    <p className="text-xs text-gray-700 mb-2 font-semibold">
+                      {semFuncao ? (
+                        'Qual nível para funcionários sem função definida?'
+                      ) : (
+                        <>Qual nível para &ldquo;{funcao}&rdquo;?</>
+                      )}
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() =>
+                          onChange(funcao, nivel === 'gestao' ? '' : 'gestao')
+                        }
+                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
+                          nivel === 'gestao'
+                            ? 'bg-purple-600 text-white border-purple-600'
+                            : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                        }`}
+                      >
+                        G — Gestão
+                      </button>
+                      <button
+                        onClick={() =>
+                          onChange(
+                            funcao,
+                            nivel === 'operacional' ? '' : 'operacional'
+                          )
+                        }
+                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
+                          nivel === 'operacional'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        O — Operacional
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function NivelCargoStep({
   funcoesNivelInfo,
   nivelCargoMap,
@@ -666,165 +885,176 @@ export default function NivelCargoStep({
         </div>
       )}
 
-      {/* Card com tabela de funções */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        {/* Header */}
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-primary" />
-            <span className="text-sm font-semibold text-gray-800">
-              Classificar Nível de Cargo
-            </span>
-            <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                todasClassificadas
-                  ? 'bg-green-100 text-green-700'
-                  : 'bg-amber-100 text-amber-700'
-              }`}
-            >
-              {classificadas}/{totalFuncoes}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <span className="text-gray-400">Definir todos:</span>
-            <button
-              onClick={() => handleDefinirTodos('gestao')}
-              className="px-2 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold"
-            >
-              G
-            </button>
-            <button
-              onClick={() => handleDefinirTodos('operacional')}
-              className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold"
-            >
-              O
-            </button>
-            <button
-              onClick={() => handleDefinirTodos('')}
-              className="px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
+      {/* Grupos por empresa quando nivel_cargo direto com células vazias */}
+      {temNivelCargoDirecto ? (
+        <SemNivelAgrupados
+          funcoesNivelInfo={funcoesSemNivelNaPlanilha}
+          nivelCargoMap={nivelCargoMap}
+          onChange={handleToggle}
+        />
+      ) : (
+        <>
+          {/* Card com tabela de funções */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            {/* Header */}
+            <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-primary" />
+                <span className="text-sm font-semibold text-gray-800">
+                  Classificar Nível de Cargo
+                </span>
+                <span
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                    todasClassificadas
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-amber-100 text-amber-700'
+                  }`}
+                >
+                  {classificadas}/{totalFuncoes}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-gray-400">Definir todos:</span>
+                <button
+                  onClick={() => handleDefinirTodos('gestao')}
+                  className="px-2 py-1 rounded-full bg-purple-100 text-purple-700 hover:bg-purple-200 font-semibold"
+                >
+                  G
+                </button>
+                <button
+                  onClick={() => handleDefinirTodos('operacional')}
+                  className="px-2 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 font-semibold"
+                >
+                  O
+                </button>
+                <button
+                  onClick={() => handleDefinirTodos('')}
+                  className="px-2 py-1 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
 
-        {/* Rows */}
-        <div className="divide-y divide-gray-50">
-          {funcoesVisiveis.map((info) => {
-            const nivel = nivelCargoMap[info.funcao] ?? '';
+            {/* Rows */}
+            <div className="divide-y divide-gray-50">
+              {funcoesVisiveis.map((info) => {
+                const nivel = nivelCargoMap[info.funcao] ?? '';
 
-            return (
-              <div
-                key={info.funcao}
-                className="flex items-center gap-3 px-4 py-2.5"
-              >
-                {/* Status icon */}
-                <div className="flex-shrink-0 w-4">
-                  {nivel ? (
-                    <CheckCircle size={14} className="text-green-500" />
-                  ) : (
-                    <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />
-                  )}
-                </div>
+                return (
+                  <div
+                    key={info.funcao}
+                    className="flex items-center gap-3 px-4 py-2.5"
+                  >
+                    {/* Status icon */}
+                    <div className="flex-shrink-0 w-4">
+                      {nivel ? (
+                        <CheckCircle size={14} className="text-green-500" />
+                      ) : (
+                        <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />
+                      )}
+                    </div>
 
-                {/* Function info */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span
-                      className={`text-sm font-medium truncate ${info.funcao === 'Não informado' ? 'text-amber-700 italic' : 'text-gray-800'}`}
-                      title={
-                        info.funcao === 'Não informado'
-                          ? 'Funcionários sem função definida'
-                          : info.funcao
-                      }
-                    >
-                      {info.funcao === 'Não informado'
-                        ? 'Sem função'
-                        : info.funcao}
-                    </span>
-                    {info.isMudancaRole && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
-                        <ArrowRight size={9} />
-                        troca função
-                      </span>
-                    )}
-                    {info.qtdNovos > 0 && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">
-                        {info.qtdNovos} novo{info.qtdNovos > 1 ? 's' : ''}
-                      </span>
-                    )}
-                    {(info.qtdSemNivelNaPlanilha ?? 0) > 0 && (
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
-                        {info.qtdSemNivelNaPlanilha} sem nível
-                      </span>
-                    )}
-                    {info.niveisAtuais.length > 1 && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 flex-shrink-0">
-                        <AlertTriangle size={9} />
-                        conflito
-                      </span>
-                    )}
-                  </div>
-                  {/* Campo nome: mostra nomes dos funcionários com mudança */}
-                  {(() => {
-                    const nomes = (
-                      info.funcionariosComMudanca?.length
-                        ? info.funcionariosComMudanca
-                        : (info.funcionariosComMudancaNivel ?? [])
-                    )
-                      .map((f) => f.nome)
-                      .filter(Boolean);
-                    return nomes.length > 0 ? (
-                      <div className="flex items-center gap-1 mt-0.5 min-w-0">
-                        <span className="text-[10px] text-gray-600 truncate">
-                          {nomes.slice(0, 2).join(', ')}
-                          {nomes.length > 2 && (
-                            <span className="text-gray-400">
-                              {' '}
-                              +{nomes.length - 2}
+                    {/* Function info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`text-sm font-medium truncate ${info.funcao === 'Não informado' ? 'text-amber-700 italic' : 'text-gray-800'}`}
+                          title={
+                            info.funcao === 'Não informado'
+                              ? 'Funcionários sem função definida'
+                              : info.funcao
+                          }
+                        >
+                          {info.funcao === 'Não informado'
+                            ? 'Sem função'
+                            : info.funcao}
+                        </span>
+                        {info.isMudancaRole && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
+                            <ArrowRight size={9} />
+                            troca função
+                          </span>
+                        )}
+                        {info.qtdNovos > 0 && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">
+                            {info.qtdNovos} novo{info.qtdNovos > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        {(info.qtdSemNivelNaPlanilha ?? 0) > 0 && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
+                            {info.qtdSemNivelNaPlanilha} sem nível
+                          </span>
+                        )}
+                        {info.niveisAtuais.length > 1 && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-100 text-orange-700 flex-shrink-0">
+                            <AlertTriangle size={9} />
+                            conflito
+                          </span>
+                        )}
+                      </div>
+                      {/* Campo nome: mostra nomes dos funcionários com mudança */}
+                      {(() => {
+                        const nomes = (
+                          info.funcionariosComMudanca?.length
+                            ? info.funcionariosComMudanca
+                            : (info.funcionariosComMudancaNivel ?? [])
+                        )
+                          .map((f) => f.nome)
+                          .filter(Boolean);
+                        return nomes.length > 0 ? (
+                          <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                            <span className="text-[10px] text-gray-600 truncate">
+                              {nomes.slice(0, 2).join(', ')}
+                              {nomes.length > 2 && (
+                                <span className="text-gray-400">
+                                  {' '}
+                                  +{nomes.length - 2}
+                                </span>
+                              )}
                             </span>
-                          )}
+                          </div>
+                        ) : null;
+                      })()}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-gray-400">
+                          {info.qtdFuncionarios} func.
+                          {info.qtdExistentes > 0 &&
+                            ` · ${info.qtdExistentes} existente${info.qtdExistentes > 1 ? 's' : ''}`}
                         </span>
                       </div>
-                    ) : null;
-                  })()}
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-gray-400">
-                      {info.qtdFuncionarios} func.
-                      {info.qtdExistentes > 0 &&
-                        ` · ${info.qtdExistentes} existente${info.qtdExistentes > 1 ? 's' : ''}`}
-                    </span>
-                  </div>
-                </div>
+                    </div>
 
-                {/* G / O buttons */}
-                <div className="flex gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => handleToggle(info.funcao, 'gestao')}
-                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
-                      nivel === 'gestao'
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-                    }`}
-                  >
-                    G
-                  </button>
-                  <button
-                    onClick={() => handleToggle(info.funcao, 'operacional')}
-                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
-                      nivel === 'operacional'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                    }`}
-                  >
-                    O
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+                    {/* G / O buttons */}
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => handleToggle(info.funcao, 'gestao')}
+                        className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                          nivel === 'gestao'
+                            ? 'bg-purple-600 text-white border-purple-600'
+                            : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                        }`}
+                      >
+                        G
+                      </button>
+                      <button
+                        onClick={() => handleToggle(info.funcao, 'operacional')}
+                        className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                          nivel === 'operacional'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        O
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Detalhes de mudanças (troca de função / nível) quando existentes */}
       {funcoesNivelInfo.some(

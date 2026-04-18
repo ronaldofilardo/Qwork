@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Building2, User, Loader2 } from 'lucide-react';
 import { normalizeCNPJ, validarCNPJ } from '@/lib/validators';
@@ -35,6 +35,7 @@ interface EmpresaFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (novaEmpresa: Empresa) => void;
+  empresaId?: number;
 }
 
 const initialFormState: EmpresaFormData = {
@@ -55,10 +56,43 @@ export default function EmpresaFormModal({
   isOpen,
   onClose,
   onSuccess,
+  empresaId,
 }: EmpresaFormModalProps) {
+  const isEditMode = !!empresaId;
   const [formData, setFormData] = useState<EmpresaFormData>(initialFormState);
   const [loading, setLoading] = useState(false);
+  const [loadingDados, setLoadingDados] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Carrega dados da empresa ao abrir em modo edição
+  useEffect(() => {
+    if (!isOpen || !empresaId) return;
+
+    setLoadingDados(true);
+    setErrors({});
+    fetch(`/api/rh/empresas/${empresaId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.empresa) {
+          const e = data.empresa;
+          setFormData({
+            nome: e.nome || '',
+            cnpj: e.cnpj || '',
+            email: e.email || '',
+            telefone: e.telefone || '',
+            endereco: e.endereco || '',
+            cidade: e.cidade || '',
+            estado: e.estado || '',
+            cep: e.cep || '',
+            representante_nome: e.representante_nome || '',
+            representante_fone: e.representante_fone || '',
+            representante_email: e.representante_email || '',
+          });
+        }
+      })
+      .catch(() => setErrors({ _form: 'Erro ao carregar dados da empresa.' }))
+      .finally(() => setLoadingDados(false));
+  }, [isOpen, empresaId]);
 
   if (!isOpen) return null;
 
@@ -115,43 +149,62 @@ export default function EmpresaFormModal({
       newErrors.nome = 'Nome deve ter no mínimo 3 caracteres';
     }
 
-    const cnpjNorm = normalizeCNPJ(formData.cnpj);
-    if (!cnpjNorm) {
-      newErrors.cnpj = 'CNPJ é obrigatório';
-    } else if (!validarCNPJ(cnpjNorm)) {
-      newErrors.cnpj = 'CNPJ inválido';
+    if (!isEditMode) {
+      const cnpjNorm = normalizeCNPJ(formData.cnpj);
+      if (!cnpjNorm) {
+        newErrors.cnpj = 'CNPJ é obrigatório';
+      } else if (!validarCNPJ(cnpjNorm)) {
+        newErrors.cnpj = 'CNPJ inválido';
+      }
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email da empresa inválido';
     }
 
-    // Validações do representante
-    if (
-      !formData.representante_nome.trim() ||
-      formData.representante_nome.trim().length < 3
-    ) {
-      newErrors.representante_nome = 'Nome do representante é obrigatório';
+    // Campos do representante são obrigatórios apenas no modo criação
+    if (!isEditMode) {
+      if (
+        !formData.representante_nome.trim() ||
+        formData.representante_nome.trim().length < 3
+      ) {
+        newErrors.representante_nome = 'Nome do representante é obrigatório';
+      } else {
+        const nomes = formData.representante_nome.trim().split(/\s+/);
+        if (nomes.length < 2) {
+          newErrors.representante_nome = 'Deve conter nome e sobrenome';
+        }
+      }
+
+      if (
+        !formData.representante_fone.trim() ||
+        formData.representante_fone.replace(/\D/g, '').length < 10
+      ) {
+        newErrors.representante_fone =
+          'Telefone do representante é obrigatório';
+      }
+
+      if (
+        !formData.representante_email ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.representante_email)
+      ) {
+        newErrors.representante_email =
+          'Email do representante é obrigatório e deve ser válido';
+      }
     } else {
-      const nomes = formData.representante_nome.trim().split(/\s+/);
-      if (nomes.length < 2) {
+      // No modo edição, valida apenas se o usuário preencheu algum campo do representante
+      if (
+        formData.representante_nome.trim() &&
+        formData.representante_nome.trim().split(/\s+/).length < 2
+      ) {
         newErrors.representante_nome = 'Deve conter nome e sobrenome';
       }
-    }
-
-    if (
-      !formData.representante_fone.trim() ||
-      formData.representante_fone.replace(/\D/g, '').length < 10
-    ) {
-      newErrors.representante_fone = 'Telefone do representante é obrigatório';
-    }
-
-    if (
-      !formData.representante_email ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.representante_email)
-    ) {
-      newErrors.representante_email =
-        'Email do representante é obrigatório e deve ser válido';
+      if (
+        formData.representante_email &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.representante_email)
+      ) {
+        newErrors.representante_email = 'Email do representante inválido';
+      }
     }
 
     setErrors(newErrors);
@@ -168,15 +221,21 @@ export default function EmpresaFormModal({
     setLoading(true);
 
     try {
-      const response = await fetch('/api/rh/empresas', {
-        method: 'POST',
+      const url = isEditMode
+        ? `/api/rh/empresas/${empresaId}`
+        : '/api/rh/empresas';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (response.ok) {
-        const novaEmpresa = await response.json();
-        onSuccess(novaEmpresa);
+        const data = await response.json();
+        const empresa = isEditMode ? data.empresa : data;
+        onSuccess(empresa);
         setFormData(initialFormState);
         setErrors({});
         onClose();
@@ -194,7 +253,7 @@ export default function EmpresaFormModal({
         }
       }
     } catch (error) {
-      console.error('Erro ao criar empresa:', error);
+      console.error('Erro ao salvar empresa:', error);
       setErrors({ _form: 'Erro ao conectar com o servidor.' });
     } finally {
       setLoading(false);
@@ -216,7 +275,7 @@ export default function EmpresaFormModal({
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Building2 size={24} className="text-primary-500" />
-            Nova Empresa Cliente
+            {isEditMode ? 'Editar Empresa' : 'Nova Empresa Cliente'}
           </h2>
           <button
             onClick={handleClose}
@@ -227,271 +286,293 @@ export default function EmpresaFormModal({
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Erro geral */}
-          {errors._form && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
-              {errors._form}
-            </div>
-          )}
-
-          {/* Seção: Dados do Representante */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <User size={18} />
-              Dados do Representante
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome do Representante <span className="text-red-500">*</span>
-                </label>
-                <input
-                  data-testid="representante-nome"
-                  type="text"
-                  value={formData.representante_nome}
-                  onChange={(e) =>
-                    handleChange('representante_nome', e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.representante_nome
-                      ? 'border-red-500'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder="Ex: João Silva Santos"
-                  disabled={loading}
-                />
-                {errors.representante_nome && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.representante_nome}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  data-testid="representante-fone"
-                  type="text"
-                  value={formData.representante_fone}
-                  onChange={(e) =>
-                    handleTelefoneChange('representante_fone', e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.representante_fone
-                      ? 'border-red-500'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder="(00) 00000-0000"
-                  maxLength={15}
-                  disabled={loading}
-                />
-                {errors.representante_fone && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.representante_fone}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email <span className="text-red-500">*</span>
-                </label>
-                <input
-                  data-testid="representante-email"
-                  type="email"
-                  value={formData.representante_email}
-                  onChange={(e) =>
-                    handleChange('representante_email', e.target.value)
-                  }
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.representante_email
-                      ? 'border-red-500'
-                      : 'border-gray-300'
-                  }`}
-                  placeholder="joao.silva@empresa.com"
-                  disabled={loading}
-                />
-                {errors.representante_email && (
-                  <p className="mt-1 text-xs text-red-500">
-                    {errors.representante_email}
-                  </p>
-                )}
-              </div>
-            </div>
+        {/* Loading dados */}
+        {loadingDados ? (
+          <div className="flex items-center justify-center py-16">
+            <Loader2 size={32} className="animate-spin text-primary-500" />
           </div>
-
-          {/* Seção: Dados da Empresa */}
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Building2 size={18} />
-              Dados da Empresa
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nome da Empresa <span className="text-red-500">*</span>
-                </label>
-                <input
-                  data-testid="empresa-nome"
-                  type="text"
-                  value={formData.nome}
-                  onChange={(e) => handleChange('nome', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.nome ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Ex: Empresa XYZ Ltda"
-                  disabled={loading}
-                />
-                {errors.nome && (
-                  <p className="mt-1 text-xs text-red-500">{errors.nome}</p>
-                )}
+        ) : (
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Erro geral */}
+            {errors._form && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                {errors._form}
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CNPJ <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.cnpj}
-                  onChange={(e) => handleCNPJChange(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.cnpj ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="00.000.000/0000-00"
-                  maxLength={18}
-                  disabled={loading}
-                />
-                {errors.cnpj && (
-                  <p className="mt-1 text-xs text-red-500">{errors.cnpj}</p>
-                )}
-              </div>
+            {/* Seção: Dados do Representante */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <User size={18} />
+                Dados do Representante
+              </h3>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email da Empresa
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleChange('email', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                    errors.email ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="contato@empresa.com"
-                  disabled={loading}
-                />
-                {errors.email && (
-                  <p className="mt-1 text-xs text-red-500">{errors.email}</p>
-                )}
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome do Representante{' '}
+                    {!isEditMode && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    data-testid="representante-nome"
+                    type="text"
+                    value={formData.representante_nome}
+                    onChange={(e) =>
+                      handleChange('representante_nome', e.target.value)
+                    }
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                      errors.representante_nome
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Ex: João Silva Santos"
+                    disabled={loading}
+                  />
+                  {errors.representante_nome && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.representante_nome}
+                    </p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone
-                </label>
-                <input
-                  type="text"
-                  value={formData.telefone}
-                  onChange={(e) =>
-                    handleTelefoneChange('telefone', e.target.value)
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="(00) 00000-0000"
-                  maxLength={15}
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Endereço
-                </label>
-                <input
-                  type="text"
-                  value={formData.endereco}
-                  onChange={(e) => handleChange('endereco', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Rua, número, complemento"
-                  disabled={loading}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cidade
-                </label>
-                <input
-                  type="text"
-                  value={formData.cidade}
-                  onChange={(e) => handleChange('cidade', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  placeholder="Ex: São Paulo"
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    UF
+                    Telefone{' '}
+                    {!isEditMode && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    data-testid="representante-fone"
+                    type="text"
+                    value={formData.representante_fone}
+                    onChange={(e) =>
+                      handleTelefoneChange('representante_fone', e.target.value)
+                    }
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                      errors.representante_fone
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="(00) 00000-0000"
+                    maxLength={15}
+                    disabled={loading}
+                  />
+                  {errors.representante_fone && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.representante_fone}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email{' '}
+                    {!isEditMode && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    data-testid="representante-email"
+                    type="email"
+                    value={formData.representante_email}
+                    onChange={(e) =>
+                      handleChange('representante_email', e.target.value)
+                    }
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                      errors.representante_email
+                        ? 'border-red-500'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="joao.silva@empresa.com"
+                    disabled={loading}
+                  />
+                  {errors.representante_email && (
+                    <p className="mt-1 text-xs text-red-500">
+                      {errors.representante_email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Seção: Dados da Empresa */}
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Building2 size={18} />
+                Dados da Empresa
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nome da Empresa <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    data-testid="empresa-nome"
+                    type="text"
+                    value={formData.nome}
+                    onChange={(e) => handleChange('nome', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                      errors.nome ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="Ex: Empresa XYZ Ltda"
+                    disabled={loading}
+                  />
+                  {errors.nome && (
+                    <p className="mt-1 text-xs text-red-500">{errors.nome}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    CNPJ{' '}
+                    {!isEditMode && <span className="text-red-500">*</span>}
+                    {isEditMode && (
+                      <span className="ml-1 text-xs text-gray-400">
+                        (não editável)
+                      </span>
+                    )}
                   </label>
                   <input
                     type="text"
-                    value={formData.estado}
+                    value={formData.cnpj}
                     onChange={(e) =>
-                      handleChange('estado', e.target.value.toUpperCase())
+                      !isEditMode && handleCNPJChange(e.target.value)
+                    }
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                      errors.cnpj ? 'border-red-500' : 'border-gray-300'
+                    } ${isEditMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                    disabled={loading || isEditMode}
+                    readOnly={isEditMode}
+                  />
+                  {errors.cnpj && (
+                    <p className="mt-1 text-xs text-red-500">{errors.cnpj}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email da Empresa
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
+                      errors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder="contato@empresa.com"
+                    disabled={loading}
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-red-500">{errors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Telefone
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.telefone}
+                    onChange={(e) =>
+                      handleTelefoneChange('telefone', e.target.value)
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="SP"
-                    maxLength={2}
+                    placeholder="(00) 00000-0000"
+                    maxLength={15}
                     disabled={loading}
                   />
                 </div>
-                <div>
+
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    CEP
+                    Endereço
                   </label>
                   <input
                     type="text"
-                    value={formData.cep}
-                    onChange={(e) => handleChange('cep', e.target.value)}
+                    value={formData.endereco}
+                    onChange={(e) => handleChange('endereco', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="00000-000"
-                    maxLength={9}
+                    placeholder="Rua, número, complemento"
                     disabled={loading}
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cidade
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cidade}
+                    onChange={(e) => handleChange('cidade', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    placeholder="Ex: São Paulo"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      UF
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.estado}
+                      onChange={(e) =>
+                        handleChange('estado', e.target.value.toUpperCase())
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="SP"
+                      maxLength={2}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      CEP
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.cep}
+                      onChange={(e) => handleChange('cep', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      placeholder="00000-000"
+                      maxLength={9}
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Botões (sticky para garantir visibilidade) */}
-          <div className="sticky bottom-0 bg-white z-20 py-4 px-6 flex justify-end gap-3 border-t border-gray-200">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={loading}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-            >
-              {loading && <Loader2 size={16} className="animate-spin" />}
-              {loading ? 'Salvando...' : 'Salvar Empresa'}
-            </button>
-          </div>
-        </form>
+            {/* Botões (sticky para garantir visibilidade) */}
+            <div className="sticky bottom-0 bg-white z-20 py-4 px-6 flex justify-end gap-3 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={handleClose}
+                disabled={loading}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+              >
+                {loading && <Loader2 size={16} className="animate-spin" />}
+                {loading
+                  ? 'Salvando...'
+                  : isEditMode
+                    ? 'Salvar Alterações'
+                    : 'Salvar Empresa'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

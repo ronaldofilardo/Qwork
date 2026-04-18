@@ -1,3 +1,5 @@
+import { COMISSAO_STATUS_BADGE } from '@/lib/status-labels';
+
 export interface Comissao {
   id: number;
   representante_nome: string;
@@ -39,33 +41,7 @@ export interface Resumo {
   valor_liberado: string;
 }
 
-export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
-  retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
-  // pendente_consolidacao: mantido como legado para exibir dados antigos do DB
-  pendente_consolidacao: {
-    label: 'Legado (Ciclo)',
-    cor: 'bg-gray-200 text-gray-500',
-  },
-  pendente_nf: {
-    label: 'Legado (NF)',
-    cor: 'bg-gray-200 text-gray-500',
-  },
-  nf_em_analise: {
-    label: 'Legado (Análise)',
-    cor: 'bg-gray-200 text-gray-500',
-  },
-  congelada_rep_suspenso: {
-    label: 'Congelada (Suspensão)',
-    cor: 'bg-orange-100 text-orange-700',
-  },
-  congelada_aguardando_admin: {
-    label: 'Aguardando Admin',
-    cor: 'bg-yellow-100 text-yellow-700',
-  },
-  liberada: { label: 'Liberada', cor: 'bg-purple-100 text-purple-700' },
-  paga: { label: 'Paga', cor: 'bg-green-100 text-green-700' },
-  cancelada: { label: 'Cancelada', cor: 'bg-red-100 text-red-600' },
-};
+export const STATUS_BADGE = COMISSAO_STATUS_BADGE;
 
 export const ACOES_POR_STATUS: Record<string, string[]> = {
   liberada: ['pagar', 'congelar', 'cancelar'],

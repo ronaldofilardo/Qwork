@@ -11,6 +11,7 @@ import {
 import type { TipoCliente } from '@/lib/leads-config';
 import type { NovoLeadForm, ErrosCampos } from '../types';
 import { AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
 
 interface NovoLeadModalProps {
   novoForm: NovoLeadForm;
@@ -51,6 +52,8 @@ export default function NovoLeadModal({
   valorCustoFixoEntidade,
   valorCustoFixoClinica,
 }: NovoLeadModalProps) {
+  const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
+
   const valorNegociadoNum =
     parseFloat(
       novoForm.valor_negociado.replace(/[^\d,]/g, '').replace(',', '.')
@@ -100,7 +103,12 @@ export default function NovoLeadModal({
     valorNegociadoNum > 0 &&
     valorNegociadoNum < custoFixoRep;
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+    <div
+      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) setMostrarConfirmacao(true);
+      }}
+    >
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="font-semibold text-gray-900">
@@ -492,6 +500,39 @@ export default function NovoLeadModal({
           </div>
         </form>
       </div>
+
+      {/* Modal de Confirmação */}
+      {mostrarConfirmacao && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm animate-in fade-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Deseja encerrar o cadastro do lead?
+              </h3>
+            </div>
+            <p className="px-6 py-4 text-sm text-gray-600">
+              Os dados preenchidos serão descartados.
+            </p>
+            <div className="flex gap-3 px-6 pb-6">
+              <button
+                onClick={() => setMostrarConfirmacao(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                Não, continuar
+              </button>
+              <button
+                onClick={() => {
+                  setMostrarConfirmacao(false);
+                  onClose();
+                }}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
+              >
+                Sim, encerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

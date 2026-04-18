@@ -1,3 +1,5 @@
+import { COMISSAO_STATUS_BADGE } from '@/lib/status-labels';
+
 export interface Comissao {
   id: number;
   entidade_nome: string;
@@ -22,20 +24,12 @@ export interface Resumo {
   liberadas: string;
   pagas: string;
   valor_pendente: string;
+  valor_futuro: string;
   valor_liberado: string;
   valor_pago_total: string;
 }
 
-export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
-  retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
-  congelada_aguardando_admin: {
-    label: 'Aguardando Admin',
-    cor: 'bg-yellow-100 text-yellow-700',
-  },
-  liberada: { label: 'Liberada', cor: 'bg-purple-100 text-purple-700' },
-  paga: { label: 'Paga', cor: 'bg-green-100 text-green-700' },
-  cancelada: { label: 'Cancelada', cor: 'bg-red-100 text-red-600' },
-};
+export const STATUS_BADGE = COMISSAO_STATUS_BADGE;
 
 export function fmt(v: string | number | null | undefined) {
   return `R$ ${parseFloat(String(v ?? '0') || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;

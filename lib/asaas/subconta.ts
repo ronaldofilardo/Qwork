@@ -87,17 +87,19 @@ export interface AsaasSplitItem {
  *   - Inviável se valorQWork < CUSTO_MINIMO[tipoProduto]
  *
  * Modelo CUSTO_FIXO:
- *   - valorQWork         = CUSTO_MINIMO[tipoProduto]
- *   - valorRepresentante = valorLaudo - valorQWork (base do rep)
- *   - valorComercial     = (valorLaudo - valorRepresentante_bruto) × (percentualComercial / 100)
- *   - Inviável se valorRepresentante < 0
+ *   - valorRepresentante = valorCustoFixoRep (valor fixo configurado no cadastro do rep)
+ *   - valorComercial     = (valorLaudo - valorCustoFixoRep) × (percentualComercial / 100)
+ *   - valorQWork         = valorLaudo - valorRepresentante - valorComercial
+ *   - Inviável se valorQWork < CUSTO_MINIMO[tipoProduto]
  */
 export function calcularSplit(
   modelo: ModeloComissionamento,
   valorLaudo: number,
   tipoProduto: TipoProdutoSplit,
   percentual?: number,
-  percentualComercial?: number
+  percentualComercial?: number,
+  /** Valor custo fixo do representante (R$). Obrigatório para modelo custo_fixo. */
+  valorCustoFixoRep?: number
 ): ResultadoSplit {
   const custoMinimo = CUSTO_MINIMO[tipoProduto];
   const percComercial =
@@ -142,17 +144,22 @@ export function calcularSplit(
   }
 
   // modelo === 'custo_fixo'
-  const valorQWork = custoMinimo;
-  const valorRepresentante = parseFloat((valorLaudo - valorQWork).toFixed(2));
-  // Comercial recebe % do que sobra após o rep (base residual)
-  const baseRestante = parseFloat((valorLaudo - valorRepresentante).toFixed(2));
-  const valorComercial = parseFloat(
-    (baseRestante * (percComercial / 100)).toFixed(2)
+  // Rep recebe o custo fixo configurado; comercial recebe % da margem; QWork fica com o resto
+  const custoFixo =
+    valorCustoFixoRep != null && valorCustoFixoRep > 0
+      ? valorCustoFixoRep
+      : custoMinimo; // fallback para custo mínimo se não configurado
+  const valorRepresentante = parseFloat(custoFixo.toFixed(2));
+  const margem = parseFloat((valorLaudo - valorRepresentante).toFixed(2));
+  const valorComercial =
+    margem > 0 ? parseFloat((margem * (percComercial / 100)).toFixed(2)) : 0;
+  const valorQWork = parseFloat(
+    (valorLaudo - valorRepresentante - valorComercial).toFixed(2)
   );
-  const viavel = valorRepresentante >= 0;
+  const viavel = valorQWork >= custoMinimo;
 
   return {
-    valorQWork: parseFloat((valorQWork - valorComercial).toFixed(2)),
+    valorQWork,
     valorRepresentante,
     valorComercial,
     viavel,

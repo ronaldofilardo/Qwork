@@ -57,7 +57,13 @@ export default function ModalContrato({
       let response;
 
       if (typeof contratoId === 'number') {
-        response = await fetch(`/api/contratos/${contratoId}`);
+        // Tentar endpoint público primeiro (para links de suporte sem autenticação)
+        response = await fetch(`/api/contratos/public/${contratoId}`);
+
+        // Se não autorizado no público, tentar o endpoint autenticado
+        if (response.status === 401 || response.status === 403) {
+          response = await fetch(`/api/contratos/${contratoId}`);
+        }
       } else {
         const query = `numero_contrato=${encodeURIComponent(String(contratoId))}`;
         response = await fetch(`/api/contratos?${query}`);

@@ -388,10 +388,10 @@ BEGIN
   -- Congela comissões aprovadas sem NF enviada para o mês de pagamento informado
   UPDATE public.comissoes_laudo
   SET    status                = 'congelada_aguardando_admin',
-         motivo_congelamento   = 'nf_rpa_pendente',
+         motivo_congelamento   = 'nf_pendente',
          auto_cancelamento_em  = NOW() + INTERVAL '30 days'
   WHERE  status = 'aprovada'
-    AND  nf_rpa_enviada_em IS NULL
+    AND  nf_enviada_em IS NULL
     AND  mes_pagamento = p_mes_referencia;
 
   GET DIAGNOSTICS _count = ROW_COUNT;
@@ -1398,10 +1398,10 @@ CREATE TABLE public.comissoes_laudo (
     data_aprovacao timestamp with time zone,
     data_liberacao timestamp with time zone,
     data_pagamento timestamp with time zone,
-    nf_rpa_enviada_em timestamp with time zone,
-    nf_rpa_aprovada_em timestamp with time zone,
-    nf_rpa_rejeitada_em timestamp with time zone,
-    nf_rpa_motivo_rejeicao text,
+    nf_enviada_em timestamp with time zone,
+    nf_aprovada_em timestamp with time zone,
+    nf_rejeitada_em timestamp with time zone,
+    nf_motivo_rejeicao text,
     comprovante_pagamento_path text,
     sla_admin_aviso_em timestamp with time zone,
     auto_cancelamento_em timestamp with time zone,
