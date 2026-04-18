@@ -49,6 +49,7 @@ const vinculoComLaudo = {
   perc_rep: '12.00',
   valor_rep: '12.00',
   valor_qwork: '80.00',
+  isento_pagamento: false,
 };
 
 /** Vínculo com representante PJ (cpf_responsavel_pj retornado via COALESCE como rep_cpf) */
@@ -78,6 +79,7 @@ const vinculoPJ = {
   perc_rep: null,
   valor_rep: null,
   valor_qwork: null,
+  isento_pagamento: false,
 };
 
 /** Vínculo sem laudo e sem representante */
@@ -107,6 +109,7 @@ const vinculoSemRep = {
   perc_rep: null,
   valor_rep: null,
   valor_qwork: null,
+  isento_pagamento: false,
 };
 
 describe('GET /api/admin/contratos', () => {
@@ -219,5 +222,28 @@ describe('GET /api/admin/contratos', () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     expect(mockRequireRole).toHaveBeenCalledWith('admin', false);
+  });
+
+  it('inclui campo isento_pagamento na resposta', async () => {
+    const contratoIsento = { ...vinculoComLaudo, isento_pagamento: true };
+    mockQuery.mockResolvedValueOnce({ rows: [contratoIsento] } as never);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.contratos[0].isento_pagamento).toBe(true);
+  });
+
+  it('retorna isento_pagamento: false por padrão', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [vinculoComLaudo] } as never);
+    const res = await GET();
+    const body = await res.json();
+    expect(body.contratos[0].isento_pagamento).toBe(false);
+  });
+
+  it('a query inclui COALESCE de clin.isento_pagamento e ent.isento_pagamento', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] } as never);
+    await GET();
+    const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
+    expect(sql).toContain('coalesce(clin.isento_pagamento, ent.isento_pagamento, false)');
   });
 });

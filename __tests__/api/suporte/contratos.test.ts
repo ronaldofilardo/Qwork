@@ -48,6 +48,7 @@ const vinculoComLaudo = {
   valor_comercial: '2.00',
   perc_rep: null,
   valor_rep: '58.00',
+  isento_pagamento: false,
 };
 
 /** Vínculo sem laudo e sem representante — deve aparecer na listagem */
@@ -176,5 +177,29 @@ describe('GET /api/suporte/contratos', () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     expect(mockRequireRole).toHaveBeenCalledWith('suporte', false);
+  });
+
+  it('inclui campo isento_pagamento na resposta', async () => {
+    const contratoComIsento = { ...vinculoComLaudo, isento_pagamento: true };
+    mockQuery.mockResolvedValueOnce({ rows: [contratoComIsento] } as never);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.contratos[0].isento_pagamento).toBe(true);
+  });
+
+  it('retorna isento_pagamento: false quando nenhum parceiro isento', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [vinculoComLaudo] } as never);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.contratos[0].isento_pagamento).toBe(false);
+  });
+
+  it('a query inclui COALESCE de clin.isento_pagamento e ent.isento_pagamento', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] } as never);
+    await GET();
+    const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
+    expect(sql).toContain('coalesce(clin.isento_pagamento, ent.isento_pagamento, false)');
   });
 });

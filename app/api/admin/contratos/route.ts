@@ -40,6 +40,7 @@ export async function GET(): Promise<NextResponse> {
       perc_rep: string | null;
       valor_rep: string | null;
       valor_qwork: string | null;
+      isento_pagamento: boolean;
     }>(
       `SELECT
          COALESCE(clin.nome, ent.nome)                             AS contratante_nome,
@@ -50,6 +51,7 @@ export async function GET(): Promise<NextResponse> {
            WHEN vc.clinica_id IS NOT NULL THEN 'clinica'
            ELSE 'entidade'
          END                                                       AS tipo_contratante,
+         COALESCE(clin.isento_pagamento, ent.isento_pagamento, false) AS isento_pagamento,
          r.nome                                                    AS rep_nome,
          COALESCE(r.cpf, r.cpf_responsavel_pj)                     AS rep_cpf,
          r.codigo                                                  AS rep_codigo,
@@ -97,7 +99,9 @@ export async function GET(): Promise<NextResponse> {
          lr.criado_em,
          lr.valor_custo_fixo_snapshot,
          lr.valor_negociado,
-         lr.percentual_comissao_comercial
+         lr.percentual_comissao_comercial,
+         clin.isento_pagamento,
+         ent.isento_pagamento
        UNION ALL
        SELECT
          ent2.nome                                                  AS contratante_nome,
@@ -124,7 +128,8 @@ export async function GET(): Promise<NextResponse> {
          NULL::numeric                                              AS valor_comercial,
          NULL::numeric                                              AS perc_rep,
          NULL::numeric                                              AS valor_rep,
-         NULL::numeric                                              AS valor_qwork
+         NULL::numeric                                              AS valor_qwork,
+         false                                                      AS isento_pagamento
        FROM public.entidades ent2
        JOIN public.lotes_avaliacao la2 ON la2.entidade_id = ent2.id
        LEFT JOIN public.avaliacoes av2 ON av2.lote_id = la2.id

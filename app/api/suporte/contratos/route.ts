@@ -39,6 +39,7 @@ export async function GET(): Promise<NextResponse> {
       valor_comercial: string | null;
       perc_rep: string | null;
       valor_rep: string | null;
+      isento_pagamento: boolean;
     }>(
       `SELECT
          COALESCE(clin.nome, ent.nome)                             AS contratante_nome,
@@ -49,6 +50,7 @@ export async function GET(): Promise<NextResponse> {
            WHEN vc.clinica_id IS NOT NULL THEN 'clinica'
            ELSE 'entidade'
          END                                                       AS tipo_contratante,
+         COALESCE(clin.isento_pagamento, ent.isento_pagamento, false) AS isento_pagamento,
          r.nome                                                    AS rep_nome,
          COALESCE(r.cpf, r.cpf_responsavel_pj)                     AS rep_cpf,
          r.codigo                                                  AS rep_codigo,
@@ -90,7 +92,9 @@ export async function GET(): Promise<NextResponse> {
          lr.criado_em,
          lr.valor_custo_fixo_snapshot,
          lr.valor_negociado,
-         lr.percentual_comissao_comercial
+         lr.percentual_comissao_comercial,
+         clin.isento_pagamento,
+         ent.isento_pagamento
        ORDER BY vc.id DESC
        LIMIT 500`,
       []

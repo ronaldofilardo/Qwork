@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, UserPlus } from 'lucide-react';
+import { RefreshCw, UserPlus, FileDown, ShieldOff, X } from 'lucide-react';
 import { VincularRepDrawer } from '@/components/comercial/contratos/VincularRepDrawer';
 
 interface ContratoRow {
@@ -30,6 +30,7 @@ interface ContratoRow {
   perc_rep: string | null;
   valor_rep: string | null;
   valor_qwork?: string | null;
+  isento_pagamento?: boolean;
 }
 
 interface ContratosTableProps {
@@ -37,6 +38,8 @@ interface ContratosTableProps {
   showQWork?: boolean;
   allowVincular?: boolean;
   comercial?: boolean;
+  allowGerarContrato?: boolean;
+  allowIsentarParceiro?: boolean;
 }
 
 const fmtBRL = (v: string | number | null | undefined) => {
@@ -67,12 +70,19 @@ export function ContratosTable({
   showQWork = false,
   allowVincular = false,
   comercial = false,
+  allowGerarContrato = false,
+  allowIsentarParceiro = false,
 }: ContratosTableProps) {
   const [data, setData] = useState<ContratoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [drawerRow, setDrawerRow] = useState<ContratoRow | null>(null);
   const [filtroRep, setFiltroRep] = useState<string>('');
+  const [showIsentarModal, setShowIsentarModal] = useState(false);
+  const [cnpjIsentar, setCnpjIsentar] = useState('');
+  const [isentarLoading, setIsentarLoading] = useState(false);
+  const [isentarErro, setIsentarErro] = useState<string | null>(null);
+  const [isentarSucesso, setIsentarSucesso] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -96,6 +106,56 @@ export function ContratosTable({
     void carregar();
   }, [carregar]);
 
+  const handleIsentar = async () => {
+    const cnpjLimpo = cnpjIsentar.replace(/\D/g, '');
+    if (cnpjLimpo.length !== 14) {
+      setIsentarErro('CNPJ inválido — deve ter 14 dígitos');
+      return;
+    }
+    setIsentarLoading(true);
+    setIsentarErro(null);
+    setIsentarSucesso(null);
+    try {
+      const res = await fetch('/api/admin/tomadores/isentar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cnpj: cnpjLimpo }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? `Erro ${res.status}`);
+      setIsentarSucesso(`${json.nome} (${json.tipo}) marcado como isento com sucesso.`);
+      setCnpjIsentar('');
+      void carregar();
+    } catch (e) {
+      setIsentarErro(e instanceof Error ? e.message : 'Erro ao isentar parceiro');
+    } finally {
+      setIsentarLoading(false);
+    }
+  };
+
+  const handleDownloadContrato = async (row: ContratoRow) => {
+    try {
+      const res = await fetch(
+        `/api/suporte/contratos/${row.contratante_id}/pdf?tipo=${row.tipo_contratante}`,
+        { cache: 'no-store' }
+      );
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        alert(j.error ?? 'Erro ao baixar contrato');
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contrato-${row.contratante_id}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Erro ao baixar contrato');
+    }
+  };
+
   return (
     <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
@@ -105,14 +165,25 @@ export function ContratosTable({
             Um registro por tomador — laudos e comissões acumulados
           </p>
         </div>
-        <button
-          onClick={() => void carregar()}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
-        >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          {allowIsentarParceiro && (
+            <button
+              onClick={() => { setShowIsentarModal(true); setIsentarErro(null); setIsentarSucesso(null); setCnpjIsentar(''); }}
+              className="flex items-center gap-2 px-3 py-2 text-sm border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors"
+            >
+              <ShieldOff size={14} />
+              Isentar Parceiro
+            </button>
+          )}
+          <button
+            onClick={() => void carregar()}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Atualizar
+          </button>
+        </div>
       </div>
 
       {erro && (
@@ -306,8 +377,13 @@ export function ContratosTable({
                             {isClinica ? 'CLÍ' : 'ENT'}
                           </span>
                           <div>
-                            <p className="font-semibold text-gray-900 text-xs leading-tight">
+                            <p className="font-semibold text-gray-900 text-xs leading-tight flex items-center gap-1">
                               {row.contratante_nome || '—'}
+                              {row.isento_pagamento && (
+                                <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                                  ISENTO
+                                </span>
+                              )}
                             </p>
                             <p className="text-[11px] text-gray-400 font-mono">
                               {row.contratante_cnpj || '—'}
@@ -350,7 +426,18 @@ export function ContratosTable({
 
                         {/* Contrato date */}
                         <td className="text-center px-3 py-3 text-xs text-gray-600">
-                          {fmtDate(row.contrato_data)}
+                          <div className="inline-flex items-center gap-1">
+                            <span>{fmtDate(row.contrato_data)}</span>
+                            {allowGerarContrato && row.contrato_data && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); void handleDownloadContrato(row); }}
+                                title="Baixar contrato PDF"
+                                className="text-gray-400 hover:text-gray-700 transition-colors"
+                              >
+                                <FileDown size={13} />
+                              </button>
+                            )}
+                          </div>
                         </td>
 
                         {/* Tempo (dias) */}
@@ -545,6 +632,51 @@ export function ContratosTable({
           onClose={() => setDrawerRow(null)}
           onSaved={() => void carregar()}
         />
+      )}
+
+      {/* Modal Isentar Parceiro */}
+      {showIsentarModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-gray-900">Isentar Parceiro</h3>
+              <button onClick={() => setShowIsentarModal(false)} className="text-gray-400 hover:text-gray-700">
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              Informe o CNPJ do parceiro para conceder isenção total de cobranças (laudos e multa por inatividade).
+            </p>
+            <input
+              type="text"
+              value={cnpjIsentar}
+              onChange={(e) => setCnpjIsentar(e.target.value)}
+              placeholder="CNPJ do parceiro (apenas números)"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 mb-3"
+            />
+            {isentarErro && (
+              <p className="text-sm text-red-600 mb-3">⚠️ {isentarErro}</p>
+            )}
+            {isentarSucesso && (
+              <p className="text-sm text-green-700 mb-3">✓ {isentarSucesso}</p>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowIsentarModal(false)}
+                className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50"
+              >
+                Fechar
+              </button>
+              <button
+                onClick={() => void handleIsentar()}
+                disabled={isentarLoading}
+                className="px-4 py-2 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 disabled:opacity-50"
+              >
+                {isentarLoading ? 'Salvando...' : 'Confirmar Isenção'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
