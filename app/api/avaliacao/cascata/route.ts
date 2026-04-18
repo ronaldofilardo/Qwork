@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
-    const _session = await requireAuth();
+    const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
     const { respostas } = await request.json();
 
     if (!respostas || typeof respostas !== 'object') {
@@ -113,6 +115,9 @@ export async function POST(request: Request) {
       condicoesAvaliadas: condicoesResult.rows.length,
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao avaliar condições de cascata:', error);
     return NextResponse.json(
       { error: 'Erro ao avaliar condições' },

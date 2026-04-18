@@ -50,9 +50,9 @@ describe('canTransitionComissao', () => {
     });
 
     it('deve rejeitar retida → paga (transição inexistente)', () => {
-      expect(canTransitionComissao('retida', 'paga', CTX_ADMIN_COM_MOTIVO)).toBe(
-        false
-      );
+      expect(
+        canTransitionComissao('retida', 'paga', CTX_ADMIN_COM_MOTIVO)
+      ).toBe(false);
     });
   });
 
@@ -173,7 +173,11 @@ describe('getNextValidComissaoStates', () => {
   it('deve retornar estados válidos de liberada', () => {
     const validos = getNextValidComissaoStates('liberada');
     expect(validos).toEqual(
-      expect.arrayContaining(['paga', 'congelada_aguardando_admin', 'cancelada'])
+      expect.arrayContaining([
+        'paga',
+        'congelada_aguardando_admin',
+        'cancelada',
+      ])
     );
     expect(validos).toHaveLength(3);
   });
@@ -202,11 +206,7 @@ describe('validateComissaoTransition', () => {
 
   describe('estado final', () => {
     it('deve retornar valido: false com mensagem ao tentar sair de paga', () => {
-      const resultado = validateComissaoTransition(
-        'paga',
-        'retida',
-        CTX_ADMIN
-      );
+      const resultado = validateComissaoTransition('paga', 'retida', CTX_ADMIN);
       expect(resultado.valido).toBe(false);
       expect(resultado.erro).toContain('paga');
       expect(resultado.erro).toContain('estado final');

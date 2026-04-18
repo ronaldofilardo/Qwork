@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,11 +21,9 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST(request: Request) {
   try {
-    // Validar sessão
+    // Validar sessão e role
     const session = getSession();
-    if (!session || !session.cpf) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
+    assertRoles(session, [ROLES.FUNCIONARIO]);
 
     const { avaliacaoId, nome, cpf, dataNascimento } = await request.json();
 
@@ -171,6 +170,9 @@ export async function POST(request: Request) {
       confirmadoEm: confirmacao.confirmado_em,
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('[CONFIRMAR-IDENTIDADE] Erro:', error);
     return NextResponse.json(
       { error: 'Erro ao registrar confirmação de identidade' },

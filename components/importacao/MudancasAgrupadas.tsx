@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  AlertTriangle,
-  CheckCircle,
-} from 'lucide-react';
+import { AlertTriangle, CheckCircle } from 'lucide-react';
 import type { FuncaoNivelInfo, NivelCargo } from './NivelCargoStep';
 import { groupMudancasByEmpresaAndFuncao } from './NivelCargoStep';
 

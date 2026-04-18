@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { queryWithContext, transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 import {
   validarTransicaoStatusAvaliacao,
   type StatusAvaliacaoType,
@@ -10,6 +11,7 @@ import {
 export async function GET(request: Request) {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
 
     // MULTI-EMPRESA: aceitar ?avaliacaoId para selecionar avaliação específica
     const { searchParams } = new URL(request.url);
@@ -77,6 +79,9 @@ export async function GET(request: Request) {
       { status: 200 }
     );
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao buscar status da avaliação:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar status' },
@@ -88,6 +93,7 @@ export async function GET(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
     const body = await request.json();
     const { status, avaliacaoId: bodyAvaliacaoId } = body;
 
@@ -178,6 +184,9 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao atualizar status da avaliação:', error);
     return NextResponse.json(
       { error: 'Erro ao atualizar status' },
