@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import EditRepresentanteModal from './EditRepresentanteModal';
 import AprovarComissaoModal from './AprovarComissaoModal';
+import KPICard from './KPICard';
+import { fmtBRL, fmtDoc, fmtCpf, fmtCnpj } from './format-utils';
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   apto: { label: 'Ativo', cls: 'bg-green-100 text-green-700' },
@@ -57,45 +59,6 @@ const STATUS_COMISSAO_CLS: Record<string, string> = {
   aprovada: 'bg-blue-100 text-blue-700',
   em_pagamento: 'bg-purple-100 text-purple-700',
 };
-
-const KPICard = ({
-  label,
-  value,
-  sub,
-  highlight,
-  onClick,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  highlight?: boolean;
-  onClick?: () => void;
-}) => (
-  <div
-    onClick={onClick}
-    className={`bg-white rounded-3xl p-6 border shadow-sm transition-all hover:border-green-200 hover:shadow-lg hover:shadow-green-900/[0.03] flex flex-col justify-center h-40${
-      onClick ? ' cursor-pointer active:scale-[0.98]' : ''
-    }`}
-  >
-    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-      {label}
-    </span>
-    <div className="flex items-baseline gap-2">
-      <span
-        className={`text-4xl font-black tracking-tighter ${
-          highlight ? 'text-green-600' : 'text-gray-900'
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-    {sub && (
-      <p className="text-xs font-medium text-gray-400 mt-2 uppercase tracking-wide">
-        {sub}
-      </p>
-    )}
-  </div>
-);
 
 interface RepMetrica {
   id: number;
@@ -446,31 +409,6 @@ export default function ComercialRepresentanteDetalhePage() {
   const statusInfo = STATUS_LABEL[rep.status] ?? {
     label: rep.status,
     cls: 'bg-gray-100 text-gray-500',
-  };
-  const fmtBRL = (v: number) =>
-    (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  const fmtDoc = (v: string | undefined) => {
-    if (!v) return null;
-    const d = v.replace(/\D/g, '');
-    if (d.length === 14)
-      return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-    if (d.length === 11)
-      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    return v;
-  };
-  const fmtCpf = (v: string | null) => {
-    if (!v) return '—';
-    const d = v.replace(/\D/g, '');
-    if (d.length === 11)
-      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    return v;
-  };
-  const fmtCnpj = (v: string | null) => {
-    if (!v) return '—';
-    const d = v.replace(/\D/g, '');
-    if (d.length === 14)
-      return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-    return v;
   };
   const n = (v: number | undefined) => (v ?? 0).toLocaleString('pt-BR');
 

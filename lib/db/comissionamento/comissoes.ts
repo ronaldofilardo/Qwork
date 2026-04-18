@@ -11,12 +11,11 @@ import type {
   MotivoCongelamento,
 } from '../../types/comissionamento';
 import { registrarAuditoria } from './auditoria';
-import { calcularPrevisaoPagamento } from './utils';
 import {
-  CUSTO_POR_AVALIACAO,
-  calcularComissaoCustoFixo,
-  type TipoCliente,
-} from '../../leads-config';
+  calcularValoresComissao,
+  determinarStatusInicialComissao,
+  calcularMesesComissao,
+} from './comissoes-calculos';
 
 /** Lista comissões de um representante com resumo */
 export async function getComissoesByRepresentante(
@@ -245,116 +244,47 @@ export async function criarComissaoAdmin(params: {
     };
   }
 
-  const modeloRep: string = rep.modelo_comissionamento ?? 'percentual';
-  const isCustoFixo = modeloRep === 'custo_fixo';
-
   // Buscar valor_negociado do vínculo (para custo_fixo), percentual e % comercial
   const vinculoPercResult = await query(
     `SELECT percentual_comissao_representante, valor_negociado, percentual_comissao_comercial
      FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
     [vinculo_id]
   );
-  const percVinculo =
-    vinculoPercResult.rows[0]?.percentual_comissao_representante;
-  const valorNegociadoVinculo: number | null =
-    vinculoPercResult.rows[0]?.valor_negociado != null
-      ? parseFloat(vinculoPercResult.rows[0].valor_negociado)
-      : null;
-  const percComercialVinculo: number =
-    vinculoPercResult.rows[0]?.percentual_comissao_comercial != null
-      ? parseFloat(vinculoPercResult.rows[0].percentual_comissao_comercial)
-      : 0;
 
-  let percentualRep: number | null = null;
-  let valorComissao: number;
-  let baseCalculoFinal = 0;
+  // Calcular valores de comissão via função pura extraída
+  const calculoResult = calcularValoresComissao({
+    rep,
+    vinculoPerc: vinculoPercResult.rows[0] ?? {
+      percentual_comissao_representante: null,
+      valor_negociado: null,
+      percentual_comissao_comercial: null,
+    },
+    entidadeId: entId,
+    valorLaudo: valor_laudo,
+    totalParcelas: totalParc,
+  });
 
-  if (isCustoFixo) {
-    // Custo fixo: comissão = (valorRep / negociado) × bruto_por_parcela
-    // Determina tipo de cliente para obter o custo mínimo correto
-    const tipoCliente: TipoCliente = entId ? 'entidade' : 'clinica';
-    const custoFixoRep: number =
-      (entId
-        ? rep.valor_custo_fixo_entidade != null
-          ? parseFloat(rep.valor_custo_fixo_entidade)
-          : null
-        : rep.valor_custo_fixo_clinica != null
-          ? parseFloat(rep.valor_custo_fixo_clinica)
-          : null) ?? CUSTO_POR_AVALIACAO[tipoCliente];
-
-    // Usa valor_negociado do vínculo; fallback para valor_laudo
-    const negociado = valorNegociadoVinculo ?? valor_laudo;
-    const { valorRep, abaixoMinimo } = calcularComissaoCustoFixo(
-      negociado,
-      custoFixoRep,
-      percComercialVinculo
-    );
-    if (abaixoMinimo) {
-      return {
-        comissao: null,
-        erro: `Valor negociado (R$ ${negociado.toFixed(2)}) é inferior ao custo fixo por avaliação (R$ ${custoFixoRep.toFixed(2)}).`,
-      };
-    }
-    // L2 fix: base sempre BRUTA (valor_laudo / totalParc), nunca netValue do Asaas
-    const brutoPerParcel = valor_laudo / totalParc;
-    // Proporcional: margem por parcela = (valorRep / negociado) × brutoPerParcel
-    const ratioRep = negociado > 0 ? valorRep / negociado : 0;
-    valorComissao = Math.round(ratioRep * brutoPerParcel * 100) / 100;
-    percentualRep = 0; // custo_fixo não usa percentual; 0 pois coluna é NOT NULL
-    // custo_fixo: comercial recebe % da MARGEM (não do bruto total)
-    baseCalculoFinal = Math.max(0, valorComissao);
-  } else {
-    // Percentual: L2 fix — base sempre BRUTA (valor_laudo / totalParc)
-    percentualRep =
-      percVinculo != null
-        ? parseFloat(percVinculo)
-        : rep.percentual_comissao != null
-          ? parseFloat(rep.percentual_comissao)
-          : null;
-    if (percentualRep == null) {
-      return {
-        comissao: null,
-        erro: 'Percentual de comissão não definido para este vínculo/representante.',
-      };
-    }
-
-    // L2 fix: sempre usar valor bruto por parcela como base de cálculo
-    const brutoPerParcel = valor_laudo / totalParc;
-    valorComissao =
-      Math.round(((brutoPerParcel * percentualRep) / 100) * 100) / 100;
-    // Para modelo %, comercial também calcula sobre o bruto (não sobre o residual)
-    baseCalculoFinal = brutoPerParcel;
+  if ('erro' in calculoResult) {
+    return { comissao: null, erro: calculoResult.erro };
   }
 
-  // Comissão do comercial sobre baseCalculoFinal
-  // custo_fixo: baseCalculoFinal = bruto - rep (residual)
-  // percentual:  baseCalculoFinal = bruto
-  const valorComissaoComercial: number =
-    percComercialVinculo > 0
-      ? Math.round(((baseCalculoFinal * percComercialVinculo) / 100) * 100) /
-        100
-      : 0;
+  const {
+    valorComissao,
+    percentualRep,
+    percComercialVinculo,
+    valorComissaoComercial,
+  } = calculoResult.resultado;
 
-  // L10 fix: status inicial depende se parcela está confirmada E se rep tem wallet Asaas
-  // - forcar_retida = true → sempre retida (provisionamento antecipado de parcelas futuras)
-  // - parcela_confirmada_em = null → retida (parcela ainda não paga)
-  // - parcela confirmada + rep tem wallet → paga (split já foi executado)
-  // - parcela confirmada + rep sem wallet → retida (sem split, aguarda configuração)
-  const repTemWallet = !!rep.asaas_wallet_id;
-  const parcelaEfetivamentePaga =
-    !forcar_retida && parcela_confirmada_em != null;
-  const statusInicial: StatusComissao =
-    parcelaEfetivamentePaga && repTemWallet ? 'paga' : 'retida';
+  // Determinar status inicial via função pura extraída
+  const statusInicial = determinarStatusInicialComissao({
+    forcarRetida: forcar_retida,
+    parcelaConfirmadaEm: parcela_confirmada_em ?? null,
+    repApto: rep.status === 'apto',
+  });
 
-  // Mês de emissão e pagamento
-  const agora = new Date();
-  const mesEmissao = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`;
-  const { mes_pagamento: mesPagBase } = calcularPrevisaoPagamento(agora);
-  // Parcelado: cada parcela N tem previsão deslocada em (N-1) meses
-  // parcela 1 → base, parcela 2 → base+1 mês, etc.
-  const mesPagDate = new Date(mesPagBase + 'T00:00:00Z');
-  mesPagDate.setUTCMonth(mesPagDate.getUTCMonth() + (parcelaNum - 1));
-  const mes_pagamento = `${mesPagDate.getUTCFullYear()}-${String(mesPagDate.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  // Mês de emissão e pagamento via função pura extraída
+  const { mesEmissao, mesPagamento: mes_pagamento } =
+    calcularMesesComissao(parcelaNum);
 
   const result = await query(
     `INSERT INTO comissoes_laudo (
@@ -435,7 +365,7 @@ export async function criarComissaoAdmin(params: {
     // Se comissão já paga, upsert ciclo mensal (best-effort)
     if (statusInicial === 'paga') {
       try {
-        const mesRef = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`;
+        const mesRef = mesEmissao;
         const upsertResult = await query<{ id: number }>(
           `INSERT INTO ciclos_comissao (representante_id, mes_referencia, valor_total, qtd_comissoes, status)
            VALUES ($1, $2::date, $3, 1, 'fechado')
