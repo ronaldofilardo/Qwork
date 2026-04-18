@@ -36,7 +36,9 @@ jest.mock('@/lib/lotes', () => ({ recalcularStatusLote: jest.fn() }));
 import { queryWithContext } from '@/lib/db-security';
 import * as avaliacaoConclusao from '@/lib/avaliacao-conclusao';
 
-const mockQueryWithContext = queryWithContext as jest.MockedFunction<typeof queryWithContext>;
+const mockQueryWithContext = queryWithContext as jest.MockedFunction<
+  typeof queryWithContext
+>;
 
 // --------------------------------------------------------------- helpers --
 
@@ -61,7 +63,9 @@ describe('/api/avaliacao/respostas', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockSession = null;
-    (avaliacaoConclusao.verificarEConcluirAvaliacao as jest.Mock).mockResolvedValue({
+    (
+      avaliacaoConclusao.verificarEConcluirAvaliacao as jest.Mock
+    ).mockResolvedValue({
       concluida: false,
       totalRespostas: 1,
       mensagem: 'Em andamento',
@@ -91,9 +95,15 @@ describe('/api/avaliacao/respostas', () => {
       mockSession = makeSession();
 
       // 1ª: SELECT avaliação por CPF
-      mockQueryWithContext.mockResolvedValueOnce({ rows: [{ id: 42 }], rowCount: 1 } as any);
+      mockQueryWithContext.mockResolvedValueOnce({
+        rows: [{ id: 42 }],
+        rowCount: 1,
+      } as any);
       // 2ª: SELECT respostas por avaliacao_id + grupo
-      mockQueryWithContext.mockResolvedValueOnce({ rows: mockRespostas, rowCount: 2 } as any);
+      mockQueryWithContext.mockResolvedValueOnce({
+        rows: mockRespostas,
+        rowCount: 2,
+      } as any);
 
       const response = await GET(makeGetRequest('grupo=1'));
       const data = await response.json();
@@ -106,9 +116,15 @@ describe('/api/avaliacao/respostas', () => {
       mockSession = makeSession();
 
       // 1ª: SELECT avaliação
-      mockQueryWithContext.mockResolvedValueOnce({ rows: [{ id: 42 }], rowCount: 1 } as any);
+      mockQueryWithContext.mockResolvedValueOnce({
+        rows: [{ id: 42 }],
+        rowCount: 1,
+      } as any);
       // 2ª: SELECT respostas vazia
-      mockQueryWithContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryWithContext.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      } as any);
 
       const response = await GET(makeGetRequest('grupo=1'));
       const data = await response.json();
@@ -121,7 +137,10 @@ describe('/api/avaliacao/respostas', () => {
       mockSession = makeSession();
 
       // SELECT avaliação — sem resultado
-      mockQueryWithContext.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQueryWithContext.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      } as any);
 
       const response = await GET(makeGetRequest('grupo=1'));
       const data = await response.json();
@@ -136,7 +155,9 @@ describe('/api/avaliacao/respostas', () => {
   describe('POST', () => {
     it('deve retornar 401 quando não autenticado', async () => {
       // mockSession = null
-      const response = await POST(makePostRequest({ respostas: [{ item: 'Q1', valor: 75, grupo: 1 }] }));
+      const response = await POST(
+        makePostRequest({ respostas: [{ item: 'Q1', valor: 75, grupo: 1 }] })
+      );
       expect(response.status).toBe(401);
     });
 
@@ -151,16 +172,24 @@ describe('/api/avaliacao/respostas', () => {
 
       // 1ª SELECT avaliação; 2ª SELECT status; 3ª-4ª INSERT respostas
       mockQueryWithContext
-        .mockResolvedValueOnce({ rows: [{ id: 42, lote_id: null }], rowCount: 1 } as any) // SELECT avaliacao
-        .mockResolvedValueOnce({ rows: [{ status: 'em_andamento' }], rowCount: 1 } as any) // SELECT status
+        .mockResolvedValueOnce({
+          rows: [{ id: 42, lote_id: null }],
+          rowCount: 1,
+        } as any) // SELECT avaliacao
+        .mockResolvedValueOnce({
+          rows: [{ status: 'em_andamento' }],
+          rowCount: 1,
+        } as any) // SELECT status
         .mockResolvedValue({ rows: [], rowCount: 1 } as any); // INSERT respostas
 
-      const response = await POST(makePostRequest({
-        respostas: [
-          { item: 'Q1', valor: 75, grupo: 1 },
-          { item: 'Q2', valor: 50, grupo: 1 },
-        ],
-      }));
+      const response = await POST(
+        makePostRequest({
+          respostas: [
+            { item: 'Q1', valor: 75, grupo: 1 },
+            { item: 'Q2', valor: 50, grupo: 1 },
+          ],
+        })
+      );
 
       expect(response.status).toBe(200);
       const data = await response.json();
@@ -171,18 +200,28 @@ describe('/api/avaliacao/respostas', () => {
       mockSession = makeSession();
 
       mockQueryWithContext
-        .mockResolvedValueOnce({ rows: [{ id: 99, lote_id: null }], rowCount: 1 } as any) // SELECT avaliacao
-        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 } as any)   // SELECT status
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)                          // INSERT resposta
-        .mockResolvedValue({ rows: [], rowCount: 1 } as any);                             // UPDATE status
+        .mockResolvedValueOnce({
+          rows: [{ id: 99, lote_id: null }],
+          rowCount: 1,
+        } as any) // SELECT avaliacao
+        .mockResolvedValueOnce({
+          rows: [{ status: 'iniciada' }],
+          rowCount: 1,
+        } as any) // SELECT status
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT resposta
+        .mockResolvedValue({ rows: [], rowCount: 1 } as any); // UPDATE status
 
-      const response = await POST(makePostRequest({
-        respostas: [{ item: 'Q1', valor: 75, grupo: 1 }],
-      }));
+      const response = await POST(
+        makePostRequest({
+          respostas: [{ item: 'Q1', valor: 75, grupo: 1 }],
+        })
+      );
 
       expect(response.status).toBe(200);
       expect(mockQueryWithContext).toHaveBeenCalledWith(
-        expect.stringContaining("UPDATE avaliacoes SET status = 'em_andamento'"),
+        expect.stringContaining(
+          "UPDATE avaliacoes SET status = 'em_andamento'"
+        ),
         [99]
       );
     });
@@ -192,9 +231,11 @@ describe('/api/avaliacao/respostas', () => {
       // SELECT avaliação falha
       mockQueryWithContext.mockRejectedValueOnce(new Error('Database error'));
 
-      const response = await POST(makePostRequest({
-        respostas: [{ item: 'Q1', valor: 75, grupo: 1 }],
-      }));
+      const response = await POST(
+        makePostRequest({
+          respostas: [{ item: 'Q1', valor: 75, grupo: 1 }],
+        })
+      );
 
       expect(response.status).toBe(500);
     });
