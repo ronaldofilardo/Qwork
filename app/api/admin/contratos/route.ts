@@ -51,7 +51,6 @@ export async function GET(): Promise<NextResponse> {
            WHEN vc.clinica_id IS NOT NULL THEN 'clinica'
            ELSE 'entidade'
          END                                                       AS tipo_contratante,
-         COALESCE(clin.isento_pagamento, ent.isento_pagamento, false) AS isento_pagamento,
          r.nome                                                    AS rep_nome,
          COALESCE(r.cpf, r.cpf_responsavel_pj)                     AS rep_cpf,
          r.codigo                                                  AS rep_codigo,
@@ -76,7 +75,8 @@ export async function GET(): Promise<NextResponse> {
            - COALESCE(SUM(cl.valor_comissao), 0)
            - COALESCE(SUM(cl.valor_comissao_comercial), 0),
            2
-         )                                                         AS valor_qwork
+         )                                                         AS valor_qwork,
+         COALESCE(clin.isento_pagamento, ent.isento_pagamento, false)::boolean AS isento_pagamento
        FROM public.vinculos_comissao vc
        LEFT JOIN public.comissoes_laudo cl   ON cl.vinculo_id = vc.id
        LEFT JOIN public.representantes r     ON r.id = vc.representante_id
@@ -129,7 +129,7 @@ export async function GET(): Promise<NextResponse> {
          NULL::numeric                                              AS perc_rep,
          NULL::numeric                                              AS valor_rep,
          NULL::numeric                                              AS valor_qwork,
-         false                                                      AS isento_pagamento
+         false::boolean                                             AS isento_pagamento
        FROM public.entidades ent2
        JOIN public.lotes_avaliacao la2 ON la2.entidade_id = ent2.id
        LEFT JOIN public.avaliacoes av2 ON av2.lote_id = la2.id
