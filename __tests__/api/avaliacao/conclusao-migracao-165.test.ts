@@ -91,7 +91,12 @@ describe('Integração: Salvar Respostas + Trigger Migração 165', () => {
         `INSERT INTO funcionarios (cpf, nome, senha_hash, usuario_tipo)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome`,
-        [testSetup.funcionarioCpf, 'Employee Test Integração', 'hash_teste_placeholder', 'funcionario_clinica'],
+        [
+          testSetup.funcionarioCpf,
+          'Employee Test Integração',
+          'hash_teste_placeholder',
+          'funcionario_clinica',
+        ],
         TEST_SESSION
       );
 
@@ -125,7 +130,8 @@ describe('Integração: Salvar Respostas + Trigger Migração 165', () => {
       testSetup.avaliacaoId = avaliacaoResult.rows[0].id;
 
       // Criar função + trigger atualizar_ultima_avaliacao se não existir no banco de teste
-      await query(`
+      await query(
+        `
         CREATE OR REPLACE FUNCTION atualizar_ultima_avaliacao_funcionario()
         RETURNS TRIGGER AS $$
         BEGIN
@@ -144,11 +150,19 @@ describe('Integração: Salvar Respostas + Trigger Migração 165', () => {
           RETURN NEW;
         END;
         $$ LANGUAGE plpgsql
-      `, [], TEST_SESSION);
-      await query(`
+      `,
+        [],
+        TEST_SESSION
+      );
+      await query(
+        `
         DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao ON avaliacoes
-      `, [], TEST_SESSION);
-      await query(`
+      `,
+        [],
+        TEST_SESSION
+      );
+      await query(
+        `
         CREATE TRIGGER trigger_atualizar_ultima_avaliacao
         AFTER UPDATE OF status, envio, inativada_em
         ON avaliacoes
@@ -159,7 +173,10 @@ describe('Integração: Salvar Respostas + Trigger Migração 165', () => {
           OR (NEW.inativada_em IS NOT NULL AND OLD.inativada_em IS NULL)
         )
         EXECUTE FUNCTION atualizar_ultima_avaliacao_funcionario()
-      `, [], TEST_SESSION);
+      `,
+        [],
+        TEST_SESSION
+      );
     } catch (err) {
       console.error('Setup Error:', err);
       throw err;
@@ -179,16 +196,42 @@ describe('Integração: Salvar Respostas + Trigger Migração 165', () => {
         [funcionarioCpf],
         TEST_SESSION
       );
-      await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [
-        funcionarioCpf,
-      ], TEST_SESSION);
-      await query('DELETE FROM funcionarios WHERE cpf = $1', [funcionarioCpf], TEST_SESSION);
-      await query('DELETE FROM laudos WHERE lote_id = $1', [loteId], TEST_SESSION);
-      await query('DELETE FROM lotes_avaliacao WHERE id = $1', [loteId], TEST_SESSION);
-      await query('DELETE FROM empresas_clientes WHERE id = $1', [empresaId], TEST_SESSION);
-      await query('DELETE FROM clinicas WHERE id = $1', [clinicaId], TEST_SESSION);
+      await query(
+        'DELETE FROM avaliacoes WHERE funcionario_cpf = $1',
+        [funcionarioCpf],
+        TEST_SESSION
+      );
+      await query(
+        'DELETE FROM funcionarios WHERE cpf = $1',
+        [funcionarioCpf],
+        TEST_SESSION
+      );
+      await query(
+        'DELETE FROM laudos WHERE lote_id = $1',
+        [loteId],
+        TEST_SESSION
+      );
+      await query(
+        'DELETE FROM lotes_avaliacao WHERE id = $1',
+        [loteId],
+        TEST_SESSION
+      );
+      await query(
+        'DELETE FROM empresas_clientes WHERE id = $1',
+        [empresaId],
+        TEST_SESSION
+      );
+      await query(
+        'DELETE FROM clinicas WHERE id = $1',
+        [clinicaId],
+        TEST_SESSION
+      );
       // Limpar trigger criado para o teste
-      await query(`DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao ON avaliacoes`, [], TEST_SESSION).catch(() => {});
+      await query(
+        `DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao ON avaliacoes`,
+        [],
+        TEST_SESSION
+      ).catch(() => {});
     } catch (err) {
       console.error('Cleanup Error:', err);
     }
@@ -347,7 +390,11 @@ describe('Integração: Salvar Respostas + Trigger Migração 165', () => {
 
       expect(agora.rows[0].ultima_avaliacao_id).toBe(seg2AvaliacaoId);
     } finally {
-      await query('DELETE FROM avaliacoes WHERE id = $1', [seg2AvaliacaoId], TEST_SESSION);
+      await query(
+        'DELETE FROM avaliacoes WHERE id = $1',
+        [seg2AvaliacaoId],
+        TEST_SESSION
+      );
     }
   });
 });
