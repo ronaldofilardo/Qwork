@@ -139,8 +139,7 @@ export function determinarStatusInicialComissao(params: {
   repApto: boolean;
 }): StatusComissao {
   const { forcarRetida, parcelaConfirmadaEm, repApto } = params;
-  const parcelaEfetivamentePaga =
-    !forcarRetida && parcelaConfirmadaEm != null;
+  const parcelaEfetivamentePaga = !forcarRetida && parcelaConfirmadaEm != null;
   return parcelaEfetivamentePaga && repApto ? 'paga' : 'retida';
 }
 

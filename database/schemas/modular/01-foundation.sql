@@ -110,7 +110,8 @@ CREATE TYPE public.perfil_usuario_enum AS ENUM (
     'emissor',
     'suporte',
     'comercial',
-    'vendedor'
+    'vendedor',
+    'gestor'  -- adicionado migration 1220
 );
 
 

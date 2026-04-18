@@ -22,6 +22,9 @@ jest.mock('@/lib/calculate', () => ({
     { grupo: 1, dominio: 'Demanda', score: 75, categoria: 'medio' },
   ]),
 }));
+jest.mock('@/lib/avaliacao-conclusao', () => ({
+  verificarEConcluirAvaliacao: jest.fn(),
+}));
 jest.mock('@/lib/questoes', () => ({
   grupos: [
     {
@@ -40,30 +43,41 @@ jest.mock('@/lib/questoes', () => ({
 }));
 
 import { POST } from '@/app/api/avaliacao/save/route';
-import * as db from '@/lib/db';
 import * as dbSecurity from '@/lib/db-security';
 import * as session from '@/lib/session';
+import * as avaliacaoConclusao from '@/lib/avaliacao-conclusao';
+
+function mockDbSeq(
+  avaliacao: object,
+  ...extraCalls: object[]
+) {
+  const mock = dbSecurity.queryWithContext as jest.Mock;
+  mock.mockResolvedValueOnce({ rows: [avaliacao], rowCount: 1 }); // SELECT avaliacao
+  extraCalls.forEach((r) => mock.mockResolvedValueOnce(r));       // INSERT respostas / COUNT
+  mock.mockResolvedValue({ rows: [], rowCount: 1 });               // DEFAULT
+}
 
 describe('API /api/avaliacao/save', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it('deve avançar grupo_atual se todas as respostas do grupo forem preenchidas', async () => {
     (session.requireAuth as jest.Mock).mockResolvedValue({
       cpf: '123',
       nome: 'Teste',
       perfil: 'funcionario',
     });
-    (db.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: null }], rowCount: 1 }) // Busca avaliação existente
-      .mockResolvedValue({ rows: [], rowCount: 1 }) // INSERT respostas
-      .mockResolvedValueOnce({ rows: [{ total: '2' }], rowCount: 1 }); // COUNT respostas (< 37)
+    (avaliacaoConclusao.verificarEConcluirAvaliacao as jest.Mock).mockResolvedValue({
+      concluida: false,
+    });
+  });
 
-    (dbSecurity.queryWithContext as jest.Mock).mockResolvedValue({
-      rows: [],
-      rowCount: 1,
-    }); // UPDATE com context
+  it('deve avançar grupo_atual se todas as respostas do grupo forem preenchidas', async () => {
+    // SELECT avaliacao → existe; INSERT Q1 → ok; INSERT Q2 → ok; COUNT → 2; UPDATE → ok
+    mockDbSeq(
+      { id: 1, lote_id: null },
+      { rows: [], rowCount: 1 }, // INSERT Q1
+      { rows: [], rowCount: 1 }, // INSERT Q2
+      { rows: [{ total: '2' }], rowCount: 1 }, // COUNT
+    );
 
     const mockRequest = {
       json: jest.fn().mockResolvedValue({
@@ -75,64 +89,46 @@ describe('API /api/avaliacao/save', () => {
       }),
     };
 
-    await POST(mockRequest as any);
+    const res = await POST(mockRequest as any);
+    expect(res.status).toBe(200);
 
-    // Verifica se o queryWithContext foi chamado para UPDATE
+    // grupo avanço: respostas.length (2) >= itens do grupo (2) → grupoAtual = 1+1 = 2
     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
-      [2, 'em_andamento', 1],
-      expect.objectContaining({ cpf: '123' })
+      [2, 'em_andamento', 1]
     );
   });
 
   it('deve manter grupo_atual se grupo está incompleto', async () => {
-    (session.requireAuth as jest.Mock).mockResolvedValue({
-      cpf: '123',
-      nome: 'Teste',
-      perfil: 'funcionario',
-    });
-    (db.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: null }], rowCount: 1 })
-      .mockResolvedValue({ rows: [], rowCount: 1 })
-      .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 });
-
-    (dbSecurity.queryWithContext as jest.Mock).mockResolvedValue({
-      rows: [],
-      rowCount: 1,
-    });
+    mockDbSeq(
+      { id: 1, lote_id: null },
+      { rows: [], rowCount: 1 }, // INSERT Q1
+      { rows: [{ total: '1' }], rowCount: 1 }, // COUNT
+    );
 
     const mockRequest = {
       json: jest.fn().mockResolvedValue({
         grupo: 1,
-        respostas: [{ item: 'Q1', valor: 1, grupo: 1 }], // Apenas 1 resposta de 2 possíveis
+        respostas: [{ item: 'Q1', valor: 1, grupo: 1 }], // apenas 1 de 2
       }),
     };
 
-    await POST(mockRequest as any);
+    const res = await POST(mockRequest as any);
+    expect(res.status).toBe(200);
 
-    // Verifica se o queryWithContext foi chamado mantendo o mesmo grupo
+    // grupo NÃO avança: respostas.length (1) < itens do grupo (2) → grupoAtual = 1
     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
-      [1, 'em_andamento', 1],
-      expect.objectContaining({ cpf: '123' })
+      [1, 'em_andamento', 1]
     );
   });
 
   it('deve atualizar status para em_andamento sempre que salvar', async () => {
-    (session.requireAuth as jest.Mock).mockResolvedValue({
-      cpf: '123',
-      nome: 'Teste',
-      perfil: 'funcionario',
-    });
-    (db.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: null }], rowCount: 1 })
-      .mockResolvedValue({ rows: [], rowCount: 1 })
-      .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 });
-
-    (dbSecurity.queryWithContext as jest.Mock).mockResolvedValue({
-      rows: [],
-      rowCount: 1,
-    });
+    mockDbSeq(
+      { id: 1, lote_id: null },
+      { rows: [], rowCount: 1 }, // INSERT Q1
+      { rows: [{ total: '1' }], rowCount: 1 }, // COUNT
+    );
 
     const mockRequest = {
       json: jest.fn().mockResolvedValue({
@@ -141,13 +137,12 @@ describe('API /api/avaliacao/save', () => {
       }),
     };
 
-    await POST(mockRequest as any);
+    const res = await POST(mockRequest as any);
+    expect(res.status).toBe(200);
 
-    // Verifica se o status sempre é atualizado para 'em_andamento'
     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
-      expect.arrayContaining([1, 'em_andamento', 1]),
-      expect.objectContaining({ cpf: '123' })
+      expect.arrayContaining(['em_andamento', 1])
     );
   });
 });

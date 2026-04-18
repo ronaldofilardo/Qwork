@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 import { grupos } from '@/lib/questoes';
 
 export const dynamic = 'force-dynamic';
@@ -8,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
     const { searchParams } = new URL(request.url);
     const avaliacaoIdParam = searchParams.get('avaliacao_id');
 
@@ -99,6 +101,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ resultados: resultadosCalculados });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao buscar resultados:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar resultados' },

@@ -4711,10 +4711,23 @@ CREATE POLICY avaliacoes_own_select ON public.avaliacoes FOR SELECT USING ((((fu
 -- Name: avaliacoes avaliacoes_rh_select; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY avaliacoes_rh_select ON public.avaliacoes FOR SELECT USING (((current_setting('app.current_user_perfil'::text, true) = 'rh'::text) AND (EXISTS ( SELECT 1
-   FROM (public.lotes_avaliacao la
-     JOIN public.empresas_clientes ec ON ((la.empresa_id = ec.id)))
-  WHERE ((la.id = avaliacoes.lote_id) AND (ec.clinica_id = (NULLIF(current_setting('app.current_clinica_id'::text, true), ''::text))::integer))))));
+CREATE POLICY avaliacoes_rh_select ON public.avaliacoes FOR SELECT USING (((public.current_user_perfil() = 'rh'::text) AND public.validate_rh_clinica() AND (lote_id IN ( SELECT la.id
+   FROM public.lotes_avaliacao la
+  WHERE (la.clinica_id = public.current_user_clinica_id_optional())))));
+
+COMMENT ON POLICY avaliacoes_rh_select ON public.avaliacoes IS 'RH vê apenas avaliações de lotes da sua clínica';
+
+
+--
+-- Name: avaliacoes avaliacoes_gestor_select; Type: POLICY; Schema: public; Owner: postgres
+-- Migration: 1219
+--
+
+CREATE POLICY avaliacoes_gestor_select ON public.avaliacoes FOR SELECT USING (((current_setting('app.current_user_perfil'::text, true) = 'gestor'::text) AND (lote_id IN ( SELECT lotes_avaliacao.id
+   FROM public.lotes_avaliacao
+  WHERE ((lotes_avaliacao.entidade_id IS NOT NULL) AND (lotes_avaliacao.entidade_id = public.current_user_entidade_id_optional()))))));
+
+COMMENT ON POLICY avaliacoes_gestor_select ON public.avaliacoes IS 'Gestor de entidade vê apenas avaliações de lotes da sua entidade';
 
 
 
@@ -4809,26 +4822,41 @@ CREATE POLICY lotes_rh_select ON public.lotes_avaliacao FOR SELECT USING (((publ
 
 
 --
--- Name: laudos policy_laudos_admin; Type: POLICY; Schema: public; Owner: postgres
+-- Name: lotes_avaliacao lotes_gestor_select; Type: POLICY; Schema: public; Owner: postgres
+-- Migration: 1219
 --
 
-CREATE POLICY policy_laudos_admin ON public.laudos FOR SELECT USING ((current_setting('app.current_role'::text, true) = 'admin'::text));
+CREATE POLICY lotes_gestor_select ON public.lotes_avaliacao FOR SELECT USING (((current_setting('app.current_user_perfil'::text, true) = 'gestor'::text) AND (entidade_id IS NOT NULL) AND (entidade_id = public.current_user_entidade_id_optional())));
 
+COMMENT ON POLICY lotes_gestor_select ON public.lotes_avaliacao IS 'Gestor de entidade vê apenas lotes da sua entidade';
+
+
+
+--
+-- Name: laudos (removida) policy_laudos_admin; Type: POLICY; Schema: public; Owner: postgres
+--
+
+-- policy_laudos_admin REMOVIDA (migration 1219): admin bloqueado de laudos é intencional (laudos_block_admin RESTRICTIVE)
 
 
 --
 -- Name: lotes_avaliacao policy_lotes_admin; Type: POLICY; Schema: public; Owner: postgres
+-- Migration 1219: corrigido app.current_role → app.current_user_perfil
 --
 
-CREATE POLICY policy_lotes_admin ON public.lotes_avaliacao FOR SELECT USING ((current_setting('app.current_role'::text, true) = 'admin'::text));
+CREATE POLICY policy_lotes_admin ON public.lotes_avaliacao FOR SELECT USING ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text));
 
+COMMENT ON POLICY policy_lotes_admin ON public.lotes_avaliacao IS 'Admin vê metadados de todos os lotes (RBAC admin)';
 
 
 --
 -- Name: lotes_avaliacao policy_lotes_emissor; Type: POLICY; Schema: public; Owner: postgres
+-- Migration 1219: corrigido app.current_role → current_user_perfil()
 --
 
-CREATE POLICY policy_lotes_emissor ON public.lotes_avaliacao FOR SELECT USING (((current_setting('app.current_role'::text, true) = 'emissor'::text) AND ((status)::text = ANY (ARRAY[('pendente'::character varying)::text, ('em_processamento'::character varying)::text, ('concluido'::character varying)::text]))));
+CREATE POLICY policy_lotes_emissor ON public.lotes_avaliacao FOR SELECT USING (((public.current_user_perfil() = 'emissor'::text) AND ((status)::text = ANY (ARRAY[('pendente'::character varying)::text, ('em_processamento'::character varying)::text, ('concluido'::character varying)::text]))));
+
+COMMENT ON POLICY policy_lotes_emissor ON public.lotes_avaliacao IS 'Emissor acessa lotes prontos para emissão/já emitidos';
 
 
 
@@ -4903,6 +4931,31 @@ CREATE POLICY rls_emissor_insert_laudos ON public.laudos FOR INSERT WITH CHECK (
 --
 
 CREATE POLICY rls_emissor_select_laudos ON public.laudos FOR SELECT USING ((public.current_user_perfil() = 'emissor'::text));
+
+
+
+--
+-- Name: laudos laudos_rh_select; Type: POLICY; Schema: public; Owner: postgres
+-- Migration: 1219
+--
+
+CREATE POLICY laudos_rh_select ON public.laudos FOR SELECT USING (((public.current_user_perfil() = 'rh'::text) AND public.validate_rh_clinica() AND (lote_id IN ( SELECT lotes_avaliacao.id
+   FROM public.lotes_avaliacao
+  WHERE (lotes_avaliacao.clinica_id = public.current_user_clinica_id_optional())))));
+
+COMMENT ON POLICY laudos_rh_select ON public.laudos IS 'RH vê laudos de lotes da sua clínica';
+
+
+--
+-- Name: laudos laudos_gestor_select; Type: POLICY; Schema: public; Owner: postgres
+-- Migration: 1219
+--
+
+CREATE POLICY laudos_gestor_select ON public.laudos FOR SELECT USING (((current_setting('app.current_user_perfil'::text, true) = 'gestor'::text) AND (lote_id IN ( SELECT lotes_avaliacao.id
+   FROM public.lotes_avaliacao
+  WHERE ((lotes_avaliacao.entidade_id IS NOT NULL) AND (lotes_avaliacao.entidade_id = public.current_user_entidade_id_optional()))))));
+
+COMMENT ON POLICY laudos_gestor_select ON public.laudos IS 'Gestor de entidade vê laudos de lotes da sua entidade';
 
 
 

@@ -65,7 +65,10 @@ describe('checkEmailDuplicate', () => {
       // Arrange: não encontrou em representantes, mas encontrou em leads
       mockQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [{ id: 'abc-123' }], rowCount: 1 } as any);
+        .mockResolvedValueOnce({
+          rows: [{ id: 'abc-123' }],
+          rowCount: 1,
+        } as any);
 
       // Act
       const resultado = await checkEmailDuplicate('lead@email.com');
@@ -117,7 +120,10 @@ describe('checkCpfDuplicate', () => {
       // Arrange
       mockQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [{ id: 'lead-1' }], rowCount: 1 } as any);
+        .mockResolvedValueOnce({
+          rows: [{ id: 'lead-1' }],
+          rowCount: 1,
+        } as any);
 
       // Act
       const resultado = await checkCpfDuplicate('12345678901');
@@ -168,7 +174,10 @@ describe('checkCnpjDuplicate', () => {
       // Arrange
       mockQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [{ id: 'lead-2' }], rowCount: 1 } as any);
+        .mockResolvedValueOnce({
+          rows: [{ id: 'lead-2' }],
+          rowCount: 1,
+        } as any);
 
       // Act
       const resultado = await checkCnpjDuplicate('11222333000181');

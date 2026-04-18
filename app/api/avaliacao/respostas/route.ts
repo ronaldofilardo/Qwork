@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
 
 export async function POST(request: Request) {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
     const body = await request.json();
 
     let respostas = [];
@@ -140,6 +142,9 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao salvar respostas:', error);
     if (error instanceof Error && error.message === 'Não autenticado') {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
@@ -151,6 +156,7 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
     const { searchParams } = new URL(request.url);
     const grupo = searchParams.get('grupo');
     const avaliacaoIdParam = searchParams.get('avaliacaoId');
@@ -210,6 +216,9 @@ export async function GET(request: Request) {
       { status: 200 }
     );
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao buscar respostas:', error);
     return NextResponse.json({ respostas: [], total: 0 }, { status: 500 });
   }
