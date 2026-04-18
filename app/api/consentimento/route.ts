@@ -113,6 +113,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // RH só pode registrar consentimento de avaliações da própria clínica
+    if (session.perfil === 'rh' && session.clinica_id) {
+      const scopeCheck = await query(
+        `SELECT 1 FROM avaliacoes a
+         JOIN lotes_avaliacao l ON a.lote_id = l.id
+         WHERE a.id = $1 AND l.clinica_id = $2`,
+        [avaliacao_id, session.clinica_id]
+      );
+      if (scopeCheck.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Avaliação não pertence à sua clínica' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Atualizar avaliação com dados de consentimento
     const resultado = await query(
       `
@@ -226,6 +242,22 @@ export async function GET(request: NextRequest) {
         { error: 'Sem permissão para visualizar este consentimento' },
         { status: 403 }
       );
+    }
+
+    // RH só pode visualizar consentimentos de avaliações da própria clínica
+    if (session.perfil === 'rh' && session.clinica_id) {
+      const scopeCheck = await query(
+        `SELECT 1 FROM avaliacoes a
+         JOIN lotes_avaliacao l ON a.lote_id = l.id
+         WHERE a.id = $1 AND l.clinica_id = $2`,
+        [avaliacaoId, session.clinica_id]
+      );
+      if (scopeCheck.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Avaliação não pertence à sua clínica' },
+          { status: 403 }
+        );
+      }
     }
 
     return NextResponse.json({

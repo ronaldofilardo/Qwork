@@ -47,7 +47,9 @@ export const TRANSICOES_VALIDAS: Record<StatusLoteType, StatusLoteType[]> = {
   rascunho: ['ativo', 'cancelado'],
   ativo: ['concluido', 'cancelado'],
   concluido: ['emissao_solicitada', 'cancelado'],
+  // Reversão intencional: emissor pode devolver lote se não puder emitir
   emissao_solicitada: ['emissao_em_andamento', 'concluido', 'cancelado'],
+  // Reversão intencional: erro no processo de emissão volta para fila
   emissao_em_andamento: ['laudo_emitido', 'emissao_solicitada', 'cancelado'],
   laudo_emitido: ['finalizado'],
   cancelado: [], // Estado final

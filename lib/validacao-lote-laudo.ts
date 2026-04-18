@@ -9,9 +9,10 @@
  */
 
 import { query } from '@/lib/db';
+import { PERCENTUAL_MINIMO_EMISSAO } from '@/lib/config/business-rules';
 
-/** Percentual mínimo de avaliações concluídas sobre o total liberado para emissão de laudo */
-export const PERCENTUAL_MINIMO_EMISSAO = 70;
+// Re-export para backward compatibility
+export { PERCENTUAL_MINIMO_EMISSAO };
 
 export interface ValidacaoLoteResult {
   pode_emitir_laudo: boolean;
