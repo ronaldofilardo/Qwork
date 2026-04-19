@@ -19,6 +19,7 @@ interface DadosRep {
   status: string;
   criado_em: string;
   // Bancários
+  asaas_wallet_id: string | null;
   banco_codigo: string | null;
   agencia: string | null;
   conta: string | null;
@@ -41,7 +42,8 @@ type CampoEditavel =
   | 'tipo_conta'
   | 'titular_conta'
   | 'pix_chave'
-  | 'pix_tipo';
+  | 'pix_tipo'
+  | 'asaas_wallet_id';
 
 const STATUS_BADGE: Record<string, string> = {
   ativo: 'bg-blue-100 text-blue-700',
@@ -660,6 +662,28 @@ export default function DadosRepresentante() {
               <option value="telefone">Telefone</option>
               <option value="aleatoria">Chave Aleatória</option>
             </select>
+          )}
+        </CampoInline>
+
+        <CampoInline
+          label="Wallet ID Asaas"
+          campo="asaas_wallet_id"
+          valor={dados.asaas_wallet_id}
+          campoEditando={campoEditando}
+          onEditar={handleEditar}
+          onCancelar={handleCancelar}
+          onSalvar={handleSalvar}
+          salvando={salvando}
+        >
+          {(v, onChange) => (
+            <input
+              type="text"
+              value={v}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="Informe seu wallet ID do Asaas"
+              className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
           )}
         </CampoInline>
 

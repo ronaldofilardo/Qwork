@@ -7,6 +7,7 @@ import {
   ChevronUp,
   Loader2,
   DollarSign,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface CicloRow {
@@ -85,6 +86,22 @@ export default function FinanceiroRepresentantePage() {
           quando o tomador paga a cobrança.
         </p>
       </div>
+
+      {!loading &&
+        (Number(resumo.valor_total ?? 0) > 0 ||
+          Number(resumo.valor_pago ?? 0) > 0) && (
+          <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+            <ShieldCheck size={18} className="mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold">Repasse auditado no sistema</p>
+              <p className="mt-1">
+                Quando o tomador paga a cobrança, a comissão do representante é
+                registrada e auditada automaticamente no fluxo financeiro do
+                QWork.
+              </p>
+            </div>
+          </div>
+        )}
 
       {/* Cards resumo */}
       {!loading && (

@@ -29,6 +29,28 @@ interface Usuario {
   asaas_wallet_id?: string | null;
 }
 
+interface BeneficiarioSociedade {
+  id: 'ronaldo' | 'antonio';
+  nome: string;
+  nomeEmpresarial: string;
+  documentoFiscal: string;
+  walletId: string | null;
+  percentualParticipacao: number;
+  ativo: boolean;
+  observacoes?: string | null;
+}
+
+interface QWorkSociedadeConfig {
+  id: 'qwork';
+  nome: 'QWork';
+  nomeEmpresarial: string;
+  documentoFiscal: string;
+  walletId: string | null;
+  percentualParticipacao: 0;
+  ativo: boolean;
+  observacoes?: string | null;
+}
+
 const perfilLabels: Record<string, { label: string; color: string }> = {
   admin: { label: 'Admin', color: 'bg-gray-900 text-white' },
   emissor: { label: 'Emissor de Laudos', color: 'bg-blue-100 text-blue-800' },
@@ -49,6 +71,10 @@ export function EmissoresContent() {
   const [walletDraft, setWalletDraft] = useState('');
   const [savingWallet, setSavingWallet] = useState<number | null>(null);
   const [erroWallet, setErroWallet] = useState<string | null>(null);
+  const [qwork, setQwork] = useState<QWorkSociedadeConfig | null>(null);
+  const [socios, setSocios] = useState<BeneficiarioSociedade[]>([]);
+  const [erroSocios, setErroSocios] = useState<string | null>(null);
+  const [savingCadastro, setSavingCadastro] = useState<string | null>(null);
 
   const fetchUsuarios = async () => {
     setLoading(true);
@@ -126,8 +152,95 @@ export function EmissoresContent() {
     }
   };
 
+  const fetchSocios = async () => {
+    try {
+      setErroSocios(null);
+      const res = await fetch('/api/admin/financeiro/sociedade', {
+        cache: 'no-store',
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        qwork?: QWorkSociedadeConfig;
+        beneficiarios?: BeneficiarioSociedade[];
+        message?: string;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        setErroSocios(
+          data.message ??
+            data.error ??
+            'Não foi possível carregar os dados societários.'
+        );
+        return;
+      }
+
+      setQwork(data.qwork ?? null);
+      setSocios(
+        (data.beneficiarios ?? []).filter(
+          (item): item is BeneficiarioSociedade =>
+            item.id === 'ronaldo' || item.id === 'antonio'
+        )
+      );
+    } catch (error) {
+      console.error('Erro ao buscar sócios:', error);
+      setErroSocios('Não foi possível carregar os dados societários.');
+    }
+  };
+
+  const updateSocio = (
+    id: 'ronaldo' | 'antonio',
+    field: keyof BeneficiarioSociedade,
+    value: string | number | boolean | null
+  ) => {
+    setSocios((prev) =>
+      prev.map((socio) => (socio.id === id ? { ...socio, [field]: value } : socio))
+    );
+  };
+
+  const saveCadastro = async (
+    cadastro: BeneficiarioSociedade | QWorkSociedadeConfig
+  ) => {
+    setSavingCadastro(cadastro.id);
+    setErroSocios(null);
+    try {
+      const res = await fetch('/api/admin/financeiro/sociedade', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          beneficiarioId: cadastro.id,
+          nome: cadastro.nome,
+          nomeEmpresarial: cadastro.nomeEmpresarial,
+          documentoFiscal: cadastro.documentoFiscal,
+          walletId: cadastro.walletId,
+          percentualParticipacao: cadastro.percentualParticipacao,
+          ativo: cadastro.ativo,
+          observacoes: cadastro.observacoes,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        message?: string;
+        error?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(
+          data.message ?? data.error ?? 'Erro ao salvar configuração'
+        );
+      }
+
+      await fetchSocios();
+    } catch (error) {
+      setErroSocios(
+        error instanceof Error ? error.message : 'Erro ao salvar configuração'
+      );
+    } finally {
+      setSavingCadastro(null);
+    }
+  };
+
   useEffect(() => {
-    fetchUsuarios();
+    void fetchUsuarios();
+    void fetchSocios();
   }, []);
 
   // Agrupar por perfil
@@ -169,6 +282,12 @@ export function EmissoresContent() {
       {erroWallet && (
         <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
           {erroWallet}
+        </div>
+      )}
+
+      {erroSocios && (
+        <div className="mb-4 px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+          {erroSocios}
         </div>
       )}
 
@@ -371,6 +490,202 @@ export function EmissoresContent() {
           })}
         </div>
       )}
+
+      {qwork && (
+        <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-orange-500" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                QWork · recolhimento institucional
+              </h3>
+              <p className="text-sm text-gray-600">
+                Cadastro institucional da plataforma para o recolhimento dos 7%.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-gray-900">QWork</h4>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  qwork.walletId
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
+                {qwork.walletId ? 'Wallet configurada' : 'Wallet pendente'}
+              </span>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">
+                Empresa recebedora
+              </label>
+              <input
+                value={qwork.nomeEmpresarial}
+                onChange={(e) =>
+                  setQwork({ ...qwork, nomeEmpresarial: e.target.value })
+                }
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Documento fiscal
+                </label>
+                <input
+                  value={qwork.documentoFiscal}
+                  onChange={(e) =>
+                    setQwork({ ...qwork, documentoFiscal: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Wallet ID Asaas
+                </label>
+                <input
+                  value={qwork.walletId ?? ''}
+                  onChange={(e) =>
+                    setQwork({ ...qwork, walletId: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">
+                Observações
+              </label>
+              <textarea
+                value={qwork.observacoes ?? ''}
+                onChange={(e) =>
+                  setQwork({ ...qwork, observacoes: e.target.value })
+                }
+                rows={2}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => void saveCadastro(qwork)}
+                disabled={savingCadastro === qwork.id}
+                className="inline-flex cursor-pointer items-center rounded-lg bg-orange-600 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-orange-700 disabled:opacity-60"
+              >
+                {savingCadastro === qwork.id ? 'Salvando...' : 'Salvar QWork'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Wallet className="h-5 w-5 text-orange-500" />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Beneficiários societários
+            </h3>
+            <p className="text-sm text-gray-600">
+              Configure aqui as wallets dos sócios sem criar login no sistema.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {socios.map((socio) => (
+            <div
+              key={socio.id}
+              className="rounded-xl border border-gray-200 p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold text-gray-900">{socio.nome}</h4>
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    socio.walletId
+                      ? 'bg-emerald-100 text-emerald-700'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {socio.walletId ? 'Wallet configurada' : 'Wallet pendente'}
+                </span>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Empresa recebedora
+                </label>
+                <input
+                  value={socio.nomeEmpresarial}
+                  onChange={(e) =>
+                    updateSocio(socio.id, 'nomeEmpresarial', e.target.value)
+                  }
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    Documento fiscal
+                  </label>
+                  <input
+                    value={socio.documentoFiscal}
+                    onChange={(e) =>
+                      updateSocio(socio.id, 'documentoFiscal', e.target.value)
+                    }
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    Participação (%)
+                  </label>
+                  <input
+                    type="number"
+                    value={socio.percentualParticipacao}
+                    onChange={(e) =>
+                      updateSocio(
+                        socio.id,
+                        'percentualParticipacao',
+                        Number(e.target.value || 0)
+                      )
+                    }
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Wallet ID Asaas
+                </label>
+                <input
+                  value={socio.walletId ?? ''}
+                  onChange={(e) => updateSocio(socio.id, 'walletId', e.target.value)}
+                  placeholder="Informe a wallet do sócio"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                />
+              </div>
+
+              <button
+                onClick={() => void saveCadastro(socio)}
+                disabled={savingCadastro === socio.id}
+                className="inline-flex cursor-pointer items-center rounded-lg bg-orange-600 px-3 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-orange-700 disabled:opacity-60"
+              >
+                {savingCadastro === socio.id ? 'Salvando...' : 'Salvar sócio'}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <ModalResetarSenha
         isOpen={modalResetOpen}
