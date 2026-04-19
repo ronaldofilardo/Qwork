@@ -42,7 +42,149 @@ export default function EmpresasTable({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="md:hidden space-y-3 p-3 bg-gray-50/60">
+        {empresas.map((empresa) => {
+          const lote = empresa.lote_atual;
+          const elegivel = empresa.elegibilidade.elegivel;
+          const isSelected = selecionadas.has(empresa.id);
+
+          return (
+            <div
+              key={`mobile-${empresa.id}`}
+              className={`qw-mobile-card ${isSelected ? 'ring-2 ring-primary/20 border-primary/30' : ''}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="qw-mobile-card-label">Empresa / CNPJ</div>
+                  <button
+                    type="button"
+                    onClick={() => onEditEmpresa(empresa.id)}
+                    className="qw-mobile-card-value font-semibold text-primary-700 hover:text-primary-900 hover:underline text-left cursor-pointer"
+                  >
+                    {empresa.nome}
+                  </button>
+                  <p className="text-sm text-gray-500 break-all">
+                    {empresa.cnpj}
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  disabled={!elegivel}
+                  onChange={() => onToggle(empresa.id)}
+                  title={
+                    !elegivel
+                      ? (empresa.elegibilidade.motivo_bloqueio ??
+                        'Não elegível')
+                      : 'Selecionar para liberar ciclo'
+                  }
+                  className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:opacity-40"
+                />
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 gap-3">
+                <div>
+                  <div className="qw-mobile-card-label">Lote atual</div>
+                  <div className="qw-mobile-card-value">
+                    {lote ? `#${lote.id}` : 'Sem ciclo'}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="qw-mobile-card-label">Ciclo atual</div>
+                  <div className="qw-mobile-card-value">
+                    {lote ? (
+                      <StatusBadge
+                        status={lote.status}
+                        pagamento={
+                          empresa.lote_anterior?.status_pagamento ?? undefined
+                        }
+                      />
+                    ) : (
+                      <span className="text-gray-400 italic">Sem ciclo</span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="qw-mobile-card-label">Elegibilidade</div>
+                  <div className="qw-mobile-card-value">
+                    {elegivel ? (
+                      <div>
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-green-700 bg-green-50 px-2.5 py-1 rounded">
+                          Elegível
+                        </span>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {empresa.elegibilidade.count_elegiveis} funcionário
+                          {empresa.elegibilidade.count_elegiveis !== 1
+                            ? 's'
+                            : ''}
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="inline-flex items-center gap-1 text-sm font-medium text-gray-600 bg-gray-100 px-2.5 py-1 rounded">
+                          Bloqueado
+                        </span>
+                        {empresa.elegibilidade.motivo_bloqueio && (
+                          <p className="text-sm text-gray-500 mt-1 break-words">
+                            {empresa.elegibilidade.motivo_bloqueio}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="qw-mobile-card-label">Laudos</div>
+                  <div className="qw-mobile-card-value text-sm space-y-1">
+                    {empresa.laudos_status.aguardando_emissao > 0 && (
+                      <p className="text-orange-600">
+                        {empresa.laudos_status.aguardando_emissao} aguardando
+                        link pgto
+                      </p>
+                    )}
+                    {empresa.laudos_status.aguardando_pagamento > 0 && (
+                      <p className="text-yellow-600">
+                        {empresa.laudos_status.aguardando_pagamento} aguard.
+                        pgto
+                      </p>
+                    )}
+                    {empresa.laudos_status.pago > 0 && (
+                      <p className="text-teal-600">
+                        {empresa.laudos_status.pago} pago — aguard. emissão
+                      </p>
+                    )}
+                    {empresa.laudos_status.laudo_emitido > 0 && (
+                      <p className="text-green-600">
+                        {empresa.laudos_status.laudo_emitido} disponível(eis)
+                      </p>
+                    )}
+                    {empresa.laudos_status.aguardando_emissao === 0 &&
+                      empresa.laudos_status.aguardando_pagamento === 0 &&
+                      empresa.laudos_status.pago === 0 &&
+                      empresa.laudos_status.laudo_emitido === 0 && (
+                        <span className="text-gray-400">—</span>
+                      )}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/rh/empresa/${empresa.id}`)}
+                className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-4 py-3 font-medium hover:bg-primary-hover transition-colors cursor-pointer"
+              >
+                Ver detalhes
+                <ArrowRight size={16} />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-100">
           <thead className="bg-gray-50">
             <tr>

@@ -173,7 +173,7 @@ export default function SuportePage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
+        <div className="qw-content-area p-4 md:p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
               Painel de Suporte
