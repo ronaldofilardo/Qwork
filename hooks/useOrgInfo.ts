@@ -8,17 +8,58 @@ export interface OrgInfo {
   tipo: 'clinica' | 'entidade';
 }
 
-export function useOrgInfo(): { orgInfo: OrgInfo | null; loading: boolean } {
+export function useOrgInfo(enabled: boolean = true): {
+  orgInfo: OrgInfo | null;
+  loading: boolean;
+} {
   const [orgInfo, setOrgInfo] = useState<OrgInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/dashboard/org-info')
+    let isMounted = true;
+
+    if (!enabled || typeof fetch !== 'function') {
+      setOrgInfo(null);
+      setLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setLoading(true);
+
+    const request = fetch('/api/dashboard/org-info');
+
+    if (!request || typeof request.then !== 'function') {
+      setOrgInfo(null);
+      setLoading(false);
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    request
       .then((res) => (res.ok ? res.json() : null))
-      .then((data: OrgInfo | null) => setOrgInfo(data))
-      .catch(() => setOrgInfo(null))
-      .finally(() => setLoading(false));
-  }, []);
+      .then((data: OrgInfo | null) => {
+        if (isMounted) {
+          setOrgInfo(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setOrgInfo(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [enabled]);
 
   return { orgInfo, loading };
 }

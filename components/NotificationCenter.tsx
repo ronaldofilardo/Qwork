@@ -97,12 +97,12 @@ export default function NotificationCenter({
           />
 
           {/* Painel */}
-          <div className="fixed top-20 right-6 w-[420px] max-h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-gray-100 animate-in slide-in-from-top-5 duration-300">
+          <div className="fixed top-16 inset-x-3 sm:top-20 sm:right-6 sm:left-auto sm:w-[420px] max-h-[calc(100vh-5rem)] sm:max-h-[calc(100vh-120px)] bg-white rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden border border-gray-100 animate-in slide-in-from-top-5 duration-300">
             {/* Header */}
-            <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5">
+            <div className="relative bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-4 sm:py-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-white">Notificações</h3>
+                  <h3 className="text-xl font-bold text-white">Notificações</h3>
                   <p className="text-xs text-blue-100 mt-0.5">
                     {totalNaoLidas > 0
                       ? `${totalNaoLidas} ${
@@ -148,7 +148,7 @@ export default function NotificationCenter({
                     <div
                       key={notif.id}
                       onClick={() => handleNotificacaoClick(notif.id)}
-                      className="mb-2 p-4 bg-white hover:bg-blue-50 cursor-pointer transition-all duration-200 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md group"
+                      className="mb-2 p-4 sm:p-4 bg-white hover:bg-blue-50 cursor-pointer transition-all duration-200 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-md group"
                     >
                       <div className="flex items-start gap-3">
                         <div

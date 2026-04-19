@@ -46,10 +46,12 @@ export default async function RootLayout({
       </head>
       <body>
         <QueryClientProvider>
-          <PWAInitializer />
-          {/* Header condicional, não aparece em login e avaliação */}
-          <ConditionalHeader />
-          {children}
+          <div className="qw-content-area min-h-screen bg-white">
+            <PWAInitializer />
+            {/* Header condicional, não aparece em login e avaliação */}
+            <ConditionalHeader />
+            {children}
+          </div>
           <div id="modal-root"></div>
           <Toaster position="top-right" />
         </QueryClientProvider>
