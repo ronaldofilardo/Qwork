@@ -98,7 +98,6 @@ body {
   * {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
   }
 
   /* Layout da página - otimizado para mobile */
@@ -323,23 +322,138 @@ body {
   color: #1f2937 !important;
 }
 
-/* Ocultar apenas elementos de impressão */
+/* Helpers de impressão e conteúdo principal */
 .no-print {
+  display: initial;
+}
+
+.print-only {
   display: none !important;
 }
 
 /* Reset completo para mobile REMOVIDO: substituído por regras específicas e não invasivas. */
-/* Observação: regras globais que forçam position/transform/z-index breakam componentes fixed/absolute e 
-     impedem o comportamento esperado de modais e elementos responsivos. Use regras específicas quando 
+/* Observação: regras globais que forçam position/transform/z-index breakam componentes fixed/absolute e
+     impedem o comportamento esperado de modais e elementos responsivos. Use regras específicas quando
      necessário. */
 
-/* Container principal forçado */
-.max-w-4xl,
+/* Conteúdo principal — escala tipográfica maior sem afetar sidebars */
+.qw-content-area {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.qw-content-area .text-xs {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.qw-content-area .text-sm {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
+.qw-content-area .text-base {
+  font-size: 1.0625rem !important;
+  line-height: 1.625rem !important;
+}
+
+.qw-content-area .text-lg {
+  font-size: 1.1875rem !important;
+  line-height: 1.75rem !important;
+}
+
+.qw-content-area .text-xl {
+  font-size: 1.375rem !important;
+  line-height: 1.9rem !important;
+}
+
+.qw-content-area h1 {
+  font-size: clamp(1.65rem, 2vw, 2rem) !important;
+  line-height: 1.2 !important;
+}
+
+.qw-content-area h2 {
+  font-size: clamp(1.35rem, 1.6vw, 1.65rem) !important;
+  line-height: 1.25 !important;
+}
+
+.qw-content-area h3 {
+  font-size: clamp(1.125rem, 1.25vw, 1.35rem) !important;
+  line-height: 1.3 !important;
+}
+
+.qw-content-area .qw-mobile-card {
+  border-radius: 0.875rem;
+  border: 1px solid #e5e7eb;
+  background: white;
+  padding: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.qw-content-area .qw-mobile-card-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+}
+
+.qw-content-area .qw-mobile-card-value {
+  margin-top: 0.125rem;
+  color: #111827;
+}
+
+/* Sidebar preservado fora do aumento tipográfico global */
+.qw-sidebar .text-xs {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+}
+
+.qw-sidebar .text-sm {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
+
+.qw-sidebar .text-base {
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+}
+
+.qw-sidebar .text-lg {
+  font-size: 1.125rem !important;
+  line-height: 1.75rem !important;
+}
+
+/* Containers responsivos sem sobrescrever o Tailwind global */
 .container {
-  max-width: 100% !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0.5rem !important;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 768px) {
+  .qw-content-area {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .qw-content-area .grid-cols-2,
+  .qw-content-area .grid-cols-3,
+  .qw-content-area .grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
 }
 
 /* Manter estrutura de cards/grupos - otimizado mobile */
@@ -552,8 +666,10 @@ body {
 }
 
 /* Mostrar conteúdo apenas na impressão */
-.print-only {
-  display: block !important;
+@media print {
+  .print-only {
+    display: block !important;
+  }
 }
 
 /* Quebras de página adequadas */

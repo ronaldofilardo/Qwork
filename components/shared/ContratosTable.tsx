@@ -167,6 +167,11 @@ export function ContratosTable({
     }
   };
 
+  const visibleRows =
+    comercial && filtroRep
+      ? data.filter((r) => r.rep_nome === filtroRep)
+      : data;
+
   return (
     <div className="space-y-4 p-6">
       <div className="flex items-center justify-between">
@@ -247,8 +252,180 @@ export function ContratosTable({
               ) : null;
             })()}
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+            <div className="md:hidden space-y-3 p-3 bg-gray-50/60">
+              {visibleRows.map((row, idx) => {
+                const percComercial = row.perc_comercial
+                  ? parseFloat(row.perc_comercial).toFixed(1)
+                  : null;
+                const percRep = row.perc_rep
+                  ? parseFloat(row.perc_rep).toFixed(1)
+                  : null;
+                const isPercentual = row.tipo_comissionamento === 'percentual';
+                const semRep = !row.rep_nome;
+                const rowClickable = allowVincular && semRep;
+
+                return (
+                  <div
+                    key={`mobile-${row.vinculo_id ?? `novinc-${row.contratante_id}`}-${idx}`}
+                    className={`qw-mobile-card ${row.isento_pagamento ? 'border-amber-200 bg-amber-50/40' : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="qw-mobile-card-label">
+                          {comercial ? 'Representante' : 'Entidade/Clínica'}
+                        </div>
+                        <div className="qw-mobile-card-value font-semibold break-words">
+                          {comercial
+                            ? row.rep_nome || 'Sem representante'
+                            : row.contratante_nome || '—'}
+                        </div>
+                        <p className="text-sm text-gray-500 break-all">
+                          {comercial
+                            ? fmtCpf(row.rep_cpf)
+                            : row.contratante_cnpj || '—'}
+                        </p>
+                      </div>
+                      {row.isento_pagamento && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-bold text-amber-800">
+                          <ShieldCheck size={12} />
+                          Isento
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-1 gap-3">
+                      <div>
+                        <div className="qw-mobile-card-label">
+                          {comercial ? 'Entidade/Clínica' : 'Representante'}
+                        </div>
+                        <div className="qw-mobile-card-value break-words">
+                          {comercial
+                            ? row.contratante_nome || '—'
+                            : row.rep_nome || 'Sem representante'}
+                        </div>
+                        <p className="text-sm text-gray-500 break-all">
+                          {comercial
+                            ? row.contratante_cnpj || '—'
+                            : fmtCpf(row.rep_cpf)}
+                        </p>
+                      </div>
+
+                      <div>
+                        <div className="qw-mobile-card-label">Lead</div>
+                        <div className="qw-mobile-card-value">
+                          {fmtDate(row.lead_data)}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="qw-mobile-card-label">Contrato</div>
+                        <div className="qw-mobile-card-value">
+                          {fmtDate(row.contrato_data)}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="qw-mobile-card-label">Tipo</div>
+                        <div className="qw-mobile-card-value">
+                          {row.tipo_comissionamento
+                            ? isPercentual
+                              ? 'Percentual'
+                              : 'Custo fixo'
+                            : '—'}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="qw-mobile-card-label">Comissão</div>
+                        <div className="qw-mobile-card-value text-sm space-y-1">
+                          {comercial ? (
+                            isPercentual ? (
+                              <>
+                                {row.perc_comercial ? (
+                                  <p className="font-semibold text-indigo-700">
+                                    Com.{' '}
+                                    {parseFloat(row.perc_comercial).toFixed(1)}%
+                                  </p>
+                                ) : null}
+                                {row.perc_rep !== null &&
+                                row.perc_rep !== undefined ? (
+                                  <p className="font-semibold text-blue-700">
+                                    Rep. {parseFloat(row.perc_rep).toFixed(1)}%
+                                  </p>
+                                ) : row.percentual_comissao ? (
+                                  <p className="font-semibold text-blue-700">
+                                    Rep.{' '}
+                                    {parseFloat(
+                                      row.percentual_comissao
+                                    ).toFixed(1)}
+                                    %
+                                  </p>
+                                ) : null}
+                                {!row.perc_comercial &&
+                                  !row.perc_rep &&
+                                  !row.percentual_comissao && (
+                                    <span className="text-gray-300">—</span>
+                                  )}
+                              </>
+                            ) : (
+                              <span className="font-semibold text-amber-700">
+                                {fmtBRL(
+                                  row.valor_negociado ?? row.valor_custo_fixo
+                                )}
+                              </span>
+                            )
+                          ) : (
+                            <>
+                              <p className="text-blue-700">
+                                Comercial:{' '}
+                                {percComercial
+                                  ? `${percComercial}% • ${fmtBRL(row.valor_comercial)}`
+                                  : '—'}
+                              </p>
+                              <p className="text-green-700">
+                                Representante:{' '}
+                                {percRep !== null
+                                  ? `${percRep}% • ${fmtBRL(row.valor_rep)}`
+                                  : '—'}
+                              </p>
+                              {showQWork && (
+                                <p className="font-semibold text-gray-900">
+                                  QWork: {fmtBRL(row.valor_qwork)}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {rowClickable && (
+                        <button
+                          onClick={() => setDrawerRow(row)}
+                          className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white hover:bg-green-700 transition-colors cursor-pointer"
+                        >
+                          <UserPlus size={14} />
+                          Vincular representante
+                        </button>
+                      )}
+                      {allowGerarContrato && row.contrato_data && (
+                        <button
+                          onClick={() => void handleDownloadContrato(row)}
+                          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                        >
+                          <FileDown size={14} />
+                          Baixar contrato
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div
-              className="overflow-x-auto"
+              className="hidden md:block overflow-x-auto"
               style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
             >
               <table className="w-full text-sm">
@@ -333,14 +510,8 @@ export function ContratosTable({
                   </tr>
                 </thead>
                 <tbody>
-                  {(comercial && filtroRep
-                    ? data.filter((r) => r.rep_nome === filtroRep)
-                    : data
-                  ).map((row, idx) => {
-                    const visibleData =
-                      comercial && filtroRep
-                        ? data.filter((r) => r.rep_nome === filtroRep)
-                        : data;
+                  {visibleRows.map((row, idx) => {
+                    const visibleData = visibleRows;
                     const percComercial = row.perc_comercial
                       ? parseFloat(row.perc_comercial).toFixed(1)
                       : null;
@@ -645,13 +816,7 @@ export function ContratosTable({
               </table>
             </div>
             <div className="px-4 py-2 border-t border-gray-50 bg-gray-50/50 text-xs text-gray-400">
-              {
-                (comercial && filtroRep
-                  ? data.filter((r) => r.rep_nome === filtroRep)
-                  : data
-                ).length
-              }{' '}
-              registro{data.length !== 1 ? 's' : ''}
+              {visibleRows.length} registro{data.length !== 1 ? 's' : ''}
             </div>
           </div>
         </>

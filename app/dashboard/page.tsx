@@ -31,69 +31,122 @@ interface AvaliacaoAPI {
   tipo_tomador?: string;
 }
 
+interface SessionResponse {
+  nome?: string;
+  perfil?: string;
+}
+
 export default function Dashboard() {
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([]);
   const [nome, setNome] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function load() {
-      const res = await fetch('/api/auth/session');
-      if (!res.ok) {
-        window.location.href = '/login';
-        return;
+      try {
+        const res = await fetch('/api/auth/session');
+        if (!res.ok) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const user: SessionResponse = await res.json();
+
+        if (!isMounted) {
+          return;
+        }
+
+        setNome(user.nome || 'Funcionário');
+
+        if (user.perfil && user.perfil !== 'funcionario') {
+          setAvaliacoes([]);
+          return;
+        }
+
+        const avalRes = await fetch('/api/avaliacao/todas');
+
+        if (avalRes.status === 401) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const data = (await avalRes.json().catch(() => ({}))) as {
+          avaliacoes?: AvaliacaoAPI[];
+          error?: string;
+        };
+
+        const avaliacoesApi = Array.isArray(data.avaliacoes)
+          ? data.avaliacoes
+          : [];
+
+        if (!avalRes.ok) {
+          console.warn('[Dashboard] Falha ao buscar avaliações:', data.error);
+        }
+
+        // Processa todas as avaliações
+        const todas: Avaliacao[] = avaliacoesApi.map((a: AvaliacaoAPI) => ({
+          id: a.id,
+          lote_id: a.lote_id,
+          status: a.status,
+          total_respostas: a.total_respostas || 0,
+          empresa_nome: a.empresa_nome || undefined,
+          empresa_id: a.empresa_id || undefined,
+          entidade_id: a.entidade_id || undefined,
+          tipo_tomador: a.tipo_tomador || undefined,
+          inicio: a.criado_em
+            ? new Date(a.criado_em).toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : 'data não registrada',
+          fim: a.envio
+            ? new Date(a.envio).toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : undefined,
+        }));
+
+        console.log('[Dashboard] Avaliações carregadas:', {
+          total: todas.length,
+          concluidas: todas.filter(
+            (a) => a.status === 'concluida' || a.status === 'concluido'
+          ).length,
+          disponiveis: todas.filter(
+            (a) => a.status === 'iniciada' || a.status === 'em_andamento'
+          ).length,
+          comRespostas: todas.filter((a) => (a.total_respostas || 0) > 0)
+            .length,
+        });
+
+        if (isMounted) {
+          setAvaliacoes(todas);
+        }
+      } catch (error) {
+        console.error('[Dashboard] Erro ao carregar dados:', error);
+        if (isMounted) {
+          setAvaliacoes([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-      const user = await res.json();
-      setNome(user.nome || 'Funcionário');
-
-      const avalRes = await fetch('/api/avaliacao/todas');
-      const data = await avalRes.json();
-
-      // Processa todas as avaliações
-      const todas: Avaliacao[] = data.avaliacoes.map((a: AvaliacaoAPI) => ({
-        id: a.id,
-        lote_id: a.lote_id,
-        status: a.status,
-        total_respostas: a.total_respostas || 0,
-        empresa_nome: a.empresa_nome || undefined,
-        empresa_id: a.empresa_id || undefined,
-        entidade_id: a.entidade_id || undefined,
-        tipo_tomador: a.tipo_tomador || undefined,
-        inicio: a.criado_em
-          ? new Date(a.criado_em).toLocaleString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : 'data não registrada',
-        fim: a.envio
-          ? new Date(a.envio).toLocaleString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })
-          : null,
-      }));
-
-      console.log('[Dashboard] Avaliações carregadas:', {
-        total: todas.length,
-        concluidas: todas.filter(
-          (a) => a.status === 'concluida' || a.status === 'concluido'
-        ).length,
-        disponiveis: todas.filter(
-          (a) => a.status === 'iniciada' || a.status === 'em_andamento'
-        ).length,
-        comRespostas: todas.filter((a) => (a.total_respostas || 0) > 0).length,
-      });
-
-      setAvaliacoes(todas);
-      setLoading(false);
     }
+
     load();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading)

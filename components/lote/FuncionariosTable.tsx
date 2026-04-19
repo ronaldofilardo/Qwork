@@ -38,7 +38,132 @@ export default function FuncionariosTable({
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="md:hidden space-y-3 p-3 bg-gray-50/60">
+        {funcionariosFiltrados.length === 0 ? (
+          <div className="qw-mobile-card text-center text-gray-500">
+            {busca ||
+            filtroStatus !== 'todos' ||
+            Object.values(filtrosColuna).some((arr) => arr.length > 0)
+              ? 'Nenhum funcionário encontrado com os filtros aplicados'
+              : 'Nenhum funcionário neste lote'}
+          </div>
+        ) : (
+          funcionariosFiltrados.map((func, idx) => {
+            const statusBadge = getStatusBadgeInfo(func.avaliacao.status);
+            const isConcluida =
+              func.avaliacao.status === 'concluida' ||
+              func.avaliacao.status === 'concluido';
+            const isInativada = func.avaliacao.status === 'inativada';
+            const canInativar =
+              !isConcluida &&
+              !isInativada &&
+              !lote?.emissao_solicitada &&
+              !lote?.emitido_em;
+
+            return (
+              <div
+                key={`mobile-${func.cpf}-${func.avaliacao.id ?? idx}`}
+                className="qw-mobile-card"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="qw-mobile-card-label">Funcionário</div>
+                    <div className="qw-mobile-card-value font-semibold break-words">
+                      {func.nome}
+                    </div>
+                    <p className="text-sm text-gray-500 font-mono">
+                      {func.cpf}
+                    </p>
+                  </div>
+                  <span
+                    className={`inline-flex px-2.5 py-1 text-sm font-semibold rounded-full ${statusBadge.color}`}
+                  >
+                    {statusBadge.label}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-3">
+                  <div>
+                    <div className="qw-mobile-card-label">ID</div>
+                    <div className="qw-mobile-card-value font-mono">
+                      #{func.avaliacao.id}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="qw-mobile-card-label">Nível</div>
+                    <div className="qw-mobile-card-value">
+                      {func.nivel_cargo === 'operacional'
+                        ? 'Operacional'
+                        : func.nivel_cargo === 'gestao'
+                          ? 'Gestão'
+                          : '-'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="qw-mobile-card-label">
+                      Data de conclusão
+                    </div>
+                    <div className="qw-mobile-card-value">
+                      {formatDate(func.avaliacao.data_conclusao ?? null)}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="qw-mobile-card-label">
+                      {isEntidade
+                        ? 'Motivo inativação'
+                        : 'Data/motivo inativação'}
+                    </div>
+                    <div className="qw-mobile-card-value break-words">
+                      {isEntidade
+                        ? func.avaliacao.motivo_inativacao || '-'
+                        : isInativada && func.avaliacao.data_inativacao
+                          ? `${formatDate(func.avaliacao.data_inativacao)}${func.avaliacao.motivo_inativacao ? ` • ${func.avaliacao.motivo_inativacao}` : ''}`
+                          : '-'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {canInativar && (
+                    <button
+                      onClick={() =>
+                        onInativar(func.avaliacao.id, func.nome, func.cpf)
+                      }
+                      className="inline-flex items-center gap-1 px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors cursor-pointer"
+                      title="Inativar avaliação"
+                    >
+                      🚫 Inativar
+                    </button>
+                  )}
+                  {((isEntidade &&
+                    !isInativada &&
+                    !isConcluida &&
+                    !lote?.emissao_solicitada &&
+                    !lote?.emitido_em) ||
+                    (!isEntidade &&
+                      (func.avaliacao.status === 'iniciada' ||
+                        func.avaliacao.status === 'em_andamento' ||
+                        isConcluida) &&
+                      !lote?.emissao_solicitada &&
+                      !lote?.emitido_em)) && (
+                    <button
+                      onClick={() =>
+                        onResetar(func.avaliacao.id, func.nome, func.cpf)
+                      }
+                      className="inline-flex items-center gap-1 px-3 py-2 bg-amber-600 text-white rounded-lg text-sm hover:bg-amber-700 transition-colors cursor-pointer"
+                      title="Resetar avaliação"
+                    >
+                      ↻ Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
