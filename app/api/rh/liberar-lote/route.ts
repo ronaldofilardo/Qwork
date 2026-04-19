@@ -259,6 +259,13 @@ export const POST = async (req: Request) => {
     // withTransactionAsGestor mantém app.current_user_cpf durante toda a transação
     // Isso evita erro "SECURITY: app.current_user_cpf not set" após falhas parciais
 
+    // Verificar se a clínica é isenta de pagamento
+    const isentoRes = await query(
+      `SELECT isento_pagamento FROM clinicas WHERE id = $1`,
+      [empresaCheck.rows[0].clinica_id]
+    );
+    const isento = isentoRes.rows[0]?.isento_pagamento === true;
+
     const resultado = await withTransactionAsGestor(async (client) => {
       // ✅ CPF de quem liberou o lote — sempre registrado para cadeia de custódia
       // A FK histórica para entidades_senhas foi removida; liberado_por é varchar livre.
@@ -285,6 +292,22 @@ export const POST = async (req: Request) => {
       );
 
       const lote = loteResult.rows[0];
+
+      // Se isento, marcar lote como pago imediatamente.
+      // A constraint pagamento_completo_check exige método, parcelas e pago_em
+      // sempre que status_pagamento = 'pago'.
+      if (isento) {
+        await client.query(
+          `UPDATE lotes_avaliacao
+              SET status_pagamento = 'pago',
+                  pagamento_metodo = 'isento',
+                  pagamento_parcelas = 1,
+                  pago_em = NOW(),
+                  atualizado_em = NOW()
+            WHERE id = $1`,
+          [lote.id]
+        );
+      }
 
       // IMPORTANTE: Reservar ID do laudo igual ao ID do lote
       // Isso garante que laudo.id === lote.id sempre

@@ -52,13 +52,13 @@ export default function LotesPage() {
   const [showLiberarModal, setShowLiberarModal] = useState(false);
   const [downloadingLaudo, setDownloadingLaudo] = useState<number | null>(null);
 
-  // Referência para o intervalo de polling
+  // Referências para controlar polling e evitar duplicidade em Strict Mode
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasLoadedOnceRef = useRef(false);
 
   const loadLotes = useCallback(async () => {
     try {
-      const timestamp = new Date().getTime();
-      const lotesRes = await fetch(`/api/entidade/lotes?_t=${timestamp}`, {
+      const lotesRes = await fetch('/api/entidade/lotes', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -97,6 +97,10 @@ export default function LotesPage() {
 
   // Carregamento inicial
   useEffect(() => {
+    if (hasLoadedOnceRef.current) {
+      return;
+    }
+    hasLoadedOnceRef.current = true;
     loadLotes();
   }, [loadLotes]);
 

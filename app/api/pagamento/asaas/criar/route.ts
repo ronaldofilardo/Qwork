@@ -95,6 +95,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar isenção de pagamento
+    const isentoRes = await query(
+      `SELECT isento_pagamento FROM ${tomador.tipo === 'clinica' ? 'clinicas' : 'entidades'} WHERE id = $1`,
+      [finalTomadorId]
+    );
+    if (isentoRes.rows[0]?.isento_pagamento === true) {
+      return NextResponse.json({
+        isento: true,
+        message: 'Tomador isento de pagamento',
+      });
+    }
+
     // Converter método de pagamento
     const asaasBillingType = mapMetodoPagamentoToAsaasBillingType(metodo);
 

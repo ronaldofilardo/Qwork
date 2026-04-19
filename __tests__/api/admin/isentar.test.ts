@@ -17,7 +17,10 @@ jest.mock('@/lib/auditoria/auditoria', () => ({
 
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import { registrarAuditoria, extrairContextoRequisicao } from '@/lib/auditoria/auditoria';
+import {
+  registrarAuditoria,
+  extrairContextoRequisicao,
+} from '@/lib/auditoria/auditoria';
 import { POST } from '@/app/api/admin/tomadores/isentar/route';
 import { NextRequest } from 'next/server';
 
@@ -42,7 +45,9 @@ describe('POST /api/admin/tomadores/isentar', () => {
       perfil: 'admin',
     });
     (registrarAuditoria as jest.Mock).mockResolvedValue(undefined);
-    (extrairContextoRequisicao as jest.Mock).mockReturnValue({ ip: '127.0.0.1' });
+    (extrairContextoRequisicao as jest.Mock).mockReturnValue({
+      ip: '127.0.0.1',
+    });
   });
 
   it('retorna 401 quando não autenticado', async () => {
@@ -80,7 +85,9 @@ describe('POST /api/admin/tomadores/isentar', () => {
 
   it('isenta uma clínica pelo CNPJ e retorna dados', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 10, nome: 'Clínica Parceira Ltda' }] } as never)
+      .mockResolvedValueOnce({
+        rows: [{ id: 10, nome: 'Clínica Parceira Ltda' }],
+      } as never)
       .mockResolvedValueOnce({ rows: [] } as never); // auditoria mock não precisa, mas para segurança
 
     const res = await POST(makeRequest({ cnpj: '11222333000100' }));
@@ -94,7 +101,9 @@ describe('POST /api/admin/tomadores/isentar', () => {
   it('isenta uma entidade pelo CNPJ quando clínica não encontrada', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] } as never) // clinicas: não encontrada
-      .mockResolvedValueOnce({ rows: [{ id: 20, nome: 'Entidade Parceira SA' }] } as never);
+      .mockResolvedValueOnce({
+        rows: [{ id: 20, nome: 'Entidade Parceira SA' }],
+      } as never);
 
     const res = await POST(makeRequest({ cnpj: '55666777000188' }));
     expect(res.status).toBe(200);
@@ -116,8 +125,9 @@ describe('POST /api/admin/tomadores/isentar', () => {
   });
 
   it('aceita CNPJ formatado com pontuação', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 30, nome: 'Teste CNPJ Formatado' }] } as never);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 30, nome: 'Teste CNPJ Formatado' }],
+    } as never);
 
     const res = await POST(makeRequest({ cnpj: '11.222.333/0001-00' }));
     expect(res.status).toBe(200);
@@ -126,7 +136,9 @@ describe('POST /api/admin/tomadores/isentar', () => {
   });
 
   it('usa requireRole com perfil admin (não suporte)', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] } as never).mockResolvedValueOnce({ rows: [] } as never);
+    mockQuery
+      .mockResolvedValueOnce({ rows: [] } as never)
+      .mockResolvedValueOnce({ rows: [] } as never);
     await POST(makeRequest({ cnpj: '11222333000100' }));
     expect(mockRequireRole).toHaveBeenCalledWith('admin', false);
   });

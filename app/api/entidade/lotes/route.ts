@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { logger } from '@/lib/logger';
 import { requireEntity } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+const DEBUG_LOTES = process.env.DEBUG_LOTES === 'true';
 
 /**
  * GET /api/entidade/lotes
@@ -27,9 +30,11 @@ export async function GET() {
 
     // Buscar lotes associados à entidade via entidade_id
     // Inclui informações de validação e laudos (igual à API da clínica)
-    console.log(
-      `[DEBUG /api/entidade/lotes] session=${JSON.stringify({ perfil: session.perfil, entidade_id: session.entidade_id })}`
-    );
+    if (DEBUG_LOTES) {
+      logger.log(
+        `[DEBUG /api/entidade/lotes] session=${JSON.stringify({ perfil: session.perfil, entidade_id: session.entidade_id })}`
+      );
+    }
 
     let lotesResult;
     try {
@@ -82,9 +87,11 @@ export async function GET() {
       `,
         [session.entidade_id]
       );
-      console.log(
-        `[DEBUG /api/entidade/lotes] query returned rows=${lotesResult.rowCount}`
-      );
+      if (DEBUG_LOTES) {
+        logger.log(
+          `[DEBUG /api/entidade/lotes] query returned rows=${lotesResult.rowCount}`
+        );
+      }
     } catch (err) {
       console.error(
         '[ERROR /api/entidade/lotes] query failed:',

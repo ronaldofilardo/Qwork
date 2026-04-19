@@ -240,12 +240,16 @@ describe('GET /api/admin/contratos', () => {
     expect(body.contratos[0].isento_pagamento).toBe(false);
   });
 
-  it('a query inclui isento_pagamento com tipo boolean alinhado no union', async () => {
+  it('preserva o campo isento_pagamento também nas linhas do union sem vínculo', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
-    expect(sql).toContain('coalesce(clin.isento_pagamento, ent.isento_pagamento, false)::boolean as isento_pagamento');
-    expect(sql).toContain('false::boolean                                             as isento_pagamento');
-    expect(sql.indexOf('as valor_qwork')).toBeLessThan(sql.indexOf('as isento_pagamento'));
+    expect(sql).toContain(
+      'coalesce(clin.isento_pagamento, ent.isento_pagamento, false)::boolean as isento_pagamento'
+    );
+    expect(sql).toContain('coalesce(ent2.isento_pagamento, false)::boolean');
+    expect(sql.indexOf('as valor_qwork')).toBeLessThan(
+      sql.indexOf('as isento_pagamento')
+    );
   });
 });

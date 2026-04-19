@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Audit Script — Pipeline de Testes QWork
- * 
+ *
  * Analisa o estado dos testes e gera relatório JSON + Markdown.
  * Execução: node scripts/audit-tests.mjs
  */
@@ -25,7 +25,13 @@ function walkDir(dir, ext = '.test.ts') {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       results.push(...walkDir(full, ext));
-    } else if (entry.name.endsWith(ext) || entry.name.endsWith('.test.tsx') || entry.name.endsWith('.cy.ts') || entry.name.endsWith('.spec.ts') || entry.name.endsWith('.old')) {
+    } else if (
+      entry.name.endsWith(ext) ||
+      entry.name.endsWith('.test.tsx') ||
+      entry.name.endsWith('.cy.ts') ||
+      entry.name.endsWith('.spec.ts') ||
+      entry.name.endsWith('.old')
+    ) {
       results.push(full);
     }
   }
@@ -40,18 +46,18 @@ function relativePath(absPath) {
 
 function countByCategory() {
   const categories = {
-    'api': path.join(TESTS_DIR, 'api'),
-    'integration': path.join(TESTS_DIR, 'integration'),
-    'database': path.join(TESTS_DIR, 'database'),
-    'regression': path.join(TESTS_DIR, 'regression'),
-    'unit': path.join(TESTS_DIR, 'unit'),
-    'lib': path.join(TESTS_DIR, 'lib'),
-    'components': path.join(TESTS_DIR, 'components'),
-    'hooks': path.join(TESTS_DIR, 'hooks'),
+    api: path.join(TESTS_DIR, 'api'),
+    integration: path.join(TESTS_DIR, 'integration'),
+    database: path.join(TESTS_DIR, 'database'),
+    regression: path.join(TESTS_DIR, 'regression'),
+    unit: path.join(TESTS_DIR, 'unit'),
+    lib: path.join(TESTS_DIR, 'lib'),
+    components: path.join(TESTS_DIR, 'components'),
+    hooks: path.join(TESTS_DIR, 'hooks'),
     'e2e-jest': path.join(TESTS_DIR, 'e2e'),
-    'security': path.join(TESTS_DIR, 'security'),
+    security: path.join(TESTS_DIR, 'security'),
     'rls-rbac': path.join(TESTS_DIR, 'security'),
-    'cypress': path.join(CYPRESS_DIR, 'e2e'),
+    cypress: path.join(CYPRESS_DIR, 'e2e'),
   };
 
   const counts = {};
@@ -90,11 +96,15 @@ function findSkips() {
       for (const pattern of patterns) {
         if (pattern.test(line)) {
           // Extract the test description
-          const descMatch = line.match(/(?:describe|it|test|xit|xdescribe|xtest)\.?skip?\s*\(\s*['"`]([^'"`]+)['"`]/);
+          const descMatch = line.match(
+            /(?:describe|it|test|xit|xdescribe|xtest)\.?skip?\s*\(\s*['"`]([^'"`]+)['"`]/
+          );
           skips.push({
             file: relativePath(file),
             line: i + 1,
-            type: pattern.source.includes('describe') ? 'describe.skip' : 'it.skip',
+            type: pattern.source.includes('describe')
+              ? 'describe.skip'
+              : 'it.skip',
             description: descMatch ? descMatch[1] : line.trim().slice(0, 100),
           });
           break;
@@ -124,27 +134,41 @@ function findObsolete() {
     const content = fs.readFileSync(file, 'utf-8');
 
     // Entire file is describe.skip
-    if (/^(?:\s*\/\/[^\n]*\n)*\s*(?:import[^\n]*\n)*\s*describe\.skip\s*\(/.test(content)) {
+    if (
+      /^(?:\s*\/\/[^\n]*\n)*\s*(?:import[^\n]*\n)*\s*describe\.skip\s*\(/.test(
+        content
+      )
+    ) {
       const hasActiveTests = /(?:^|\n)\s*(?:it|test)\s*\(/.test(content);
       if (!hasActiveTests) {
-        obsolete.push({ file: rel, reason: 'Arquivo inteiro em describe.skip sem testes ativos' });
+        obsolete.push({
+          file: rel,
+          reason: 'Arquivo inteiro em describe.skip sem testes ativos',
+        });
       }
     }
 
     // @deprecated
-    if (content.includes('@deprecated') || content.includes('OBSOLETO') || content.includes('DEPRECADO')) {
+    if (
+      content.includes('@deprecated') ||
+      content.includes('OBSOLETO') ||
+      content.includes('DEPRECADO')
+    ) {
       obsolete.push({ file: rel, reason: 'Marcado como @deprecated/OBSOLETO' });
     }
 
     // LEGADO/REMOVIDO in describe.skip
     if (/describe\.skip\([^)]*(?:LEGADO|REMOVIDO|REFATORADO)/.test(content)) {
-      obsolete.push({ file: rel, reason: 'describe.skip com tag LEGADO/REMOVIDO/REFATORADO' });
+      obsolete.push({
+        file: rel,
+        reason: 'describe.skip com tag LEGADO/REMOVIDO/REFATORADO',
+      });
     }
   }
 
   // Deduplicate
   const seen = new Set();
-  return obsolete.filter(o => {
+  return obsolete.filter((o) => {
     const key = o.file;
     if (seen.has(key)) return false;
     seen.add(key);
@@ -157,7 +181,7 @@ function findObsolete() {
 function findDuplicates() {
   const apiFiles = walkDir(path.join(TESTS_DIR, 'api'));
   const integrationFiles = walkDir(path.join(TESTS_DIR, 'integration'));
-  
+
   const duplicates = [];
 
   // Extract endpoint patterns from files
@@ -215,8 +239,8 @@ const report = {
 report.summary = {
   totalFiles: Object.values(report.counts).reduce((s, c) => s + c.files, 0),
   totalSkips: report.skips.length,
-  describeSkips: report.skips.filter(s => s.type === 'describe.skip').length,
-  itSkips: report.skips.filter(s => s.type === 'it.skip').length,
+  describeSkips: report.skips.filter((s) => s.type === 'describe.skip').length,
+  itSkips: report.skips.filter((s) => s.type === 'it.skip').length,
   obsoleteFiles: report.obsolete.length,
   duplicateEndpoints: report.duplicates.length,
 };
@@ -243,22 +267,29 @@ const mdLines = [
   '## Contagem por Categoria',
   `| Categoria | Arquivos |`,
   `|-----------|----------|`,
-  ...Object.entries(report.counts).map(([name, data]) => `| ${name} | ${data.files} |`),
+  ...Object.entries(report.counts).map(
+    ([name, data]) => `| ${name} | ${data.files} |`
+  ),
   '',
   '## Testes Skipped',
   `| Arquivo | Linha | Tipo | Descrição |`,
   `|---------|-------|------|-----------|`,
-  ...report.skips.map(s => `| ${s.file} | ${s.line} | ${s.type} | ${s.description.slice(0, 80)} |`),
+  ...report.skips.map(
+    (s) =>
+      `| ${s.file} | ${s.line} | ${s.type} | ${s.description.slice(0, 80)} |`
+  ),
   '',
   '## Arquivos Obsoletos',
   `| Arquivo | Razão |`,
   `|---------|-------|`,
-  ...report.obsolete.map(o => `| ${o.file} | ${o.reason} |`),
+  ...report.obsolete.map((o) => `| ${o.file} | ${o.reason} |`),
   '',
   '## Duplicatas API vs Integration',
   `| Endpoint | API Test | Integration Test |`,
   `|----------|----------|-----------------|`,
-  ...report.duplicates.map(d => `| ${d.endpoint} | ${d.apiFiles[0]} | ${d.integrationFile} |`),
+  ...report.duplicates.map(
+    (d) => `| ${d.endpoint} | ${d.apiFiles[0]} | ${d.integrationFile} |`
+  ),
 ];
 
 const mdPath = path.join(ROOT, 'docs', 'testing', 'AUDIT-REPORT.md');

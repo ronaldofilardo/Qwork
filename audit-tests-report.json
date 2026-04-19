@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-04-18T15:50:42.573Z",
+  "timestamp": "2026-04-19T10:08:55.660Z",
   "counts": {
     "api": {
-      "files": 214,
+      "files": 218,
       "paths": [
         "__tests__/api/admin/auditorias-laudos.test.ts",
         "__tests__/api/admin/auditorias.test.ts",
@@ -21,6 +21,7 @@
         "__tests__/api/admin/funcionarios.test.ts",
         "__tests__/api/admin/gerar-link-retomada.test.ts",
         "__tests__/api/admin/gestores-rh.test.ts",
+        "__tests__/api/admin/isentar.test.ts",
         "__tests__/api/admin/leads-documentos.test.ts",
         "__tests__/api/admin/manutencao/aguardando-quitacao.test.ts",
         "__tests__/api/admin/manutencao/confirmar-empresa.test.ts",
@@ -135,6 +136,7 @@
         "__tests__/api/jobs/process-pdf-disabled.test.ts",
         "__tests__/api/jobs/process-pdf.test.ts",
         "__tests__/api/novo-modelo-comissionamento.test.ts",
+        "__tests__/api/pagamento/asaas-criar-isento.test.ts",
         "__tests__/api/pagamento/confirmar-bytea.test.ts",
         "__tests__/api/pagamento/iniciar.test.ts",
         "__tests__/api/pagamento/manutencao-info.test.ts",
@@ -205,7 +207,9 @@
         "__tests__/api/rh/relatorio-lote-pdf-corrections.test.ts",
         "__tests__/api/rh/reset-security-context.test.ts",
         "__tests__/api/storage.test.ts",
+        "__tests__/api/suporte/contratos-pdf.test.ts",
         "__tests__/api/suporte/contratos.test.ts",
+        "__tests__/api/suporte/isentar.test.ts",
         "__tests__/api/suporte/leads-aprovacao.test.ts",
         "__tests__/api/suporte/pre-cadastro-delete.test.ts",
         "__tests__/api/suporte/pre-cadastro.test.ts",
@@ -320,7 +324,7 @@
       ]
     },
     "regression": {
-      "files": 29,
+      "files": 30,
       "paths": [
         "__tests__/regression/correcoes-01-04-2026-migration-1139-not-null.test.ts",
         "__tests__/regression/correcoes-01-04-2026-remocao-pagamento-cadastro.test.ts",
@@ -338,6 +342,7 @@
         "__tests__/regression/correcoes-09-02-2026-entidade-id.test.ts",
         "__tests__/regression/correcoes-17-03-2026.test.ts",
         "__tests__/regression/correcoes-18-03-2026.test.ts",
+        "__tests__/regression/correcoes-18-04-2026-lote-isento-pagamento-completo.test.ts",
         "__tests__/regression/correcoes-20-03-2026.test.ts",
         "__tests__/regression/correcoes-22-03-2026.test.ts",
         "__tests__/regression/correcoes-23-03-2026.test.ts",
@@ -462,7 +467,7 @@
       ]
     },
     "components": {
-      "files": 116,
+      "files": 117,
       "paths": [
         "__tests__/components/AccountInfoContent.test.tsx",
         "__tests__/components/admin/AdminSidebar-logout.test.tsx",
@@ -497,6 +502,7 @@
         "__tests__/components/ConditionalHeader.test.tsx",
         "__tests__/components/ConfirmacaoStep.indicacao.test.tsx",
         "__tests__/components/ConfirmacaoStep.test.tsx",
+        "__tests__/components/ContratosTable.test.tsx",
         "__tests__/components/CPFMascarado.test.tsx",
         "__tests__/components/DadosStep.test.tsx",
         "__tests__/components/Dashboard.test.tsx",
@@ -1236,6 +1242,13 @@
       "integrationFile": "__tests__/integration/arquitetura-segregada-rh-entidade.test.ts"
     },
     {
+      "endpoint": "/api/pagamento/asaas/criar/route",
+      "apiFiles": [
+        "__tests__/api/pagamento/asaas-criar-isento.test.ts"
+      ],
+      "integrationFile": "__tests__/integration/asaas-webhook-lote-sync.test.ts"
+    },
+    {
       "endpoint": "/api/auth/session",
       "apiFiles": [
         "__tests__/api/auth/session.test.ts"
@@ -1530,11 +1543,11 @@
     }
   ],
   "summary": {
-    "totalFiles": 645,
+    "totalFiles": 651,
     "totalSkips": 73,
     "describeSkips": 15,
     "itSkips": 58,
     "obsoleteFiles": 3,
-    "duplicateEndpoints": 46
+    "duplicateEndpoints": 47
   }
 }

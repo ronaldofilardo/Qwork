@@ -200,6 +200,8 @@ describe('GET /api/suporte/contratos', () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
-    expect(sql).toContain('coalesce(clin.isento_pagamento, ent.isento_pagamento, false)');
+    expect(sql).toContain(
+      'coalesce(clin.isento_pagamento, ent.isento_pagamento, false)'
+    );
   });
 });
