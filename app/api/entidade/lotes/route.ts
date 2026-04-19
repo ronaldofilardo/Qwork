@@ -108,7 +108,10 @@ export async function GET() {
     // Validar cada lote para determinar se pode emitir laudo
     const lotesComValidacao = await Promise.all(
       lotesResult.rows.map(async (lote) => {
-        if (lote.isento_pagamento === true && lote.status_pagamento !== 'pago') {
+        if (
+          lote.isento_pagamento === true &&
+          lote.status_pagamento !== 'pago'
+        ) {
           lote.status_pagamento = 'pago';
         }
 
