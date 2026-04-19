@@ -38,6 +38,7 @@ export async function GET(
         la.tipo,
         la.status,
         la.status_pagamento,
+        COALESCE(ent.isento_pagamento, false) AS isento_pagamento,
         la.criado_em,
         la.liberado_em,
         l.emitido_em as laudo_emitido_em,
@@ -66,6 +67,7 @@ export async function GET(
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id
+      LEFT JOIN entidades ent ON ent.id = la.entidade_id
       -- ISOLAMENTO: entidade_id direto na tabela de lotes previne acesso a lotes de clínicas
       WHERE la.id = $1
         AND la.entidade_id = $2
@@ -84,6 +86,10 @@ export async function GET(
     }
 
     const lote = loteResult.rows[0];
+
+    if (lote.isento_pagamento === true && lote.status_pagamento !== 'pago') {
+      lote.status_pagamento = 'pago';
+    }
 
     // Buscar estatísticas (excluindo avaliações inativadas dos pendentes)
     const statsResult = await query(

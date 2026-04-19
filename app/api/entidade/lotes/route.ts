@@ -47,6 +47,7 @@ export async function GET() {
           la.tipo,
           la.status,
           la.status_pagamento,
+          COALESCE(ent.isento_pagamento, false) AS isento_pagamento,
           la.link_disponibilizado_em,
           la.criado_em,
           la.liberado_em,
@@ -79,7 +80,7 @@ export async function GET() {
         WHERE la.entidade_id = $1
           AND la.clinica_id IS NULL
           AND la.empresa_id IS NULL
-        GROUP BY la.id, la.tipo, la.status, la.status_pagamento, la.link_disponibilizado_em,
+        GROUP BY la.id, la.tipo, la.status, la.status_pagamento, ent.isento_pagamento, la.link_disponibilizado_em,
                  la.criado_em, la.liberado_em, f2.nome, ent.nome,
                  l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
                  fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
@@ -107,6 +108,10 @@ export async function GET() {
     // Validar cada lote para determinar se pode emitir laudo
     const lotesComValidacao = await Promise.all(
       lotesResult.rows.map(async (lote) => {
+        if (lote.isento_pagamento === true && lote.status_pagamento !== 'pago') {
+          lote.status_pagamento = 'pago';
+        }
+
         // Somente validar quando lote estiver concluído (evita chamadas desnecessárias em lotes 'ativo')
         if (lote.status !== 'concluido') {
           return {
