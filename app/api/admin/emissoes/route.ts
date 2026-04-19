@@ -11,8 +11,11 @@ export async function GET() {
     const result = await query(`
       SELECT
         vs.*,
-        pg.detalhes_parcelas
+        pg.detalhes_parcelas,
+        COALESCE(cl.isento_pagamento, ent.isento_pagamento, false)::boolean AS isento_pagamento
       FROM v_solicitacoes_emissao vs
+      LEFT JOIN clinicas cl ON cl.id = vs.clinica_id
+      LEFT JOIN entidades ent ON ent.id = vs.entidade_id
       LEFT JOIN LATERAL (
         -- Prioriza o pagamento que referencia explicitamente este lote (dados_adicionais->lote_id).
         -- Fallback: pagamento mais recente da entidade/clínica (pagamentos antigos sem lote_id).
@@ -53,7 +56,19 @@ export async function GET() {
         seenLotes.set(row.lote_id, row);
       }
     }
-    const solicitacoes = Array.from(seenLotes.values());
+    const solicitacoes = Array.from(seenLotes.values()).map((row) => {
+      if (row.isento_pagamento === true) {
+        return {
+          ...row,
+          status_pagamento: 'pago',
+          pagamento_metodo: row.pagamento_metodo || 'isento',
+          pagamento_parcelas: row.pagamento_parcelas || 1,
+          pago_em: row.pago_em || row.solicitacao_emissao_em,
+        };
+      }
+
+      return row;
+    });
 
     console.log(
       '[API /admin/emissoes] Após dedup:',

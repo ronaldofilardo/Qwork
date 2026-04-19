@@ -59,8 +59,16 @@ const STATUS_BADGES: Record<
   },
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const badge = STATUS_BADGES[status] || STATUS_BADGES['aguardando_cobranca'];
+function StatusBadge({
+  status,
+  isento = false,
+}: {
+  status: string;
+  isento?: boolean;
+}) {
+  const resolvedStatus = isento ? 'pago' : status;
+  const badge =
+    STATUS_BADGES[resolvedStatus] || STATUS_BADGES['aguardando_cobranca'];
   const Icon = badge.icon;
   return (
     <span
@@ -245,6 +253,23 @@ function StatusActions({
 >) {
   const loteId = solicitacao.lote_id;
   const isProcessando = processando === loteId;
+
+  if (solicitacao.isento_pagamento) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-green-700">
+          <CheckCircle className="w-5 h-5" />
+          <span className="font-medium">
+            Tomador isento — nenhuma cobrança é necessária
+          </span>
+        </div>
+        <p className="text-sm text-gray-600">
+          O lote permanece liberado para emissão sem geração de link de
+          pagamento.
+        </p>
+      </div>
+    );
+  }
 
   if (solicitacao.status_pagamento === 'aguardando_cobranca') {
     const temSugestao =
@@ -795,7 +820,16 @@ export function SolicitacaoCard(props: SolicitacaoCardProps) {
             <h3 className="text-lg font-semibold text-gray-900">
               Lote #{solicitacao.lote_id}
             </h3>
-            <StatusBadge status={solicitacao.status_pagamento} />
+            <StatusBadge
+              status={solicitacao.status_pagamento}
+              isento={solicitacao.isento_pagamento}
+            />
+            {solicitacao.isento_pagamento && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-300">
+                <CheckCircle className="w-3 h-3" />
+                Isento
+              </span>
+            )}
             {solicitacao.tipo_cobranca === 'manutencao' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-300">
                 <Wrench className="w-3 h-3" />
