@@ -22,7 +22,7 @@ export async function GET() {
               r.cpf, r.cnpj,
               r.aceite_termos, r.aceite_disclaimer_nv, r.aceite_politica_privacidade, r.criado_em, r.aprovado_em,
               r.banco_codigo, r.agencia, r.conta, r.tipo_conta, r.titular_conta,
-              r.pix_chave, r.pix_tipo,
+              r.pix_chave, r.pix_tipo, r.asaas_wallet_id,
               r.dados_bancarios_status, r.dados_bancarios_solicitado_em,
               r.dados_bancarios_confirmado_em,
               r.modelo_comissionamento, r.percentual_comissao, r.percentual_comissao_comercial,
