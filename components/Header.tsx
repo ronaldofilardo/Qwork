@@ -25,7 +25,8 @@ export default function Header({
 }: HeaderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { orgInfo } = useOrgInfo();
+  const perfilAtual = userRole || session?.perfil;
+  const { orgInfo } = useOrgInfo(perfilAtual === 'funcionario');
 
   const fetchSession = async () => {
     try {
@@ -91,7 +92,7 @@ export default function Header({
 
   // Prioriza props, se não existirem usa session
   const nome = userName || session?.nome;
-  const perfil = userRole || session?.perfil;
+  const perfil = perfilAtual;
 
   // Se não há informação de usuário, não renderiza o header
   if (!nome && !perfil) {
@@ -100,11 +101,11 @@ export default function Header({
 
   return (
     <header
-      className="bg-black text-white border-b-4 border-accent sticky top-0 z-[1000] w-full min-h-[56px] sm:min-h-[70px] flex items-center justify-between px-3 sm:px-6 lg:px-8 box-border"
+      className="bg-black text-white border-b-4 border-accent sticky top-0 z-[1000] w-full min-h-[60px] sm:min-h-[70px] flex items-center justify-between gap-3 px-3 sm:px-6 lg:px-8 box-border"
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       {/* Logo + Título */}
-      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         <div className="w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center bg-white rounded-lg p-1">
           <Image
             src={QWORK_LOGO_BASE64}
@@ -115,7 +116,7 @@ export default function Header({
           />
         </div>
         <div className="min-w-0">
-          <div className="font-bold text-base sm:text-xl leading-tight truncate">
+          <div className="font-bold text-lg sm:text-xl leading-tight truncate">
             {getRoleTitle(perfil)}
           </div>
           <div className="text-[9px] sm:text-[11px] text-accent tracking-[0.08em] mt-0.5 hidden xs:block">
@@ -126,7 +127,7 @@ export default function Header({
 
       {/* Nome do usuário */}
       {nome && (
-        <span className="font-bold text-xs sm:text-base text-accent px-2 py-1 sm:px-4 sm:py-2 bg-accent/10 rounded-lg ml-2 truncate max-w-[120px] sm:max-w-xs text-right">
+        <span className="font-bold text-sm sm:text-base text-accent px-2.5 py-1.5 sm:px-4 sm:py-2 bg-accent/10 rounded-lg ml-2 truncate max-w-[140px] sm:max-w-xs text-right">
           {nome}
         </span>
       )}

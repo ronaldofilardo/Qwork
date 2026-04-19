@@ -9,7 +9,7 @@ export default function RhLayout({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen overflow-hidden bg-gray-50">
         <ClinicaSidebar />
         <div className="flex-1 min-h-0 overflow-y-auto">
-          <div className="p-4 md:p-6">{children}</div>
+          <div className="qw-content-area p-4 md:p-6">{children}</div>
         </div>
       </div>
     </RHProvider>

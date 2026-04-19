@@ -2,7 +2,7 @@
 
 exports[`SidebarLayout snapshots renders collapsed layout and matches snapshot 1`] = `
 <div
-  class="h-screen bg-white border-r border-gray-200 flex flex-col transition-all w-16"
+  class="qw-sidebar h-screen bg-white border-r border-gray-200 flex flex-col transition-all w-16"
 >
   <div
     class="p-4 border-b border-gray-200"
@@ -55,7 +55,7 @@ exports[`SidebarLayout snapshots renders collapsed layout and matches snapshot 1
 
 exports[`SidebarLayout snapshots renders default layout and matches snapshot 1`] = `
 <div
-  class="h-screen bg-white border-r border-gray-200 flex flex-col transition-all w-64"
+  class="qw-sidebar h-screen bg-white border-r border-gray-200 flex flex-col transition-all w-64"
 >
   <div
     class="p-4 border-b border-gray-200"

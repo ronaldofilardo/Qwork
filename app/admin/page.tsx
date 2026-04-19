@@ -134,7 +134,7 @@ export default function AdminPage() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
+        <div className="qw-content-area p-4 md:p-6">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">

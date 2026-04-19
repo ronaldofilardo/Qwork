@@ -144,7 +144,7 @@ export function RepresentanteProvider({
 
         {/* Conteúdo principal */}
         <div className="flex-1 overflow-y-auto">
-          <main className="max-w-6xl mx-auto px-4 py-6">
+          <main className="qw-content-area max-w-6xl mx-auto px-4 py-6">
             {showBoasVindas && session?.codigo && (
               <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
