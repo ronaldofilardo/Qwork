@@ -48,7 +48,19 @@ describe('Regressão — lote isento deve preencher pagamento completo', () => {
     const src = read('app/api/emissor/laudos/[loteId]/route.ts');
 
     expect(src).toContain('isento_pagamento');
-    expect(src).toContain('const isentoTomador = lote.isento_pagamento === true');
+    expect(src).toContain(
+      'const isentoTomador = lote.isento_pagamento === true'
+    );
     expect(src).toContain('!isentoTomador');
+  });
+
+  it('solicitação de emissão preserva lote isento como pago e não envia para cobrança', () => {
+    const src = read('app/api/lotes/[loteId]/solicitar-emissao/route.ts');
+
+    expect(src).toContain('isento_pagamento');
+    expect(src).toContain('pagamento_metodo = \u0027isento\u0027');
+    expect(src).toContain('pagamento_parcelas = 1');
+    expect(src).toContain('pago_em = NOW()');
+    expect(src).toContain("status_pagamento = 'aguardando_cobranca'");
   });
 });

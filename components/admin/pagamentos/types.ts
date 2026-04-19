@@ -18,6 +18,7 @@ export interface Solicitacao {
   pagamento_metodo: string | null;
   pagamento_parcelas: number | null;
   pago_em: string | null;
+  isento_pagamento?: boolean;
   empresa_nome: string;
   nome_tomador: string;
   solicitante_nome: string;
