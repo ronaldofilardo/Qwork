@@ -12,15 +12,21 @@ import {
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type AdminSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
+export type AdminSection =
+  | 'tomadores'
+  | 'volume'
+  | 'financeiro'
+  | 'geral'
+  | 'auditorias';
 export type VolumeSubSection = 'entidade' | 'rh';
-export type FinanceiroSubSection = 'contagem' | 'contratos';
+export type FinanceiroSubSection = 'contagem' | 'contratos' | 'sociedade';
 export type GeralSubSection = 'perfis';
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
   activeSubSection?: string;
   onSectionChange: (section: AdminSection, subSection?: string) => void;
+  counts?: Record<string, number>;
 }
 
 export default function AdminSidebar({
@@ -134,6 +140,13 @@ export default function AdminSidebar({
       onToggleCollapsed={() => setIsCollapsed(!isCollapsed)}
       footer={legend}
     >
+      <MenuItem
+        icon={FileCheck}
+        label="Tomadores"
+        isActive={activeSection === 'tomadores'}
+        onClick={() => onSectionChange('tomadores')}
+      />
+
       {/* Volume */}
       <MenuItem
         icon={BarChart2}
@@ -192,6 +205,13 @@ export default function AdminSidebar({
               activeSection === 'financeiro' && activeSubSection === 'contratos'
             }
             onClick={() => onSectionChange('financeiro', 'contratos')}
+          />
+          <SubMenuItem
+            label="Sociedade"
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'sociedade'
+            }
+            onClick={() => onSectionChange('financeiro', 'sociedade')}
           />
         </div>
       )}

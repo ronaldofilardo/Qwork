@@ -8,6 +8,8 @@ import { VolumeContent } from '@/components/admin/VolumeContent';
 import { ContagemContent } from '@/components/admin/ContagemContent';
 import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
 import { ContratosTable } from '@/components/shared/ContratosTable';
+import { TomadoresContent } from '@/components/admin/TomadoresContent';
+import SociedadeContent from '@/components/admin/SociedadeContent';
 
 interface Session {
   cpf: string;
@@ -15,13 +17,18 @@ interface Session {
   perfil: string;
 }
 
-type MainSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
+type MainSection =
+  | 'tomadores'
+  | 'volume'
+  | 'financeiro'
+  | 'geral'
+  | 'auditorias';
 type _VolumeSubSection = 'entidade' | 'rh';
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<MainSection>('volume');
+  const [activeSection, setActiveSection] = useState<MainSection>('tomadores');
   const [activeSubSection, setActiveSubSection] = useState<string>('entidade');
 
   const router = useRouter();
@@ -59,6 +66,10 @@ export default function AdminPage() {
   };
 
   const renderContent = () => {
+    if (activeSection === 'tomadores') {
+      return <TomadoresContent activeSubSection={activeSubSection} />;
+    }
+
     if (activeSection === 'volume') {
       return <VolumeContent activeSubSection={activeSubSection} />;
     }
@@ -72,6 +83,9 @@ export default function AdminPage() {
             allowIsentarParceiro
           />
         );
+      if (activeSubSection === 'sociedade') {
+        return <SociedadeContent />;
+      }
       return <ContagemContent />;
     }
 

@@ -16,6 +16,7 @@ const PatchSchema = z.object({
   nome: z.string().min(2).max(200).trim().optional(),
   email: z.string().email().max(100).optional(),
   telefone: z.string().max(30).optional().nullable(),
+  asaas_wallet_id: z.string().max(100).optional().nullable(),
   status: z
     .enum([
       'ativo',
@@ -28,8 +29,7 @@ const PatchSchema = z.object({
       'aprovacao_comercial',
     ])
     .optional(),
-  // Dados bancários, comissão e wallet são SOMENTE LEITURA para suporte.
-  // Alterações nesses campos devem ser feitas via perfil 'comercial' ou 'admin'.
+  // WalletId também pode ser ajustado pelo suporte para preparar o split financeiro.
 });
 
 type PatchInput = z.infer<typeof PatchSchema>;
@@ -136,6 +136,8 @@ export async function PATCH(
     if (data.nome !== undefined) repFields['nome'] = data.nome;
     if (data.email !== undefined) repFields['email'] = data.email;
     if (data.telefone !== undefined) repFields['telefone'] = data.telefone;
+    if (data.asaas_wallet_id !== undefined)
+      repFields['asaas_wallet_id'] = data.asaas_wallet_id;
     if (data.status !== undefined) repFields['status'] = data.status;
 
     if (Object.keys(repFields).length === 0) {

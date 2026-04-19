@@ -33,6 +33,7 @@ const dadosBancariosSchema = z
       .enum(['cpf', 'cnpj', 'email', 'telefone', 'aleatoria'])
       .nullable()
       .optional(),
+    asaas_wallet_id: z.string().max(100).nullable().optional(),
   })
   .strict(); // rejeita campos desconhecidos (inclui cpf/cnpj/tipo_pessoa)
 

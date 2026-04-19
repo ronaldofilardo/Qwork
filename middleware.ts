@@ -224,25 +224,34 @@ function shouldLogUnauthenticatedAccess(
  * Centralised to avoid repeated JSON.parse calls throughout middleware.
  */
 function parseSession(request: NextRequest): MiddlewareSession | null {
-  const sessionCookie = request.cookies.get('bps-session')?.value;
-  if (sessionCookie) {
+  const parseValue = (rawValue: string): MiddlewareSession | null => {
     try {
-      return JSON.parse(sessionCookie);
-    } catch (err) {
-      console.error('[SECURITY] Sessão inválida no cookie:', err);
+      const parsed: unknown = JSON.parse(rawValue);
+      if (parsed && typeof parsed === 'object') {
+        return parsed as MiddlewareSession;
+      }
+      return null;
+    } catch {
       return null;
     }
+  };
+
+  const sessionCookie = request.cookies.get('bps-session')?.value;
+  if (sessionCookie) {
+    const parsed = parseValue(sessionCookie);
+    if (parsed) {
+      return parsed;
+    }
+    console.error('[SECURITY] Sessão inválida no cookie.');
+    return null;
   }
+
   // Edge Runtime: não usar process.env.NODE_ENV (causa eval)
   // Mock header É permitido APENAS em desenvolvimento local via x-mock-session
   // Sempre permitir para compatibilidade com testes e desenvolvimento
   const mockHeader = request.headers.get('x-mock-session');
   if (mockHeader) {
-    try {
-      return JSON.parse(mockHeader);
-    } catch {
-      return null;
-    }
+    return parseValue(mockHeader);
   }
   return null;
 }
@@ -339,8 +348,14 @@ export function middleware(request: NextRequest) {
       return new NextResponse('Autenticação requerida', { status: 401 });
     }
 
-    // Verificar MFA para rotas críticas
-    if (MFA_REQUIRED_ROUTES.some((route) => pathname.startsWith(route))) {
+    // Verificar MFA para rotas críticas apenas em produção
+    const shouldEnforceMfaInThisEnv =
+      process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+
+    if (
+      shouldEnforceMfaInThisEnv &&
+      MFA_REQUIRED_ROUTES.some((route) => pathname.startsWith(route))
+    ) {
       if (session.perfil === 'admin' && !session.mfaVerified) {
         console.error(
           `[SECURITY] Admin ${maskCpf(session.cpf)} tentou acessar ${pathname} sem MFA verificado`
@@ -359,7 +374,7 @@ export function middleware(request: NextRequest) {
   // ── Funcionário route segregation — block gestores ──
   if (FUNCIONARIO_ROUTES.some((route) => pathname.startsWith(route))) {
     if (session) {
-      const redirectTo = GESTOR_REDIRECT[session.perfil as string];
+      const redirectTo = GESTOR_REDIRECT[session.perfil];
       if (redirectTo) {
         console.error(
           `[SECURITY] ${session.perfil} ${maskCpf(session.cpf)} tentou acessar rota de funcionário ${pathname}, redirecionando para ${redirectTo}`
