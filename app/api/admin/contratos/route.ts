@@ -129,7 +129,7 @@ export async function GET(): Promise<NextResponse> {
          NULL::numeric                                              AS perc_rep,
          NULL::numeric                                              AS valor_rep,
          NULL::numeric                                              AS valor_qwork,
-         false::boolean                                             AS isento_pagamento
+         COALESCE(ent2.isento_pagamento, false)::boolean            AS isento_pagamento
        FROM public.entidades ent2
        JOIN public.lotes_avaliacao la2 ON la2.entidade_id = ent2.id
        LEFT JOIN public.avaliacoes av2 ON av2.lote_id = la2.id

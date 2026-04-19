@@ -65,7 +65,13 @@ export default function AdminPage() {
 
     if (activeSection === 'financeiro') {
       if (activeSubSection === 'contratos')
-        return <ContratosTable endpoint="/api/admin/contratos" showQWork allowIsentarParceiro />;
+        return (
+          <ContratosTable
+            endpoint="/api/admin/contratos"
+            showQWork
+            allowIsentarParceiro
+          />
+        );
       return <ContagemContent />;
     }
 

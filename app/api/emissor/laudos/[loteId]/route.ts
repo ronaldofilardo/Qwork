@@ -19,6 +19,12 @@ export const GET = async (
   let user;
   try {
     user = await requireRole('emissor');
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Acesso negado', success: false },
+        { status: 403 }
+      );
+    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -238,7 +244,13 @@ export const PUT = async (
   _ctx: { params: { loteId: string } }
 ) => {
   try {
-    await requireRole('emissor');
+    const user = await requireRole('emissor');
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Acesso negado', success: false },
+        { status: 403 }
+      );
+    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -269,6 +281,12 @@ export const PATCH = async (
   let user;
   try {
     user = await requireRole('emissor');
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Acesso negado', success: false },
+        { status: 403 }
+      );
+    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -362,9 +380,15 @@ export const POST = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  let user: Awaited<ReturnType<typeof requireRole>>;
+  let user: Awaited<ReturnType<typeof requireRole>> | null;
   try {
     user = await requireRole('emissor');
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Acesso negado', success: false },
+        { status: 403 }
+      );
+    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -386,6 +410,7 @@ export const POST = async (
       `
       SELECT la.id, la.status, la.status_pagamento, la.pago_em,
              COALESCE(e.nome, ec.nome) as empresa_nome,
+             COALESCE(e.isento_pagamento, c.isento_pagamento, false) AS isento_pagamento,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
              COUNT(a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
@@ -395,7 +420,7 @@ export const POST = async (
       LEFT JOIN clinicas c ON la.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, ec.nome, c.nome
+      GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, ec.nome, c.nome, e.isento_pagamento, c.isento_pagamento
     `,
       [loteId],
       user
@@ -429,10 +454,15 @@ export const POST = async (
       );
     }
 
-    // VALIDAR PAGAMENTO: Só permite emissão se pagamento confirmado
+    // VALIDAR PAGAMENTO: Só permite emissão se pagamento confirmado (ou isento)
     const skipPaymentPhase = process.env.SKIP_PAYMENT_PHASE === 'true';
+    const isentoTomador = lote.isento_pagamento === true;
 
-    if (!skipPaymentPhase && lote.status_pagamento !== 'pago') {
+    if (
+      !skipPaymentPhase &&
+      !isentoTomador &&
+      lote.status_pagamento !== 'pago'
+    ) {
       return NextResponse.json(
         {
           error: 'Pagamento não confirmado',
@@ -494,8 +524,19 @@ export const POST = async (
     );
 
     try {
-      const { gerarPDFLaudo } = await import('@/lib/laudo-auto');
-      const resultado = await gerarPDFLaudo(loteId, user.cpf, user);
+      const laudoAuto = await import('@/lib/laudo-auto');
+      const gerarLaudo =
+        laudoAuto.gerarPDFLaudo ?? laudoAuto.gerarLaudoCompletoEmitirPDF;
+
+      if (typeof gerarLaudo !== 'function') {
+        throw new Error('Função de geração de laudo não disponível');
+      }
+
+      const resultadoBruto = await gerarLaudo(loteId, user.cpf, user);
+      const resultado =
+        typeof resultadoBruto === 'number'
+          ? { laudoId: resultadoBruto, status: 'emitido' }
+          : resultadoBruto;
 
       return NextResponse.json(
         {

@@ -1,0 +1,195 @@
+# QWork — Instruções de Repositório para Claude Code
+
+Este arquivo define o comportamento padrão esperado para qualquer tarefa neste repositório.
+
+---
+
+## Resposta e comunicação
+
+- Responda em português do Brasil.
+- Seja curto, direto e profissional.
+- Antes de alterar arquivos, diga brevemente o que será feito e quais arquivos serão tocados.
+- Se uma mudança puder afetar múltiplos arquivos, cite os principais impactados.
+- Se houver risco, ofereça caminho de rollback simples.
+
+---
+
+## Contexto do sistema
+
+**QWork** é um sistema de gestão de avaliações de saúde ocupacional com emissão **100% manual** de laudos médicos.
+
+### Fluxo principal de laudos
+
+```text
+RH → POST /api/lotes/[id]/liberar → avaliações → POST /api/lotes/[id]/solicitar-emissao
+→ Emissor → POST /api/emissor/laudos/[id] → gerarLaudoCompletoEmitirPDF() → emitido
+```
+
+- A trigger `fn_reservar_id_laudo_on_lote_insert` cria laudo em `rascunho` automaticamente.
+- Constraint crítica: `lote.id = laudo.id` sempre.
+- O cron de auto-emissão está desabilitado e não deve ser reativado sem aprovação explícita.
+
+### Perfis de usuário
+
+| Perfil | Base principal |
+| --- | --- |
+| admin | /admin e /api/admin |
+| rh | /rh e /api/rh |
+| gestor | /entidade e /api/entidade |
+| suporte | /suporte e /api/suporte |
+| comercial | /comercial e /api/comercial |
+| vendedor | /vendedor e /api/vendedor |
+| emissor | /emissor e /api/emissor |
+| funcionario | /dashboard e /avaliacao |
+
+- Gestores não acessam rotas de funcionário.
+- A sessão é lida do cookie `bps-session`.
+- Nunca logar CPF completo; mascarar sempre que necessário.
+
+---
+
+## Stack do projeto
+
+- Next.js 14 com App Router
+- TypeScript em modo strict
+- PostgreSQL local e Neon Cloud
+- Tailwind CSS
+- Zod para validação
+- Zustand para estado global no cliente
+- React Query para cache e fetch no cliente
+- Sentry para monitoramento de erros
+- Backblaze S2 para storage privado de laudos
+- Asaas para pagamentos
+- ZapSign desabilitado por padrão
+- Puppeteer para geração de PDF
+- Package manager oficial: pnpm
+
+---
+
+## Política de banco de dados
+
+| Ambiente | Banco | Variável principal |
+| --- | --- | --- |
+| Desenvolvimento | nr-bps_db | LOCAL_DATABASE_URL |
+| Testes | nr-bps_db_test | TEST_DATABASE_URL |
+| Staging | Neon | DATABASE_URL |
+| Produção | neondb_v2 | DATABASE_URL |
+
+- Nunca apontar desenvolvimento local para produção.
+- Nunca definir `NODE_ENV=production` em `.env.local`.
+- Nunca usar `ALLOW_PROD_DB_LOCAL` localmente.
+- O banco de testes deve permanecer isolado do banco de desenvolvimento e produção.
+- Ao alterar schema, manter sincronizados código, migrations e arquivos de blueprint em `database/schemas`.
+
+---
+
+## Regras obrigatórias
+
+1. Nunca quebre código existente.
+2. Sempre investigue a causa raiz antes de corrigir sintomas.
+3. Valide a mudança antes de dizer que concluiu.
+4. Reutilize padrões já existentes no codebase.
+5. Em caso de dúvida entre duas abordagens, escolha a mais conservadora.
+6. Nunca exponha segredos, tokens ou variáveis sensíveis em Client Components.
+7. Nunca altere testes que já passam sem motivo claro.
+8. Nunca use npm ou yarn; use sempre pnpm.
+9. Nunca reative fluxos automáticos de auto-emissão sem autorização explícita.
+
+---
+
+## Fluxo obrigatório para qualquer mudança
+
+1. Ler o arquivo e o contexto ao redor antes de editar.
+2. Entender a causa raiz do problema.
+3. Fazer a menor mudança segura possível.
+4. Validar com testes, lint ou type-check relevantes.
+5. Só então afirmar que a tarefa foi concluída.
+
+---
+
+## Regras para APIs e segurança
+
+- Verifique autenticação antes de qualquer lógica de negócio.
+- Verifique autorização logo em seguida, com base em perfil e escopo.
+- Valide entradas externas com Zod sempre que fizer sentido.
+- Retorne erros estruturados e sem vazar detalhes internos.
+- Nunca logue senha, token, CPF completo ou dados sensíveis.
+- Mantenha rate limit e auditoria em fluxos críticos.
+- Rotas de emissão, pagamento, autenticação e contratos exigem validação extra antes de qualquer mudança.
+- Em áreas administrativas, respeite controles adicionais como MFA e restrição por IP quando aplicável.
+
+### Rate limiting
+
+- Login: 10 requisições por 5 minutos por IP.
+- Usuário autenticado: limites mais altos por usuário e por IP.
+- Público não autenticado: limite próprio por IP.
+
+---
+
+## Regras para Next.js
+
+- Prefira Server Components por padrão.
+- Use `use client` apenas quando estritamente necessário.
+- Evite fetch inicial em `useEffect` quando um Server Component resolver melhor.
+- Para dados dinâmicos, use estratégias coerentes com `cache`, `revalidate` e server boundaries.
+
+---
+
+## Regras para TypeScript
+
+- Não desabilite o strict mode.
+- Evite `any`; prefira `unknown` com narrowing.
+- Tipos explícitos em APIs e funções públicas.
+- Não usar `ts-ignore` sem justificativa real.
+
+---
+
+## Regras para logs
+
+- `warn` e `error` sempre podem aparecer.
+- Logs verbosos só quando flags de debug estiverem ativas.
+- Evite ruído em caminhos de sucesso do login, middleware e banco.
+- Nunca logar CPF completo, senha, token ou dados sensíveis.
+
+---
+
+## Convenções importantes do QWork
+
+- `database/schemas/` contém blueprints da estrutura e deve refletir o estado atual do sistema.
+- Ao renomear colunas ou entidades, atualizar código, migration e schema file.
+- Mudanças em pagamento, autenticação, emissão de laudos, contratos e storage exigem validação extra.
+- O storage de laudos deve permanecer no backend, por streaming, com bucket privado.
+- ZapSign permanece desabilitado por padrão, salvo contexto explícito para habilitação.
+
+---
+
+## Comandos de validação
+
+Execute apenas o que for relevante para a mudança:
+
+```bash
+pnpm dev
+pnpm type-check
+pnpm lint
+pnpm quality:check
+pnpm test:unit
+pnpm test:api
+pnpm test:regression
+pnpm test:integration
+pnpm test:security
+pnpm test
+pnpm test:e2e
+```
+
+> Atenção: os testes dependem de ambiente isolado e devem usar o banco local de testes.
+
+---
+
+## Preferências de trabalho
+
+- Priorize mudanças pequenas, verificáveis e reversíveis.
+- Para bugs, adicione ou atualize teste de regressão quando fizer sentido.
+- Preserve acessibilidade, responsividade e consistência visual ao tocar UI.
+- Em áreas sensíveis, prefira evidência e verificação a suposições.
+- Ao tocar o middleware, valide se as rotas públicas e o mapa de roles continuam corretos.
+

@@ -1,26 +1,26 @@
 # Audit de Testes — QWork
-> Gerado em: 2026-04-18T15:50:42.573Z
+> Gerado em: 2026-04-19T10:08:55.660Z
 
 ## Resumo
 | Métrica | Valor |
 |---------|-------|
-| Total arquivos de teste | 645 |
+| Total arquivos de teste | 651 |
 | Total .skip() | 73 |
 | describe.skip | 15 |
 | it.skip / test.skip | 58 |
 | Arquivos obsoletos | 3 |
-| Endpoints duplicados | 46 |
+| Endpoints duplicados | 47 |
 
 ## Contagem por Categoria
 | Categoria | Arquivos |
 |-----------|----------|
-| api | 214 |
+| api | 218 |
 | integration | 48 |
 | database | 41 |
-| regression | 29 |
+| regression | 30 |
 | unit | 5 |
 | lib | 93 |
-| components | 116 |
+| components | 117 |
 | hooks | 7 |
 | e2e-jest | 3 |
 | security | 20 |
@@ -123,6 +123,7 @@
 | /api/entidade/relatorio-lote-pdf | __tests__/api/entidade/migration-1008-corrections.test.ts | __tests__/integration/arquitetura-segregada-rh-entidade.test.ts |
 | /api/entidade/lote/ | __tests__/api/entidade/lote-avaliacoes-inativar.test.ts | __tests__/integration/arquitetura-segregada-rh-entidade.test.ts |
 | /api/entidade/relatorio-lote-pdf/route | __tests__/api/entidade/relatorio-lote-pdf-corrections.test.ts | __tests__/integration/arquitetura-segregada-rh-entidade.test.ts |
+| /api/pagamento/asaas/criar/route | __tests__/api/pagamento/asaas-criar-isento.test.ts | __tests__/integration/asaas-webhook-lote-sync.test.ts |
 | /api/auth/session | __tests__/api/auth/session.test.ts | __tests__/integration/avaliacao-q37-modal.test.tsx |
 | /api/avaliacao/todas | __tests__/api/rbac/avaliacao-role-check.test.ts | __tests__/integration/avaliacao-q37-modal.test.tsx |
 | /api/avaliacao/status | __tests__/api/avaliacao/status.test.ts | __tests__/integration/avaliacao-q37-modal.test.tsx |

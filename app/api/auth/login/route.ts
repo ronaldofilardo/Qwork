@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query, getDatabaseInfo } from '@/lib/db';
+import { query } from '@/lib/db';
 import { createSession } from '@/lib/session';
 import { validateDbEnvironmentAccess } from '@/lib/db/environment-guard';
 import bcrypt from 'bcryptjs';
@@ -9,6 +9,7 @@ import {
 } from '@/lib/auditoria/auditoria';
 import { NextRequest } from 'next/server';
 import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 import { handleRepresentanteLogin, validarSenhaFuncionario } from './helpers';
 
 export const dynamic = 'force-dynamic';
@@ -31,7 +32,6 @@ export async function POST(request: Request) {
   const contextoRequisicao = extrairContextoRequisicao(request);
 
   try {
-    console.log('Database info:', getDatabaseInfo());
     const { cpf, senha, data_nascimento } = await request.json();
 
     // Validar entrada
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
       'emissor',
     ];
 
-    console.log(`[LOGIN] Buscando usuário CPF ${cpf}...`);
+    logger.log(`[LOGIN] Iniciando autenticação para CPF ***${cpf.slice(-4)}`);
 
     // Tentar buscar em usuarios (contas de sistema + funcionários que migraram)
     const usuarioFirstPass = await query(
@@ -81,12 +81,12 @@ export async function POST(request: Request) {
     ) {
       foundInUsuarios = true;
       usuario = usuarioRows[0];
-      console.log(
-        `[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
+      logger.log(
+        `[LOGIN] Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
       );
     } else {
       // Procurar em funcionarios como alternativa
-      console.log(`[LOGIN] Buscando usuário CPF ${cpf} em funcionarios...`);
+      logger.log('[LOGIN] Buscando usuário em funcionarios (fallback)');
       const funcResult = await query(
         `SELECT * FROM funcionarios WHERE cpf = $1 LIMIT 1`,
         [cpf]
@@ -119,7 +119,7 @@ export async function POST(request: Request) {
         usuario.clinica_id = usuario.clinica_id || usuario.clinicaId || null;
         usuario.senha_hash =
           usuario.senha_hash || usuario.senhaHash || usuario.senha;
-        console.log(`[LOGIN] ✓ Usuário encontrado em funcionarios:`, {
+        logger.log(`[LOGIN] Usuário encontrado em funcionarios:`, {
           cpf: usuario.cpf,
           usuario_tipo_raw: rawPerfil,
           tipo: usuario.tipo_usuario,
@@ -131,18 +131,18 @@ export async function POST(request: Request) {
         // Encontrou em usuarios mas não é tipo sistema — usar mesmo assim
         foundInUsuarios = true;
         usuario = usuarioRows[0];
-        console.log(
-          `[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
+        logger.log(
+          `[LOGIN] Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
         );
       } else {
         // Não encontrou em nenhum lugar
-        console.log(
-          `[LOGIN] ✗ Não encontrado em funcionarios nem usuarios; tentando representante...`
+        logger.log(
+          '[LOGIN] Usuário não encontrado nas tabelas primárias; tentando representante'
         );
         return await handleRepresentanteLogin(cpf, senha, contextoRequisicao);
       }
     }
-    console.log(`[LOGIN] Usuário encontrado:`, {
+    logger.log(`[LOGIN] Usuário encontrado:`, {
       cpf: usuario.cpf,
       tipo: usuario.tipo_usuario,
       clinica_id: usuario.clinica_id,
@@ -183,9 +183,7 @@ export async function POST(request: Request) {
 
     if (foundInFuncionarios) {
       // Usuário vindo da tabela `funcionarios`: senha já disponível na linha
-      console.log(
-        `[LOGIN] Usuário vindo de funcionarios; usando senha de funcionarios`
-      );
+      logger.log('[LOGIN] Usuário vindo de funcionarios');
       senhaHash = usuario.senha_hash;
       tomadorId = usuario.entidade_id || usuario.clinica_id || null;
       tomadorAtivo = usuario.ativo ?? true;
@@ -194,15 +192,15 @@ export async function POST(request: Request) {
       SYSTEM_ACCOUNT_TYPES.includes(usuario.tipo_usuario)
     ) {
       // Usuário de sistema (suporte, comercial, vendedor, admin, emissor): senha em usuarios
-      console.log(
-        `[LOGIN] Usuário de sistema (${usuario.tipo_usuario}); usando senha de usuarios`
+      logger.log(
+        `[LOGIN] Usuário de sistema (${usuario.tipo_usuario}) autenticando via usuarios`
       );
       senhaHash = usuario.senha_hash;
       tomadorId = usuario.entidade_id || usuario.clinica_id || null;
       tomadorAtivo = usuario.ativo ?? true;
     } else if (usuario.tipo_usuario === 'gestor') {
       // Buscar senha em entidades_senhas
-      console.log(`[LOGIN] Buscando senha de gestor em entidades_senhas...`);
+      logger.log('[LOGIN] Buscando credenciais de gestor');
       const senhaResult = await query(
         `SELECT es.senha_hash, es.primeira_senha_alterada, e.id, e.ativa
          FROM entidades_senhas es
@@ -228,7 +226,7 @@ export async function POST(request: Request) {
         senhaResult.rows[0].primeira_senha_alterada ?? true;
     } else if (usuario.tipo_usuario === 'rh') {
       // Buscar senha em clinicas_senhas
-      console.log(`[LOGIN] Buscando senha de RH em clinicas_senhas...`);
+      logger.log('[LOGIN] Buscando credenciais de RH');
       const senhaResult = await query(
         `SELECT cs.senha_hash, cs.primeira_senha_alterada, c.id as clinica_id, c.ativa
          FROM clinicas_senhas cs
@@ -278,7 +276,7 @@ export async function POST(request: Request) {
       usuario.tipo_usuario === 'comercial' ||
       usuario.tipo_usuario === 'vendedor'
     ) {
-      console.log(`[LOGIN] Login de ${usuario.tipo_usuario} — validando senha`);
+      logger.log(`[LOGIN] Validando senha para perfil ${usuario.tipo_usuario}`);
       senhaHash = usuario.senha_hash || null;
       tomadorId = null;
       tomadorAtivo = true;
@@ -348,9 +346,8 @@ export async function POST(request: Request) {
       if (errResp) return errResp;
     } else if (senha && senhaHash) {
       // Validar senha para demais usuários (RH, Gestor)
-      console.log('[LOGIN] Comparando senha contra hash...');
+      logger.log('[LOGIN] Validando credenciais');
       const senhaValida = await bcrypt.compare(senha, senhaHash);
-      console.log(`[LOGIN] Senha válida: ${senhaValida}`);
 
       if (!senhaValida) {
         try {
@@ -456,7 +453,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log(`[LOGIN] Sessão criada para ${perfil}`);
+    logger.log(`[LOGIN] Sessão criada para ${perfil}`);
 
     // Pré-verificar disponibilidade de ambientes para emissores
     const environmentAvailability =
@@ -499,7 +496,7 @@ export async function POST(request: Request) {
         // HOTFIX: Se tabela não existe (42P01), assumir termos PENDENTES (lado seguro)
         // Assim o modal será mostrado, e quando tentar registrar, receberá erro 503 amigável
         if (err?.code === '42P01') {
-          console.log(
+          logger.log(
             '[LOGIN] Tabela de termos ainda não existe - assumindo termos como pendentes'
           );
           termosPendentes = {

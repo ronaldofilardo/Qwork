@@ -1,7 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw, UserPlus, FileDown, ShieldOff, X } from 'lucide-react';
+import {
+  RefreshCw,
+  UserPlus,
+  FileDown,
+  ShieldOff,
+  ShieldCheck,
+  X,
+} from 'lucide-react';
 import { VincularRepDrawer } from '@/components/comercial/contratos/VincularRepDrawer';
 
 interface ContratoRow {
@@ -123,11 +130,15 @@ export function ContratosTable({
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? `Erro ${res.status}`);
-      setIsentarSucesso(`${json.nome} (${json.tipo}) marcado como isento com sucesso.`);
+      setIsentarSucesso(
+        `${json.nome} (${json.tipo}) marcado como isento com sucesso.`
+      );
       setCnpjIsentar('');
       void carregar();
     } catch (e) {
-      setIsentarErro(e instanceof Error ? e.message : 'Erro ao isentar parceiro');
+      setIsentarErro(
+        e instanceof Error ? e.message : 'Erro ao isentar parceiro'
+      );
     } finally {
       setIsentarLoading(false);
     }
@@ -168,7 +179,12 @@ export function ContratosTable({
         <div className="flex items-center gap-2">
           {allowIsentarParceiro && (
             <button
-              onClick={() => { setShowIsentarModal(true); setIsentarErro(null); setIsentarSucesso(null); setCnpjIsentar(''); }}
+              onClick={() => {
+                setShowIsentarModal(true);
+                setIsentarErro(null);
+                setIsentarSucesso(null);
+                setCnpjIsentar('');
+              }}
               className="flex items-center gap-2 px-3 py-2 text-sm border border-amber-200 text-amber-700 rounded-lg hover:bg-amber-50 transition-colors"
             >
               <ShieldOff size={14} />
@@ -366,7 +382,13 @@ export function ContratosTable({
 
                     const tdEntidade = (
                       <td className="px-3 py-3">
-                        <div className="flex items-center gap-1.5">
+                        <div
+                          className={`flex items-center gap-1.5 rounded-lg px-2 py-1 transition-all duration-200 ${
+                            row.isento_pagamento
+                              ? 'border border-amber-200 bg-amber-50/80'
+                              : ''
+                          }`}
+                        >
                           <span
                             className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
                               isClinica
@@ -377,17 +399,27 @@ export function ContratosTable({
                             {isClinica ? 'CLÍ' : 'ENT'}
                           </span>
                           <div>
-                            <p className="font-semibold text-gray-900 text-xs leading-tight flex items-center gap-1">
-                              {row.contratante_nome || '—'}
+                            <p className="font-semibold text-gray-900 text-xs leading-tight flex flex-wrap items-center gap-1.5">
+                              <span>{row.contratante_nome || '—'}</span>
                               {row.isento_pagamento && (
-                                <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-200">
-                                  ISENTO
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-800"
+                                  title="Tomador com cobrança isenta"
+                                  aria-label="Tomador isento"
+                                >
+                                  <ShieldCheck size={12} />
+                                  Isento
                                 </span>
                               )}
                             </p>
                             <p className="text-[11px] text-gray-400 font-mono">
                               {row.contratante_cnpj || '—'}
                             </p>
+                            {row.isento_pagamento && (
+                              <p className="mt-1 text-[10px] font-medium text-amber-700">
+                                Cobrança dispensada para este tomador
+                              </p>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -401,10 +433,12 @@ export function ContratosTable({
                         }
                         className={`border-b border-gray-50 transition-colors ${
                           idx === visibleData.length - 1 ? 'border-b-0' : ''
-                        } ${
+                        } ${row.isento_pagamento ? 'bg-amber-50/30' : ''} ${
                           rowClickable
                             ? 'hover:bg-green-50/60 cursor-pointer'
-                            : 'hover:bg-gray-50/50'
+                            : row.isento_pagamento
+                              ? 'hover:bg-amber-50/60'
+                              : 'hover:bg-gray-50/50'
                         }`}
                       >
                         {comercial ? (
@@ -430,7 +464,10 @@ export function ContratosTable({
                             <span>{fmtDate(row.contrato_data)}</span>
                             {allowGerarContrato && row.contrato_data && (
                               <button
-                                onClick={(e) => { e.stopPropagation(); void handleDownloadContrato(row); }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleDownloadContrato(row);
+                                }}
                                 title="Baixar contrato PDF"
                                 className="text-gray-400 hover:text-gray-700 transition-colors"
                               >
@@ -639,13 +676,19 @@ export function ContratosTable({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-gray-900">Isentar Parceiro</h3>
-              <button onClick={() => setShowIsentarModal(false)} className="text-gray-400 hover:text-gray-700">
+              <h3 className="text-base font-bold text-gray-900">
+                Isentar Parceiro
+              </h3>
+              <button
+                onClick={() => setShowIsentarModal(false)}
+                className="text-gray-400 hover:text-gray-700"
+              >
                 <X size={18} />
               </button>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              Informe o CNPJ do parceiro para conceder isenção total de cobranças (laudos e multa por inatividade).
+              Informe o CNPJ do parceiro para conceder isenção total de
+              cobranças (laudos e multa por inatividade).
             </p>
             <input
               type="text"

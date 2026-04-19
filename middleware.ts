@@ -206,6 +206,19 @@ function maskCpf(cpf: string | undefined): string {
   return `***${cpf.slice(-4)}`;
 }
 
+function shouldLogUnauthenticatedAccess(
+  request: NextRequest,
+  pathname: string
+): boolean {
+  const method = request.method.toUpperCase();
+  const isMutation = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+  return (
+    pathname.startsWith('/api/') ||
+    isMutation ||
+    process.env.DEBUG_MIDDLEWARE === 'true'
+  );
+}
+
 /**
  * Parse session from cookie or x-mock-session header (dev/test only).
  * Centralised to avoid repeated JSON.parse calls throughout middleware.
@@ -275,9 +288,11 @@ export function middleware(request: NextRequest) {
 
     const contratacaoSession = parseSession(request);
     if (!contratacaoSession) {
-      console.error(
-        `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
-      );
+      if (shouldLogUnauthenticatedAccess(request, pathname)) {
+        console.warn(
+          `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
+        );
+      }
       return new NextResponse('Autenticação requerida', { status: 401 });
     }
 
@@ -316,9 +331,11 @@ export function middleware(request: NextRequest) {
     }
 
     if (!session) {
-      console.error(
-        `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
-      );
+      if (shouldLogUnauthenticatedAccess(request, pathname)) {
+        console.warn(
+          `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
+        );
+      }
       return new NextResponse('Autenticação requerida', { status: 401 });
     }
 

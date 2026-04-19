@@ -13,7 +13,7 @@ import dotenv from 'dotenv';
 // Load local env early to ensure LOCAL_DATABASE_URL and other overrides are available
 // ⚠️ SEGURANÇA DE ISOLAMENTO DE TESTES: NÃO chamar dotenv.config em ambiente Jest.
 if (!process.env.JEST_WORKER_ID && process.env.NODE_ENV !== 'test') {
-  dotenv.config({ path: '.env.local', override: true });
+  dotenv.config({ path: '.env.local', override: true, quiet: true });
 }
 
 import pg from 'pg';
@@ -129,7 +129,8 @@ if (environment === 'development' && hasTestDatabaseUrl && !isRunningTests) {
 export const isDevelopment = environment === 'development';
 export const isTest = environment === 'test';
 export const isProduction = environment === 'production';
-export const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
+export const DEBUG_DB = process.env.DEBUG_DB === 'true' || isTest;
+let hasWarnedAboutLocalDbOverride = false;
 
 /**
  * Modo especial: emissor local — desativado por política de segurança.
@@ -177,8 +178,13 @@ const getDatabaseUrl = () => {
 
   // Ambiente de desenvolvimento
   if (isDevelopment) {
-    if (process.env.DATABASE_URL) {
+    if (
+      process.env.DATABASE_URL &&
+      DEBUG_DB &&
+      !hasWarnedAboutLocalDbOverride
+    ) {
       console.warn('Ignorado em desenvolvimento. Use LOCAL_DATABASE_URL');
+      hasWarnedAboutLocalDbOverride = true;
     }
 
     if (!process.env.LOCAL_DATABASE_URL) {
@@ -292,16 +298,17 @@ export function getLocalPool(): pg.Pool {
       console.error('Erro inesperado no pool de conexões:', err);
     });
 
-    // Log da conexão
-    try {
-      const parsed = new URL(connectionString);
-      const dbName = parsed.pathname.replace(/^\//, '');
-      const host = parsed.hostname;
-      console.log(
-        `🔌 [lib/db/connection] Conectado ao banco: ${dbName} @ ${host} (ambiente: ${environment})`
-      );
-    } catch {
-      // Se parsing falhar, continuar sem log
+    if (DEBUG_DB) {
+      try {
+        const parsed = new URL(connectionString);
+        const dbName = parsed.pathname.replace(/^\//, '');
+        const host = parsed.hostname;
+        console.log(
+          `🔌 [lib/db/connection] Conectado ao banco: ${dbName} @ ${host} (ambiente: ${environment})`
+        );
+      } catch {
+        // Se parsing falhar, continuar sem log
+      }
     }
   }
   return localPool;

@@ -4,6 +4,7 @@ import { createSession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
 import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 import { registrarAuditoria } from '@/lib/auditoria/auditoria';
+import { logger } from '@/lib/logger';
 
 type ContextoRequisicao = Record<string, unknown>;
 
@@ -27,7 +28,9 @@ export async function handleRepresentanteLogin(
   const repRows = repResult && repResult.rows ? repResult.rows : [];
 
   if (repRows.length === 0) {
-    console.log(`[LOGIN] Usuário não encontrado em nenhuma tabela: ${cpf}`);
+    logger.log(
+      `[LOGIN] Usuário não encontrado em nenhuma tabela: ***${cpf.slice(-4)}`
+    );
     return NextResponse.json(
       { error: 'CPF ou senha inválidos' },
       { status: 401 }
@@ -35,7 +38,7 @@ export async function handleRepresentanteLogin(
   }
 
   const rep = repRows[0];
-  console.log(`[LOGIN] Representante encontrado:`, {
+  logger.log(`[LOGIN] Representante encontrado:`, {
     id: rep.id,
     nome: rep.nome,
     status: rep.status,
@@ -226,7 +229,7 @@ export async function handleRepresentanteLogin(
     );
   }
 
-  console.log(`[LOGIN] Sessão criada para representante #${rep.id}`);
+  logger.log(`[LOGIN] Sessão criada para representante #${rep.id}`);
 
   // Verificar se representante precisa trocar senha no primeiro acesso
   const precisaTrocarSenha = !primeiraSenhaAlterada;
@@ -265,22 +268,16 @@ export async function validarSenhaFuncionario(
     );
   }
 
-  console.log(
-    '[LOGIN] Funcionário com data de nascimento - validando contra hash armazenado'
+  logger.log(
+    '[LOGIN] Validando credenciais de funcionário por data de nascimento'
   );
 
   try {
     const senhaEsperada = gerarSenhaDeNascimento(data_nascimento);
-    console.log(
-      '[LOGIN] Senha gerada a partir de data_nascimento, comparando hash...'
-    );
-    console.log(`[LOGIN] DEBUG - senhaEsperada: ${senhaEsperada}`);
-    console.log(
-      `[LOGIN] DEBUG - senhaHash existe: ${!!senhaHash}, primeiros 10 chars: ${senhaHash?.substring(0, 10)}`
-    );
-
     const senhaValida = await bcrypt.compare(senhaEsperada, senhaHash);
-    console.log(`[LOGIN] Senha válida: ${senhaValida}`);
+    logger.log(
+      `[LOGIN] Resultado da validação por data de nascimento: ${senhaValida}`
+    );
 
     if (!senhaValida) {
       try {
@@ -318,14 +315,14 @@ export async function validarSenhaFuncionario(
     );
 
     if (senha && senhaHash) {
-      console.log(
-        '[LOGIN] Tentando validação com senha normal após falha em data_nascimento...'
+      logger.log(
+        '[LOGIN] Tentando validação com senha normal após falha em data_nascimento'
       );
       try {
         const senhaValida = await bcrypt.compare(senha, senhaHash);
         if (senhaValida) {
-          console.log(
-            '[LOGIN] Login bem-sucedido com senha normal (fallback após erro em data_nascimento)'
+          logger.log(
+            '[LOGIN] Login bem-sucedido com senha normal após fallback'
           );
           return null; // válida via fallback
         } else {

@@ -6,7 +6,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/session';
 import { query } from '@/lib/db';
-import { registrarAuditoria, extrairContextoRequisicao } from '@/lib/auditoria/auditoria';
+import {
+  registrarAuditoria,
+  extrairContextoRequisicao,
+} from '@/lib/auditoria/auditoria';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,12 +21,18 @@ export async function POST(request: NextRequest) {
     const cnpjRaw: unknown = body?.cnpj;
 
     if (typeof cnpjRaw !== 'string') {
-      return NextResponse.json({ error: 'CNPJ é obrigatório' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'CNPJ é obrigatório' },
+        { status: 400 }
+      );
     }
 
     const cnpj = cnpjRaw.replace(/\D/g, '');
     if (cnpj.length !== 14) {
-      return NextResponse.json({ error: 'CNPJ inválido — deve ter 14 dígitos' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'CNPJ inválido — deve ter 14 dígitos' },
+        { status: 400 }
+      );
     }
 
     // Tentar clinicas primeiro
@@ -43,7 +52,11 @@ export async function POST(request: NextRequest) {
           entidade_tipo: 'tomador',
           entidade_id: id,
           acao: 'atualizar',
-          metadados: { operacao: 'isentar_parceiro', tipo_tomador: 'clinica', cnpj },
+          metadados: {
+            operacao: 'isentar_parceiro',
+            tipo_tomador: 'clinica',
+            cnpj,
+          },
           ...contexto,
         });
       } catch (err) {
@@ -70,7 +83,11 @@ export async function POST(request: NextRequest) {
           entidade_tipo: 'tomador',
           entidade_id: id,
           acao: 'atualizar',
-          metadados: { operacao: 'isentar_parceiro', tipo_tomador: 'entidade', cnpj },
+          metadados: {
+            operacao: 'isentar_parceiro',
+            tipo_tomador: 'entidade',
+            cnpj,
+          },
           ...contexto,
         });
       } catch (err) {
@@ -80,7 +97,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ id, nome, tipo: 'entidade' });
     }
 
-    return NextResponse.json({ error: 'Tomador não encontrado para o CNPJ informado' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Tomador não encontrado para o CNPJ informado' },
+      { status: 404 }
+    );
   } catch (error: unknown) {
     const e = error as Error;
     if (
@@ -91,6 +111,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
     console.error('[POST /api/admin/tomadores/isentar]', e);
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }

@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
@@ -44,6 +45,7 @@ export function EntidadeProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [counts, setCounts] = useState<EntidadeCounts>(defaultCounts);
   const [isLoading, setIsLoading] = useState(true);
+  const hasInitializedRef = useRef(false);
 
   const loadCounts = useCallback(async () => {
     try {
@@ -75,6 +77,11 @@ export function EntidadeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (hasInitializedRef.current) {
+      return;
+    }
+    hasInitializedRef.current = true;
+
     const init = async () => {
       try {
         const sessionRes = await fetch('/api/auth/session', {

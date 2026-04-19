@@ -4,11 +4,11 @@
 
 ## Ferramentas
 
-| Ferramenta | Escopo | Config | Comando |
-|------------|--------|--------|---------|
-| **Jest** | Unitário, API, Integração, DB, Componentes | `jest.config.cjs` | `pnpm test` |
-| **Vitest** | Regressão visual/estática | `vitest.config.ts` | `pnpm test:regression` |
-| **Cypress** | E2E (browser real) | `cypress.config.ts` | `pnpm cypress` |
+| Ferramenta  | Escopo                                     | Config              | Comando                |
+| ----------- | ------------------------------------------ | ------------------- | ---------------------- |
+| **Jest**    | Unitário, API, Integração, DB, Componentes | `jest.config.cjs`   | `pnpm test`            |
+| **Vitest**  | Regressão visual/estática                  | `vitest.config.ts`  | `pnpm test:regression` |
+| **Cypress** | E2E (browser real)                         | `cypress.config.ts` | `pnpm cypress`         |
 
 ### Quando usar cada ferramenta
 
@@ -43,50 +43,52 @@ __tests__/
 
 ## Scripts Disponíveis
 
-| Script | Escopo | DB? | Velocidade |
-|--------|--------|-----|------------|
-| `pnpm test` | Todos os testes Jest | Sim | ~5-10min |
-| `pnpm test:unit` | `__tests__/lib` + `__tests__/unit` | Não | ~30s |
-| `pnpm test:api` | `__tests__/api` | Sim | ~3-5min |
-| `pnpm test:integration` | `__tests__/integration` | Sim | ~2-3min |
-| `pnpm test:database` | `__tests__/database` | Sim | ~1-2min |
-| `pnpm test:components` | `__tests__/components` | Não | ~1-2min |
-| `pnpm test:security` | `__tests__/security` | Sim | ~1min |
-| `pnpm test:regression` | `__tests__/regression` (Vitest) | Não | ~30s |
-| `pnpm test:coverage` | Todos + coverage report | Sim | ~10-15min |
-| `pnpm test:ci` | CI mode (bail=50) | Sim | ~5-10min |
-| `pnpm test:audit` | Relatório de auditoria | Não | ~5s |
-| `pnpm cypress` | E2E interativo | Sim (dev server) | Manual |
-| `pnpm test:e2e` | E2E headless | Sim (dev server) | ~5-10min |
+| Script                  | Escopo                             | DB?              | Velocidade |
+| ----------------------- | ---------------------------------- | ---------------- | ---------- |
+| `pnpm test`             | Todos os testes Jest               | Sim              | ~5-10min   |
+| `pnpm test:unit`        | `__tests__/lib` + `__tests__/unit` | Não              | ~30s       |
+| `pnpm test:api`         | `__tests__/api`                    | Sim              | ~3-5min    |
+| `pnpm test:integration` | `__tests__/integration`            | Sim              | ~2-3min    |
+| `pnpm test:database`    | `__tests__/database`               | Sim              | ~1-2min    |
+| `pnpm test:components`  | `__tests__/components`             | Não              | ~1-2min    |
+| `pnpm test:security`    | `__tests__/security`               | Sim              | ~1min      |
+| `pnpm test:regression`  | `__tests__/regression` (Vitest)    | Não              | ~30s       |
+| `pnpm test:coverage`    | Todos + coverage report            | Sim              | ~10-15min  |
+| `pnpm test:ci`          | CI mode (bail=50)                  | Sim              | ~5-10min   |
+| `pnpm test:audit`       | Relatório de auditoria             | Não              | ~5s        |
+| `pnpm cypress`          | E2E interativo                     | Sim (dev server) | Manual     |
+| `pnpm test:e2e`         | E2E headless                       | Sim (dev server) | ~5-10min   |
 
 ## Coverage Targets
 
-| Categoria | Target | Justificativa |
-|-----------|--------|--------------|
-| **Global** | 80% | Meta do projeto |
-| **Branches** | 40% | Stepping stone — aumentar gradualmente |
-| **Functions** | 50% | Stepping stone — aumentar gradualmente |
-| **Lines** | 50% | Stepping stone — aumentar gradualmente |
-| **Rotas API críticas** | 90%+ | auth, pagamento, emissão |
-| **Componentes críticos** | 80%+ | formulários, modais, dashboard |
+| Categoria                | Target | Justificativa                          |
+| ------------------------ | ------ | -------------------------------------- |
+| **Global**               | 80%    | Meta do projeto                        |
+| **Branches**             | 40%    | Stepping stone — aumentar gradualmente |
+| **Functions**            | 50%    | Stepping stone — aumentar gradualmente |
+| **Lines**                | 50%    | Stepping stone — aumentar gradualmente |
+| **Rotas API críticas**   | 90%+   | auth, pagamento, emissão               |
+| **Componentes críticos** | 80%+   | formulários, modais, dashboard         |
 
 ## Convenções
 
 ### Nomenclatura
+
 - `[feature].test.ts` — teste padrão
 - `[feature].integration.test.ts` — teste de integração
 - `[feature].cy.ts` — teste Cypress E2E
 
 ### Padrão AAA (Arrange/Act/Assert)
+
 ```typescript
 describe('Feature X', () => {
   it('deve fazer Y quando Z', async () => {
     // Arrange
     const input = { ... };
-    
+
     // Act
     const result = await action(input);
-    
+
     // Assert
     expect(result).toBe(expected);
   });
@@ -94,6 +96,7 @@ describe('Feature X', () => {
 ```
 
 ### Descrições em Português
+
 - `deve retornar 401 quando não autenticado`
 - `deve criar entidade com dados válidos`
 - `deve bloquear acesso cross-tenant`
@@ -101,12 +104,14 @@ describe('Feature X', () => {
 ## Segurança de Testes
 
 ### Proteção do Banco
+
 - `jest.setup.js` **remove** `DATABASE_URL` do ambiente
 - Apenas `TEST_DATABASE_URL` é permitido (`nr-bps_db_test`)
 - **BLOQUEIO ABSOLUTO** em URLs contendo `neon.tech`
 - `jest.global-setup.cjs` aplica migrations no banco de testes
 
 ### Isolamento
+
 - Cada teste deve limpar seus dados (ou usar transactions)
 - **Nunca** compartilhar estado entre describes
 - `clearMocks: true` garante mocks limpos entre testes
@@ -114,6 +119,7 @@ describe('Feature X', () => {
 ## CI/CD
 
 ### Pipeline Recomendado
+
 ```
 1. Lint + Type Check     (~2min)
 2. Unit Tests            (~30s)  — sem DB
@@ -127,6 +133,7 @@ describe('Feature X', () => {
 ```
 
 ### Otimizações
+
 - Steps 1-3 podem rodar em paralelo (sem DB)
 - Steps 4-7 rodam sequencialmente (compartilham DB)
 - Step 8-9 rodam após tudo passar
