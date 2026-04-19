@@ -27,9 +27,15 @@ export const GET = async (req: Request) => {
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.id = la.id
+      LEFT JOIN entidades ent ON ent.id = la.entidade_id
+      LEFT JOIN clinicas c ON c.id = la.clinica_id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
-        AND (la.status_pagamento = 'pago' OR la.status_pagamento IS NULL)
+        AND (
+          la.status_pagamento = 'pago'
+          OR la.status_pagamento IS NULL
+          OR COALESCE(ent.isento_pagamento, c.isento_pagamento, false) = true
+        )
     `,
       [],
       user
@@ -72,11 +78,16 @@ export const GET = async (req: Request) => {
       LEFT JOIN funcionarios f ON l.emissor_cpf = f.cpf
       LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN clinicas c ON ec.clinica_id = c.id
+      LEFT JOIN entidades ent ON ent.id = la.entidade_id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
-        AND (la.status_pagamento = 'pago' OR la.status_pagamento IS NULL)
+        AND (
+          la.status_pagamento = 'pago'
+          OR la.status_pagamento IS NULL
+          OR COALESCE(ent.isento_pagamento, c.isento_pagamento, false) = true
+        )
       GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE

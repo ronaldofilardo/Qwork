@@ -23,16 +23,18 @@ export async function POST(
       `SELECT la.id, la.status_pagamento, la.link_pagamento_token,
               la.link_disponibilizado_em, la.entidade_id, la.clinica_id,
               la.valor_por_funcionario, la.liberado_por,
+              COALESCE(e.isento_pagamento, cl.isento_pagamento, false) AS isento_pagamento,
               COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as num_avaliacoes,
               COALESCE(e.nome, ec_ent.nome) as nome_tomador
        FROM lotes_avaliacao la
        LEFT JOIN avaliacoes a ON a.lote_id = la.id
        LEFT JOIN entidades e ON e.id = la.entidade_id
+       LEFT JOIN clinicas cl ON cl.id = la.clinica_id
        LEFT JOIN entidades ec_ent ON ec_ent.id = (
-         SELECT cl.entidade_id FROM clinicas cl WHERE cl.id = la.clinica_id LIMIT 1
+         SELECT cl2.entidade_id FROM clinicas cl2 WHERE cl2.id = la.clinica_id LIMIT 1
        )
        WHERE la.id = $1
-       GROUP BY la.id, e.nome, ec_ent.nome`,
+       GROUP BY la.id, e.nome, ec_ent.nome, e.isento_pagamento, cl.isento_pagamento`,
       [loteId]
     );
 
@@ -44,6 +46,16 @@ export async function POST(
     }
 
     const lote = loteResult.rows[0];
+
+    if (lote.isento_pagamento === true) {
+      return NextResponse.json(
+        {
+          error:
+            'Tomador isento de pagamento — não é necessário disponibilizar link de cobrança.',
+        },
+        { status: 400 }
+      );
+    }
 
     if (!lote.link_pagamento_token) {
       return NextResponse.json(
