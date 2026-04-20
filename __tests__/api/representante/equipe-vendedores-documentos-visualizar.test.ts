@@ -144,7 +144,8 @@ describe('GET /api/representante/equipe/vendedores/[id]/documentos/visualizar', 
 
   it('deve retornar 400 quando tipo não é fornecido', async () => {
     // Arrange
-    const url = 'http://localhost/api/representante/equipe/vendedores/73/documentos/visualizar';
+    const url =
+      'http://localhost/api/representante/equipe/vendedores/73/documentos/visualizar';
     const req = new NextRequest(url, { method: 'GET' });
     (req as any).nextUrl = new URL(url);
 
@@ -210,7 +211,10 @@ describe('GET /api/representante/equipe/vendedores/[id]/documentos/visualizar', 
 
     // Caminho passado ao readFile não deve conter prefixo duplicado
     // Normaliza separadores de path (Windows usa \, Unix usa /)
-    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(/\\/g, '/');
+    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(
+      /\\/g,
+      '/'
+    );
     expect(calledPath).not.toContain('storage/storage');
     expect(calledPath).toContain(
       'representantes/PF/12345678901/vendedores/98765432100/CAD/cnh_doc.pdf'
@@ -236,7 +240,10 @@ describe('GET /api/representante/equipe/vendedores/[id]/documentos/visualizar', 
     expect(res.status).toBe(200);
 
     // Deve ter usado o primeiro path (CNPJ doc)
-    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(/\\/g, '/');
+    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(
+      /\\/g,
+      '/'
+    );
     expect(calledPath).toContain('cnpj_doc.pdf');
     expect(calledPath).not.toContain('cpf_resp_doc.pdf');
     expect(calledPath).not.toContain('storage/storage');
@@ -257,7 +264,10 @@ describe('GET /api/representante/equipe/vendedores/[id]/documentos/visualizar', 
     // Assert
     expect(res.status).toBe(200);
 
-    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(/\\/g, '/');
+    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(
+      /\\/g,
+      '/'
+    );
     expect(calledPath).toContain(
       'representantes/PF/12345678901/vendedores/98765432100/CAD/doc.pdf'
     );

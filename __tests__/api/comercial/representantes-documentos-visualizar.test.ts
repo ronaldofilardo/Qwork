@@ -187,8 +187,7 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
 
   it('deve retornar 200 para tipo=identificacao com doc_path válido', async () => {
     // Arrange
-    const storedPath =
-      'storage/representantes/PF/12345678901/IDENT/cnh.pdf';
+    const storedPath = 'storage/representantes/PF/12345678901/IDENT/cnh.pdf';
     mockRepresentanteComDoc(storedPath);
     mockReadFile.mockResolvedValueOnce(PDF_BUFFER as any);
 
@@ -282,7 +281,10 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
 
     // Caminho passado ao readFile não deve conter prefixo duplicado
     // Normaliza separadores de path (Windows usa \, Unix usa /)
-    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(/\\/g, '/');
+    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(
+      /\\/g,
+      '/'
+    );
     expect(calledPath).not.toContain('storage/storage');
     expect(calledPath).toContain(
       'representantes/PF/12345678901/vendedores/98765432100/CAD/cnpj.pdf'
@@ -307,7 +309,10 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
     // Assert
     expect(res.status).toBe(200);
 
-    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(/\\/g, '/');
+    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(
+      /\\/g,
+      '/'
+    );
     expect(calledPath).toContain('cnpj_doc.pdf');
     expect(calledPath).not.toContain('cpf_resp_doc.pdf');
     expect(calledPath).not.toContain('storage/storage');
@@ -327,7 +332,10 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
     // Assert
     expect(res.status).toBe(200);
 
-    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(/\\/g, '/');
+    const calledPath = (mockReadFile.mock.calls[0][0] as string).replace(
+      /\\/g,
+      '/'
+    );
     expect(calledPath).toContain(
       'representantes/PF/12345678901/vendedores/98765432100/CAD/doc.pdf'
     );
@@ -338,8 +346,7 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
 
   it('deve retornar 200 com Content-Type image/png para arquivo PNG', async () => {
     // Arrange
-    const storedPath =
-      'storage/representantes/PF/12345678901/IDENT/cnh.png';
+    const storedPath = 'storage/representantes/PF/12345678901/IDENT/cnh.png';
     mockRepresentanteComDoc(storedPath);
     mockReadFile.mockResolvedValueOnce(PNG_BUFFER as any);
 

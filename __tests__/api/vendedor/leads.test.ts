@@ -135,7 +135,10 @@ describe('GET /api/vendedor/leads', () => {
     // 1) SELECT usuarios
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 10 }], rowCount: 1 } as any);
     // 2) COUNT
-    mockQuery.mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ total: '0' }],
+      rowCount: 1,
+    } as any);
     // 3) SELECT leads
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // 4) SELECT repInfo — sem vínculo ativo
@@ -169,11 +172,13 @@ describe('POST /api/vendedor/leads', () => {
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // 6) SELECT representantes (repPercentuais + modelo_comissionamento)
     mockQuery.mockResolvedValueOnce({
-      rows: [{
-        percentual_comissao: '5',
-        percentual_comissao_comercial: '3',
-        modelo_comissionamento: 'percentual',
-      }],
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+        },
+      ],
       rowCount: 1,
     } as any);
     // 7) INSERT lead
@@ -239,7 +244,11 @@ describe('POST /api/vendedor/leads', () => {
       rowCount: 1,
     } as any);
     const res = await POST(
-      makePostReq({ contato_nome: 'Lead', cnpj: '12345678000190', valor_negociado: 1000 })
+      makePostReq({
+        contato_nome: 'Lead',
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+      })
     );
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/já possui/i);
@@ -257,7 +266,11 @@ describe('POST /api/vendedor/leads', () => {
       rowCount: 1,
     } as any);
     const res = await POST(
-      makePostReq({ contato_nome: 'Lead', cnpj: '12345678000190', valor_negociado: 1000 })
+      makePostReq({
+        contato_nome: 'Lead',
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+      })
     );
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/outro representante/i);
@@ -274,7 +287,11 @@ describe('POST /api/vendedor/leads', () => {
     // entidade check — existe
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 50 }], rowCount: 1 } as any);
     const res = await POST(
-      makePostReq({ contato_nome: 'Entidade Teste', cnpj: '12345678000190', valor_negociado: 1000 })
+      makePostReq({
+        contato_nome: 'Entidade Teste',
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+      })
     );
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/cliente/i);
@@ -293,7 +310,11 @@ describe('POST /api/vendedor/leads', () => {
     // clínica check — existe
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 80 }], rowCount: 1 } as any);
     const res = await POST(
-      makePostReq({ contato_nome: 'Clínica Teste', cnpj: '09110380000191', valor_negociado: 1000 })
+      makePostReq({
+        contato_nome: 'Clínica Teste',
+        cnpj: '09110380000191',
+        valor_negociado: 1000,
+      })
     );
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/clínica/i);
@@ -348,7 +369,13 @@ describe('POST /api/vendedor/leads', () => {
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // 6) repPercentuais — modelo_comissionamento null
     mockQuery.mockResolvedValueOnce({
-      rows: [{ percentual_comissao: null, percentual_comissao_comercial: null, modelo_comissionamento: null }],
+      rows: [
+        {
+          percentual_comissao: null,
+          percentual_comissao_comercial: null,
+          modelo_comissionamento: null,
+        },
+      ],
       rowCount: 1,
     } as any);
 

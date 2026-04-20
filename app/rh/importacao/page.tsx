@@ -344,7 +344,7 @@ export default function ImportacaoPage() {
   const currentStepIndex = stepOrder.indexOf(step);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="w-full p-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link href="/rh" className="text-gray-400 hover:text-gray-600">
