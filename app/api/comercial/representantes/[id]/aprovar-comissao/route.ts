@@ -106,7 +106,12 @@ export async function POST(
     }
 
     const { modelo, percentual } = parsed.data;
-    const percentualComercial = parsed.data.percentual_comissao_comercial ?? 0;
+    // No modelo percentual, derivar automaticamente como 40 − rep% se não informado.
+    const percentualComercial =
+      modelo === 'percentual' &&
+      parsed.data.percentual_comissao_comercial == null
+        ? 40 - (percentual ?? 0)
+        : (parsed.data.percentual_comissao_comercial ?? 0);
     const valorCFEntidade = parsed.data.valor_custo_fixo_entidade ?? null;
     const valorCFClinica = parsed.data.valor_custo_fixo_clinica ?? null;
 

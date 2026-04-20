@@ -354,12 +354,23 @@ describe('13. types.ts — interface Comissao: campos de lote e parcela', () => 
   it('deve ter percentual_comissao como string', () => {
     expect(src).toContain('percentual_comissao: string');
   });
+
+  it('deve ter valor_comissao_comercial como string | null (opcional)', () => {
+    // Adicionado para espelhar o painel de sociedade (fonte da verdade)
+    expect(src).toMatch(/valor_comissao_comercial\??: string \| null/);
+  });
+
+  it('deve ter representante_percentual e vinculo_percentual_comercial', () => {
+    // Campos usados pelo ComissoesTab para derivar repPct e comPct
+    expect(src).toContain('representante_percentual');
+    expect(src).toContain('vinculo_percentual_comercial');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 14. ComissoesTab — colunas espelham o painel comercial
+// 14. ComissoesTab — colunas espelham o painel de sociedade (fonte da verdade)
 // ─────────────────────────────────────────────────────────────────────────────
-describe('14. ComissoesTab — colunas idênticas ao painel comercial', () => {
+describe('14. ComissoesTab — colunas espelham o painel de sociedade (Lote, Valor Total, Comissão, Parcelas)', () => {
   const tabPath = path.join(
     ROOT,
     'app',
@@ -382,8 +393,8 @@ describe('14. ComissoesTab — colunas idênticas ao painel comercial', () => {
     expect(src).toContain('>Valor Total<');
   });
 
-  it('deve ter coluna % no cabeçalho', () => {
-    expect(src).toContain('>%<');
+  it('deve ter coluna Comissão no cabeçalho (renomeada de %)', () => {
+    expect(src).toContain('>Comissão<');
   });
 
   it('deve ter coluna Parcelas no cabeçalho', () => {
@@ -399,9 +410,27 @@ describe('14. ComissoesTab — colunas idênticas ao painel comercial', () => {
     expect(src).toContain('fmt(c.valor_laudo)');
   });
 
-  it('deve renderizar percentual_comissao com %', () => {
-    expect(src).toContain('percentual_comissao');
-    expect(src).toContain('%');
+  it('deve usar valor_comissao do BD para exibir comissão do rep (não cálculo direto)', () => {
+    // Correção: usa c.valor_comissao (gravado no BD) em vez de (valorTotal * pct / 100)
+    expect(src).toContain('fmt(c.valor_comissao)');
+    // Garante que não há cálculo inline do valor do representante
+    expect(src).not.toContain('valorTotal * repPct');
+  });
+
+  it('deve usar valor_comissao_comercial do BD para exibir comissão do comercial', () => {
+    // Correção principal desta refatoração: espelha o painel de sociedade
+    expect(src).toContain('c.valor_comissao_comercial');
+  });
+
+  it('deve exibir breakdown Rep% e Com% na coluna Comissão', () => {
+    expect(src).toContain('% Rep');
+    expect(src).toContain('% Com');
+    expect(src).toContain('repPct');
+    expect(src).toContain('comPct');
+  });
+
+  it('deve renderizar percentual via representante_percentual como fonte primária', () => {
+    expect(src).toContain('representante_percentual');
   });
 
   it('deve renderizar badge X/Y para pagamento parcelado', () => {

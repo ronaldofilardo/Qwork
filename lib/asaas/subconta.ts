@@ -21,6 +21,8 @@ export const CUSTO_MINIMO: Record<'clinica' | 'entidade', number> = {
 /** Percentual máximo de comissão distribuível (representante) */
 export const PERCENTUAL_MAXIMO_COMISSAO = 40;
 
+import { calcularDistribuicaoSociedade } from '../financeiro/sociedade';
+
 // ---------------------------------------------------------------------------
 // Tipos
 // ---------------------------------------------------------------------------
@@ -33,11 +35,22 @@ export interface ResultadoSplit {
   valorRepresentante: number;
   /** Valor que cabe ao comercial (0 se não houver percentual ou wallet configurado) */
   valorComercial: number;
+  valorImpostos?: number;
+  valorGateway?: number;
+  baseLiquida?: number;
   /** Percentual efetivamente aplicado (somente no modelo %) */
   percentualAplicado?: number;
   /** true se o valor é viável (valorQWork >= CUSTO_MINIMO) */
   viavel: boolean;
   modelo: ModeloComissionamento;
+}
+
+export interface OpcoesFinanceirasSplit {
+  percentualImpostos?: number;
+  percentualGateway?: number | null;
+  valorTaxaGateway?: number | null;
+  valorLiquidoGateway?: number | null;
+  metodoPagamento?: string | null;
 }
 
 /** Dados necessários para criar subconta Asaas do representante */
@@ -99,7 +112,8 @@ export function calcularSplit(
   percentual?: number,
   percentualComercial?: number,
   /** Valor custo fixo do representante (R$). Obrigatório para modelo custo_fixo. */
-  valorCustoFixoRep?: number
+  valorCustoFixoRep?: number,
+  opcoes?: OpcoesFinanceirasSplit
 ): ResultadoSplit {
   const custoMinimo = CUSTO_MINIMO[tipoProduto];
   const percComercial =
@@ -107,61 +121,53 @@ export function calcularSplit(
       ? percentualComercial
       : 0;
 
-  if (modelo === 'percentual') {
-    if (
-      percentual === undefined ||
+  if (
+    modelo === 'percentual' &&
+    (percentual === undefined ||
       percentual < 0 ||
-      percentual > PERCENTUAL_MAXIMO_COMISSAO
-    ) {
-      return {
-        valorQWork: valorLaudo,
-        valorRepresentante: 0,
-        valorComercial: 0,
-        viavel: false,
-        modelo,
-      };
-    }
-
-    const valorRepresentante = parseFloat(
-      (valorLaudo * (percentual / 100)).toFixed(2)
-    );
-    const valorComercial = parseFloat(
-      (valorLaudo * (percComercial / 100)).toFixed(2)
-    );
-    const valorQWork = parseFloat(
-      (valorLaudo - valorRepresentante - valorComercial).toFixed(2)
-    );
-    const viavel = valorQWork >= custoMinimo;
-
+      percentual > PERCENTUAL_MAXIMO_COMISSAO)
+  ) {
     return {
-      valorQWork,
-      valorRepresentante,
-      valorComercial,
-      percentualAplicado: percentual,
-      viavel,
+      valorQWork: valorLaudo,
+      valorRepresentante: 0,
+      valorComercial: 0,
+      valorImpostos: 0,
+      valorGateway: 0,
+      baseLiquida: valorLaudo,
+      viavel: false,
       modelo,
     };
   }
 
-  // modelo === 'custo_fixo'
-  // Rep recebe o custo fixo configurado; comercial recebe % da margem; QWork fica com o resto
   const custoFixo =
     valorCustoFixoRep != null && valorCustoFixoRep > 0
       ? valorCustoFixoRep
-      : custoMinimo; // fallback para custo mínimo se não configurado
-  const valorRepresentante = parseFloat(custoFixo.toFixed(2));
-  const margem = parseFloat((valorLaudo - valorRepresentante).toFixed(2));
-  const valorComercial =
-    margem > 0 ? parseFloat((margem * (percComercial / 100)).toFixed(2)) : 0;
-  const valorQWork = parseFloat(
-    (valorLaudo - valorRepresentante - valorComercial).toFixed(2)
-  );
-  const viavel = valorQWork >= custoMinimo;
+      : custoMinimo;
+
+  const distribuicao = calcularDistribuicaoSociedade({
+    valorBruto: valorLaudo,
+    modeloRepresentante: modelo,
+    percentualRepresentante: modelo === 'percentual' ? (percentual ?? 0) : 0,
+    valorRepresentanteFixo: modelo === 'custo_fixo' ? custoFixo : 0,
+    percentualComercial: percComercial,
+    percentualImpostos: opcoes?.percentualImpostos,
+    percentualGateway: opcoes?.percentualGateway,
+    valorTaxaGateway: opcoes?.valorTaxaGateway,
+    valorLiquidoGateway: opcoes?.valorLiquidoGateway,
+    metodoPagamento: opcoes?.metodoPagamento,
+  });
+
+  const valorQWork = Number(distribuicao.valorParaSocios.toFixed(2));
+  const viavel = distribuicao.viavel && valorQWork >= custoMinimo;
 
   return {
     valorQWork,
-    valorRepresentante,
-    valorComercial,
+    valorRepresentante: distribuicao.valorRepresentante,
+    valorComercial: distribuicao.valorComercial,
+    valorImpostos: distribuicao.valorImpostos,
+    valorGateway: distribuicao.valorGateway,
+    baseLiquida: distribuicao.baseLiquida,
+    percentualAplicado: modelo === 'percentual' ? percentual : undefined,
     viavel,
     modelo,
   };

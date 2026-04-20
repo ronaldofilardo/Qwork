@@ -33,7 +33,9 @@ export function useComissoes(): UseComissoesReturn {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFiltro, setStatusFiltro] = useState('');
-  const [mesFilter, setMesFilter] = useState(''); // YYYY-MM
+  const [mesFilter, setMesFilter] = useState(() =>
+    new Date().toISOString().slice(0, 7)
+  ); // YYYY-MM
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [erro, setErro] = useState('');

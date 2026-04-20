@@ -9,6 +9,10 @@ import {
   type BeneficiarioSociedade,
   type ConfiguracaoQWorkSociedade,
 } from '@/lib/financeiro/sociedade';
+import {
+  normalizarDetalhesParcelas,
+  type Parcela,
+} from '@/lib/parcelas-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,6 +20,9 @@ interface PagamentoSociedadeRow {
   id: number;
   asaas_payment_id: string | null;
   valor: string | number | null;
+  asaas_net_value: string | number | null;
+  numero_parcelas: number | null;
+  detalhes_parcelas: Parcela[] | string | null;
   status: string | null;
   metodo: string | null;
   criado_em: string | null;
@@ -35,6 +42,7 @@ interface EventoSociedade {
   metodo: string;
   valorBruto: number;
   valorImpostos: number;
+  valorGateway: number;
   valorRepresentante: number;
   valorComercial: number;
   valorSocioRonaldo: number;
@@ -45,6 +53,7 @@ interface EventoSociedade {
 interface ResumoPeriodo {
   entradaBruta: number;
   impostos: number;
+  gateway: number;
   representantes: number;
   comercial: number;
   ronaldo: number;
@@ -74,13 +83,77 @@ function startOfToday(): Date {
   return date;
 }
 
-function aggregateResumo(eventos: EventoSociedade[], from: Date): ResumoPeriodo {
+function getParcelasAuditadas(row: PagamentoSociedadeRow): Array<{
+  numero: number;
+  total: number;
+  valor: number;
+  data: string;
+}> {
+  const valorTotal = toNumber(row.valor);
+  const totalParcelas = Math.max(1, Number(row.numero_parcelas ?? 1));
+  const dataFallback =
+    row.data_pagamento ?? row.criado_em ?? new Date().toISOString();
+
+  if (!row.detalhes_parcelas || totalParcelas <= 1) {
+    return [
+      {
+        numero: 1,
+        total: 1,
+        valor: valorTotal,
+        data: dataFallback,
+      },
+    ];
+  }
+
+  try {
+    const detalhes =
+      typeof row.detalhes_parcelas === 'string'
+        ? (JSON.parse(row.detalhes_parcelas) as Parcela[])
+        : row.detalhes_parcelas;
+
+    const normalizadas = normalizarDetalhesParcelas(
+      Array.isArray(detalhes) ? detalhes : [],
+      row.status ?? '',
+      row.data_pagamento ?? null
+    );
+
+    const pagas = normalizadas.filter(
+      (parcela) => parcela.pago || parcela.status === 'pago'
+    );
+
+    if (pagas.length === 0) {
+      return [];
+    }
+
+    return pagas.map((parcela) => ({
+      numero: parcela.numero,
+      total: normalizadas.length || totalParcelas,
+      valor: toNumber(parcela.valor),
+      data: parcela.data_pagamento ?? dataFallback,
+    }));
+  } catch {
+    return [
+      {
+        numero: 1,
+        total: totalParcelas,
+        valor: valorTotal,
+        data: dataFallback,
+      },
+    ];
+  }
+}
+
+function aggregateResumo(
+  eventos: EventoSociedade[],
+  from: Date
+): ResumoPeriodo {
   const filtered = eventos.filter((evento) => new Date(evento.data) >= from);
 
   return filtered.reduce<ResumoPeriodo>(
     (acc, evento) => {
       acc.entradaBruta += evento.valorBruto;
       acc.impostos += evento.valorImpostos;
+      acc.gateway += evento.valorGateway;
       acc.representantes += evento.valorRepresentante;
       acc.comercial += evento.valorComercial;
       acc.ronaldo += evento.valorSocioRonaldo;
@@ -91,6 +164,7 @@ function aggregateResumo(eventos: EventoSociedade[], from: Date): ResumoPeriodo 
     {
       entradaBruta: 0,
       impostos: 0,
+      gateway: 0,
       representantes: 0,
       comercial: 0,
       ronaldo: 0,
@@ -130,87 +204,47 @@ function buildMensagensSimuladas(eventos: EventoSociedade[]) {
   });
 }
 
-async function relationExists(relationName: string): Promise<boolean> {
-  try {
-    const result = await query<{ exists: boolean }>(
-      `SELECT to_regclass($1) IS NOT NULL AS exists`,
-      [relationName]
-    );
-
-    return Boolean(result.rows[0]?.exists);
-  } catch {
-    return false;
-  }
-}
-
 async function getPagamentosSociedade(
   dias: number
 ): Promise<PagamentoSociedadeRow[]> {
   try {
-    const [hasPagamentos, hasTomadores, hasRepasses, hasRepresentantes] =
-      await Promise.all([
-        relationExists('public.pagamentos'),
-        relationExists('public.tomadores'),
-        relationExists('public.repasses_split'),
-        relationExists('public.representantes'),
-      ]);
-
-    if (!hasPagamentos) {
-      return [];
-    }
-
-    if (!hasRepasses || !hasRepresentantes) {
-      const result = await query<PagamentoSociedadeRow>(
-        `SELECT
-           p.id,
-           p.asaas_payment_id,
-           p.valor,
-           p.status,
-           p.metodo,
-           p.criado_em,
-           p.data_pagamento,
-           ${hasTomadores ? "COALESCE(t.nome, 'Tomador #' || COALESCE(p.entidade_id, p.clinica_id)::text)" : "'Tomador #' || COALESCE(p.entidade_id, p.clinica_id)::text"} AS tomador_nome,
-           NULL AS representante_nome,
-           0 AS valor_representante,
-           0 AS valor_comercial
-         FROM pagamentos p
-         ${hasTomadores ? 'LEFT JOIN tomadores t ON t.id = COALESCE(p.entidade_id, p.clinica_id)' : ''}
-         WHERE p.status = 'pago'
-           AND COALESCE(p.data_pagamento, p.criado_em) >= NOW() - ($1::text || ' days')::interval
-         ORDER BY COALESCE(p.data_pagamento, p.criado_em) DESC
-         LIMIT 100`,
-        [String(dias)]
-      );
-
-      return result.rows;
-    }
-
+    // Fonte autoritativa: comissoes_laudo via lotes_avaliacao.
+    // repasses_split foi removida na migration 1212 — não é mais usada.
+    // Não há FK direto pagamentos↔lotes_avaliacao; busca-se pagamento pelo match entidade_id/clinica_id + pago.
     const result = await query<PagamentoSociedadeRow>(
       `SELECT
-         p.id,
-         p.asaas_payment_id,
-         p.valor,
-         p.status,
-         p.metodo,
-         p.criado_em,
-         p.data_pagamento,
-         COALESCE(t.nome, 'Tomador #' || COALESCE(p.entidade_id, p.clinica_id)::text) AS tomador_nome,
+         la.id,
+         COALESCE(p.asaas_payment_id, NULL::varchar) AS asaas_payment_id,
+         COALESCE(cl_agg.valor_laudo, 0)::numeric(10,2) AS valor,
+         COALESCE(p.asaas_net_value, 0)::numeric(10,2) AS asaas_net_value,
+         la.pagamento_parcelas AS numero_parcelas,
+         NULL::jsonb AS detalhes_parcelas,
+         'pago' AS status,
+         la.pagamento_metodo AS metodo,
+         la.criado_em::text,
+         la.pago_em::text AS data_pagamento,
+         COALESCE(t.nome, 'Tomador #' || COALESCE(la.entidade_id, la.clinica_id)::text) AS tomador_nome,
          r.nome AS representante_nome,
-         COALESCE(rs.valor_representante, 0) AS valor_representante,
-         COALESCE(rs.valor_comercial, 0) AS valor_comercial
-       FROM pagamentos p
-       LEFT JOIN tomadores t ON t.id = COALESCE(p.entidade_id, p.clinica_id)
+         COALESCE(cl_agg.valor_representante, 0) AS valor_representante,
+         COALESCE(cl_agg.valor_comercial, 0) AS valor_comercial
+       FROM lotes_avaliacao la
+       LEFT JOIN tomadores t ON t.id = COALESCE(la.entidade_id, la.clinica_id)
+       LEFT JOIN pagamentos p ON p.status = 'pago'
+         AND COALESCE(p.entidade_id, p.clinica_id) = COALESCE(la.entidade_id, la.clinica_id)
+         AND ABS(EXTRACT(EPOCH FROM (p.data_pagamento - la.pago_em))) < 86400
        LEFT JOIN LATERAL (
-         SELECT representante_id, valor_representante, COALESCE(valor_comercial, 0) AS valor_comercial
-           FROM repasses_split
-          WHERE asaas_payment_id = p.asaas_payment_id
-          ORDER BY id DESC
-          LIMIT 1
-       ) rs ON TRUE
-       LEFT JOIN representantes r ON r.id = rs.representante_id
-       WHERE p.status = 'pago'
-         AND COALESCE(p.data_pagamento, p.criado_em) >= NOW() - ($1::text || ' days')::interval
-       ORDER BY COALESCE(p.data_pagamento, p.criado_em) DESC
+         SELECT
+           MIN(c.representante_id) AS first_rep_id,
+           COALESCE(SUM(c.valor_comissao), 0) AS valor_representante,
+           COALESCE(SUM(c.valor_comissao_comercial), 0) AS valor_comercial,
+           MAX(c.valor_laudo) AS valor_laudo
+         FROM comissoes_laudo c
+         WHERE c.lote_pagamento_id = la.id
+       ) cl_agg ON TRUE
+       LEFT JOIN representantes r ON r.id = cl_agg.first_rep_id
+       WHERE la.status_pagamento = 'pago'
+         AND la.pago_em >= NOW() - ($1::text || ' days')::interval
+       ORDER BY la.pago_em DESC
        LIMIT 100`,
       [String(dias)]
     );
@@ -218,7 +252,7 @@ async function getPagamentosSociedade(
     return result.rows;
   } catch (error) {
     console.warn(
-      '[Sociedade] Fallback para pagamentos/repasses:',
+      '[Sociedade] getPagamentosSociedade error:',
       error instanceof Error ? error.message : String(error)
     );
     return [];
@@ -227,18 +261,13 @@ async function getPagamentosSociedade(
 
 async function getComercialWalletCount(): Promise<number> {
   try {
-    const result = await query<{ total: string | number }>(
-      `SELECT COUNT(*) AS total
-         FROM usuarios
-        WHERE tipo_usuario = 'comercial'
-          AND ativo = TRUE
-          AND asaas_wallet_id IS NOT NULL`
+    const result = await query<{ count: string | number }>(
+      `SELECT COUNT(*) AS count FROM beneficiarios_sociedade WHERE codigo = 'comercial' AND asaas_wallet_id IS NOT NULL`
     );
-
-    return toNumber(result.rows[0]?.total);
+    return toNumber(result.rows[0]?.count ?? 0);
   } catch (error) {
     console.warn(
-      '[Sociedade] Fallback para wallets do comercial:',
+      '[Sociedade] getComercialWalletCount error:',
       error instanceof Error ? error.message : String(error)
     );
     return 0;
@@ -250,7 +279,10 @@ async function getRepresentantesWalletStats(): Promise<{
   semWallet: number;
 }> {
   try {
-    const result = await query<{ com_wallet: string | number; sem_wallet: string | number }>(
+    const result = await query<{
+      com_wallet: string | number;
+      sem_wallet: string | number;
+    }>(
       `SELECT
          COUNT(*) FILTER (WHERE asaas_wallet_id IS NOT NULL) AS com_wallet,
          COUNT(*) FILTER (WHERE asaas_wallet_id IS NULL) AS sem_wallet
@@ -263,7 +295,7 @@ async function getRepresentantesWalletStats(): Promise<{
     };
   } catch (error) {
     console.warn(
-      '[Sociedade] Fallback para wallets de representantes:',
+      '[Sociedade] getRepresentantesWalletStats error:',
       error instanceof Error ? error.message : String(error)
     );
     return {
@@ -385,47 +417,116 @@ export async function GET(request: NextRequest) {
     await requireRole('admin', true);
 
     const { searchParams } = new URL(request.url);
-    const dias = Math.min(Math.max(Number(searchParams.get('dias') ?? 30), 7), 90);
+    const dias = Math.min(
+      Math.max(Number(searchParams.get('dias') ?? 30), 7),
+      90
+    );
 
-    const [qworkInfo, beneficiariosInfo, pagamentosRows, comercialWalletCount, repWalletStats] =
-      await Promise.all([
-        getQWorkConfig(),
-        getBeneficiarios(),
-        getPagamentosSociedade(dias),
-        getComercialWalletCount(),
-        getRepresentantesWalletStats(),
-      ]);
+    const [
+      qworkInfo,
+      beneficiariosInfo,
+      pagamentosRows,
+      comercialWalletCount,
+      repWalletStats,
+    ] = await Promise.all([
+      getQWorkConfig(),
+      getBeneficiarios(),
+      getPagamentosSociedade(dias),
+      getComercialWalletCount(),
+      getRepresentantesWalletStats(),
+    ]);
 
-    const eventosRecentes = pagamentosRows.map<EventoSociedadeRowToEvento>((row) => row).map((row) => {
-      const valorBruto = toNumber(row.valor);
-      const valorRepresentante = toNumber(row.valor_representante);
-      const valorComercial = toNumber(row.valor_comercial);
-      const baseMargemLivre = valorBruto - toNumber(valorBruto * 0.07) - valorRepresentante;
-      const percentualComercial = baseMargemLivre > 0 ? (valorComercial / baseMargemLivre) * 100 : 0;
+    const eventosRecentes = pagamentosRows
+      .flatMap((row) => {
+        const valorBrutoTotal = toNumber(row.valor);
+        const valorRepresentanteTotal = toNumber(row.valor_representante);
+        const valorComercialTotal = toNumber(row.valor_comercial);
+        const valorLiquidoGatewayTotal = toNumber(row.asaas_net_value);
+        const valorGatewayTotal =
+          valorLiquidoGatewayTotal > 0 &&
+          valorLiquidoGatewayTotal <= valorBrutoTotal
+            ? toNumber(valorBrutoTotal - valorLiquidoGatewayTotal)
+            : 0;
 
-      const distribuicao = calcularDistribuicaoSociedade({
-        valorBruto,
-        modeloRepresentante: 'custo_fixo',
-        valorRepresentanteFixo: valorRepresentante,
-        percentualComercial,
-      });
+        const parcelas = getParcelasAuditadas(row);
+        const eventosBase = parcelas.length
+          ? parcelas
+          : [
+              {
+                numero: 1,
+                total: Math.max(1, Number(row.numero_parcelas ?? 1)),
+                valor: valorBrutoTotal,
+                data:
+                  row.data_pagamento ??
+                  row.criado_em ??
+                  new Date().toISOString(),
+              },
+            ];
 
-      return {
-        id: String(row.id),
-        data: row.data_pagamento ?? row.criado_em ?? new Date().toISOString(),
-        tomador: row.tomador_nome ?? 'Tomador não identificado',
-        pagamentoId: row.asaas_payment_id,
-        status: row.status ?? 'pago',
-        metodo: row.metodo ?? 'asaas',
-        valorBruto,
-        valorImpostos: distribuicao.valorImpostos,
-        valorRepresentante,
-        valorComercial,
-        valorSocioRonaldo: distribuicao.valorSocioRonaldo,
-        valorSocioAntonio: distribuicao.valorSocioAntonio,
-        representanteNome: row.representante_nome ?? null,
-      } satisfies EventoSociedade;
-    });
+        return eventosBase.map((parcela) => {
+          const proporcao =
+            valorBrutoTotal > 0
+              ? Math.min(1, Math.max(0, parcela.valor / valorBrutoTotal))
+              : 1;
+
+          const valorBruto = toNumber(parcela.valor);
+          const valorRepresentante = toNumber(
+            valorRepresentanteTotal * proporcao
+          );
+          const valorComercial = toNumber(valorComercialTotal * proporcao);
+          const valorGatewayParcela =
+            valorGatewayTotal > 0 ? toNumber(valorGatewayTotal * proporcao) : 0;
+          const valorLiquidoGateway =
+            valorGatewayParcela > 0
+              ? toNumber(valorBruto - valorGatewayParcela)
+              : undefined;
+
+          const distribuicaoBase = calcularDistribuicaoSociedade({
+            valorBruto,
+            valorLiquidoGateway,
+            metodoPagamento: row.metodo,
+            modeloRepresentante: 'custo_fixo',
+            valorRepresentanteFixo: valorRepresentante,
+            percentualComercial: 0,
+          });
+
+          const percentualComercial =
+            distribuicaoBase.margemLivre > 0
+              ? (valorComercial / distribuicaoBase.margemLivre) * 100
+              : 0;
+
+          const distribuicao = calcularDistribuicaoSociedade({
+            valorBruto,
+            valorLiquidoGateway,
+            metodoPagamento: row.metodo,
+            modeloRepresentante: 'custo_fixo',
+            valorRepresentanteFixo: valorRepresentante,
+            percentualComercial,
+          });
+
+          return {
+            id: `${row.id}-${parcela.numero}`,
+            data: parcela.data,
+            tomador:
+              eventosBase.length > 1
+                ? `${row.tomador_nome ?? 'Tomador não identificado'} · Parcela ${parcela.numero}/${parcela.total}`
+                : (row.tomador_nome ?? 'Tomador não identificado'),
+            pagamentoId: row.asaas_payment_id,
+            status: row.status ?? 'pago',
+            metodo: row.metodo ?? 'asaas',
+            valorBruto,
+            valorImpostos: distribuicao.valorImpostos,
+            valorGateway: distribuicao.valorGateway,
+            valorRepresentante,
+            valorComercial,
+            valorSocioRonaldo: distribuicao.valorSocioRonaldo,
+            valorSocioAntonio: distribuicao.valorSocioAntonio,
+            representanteNome: row.representante_nome ?? null,
+          } satisfies EventoSociedade;
+        });
+      })
+      .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
+      .slice(0, 100);
 
     const hoje = startOfToday();
     const inicioSemana = new Date(hoje);
@@ -435,9 +536,11 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      modoOperacao: process.env.ASAAS_SPLIT_MODE === 'real' ? 'real' : 'simulacao',
+      modoOperacao:
+        process.env.ASAAS_SPLIT_MODE === 'real' ? 'real' : 'simulacao',
       persistenciaDisponivel:
-        beneficiariosInfo.persistenciaDisponivel && qworkInfo.persistenciaDisponivel,
+        beneficiariosInfo.persistenciaDisponivel &&
+        qworkInfo.persistenciaDisponivel,
       qwork: qworkInfo.qwork,
       beneficiarios: beneficiariosInfo.beneficiarios,
       configuracao: {
@@ -448,10 +551,12 @@ export async function GET(request: NextRequest) {
         representantesComWallet: repWalletStats.comWallet,
         representantesSemWallet: repWalletStats.semWallet,
         socioRonaldoWalletConfigurada: Boolean(
-          beneficiariosInfo.beneficiarios.find((item) => item.id === 'ronaldo')?.walletId
+          beneficiariosInfo.beneficiarios.find((item) => item.id === 'ronaldo')
+            ?.walletId
         ),
         socioAntonioWalletConfigurada: Boolean(
-          beneficiariosInfo.beneficiarios.find((item) => item.id === 'antonio')?.walletId
+          beneficiariosInfo.beneficiarios.find((item) => item.id === 'antonio')
+            ?.walletId
         ),
       },
       resumo: {
@@ -469,7 +574,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'MFA_REQUIRED',
-          message: 'Autenticação de dois fatores requerida para visualizar a Sociedade.',
+          message:
+            'Autenticação de dois fatores requerida para visualizar a Sociedade.',
         },
         { status: 403 }
       );
@@ -481,8 +587,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
-type EventoSociedadeRowToEvento = PagamentoSociedadeRow;
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -555,7 +659,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         {
           error: 'MFA_REQUIRED',
-          message: 'Autenticação de dois fatores requerida para editar a Sociedade.',
+          message:
+            'Autenticação de dois fatores requerida para editar a Sociedade.',
         },
         { status: 403 }
       );

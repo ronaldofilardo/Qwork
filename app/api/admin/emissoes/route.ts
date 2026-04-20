@@ -12,10 +12,16 @@ export async function GET() {
       SELECT
         vs.*,
         pg.detalhes_parcelas,
-        COALESCE(cl.isento_pagamento, ent.isento_pagamento, false)::boolean AS isento_pagamento
+        COALESCE(cl.isento_pagamento, ent.isento_pagamento, false)::boolean AS isento_pagamento,
+        COALESCE(av.num_avaliacoes_cobradas, 0)::int AS num_avaliacoes_cobradas
       FROM v_solicitacoes_emissao vs
       LEFT JOIN clinicas cl ON cl.id = vs.clinica_id
       LEFT JOIN entidades ent ON ent.id = vs.entidade_id
+      LEFT JOIN LATERAL (
+        SELECT COUNT(DISTINCT a.id) FILTER (WHERE a.status != 'rascunho')::int AS num_avaliacoes_cobradas
+        FROM avaliacoes a
+        WHERE a.lote_id = vs.lote_id
+      ) av ON true
       LEFT JOIN LATERAL (
         -- Prioriza o pagamento que referencia explicitamente este lote (dados_adicionais->lote_id).
         -- Fallback: pagamento mais recente da entidade/clínica (pagamentos antigos sem lote_id).
@@ -57,9 +63,27 @@ export async function GET() {
       }
     }
     const solicitacoes = Array.from(seenLotes.values()).map((row) => {
+      const numAvaliacoesCobradas = Number(
+        row.num_avaliacoes_cobradas ?? row.num_avaliacoes_concluidas ?? 0
+      );
+      const valorUnitario = Number(
+        row.valor_por_funcionario ??
+          row.lead_valor_negociado ??
+          row.valor_negociado_vinculo ??
+          0
+      );
+
+      const rowNormalizada = {
+        ...row,
+        // Compatibilidade com consumidores legados da view.
+        num_avaliacoes_cobradas: numAvaliacoesCobradas,
+        num_avaliacoes_concluidas: numAvaliacoesCobradas,
+        valor_total_calculado: valorUnitario * numAvaliacoesCobradas,
+      };
+
       if (row.isento_pagamento === true) {
         return {
-          ...row,
+          ...rowNormalizada,
           status_pagamento: 'pago',
           pagamento_metodo: row.pagamento_metodo || 'isento',
           pagamento_parcelas: row.pagamento_parcelas || 1,
@@ -67,7 +91,7 @@ export async function GET() {
         };
       }
 
-      return row;
+      return rowNormalizada;
     });
 
     console.log(

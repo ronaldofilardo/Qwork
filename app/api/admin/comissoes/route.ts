@@ -65,15 +65,17 @@ export async function GET(request: NextRequest) {
     // Resumo geral para o painel admin
     const resumo = await query(
       `SELECT
-         COUNT(*)                                                                          AS total_comissoes,
-         COUNT(*) FILTER (WHERE c.status::text = 'retida')                                        AS pendentes_consolidacao,
-         COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                    AS liberadas,
-         COUNT(*) FILTER (WHERE c.status::text = 'paga')                                        AS pagas,
-         COUNT(*) FILTER (WHERE c.status::text LIKE 'congelada%')                               AS congeladas,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'retida'),0)              AS valor_a_pagar,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'),0)                AS valor_pago_total,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'),0)            AS valor_liberado
-       FROM comissoes_laudo c`
+         COUNT(*) AS total_comissoes,
+         COUNT(*) FILTER (WHERE c.status::text = 'retida') AS pendentes_consolidacao,
+         COUNT(*) FILTER (WHERE c.status::text = 'liberada') AS liberadas,
+         COUNT(*) FILTER (WHERE c.status::text = 'paga') AS pagas,
+         COUNT(*) FILTER (WHERE c.status::text LIKE 'congelada%') AS congeladas,
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'retida'),0) AS valor_a_pagar,
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'),0) AS valor_pago_total,
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'),0) AS valor_liberado
+       FROM comissoes_laudo c
+       ${where}`,
+      params
     );
 
     const countResult = await query<{ total: string }>(
@@ -82,7 +84,7 @@ export async function GET(request: NextRequest) {
     );
     const total = parseInt(countResult.rows[0]?.total ?? '0', 10);
 
-    params.push(limit, offset);
+    const listParams = [...params, limit, offset];
     const rows = await query(
       `SELECT
          c.*,
@@ -93,16 +95,19 @@ export async function GET(request: NextRequest) {
          COALESCE(e.nome, cl.nome) AS entidade_nome,
          c.lote_pagamento_id,
          la.pagamento_metodo           AS lote_pagamento_metodo,
-         la.pagamento_parcelas         AS lote_pagamento_parcelas
+         la.pagamento_parcelas         AS lote_pagamento_parcelas,
+         r.percentual_comissao         AS representante_percentual,
+         vc.percentual_comissao_comercial AS vinculo_percentual_comercial
        FROM comissoes_laudo c
        JOIN  representantes r  ON r.id  = c.representante_id
        LEFT JOIN entidades e   ON e.id  = c.entidade_id
        LEFT JOIN clinicas  cl  ON cl.id = c.clinica_id
        LEFT JOIN lotes_avaliacao la ON la.id = c.lote_pagamento_id
+       LEFT JOIN vinculos_comissao vc ON vc.id = c.vinculo_id
        ${where}
        ORDER BY c.criado_em DESC
        LIMIT $${i} OFFSET $${i + 1}`,
-      params
+      listParams
     );
 
     return NextResponse.json({

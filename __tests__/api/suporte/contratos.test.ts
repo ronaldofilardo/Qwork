@@ -145,18 +145,17 @@ describe('GET /api/suporte/contratos', () => {
     expect(semLaudo.total_laudos).toBe('0');
   });
 
-  it('a query usa vinculos_comissao como tabela principal (LEFT JOIN)', async () => {
+  it('a query parte das entidades e clínicas cadastradas com vínculo opcional', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     expect(mockQuery).toHaveBeenCalledTimes(1);
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
-    expect(sql).toContain('from public.vinculos_comissao');
-    expect(sql).toContain('left join public.comissoes_laudo');
+    expect(sql).toContain('from entidades');
+    expect(sql).toContain('from clinicas');
+    expect(sql).toContain('left join lateral');
+    expect(sql).toContain('from public.vinculos_comissao v');
     expect(sql).toContain('left join public.representantes');
-    // COALESCE para CPF de PF e PJ
     expect(sql).toContain('cpf_responsavel_pj');
-    // Agrega por vínculo
-    expect(sql).toContain('count(distinct cl.laudo_id)');
   });
 
   it('não inclui campo valor_qwork na query', async () => {
@@ -196,12 +195,23 @@ describe('GET /api/suporte/contratos', () => {
     expect(body.contratos[0].isento_pagamento).toBe(false);
   });
 
-  it('a query inclui COALESCE de clin.isento_pagamento e ent.isento_pagamento', async () => {
+  it('a query preserva o campo isento_pagamento para qualquer tomador cadastrado', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
     expect(sql).toContain(
-      'coalesce(clin.isento_pagamento, ent.isento_pagamento, false)'
+      'coalesce(e.isento_pagamento, false)::boolean as isento_pagamento'
     );
+    expect(sql).toContain(
+      'coalesce(cl.isento_pagamento, false)::boolean as isento_pagamento'
+    );
+  });
+
+  it('busca a data real do contrato do tomador mesmo sem lead', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] } as never);
+    await GET();
+    const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
+    expect(sql).toContain('from contratos c');
+    expect(sql).toContain('c.tomador_id = tb.id');
   });
 });

@@ -25,17 +25,17 @@ const COMMISSION_TRANSITIONS: Record<
   retida: {
     congelada_aguardando_admin: (ctx) => !!ctx?.admin_cpf,
     liberada: (ctx) => !!ctx?.admin_cpf,
-    cancelada: (ctx) => !!ctx?.admin_cpf && !!ctx?.motivo,
+    cancelada: (ctx) => !!ctx?.admin_cpf,
   },
   congelada_aguardando_admin: {
     retida: (ctx) => !!ctx?.admin_cpf, // descongelar → volta para retida
     liberada: (ctx) => !!ctx?.admin_cpf,
-    cancelada: (ctx) => !!ctx?.admin_cpf && !!ctx?.motivo,
+    cancelada: (ctx) => !!ctx?.admin_cpf,
   },
   liberada: {
     paga: (ctx) => !!ctx?.admin_cpf,
     congelada_aguardando_admin: (ctx) => !!ctx?.admin_cpf && !!ctx?.motivo,
-    cancelada: (ctx) => !!ctx?.admin_cpf && !!ctx?.motivo,
+    cancelada: (ctx) => !!ctx?.admin_cpf,
   },
   paga: {
     // Estado final — sem transições de saída

@@ -13,7 +13,7 @@
  *   - percentual_comissao_comercial=$10 e valor_comissao_comercial=$11 no INSERT
  *   - status_comissao moveu de $10 para $12
  * - Adições 2026 (Plano v2):
- *   - base de cálculo sempre BRUTA (valor_laudo/totalParc), não netValue do Asaas
+ *   - base de cálculo líquida: bruto → impostos → taxa gateway → comissão
  *   - status 'paga' direto quando rep apto + parcela confirmada + !forcar_retida
  */
 
@@ -350,8 +350,8 @@ describe('criarComissaoAdmin', () => {
       await criarComissaoAdmin({ ...BASE_PARAMS, valor_laudo: 33 });
 
       const insertValues = mockQuery.mock.calls[4][1];
-      // $9 = valor_comissao (índice 8) = 33 × 10 / 100 = 3.30
-      expect(insertValues[8]).toBeCloseTo(3.3, 2);
+      // $9 = valor_comissao (índice 8) = (33 − 7%) × 10% = 3.07
+      expect(insertValues[8]).toBeCloseTo(3.07, 2);
     });
 
     it('deve usar clinica_id quando entidade_id não fornecida', async () => {
@@ -462,6 +462,68 @@ describe('criarComissaoAdmin', () => {
       const insertValues = mockQuery.mock.calls[4][1];
       // base = jan/2027, + 2 meses = mar/2027
       expect(insertValues[13]).toBe('2027-03-01');
+    });
+  });
+
+  // ── Fallback 40 − rep% (regra QWork — cenário lote 8 / rep 115) ──────────
+  describe('fallback percComercialVinculo = 40 − rep% quando comercial zerado', () => {
+    it('deve derivar percComercialVinculo = 30 quando rep=10% e vínculo tem comercial=0', async () => {
+      // mockFluxoCompleto usa percentual_comissao_comercial: 0 no vínculo (padrão)
+      mockFluxoCompleto({ repStatus: 'apto', percentual: '10.00' });
+
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_confirmada_em: new Date('2026-01-10T10:00:00.000Z'),
+      });
+
+      const insertValues = mockQuery.mock.calls[4][1];
+      // $10 = percComercialVinculo efetivo (índice 9) → deve ser 30 (40 − 10)
+      expect(insertValues[9]).toBe(30);
+      // $11 = valorComissaoComercial (índice 10) → deve ser > 0
+      expect(Number(insertValues[10])).toBeGreaterThan(0);
+    });
+
+    it('deve manter percComercialVinculo do vínculo quando já for > 0', async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
+        .mockResolvedValueOnce({
+          rows: [{ id: 4, status: 'ativo', data_expiracao: null }],
+          rowCount: 1,
+        } as any)
+        .mockResolvedValueOnce({
+          rows: [{ id: 6, status: 'apto', percentual_comissao: '10.00' }],
+          rowCount: 1,
+        } as any)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              percentual_comissao_representante: '10.00',
+              valor_negociado: null,
+              // vínculo já tem 25% → não deve derivar
+              percentual_comissao_comercial: 25,
+            },
+          ],
+          rowCount: 1,
+        } as any)
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 99,
+              status: 'retida',
+              valor_comissao: '2.00',
+              percentual_comissao: '10',
+            },
+          ],
+          rowCount: 1,
+        } as any)
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+      await criarComissaoAdmin(BASE_PARAMS);
+
+      const insertValues = mockQuery.mock.calls[4][1];
+      // vínculo já tinha 25% → sem fallback, deve ser 25
+      expect(insertValues[9]).toBe(25);
     });
   });
 });
