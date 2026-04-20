@@ -15,6 +15,7 @@ jest.mock('bcryptjs');
 jest.mock('@/lib/session');
 jest.mock('@/lib/rate-limit', () => ({
   rateLimit: jest.fn(() => jest.fn(() => null)), // Desabilita rate limit para testes
+  rateLimitAsync: jest.fn().mockResolvedValue(null), // Desabilita rate limit async para testes
   RATE_LIMIT_CONFIGS: { auth: {} },
 }));
 

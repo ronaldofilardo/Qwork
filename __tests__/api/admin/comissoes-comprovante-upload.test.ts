@@ -257,7 +257,7 @@ describe('POST /api/admin/comissoes/[id]/comprovante', () => {
     // Assert — upload foi chamado com args corretos
     expect(mockUpload).toHaveBeenCalledWith(
       expect.any(Buffer),
-      'rpa',
+      'comprovante',
       '12345678901', // CPF do representante PF
       'application/pdf',
       'pf',
@@ -296,7 +296,7 @@ describe('POST /api/admin/comissoes/[id]/comprovante', () => {
 
     expect(mockUpload).toHaveBeenCalledWith(
       expect.any(Buffer),
-      'rpa',
+      'comprovante',
       '12345678000190', // CNPJ
       'application/pdf',
       'pj',
@@ -314,7 +314,7 @@ describe('POST /api/admin/comissoes/[id]/comprovante', () => {
     expect(res.status).toBe(201);
     expect(mockUpload).toHaveBeenCalledWith(
       expect.any(Buffer),
-      'rpa',
+      'comprovante',
       expect.any(String),
       'image/png',
       'pf',

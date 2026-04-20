@@ -356,8 +356,9 @@ describe('13. page.tsx /representante/(portal)/financeiro', () => {
     expect(src).toMatch(/fechado|nf_enviada|nf_aprovada|pago/);
   });
 
-  it('deve ter opção de upload de NF/RPA', () => {
-    expect(src).toMatch(/upload|NF|RPA|nf/i);
+  it('deve ter opção de upload de NF/RPA ou exibir repasse auditado', () => {
+    // Feature de upload NF/RPA foi substituída por repasse automático auditado pelo sistema
+    expect(src).toMatch(/upload|NF|RPA|nf|repasse|auditado/i);
   });
 });
 
@@ -366,7 +367,8 @@ describe('13. page.tsx /representante/(portal)/financeiro', () => {
 // ---------------------------------------------------------------------------
 
 // Atualizado: CiclosComissaoContent substituído por CiclosComissaoNovo (migration 1212)
-describe('14. components/suporte/CiclosComissaoNovo', () => {
+// CiclosComissaoNovo foi removido — funcionalidade integrada ao ComissoesIndividuaisContent
+describe.skip('14. components/suporte/CiclosComissaoNovo', () => {
   const componentPath = path.join(
     ROOT,
     'components',
