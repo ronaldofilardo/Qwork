@@ -26,8 +26,7 @@ export interface CreatetomadorOptions {
     | 'aprovado'
     | 'rejeitado'
     | 'em_reanalise'
-    | 'aguardando_pagamento'
-    | 'pago';
+    | 'aguardando_pagamento';
   responsavel_nome?: string;
   responsavel_cpf?: string;
   responsavel_email?: string;
@@ -43,8 +42,7 @@ export interface CreateContratoOptions {
     | 'aprovado'
     | 'rejeitado'
     | 'em_reanalise'
-    | 'aguardando_pagamento'
-    | 'pago';
+    | 'aguardando_pagamento';
   conteudo?: string;
 }
 

@@ -19,12 +19,6 @@ export const GET = async (
   let user;
   try {
     user = await requireRole('emissor');
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Acesso negado', success: false },
-        { status: 403 }
-      );
-    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -245,12 +239,6 @@ export const PUT = async (
 ) => {
   try {
     const user = await requireRole('emissor');
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Acesso negado', success: false },
-        { status: 403 }
-      );
-    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -281,12 +269,6 @@ export const PATCH = async (
   let user;
   try {
     user = await requireRole('emissor');
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Acesso negado', success: false },
-        { status: 403 }
-      );
-    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -383,12 +365,6 @@ export const POST = async (
   let user: Awaited<ReturnType<typeof requireRole>> | null;
   try {
     user = await requireRole('emissor');
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Acesso negado', success: false },
-        { status: 403 }
-      );
-    }
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },

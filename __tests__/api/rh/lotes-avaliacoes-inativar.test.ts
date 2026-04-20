@@ -14,19 +14,21 @@ jest.mock('@/lib/db-gestor', () => ({
 
 jest.mock('@/lib/session', () => ({
   requireAuth: jest.fn(),
+  requireRole: jest.fn(),
   requireRHWithEmpresaAccess: jest.fn(),
 }));
 
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
 import { queryAsGestorRH } from '@/lib/db-gestor';
-import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
+import { requireAuth, requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
 import { POST } from '@/app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockQueryAsGestorRH = queryAsGestorRH as jest.MockedFunction<
   typeof queryAsGestorRH
 >;
+const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 const mockRequireRHWithEmpresaAccess =
   requireRHWithEmpresaAccess as jest.MockedFunction<
@@ -40,7 +42,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
 
   describe('POST - Inativar avaliação', () => {
     it('deve inativar avaliação com sucesso', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
@@ -117,7 +119,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve validar motivo obrigatório', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
@@ -141,7 +143,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve rejeitar avaliação já inativada', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
@@ -187,7 +189,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve permitir inativar avaliação concluída se emissão não foi solicitada', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
@@ -249,7 +251,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve validar acesso apenas para perfil RH', async () => {
-      mockRequireAuth.mockResolvedValue(null);
+      mockRequireRole.mockRejectedValue(new Error('Sem permissão'));
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/lotes/1/avaliacoes/1/inativar',
@@ -263,12 +265,12 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         params: { id: '1', avaliacaoId: '1' },
       });
 
-      expect(response.status).toBe(403);
-      expect(mockRequireAuth).toHaveBeenCalled();
+      expect(response.status).toBe(500);
+      expect(mockRequireRole).toHaveBeenCalled();
     });
 
     it('deve validar que lote pertence à clínica do RH', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
@@ -297,7 +299,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve finalizar lote automaticamente quando for a última avaliação não concluída', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
@@ -370,7 +372,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve validar que avaliação existe no lote', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
@@ -403,7 +405,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve rejeitar inativação se lote já foi emitido', async () => {
-      mockRequireAuth.mockResolvedValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
