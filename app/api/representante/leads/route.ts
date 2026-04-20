@@ -180,6 +180,19 @@ export async function POST(request: NextRequest) {
     const percRep = Number(repResult.rows[0]?.percentual_comissao ?? 0);
     const modeloComissionamento =
       repResult.rows[0]?.modelo_comissionamento ?? null;
+
+    // Bloquear criação de lead se modelo de comissionamento não foi definido
+    if (!modeloComissionamento) {
+      return NextResponse.json(
+        {
+          error:
+            'Cadastro de leads indisponível. Aguarde a definição do modelo de comissionamento pelo Comercial.',
+          code: 'COMISSIONAMENTO_NAO_DEFINIDO',
+        },
+        { status: 403 }
+      );
+    }
+
     const percComercial = Number(
       repResult.rows[0]?.percentual_comissao_comercial ?? 0
     );

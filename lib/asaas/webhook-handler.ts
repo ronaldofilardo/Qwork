@@ -505,6 +505,7 @@ export async function activateSubscription(
         valor_parcela_liquida: paymentData.netValue ?? paymentData.value,
         parcela_numero: comissaoNumeroParcela,
         total_parcelas: comissaoTotalParcelas,
+        asaas_payment_id: paymentData.id ?? null,
       });
     } catch (errComissao) {
       console.error(

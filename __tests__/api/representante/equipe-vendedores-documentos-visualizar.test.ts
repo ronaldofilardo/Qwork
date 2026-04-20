@@ -58,7 +58,7 @@ function makeReq(
   return [req, { params: { id } } as any];
 }
 
-function mockVendedorComDoc(docPath: string, tipo: 'cad' | 'nf_rpa' = 'cad') {
+function mockVendedorComDoc(docPath: string, tipo: 'cad' | 'nf' = 'cad') {
   const key = tipo === 'cad' ? 'doc_path' : 'doc_path';
   mockQuery.mockResolvedValueOnce({
     rows: [{ [key]: docPath }],
@@ -305,17 +305,17 @@ describe('GET /api/representante/equipe/vendedores/[id]/documentos/visualizar', 
     expect(res.headers.get('Content-Type')).toBe('image/jpeg');
   });
 
-  // ── Sucesso: tipo nf_rpa ──────────────────────────────────────────────────
+  // ── Sucesso: tipo nf ──────────────────────────────────────────────────────
 
-  it('deve retornar 200 para tipo nf_rpa', async () => {
+  it('deve retornar 200 para tipo nf', async () => {
     // Arrange
     const storedPath =
       'storage/representantes/PF/12345678901/vendedores/98765432100/NF/nota_fiscal.pdf';
-    mockVendedorComDoc(storedPath, 'nf_rpa');
+    mockVendedorComDoc(storedPath, 'nf');
     mockReadFile.mockResolvedValueOnce(PDF_BUFFER as any);
 
     // Act
-    const [req, ctx] = makeReq('73', 'nf_rpa');
+    const [req, ctx] = makeReq('73', 'nf');
     const res = await GET(req, ctx);
 
     // Assert

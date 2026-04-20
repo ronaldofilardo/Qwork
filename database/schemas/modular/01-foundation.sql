@@ -77,8 +77,6 @@ ALTER TYPE public.idioma_suportado OWNER TO postgres;
 CREATE TYPE public.motivo_congelamento AS ENUM (
     'vinculo_encerrado',
     'rep_suspenso',
-    'nf_rpa_pendente',
-    'nf_rpa_rejeitada',
     'aguardando_revisao'
 );
 
@@ -279,7 +277,9 @@ COMMENT ON TYPE public.status_laudo_enum IS 'Status de laudos: emitido (gerado a
 CREATE TYPE public.status_lead AS ENUM (
     'pendente',
     'convertido',
-    'expirado'
+    'expirado',
+    'aprovado',
+    'rejeitado'
 );
 
 
@@ -2146,22 +2146,6 @@ COMMENT ON COLUMN public.comissoes_laudo.percentual_custas_plataforma IS 'Percen
 --
 
 COMMENT ON COLUMN public.comissoes_laudo.valor_comissionavel IS 'Base de cálculo da comissão: valor_laudo × (1 - percentual_custas_plataforma/100). Armazenado para auditabilidade.';
-
-
-
---
--- Name: COLUMN comissoes_laudo.nf_path; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.comissoes_laudo.nf_path IS 'Caminho relativo do arquivo NF/RPA no storage. DEV: /storage/NF/{codigo_rep}/. PROD: Backblaze.';
-
-
-
---
--- Name: COLUMN comissoes_laudo.nf_nome_arquivo; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.comissoes_laudo.nf_nome_arquivo IS 'Nome original do arquivo NF/RPA enviado pelo representante (ex: NF-2026-03.pdf).';
 
 
 

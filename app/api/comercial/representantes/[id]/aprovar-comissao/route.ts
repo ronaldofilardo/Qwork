@@ -9,7 +9,7 @@
  *                      percentual_comissao_comercial?, asaas_wallet_id? }
  *
  * Validações:
- * - Representante deve estar em 'apto', 'apto_pendente' ou 'aprovacao_comercial'
+ * - Representante NÃO deve estar em 'rejeitado', 'desativado' ou 'suspenso' (blocklist)
  * - Se modelo = 'percentual': percentual obrigatório (0 < x ≤ 40); soma rep+comercial ≤ 40
  * - Se modelo = 'custo_fixo': valor_custo_fixo_entidade e valor_custo_fixo_clinica > 0;
  *                             percentual_comissao_comercial 0–40% (sobre o custo fixo)
@@ -134,12 +134,10 @@ export async function POST(
       nome: string;
       status: string;
     };
-    if (
-      !['apto', 'apto_pendente', 'aprovacao_comercial'].includes(rep.status)
-    ) {
+    if (['rejeitado', 'desativado', 'suspenso'].includes(rep.status)) {
       return NextResponse.json(
         {
-          error: `Representante está com status '${rep.status}'. Apenas representantes ativos ou aguardando aprovação podem ter modelo de comissão definido.`,
+          error: `Representante está com status '${rep.status}'. Representantes rejeitados, desativados ou suspensos não podem ter modelo de comissão definido.`,
           code: 'STATUS_INVALIDO',
         },
         { status: 409 }

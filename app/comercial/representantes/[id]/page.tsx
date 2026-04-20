@@ -469,17 +469,24 @@ export default function ComercialRepresentanteDetalhePage() {
               <Pencil size={15} />
               Editar Dados
             </button>
-            {(rep.status === 'apto' || rep.status === 'apto_pendente') && (
-              <button
-                onClick={() => setShowComissao(true)}
-                disabled={!repFull}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-colors"
-              >
-                <BadgeCheck size={15} />
-                {repFull?.modelo_comissionamento
-                  ? 'Alterar Comissão'
-                  : 'Definir Comissão'}
-              </button>
+            {!['rejeitado', 'desativado', 'suspenso'].includes(rep.status) && (
+              <>
+                {repFull?.modelo_comissionamento ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <BadgeCheck size={13} />
+                    Comissão: {repFull.modelo_comissionamento}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setShowComissao(true)}
+                    disabled={!repFull}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-colors"
+                  >
+                    <BadgeCheck size={15} />
+                    Definir Comissão
+                  </button>
+                )}
+              </>
             )}
             {rep.status !== 'desativado' && (
               <button
@@ -654,6 +661,7 @@ export default function ComercialRepresentanteDetalhePage() {
 
             {repFull.modelo_comissionamento ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Modelo */}
                 <div className="bg-gray-50 rounded-xl p-4 border">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
                     Modelo
@@ -671,18 +679,86 @@ export default function ComercialRepresentanteDetalhePage() {
                     </p>
                   </div>
                 </div>
-                {repFull.modelo_comissionamento === 'percentual' &&
-                  repFull.percentual_comissao != null && (
-                    <div className="bg-gray-50 rounded-xl p-4 border">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Percentual
-                      </p>
-                      <p className="font-black text-gray-900 text-xl">
-                        {repFull.percentual_comissao}
-                        <span className="text-sm font-bold ml-0.5">%</span>
-                      </p>
-                    </div>
-                  )}
+
+                {/* Se PERCENTUAL: mostrar percentuais do representante e comercial */}
+                {repFull.modelo_comissionamento === 'percentual' && (
+                  <>
+                    {repFull.percentual_comissao != null && (
+                      <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          Comissão Representante
+                        </p>
+                        <p className="font-black text-green-700 text-2xl">
+                          {repFull.percentual_comissao}
+                          <span className="text-sm font-bold ml-0.5">%</span>
+                        </p>
+                      </div>
+                    )}
+                    {repFull.percentual_comissao_comercial != null && (
+                      <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          Comissão Comercial
+                        </p>
+                        <p className="font-black text-purple-700 text-2xl">
+                          {repFull.percentual_comissao_comercial}
+                          <span className="text-sm font-bold ml-0.5">%</span>
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Se CUSTO FIXO: mostrar valores por entidade/clínica + % comercial */}
+                {repFull.modelo_comissionamento === 'custo_fixo' && (
+                  <>
+                    {repFull.valor_custo_fixo_entidade != null && (
+                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          Custo Fixo — Entidade
+                        </p>
+                        <p className="font-black text-blue-700 text-xl">
+                          R${' '}
+                          {repFull.valor_custo_fixo_entidade.toLocaleString(
+                            'pt-BR',
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </p>
+                      </div>
+                    )}
+                    {repFull.valor_custo_fixo_clinica != null && (
+                      <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          Custo Fixo — Clínica
+                        </p>
+                        <p className="font-black text-blue-700 text-xl">
+                          R${' '}
+                          {repFull.valor_custo_fixo_clinica.toLocaleString(
+                            'pt-BR',
+                            {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }
+                          )}
+                        </p>
+                      </div>
+                    )}
+                    {repFull.percentual_comissao_comercial != null && (
+                      <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                          Comissão Comercial
+                        </p>
+                        <p className="font-black text-purple-700 text-2xl">
+                          {repFull.percentual_comissao_comercial}
+                          <span className="text-sm font-bold ml-0.5">%</span>
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
                 {repFull.asaas_wallet_id && (
                   <div className="bg-gray-50 rounded-xl p-4 border sm:col-span-2">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">

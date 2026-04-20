@@ -82,9 +82,16 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
 
+    // Buscar o único comercial ativo para auto-vincular
+    const comercialRes = await query<{ cpf: string }>(
+      `SELECT cpf FROM usuarios
+       WHERE perfil = 'gestor_comercial' AND ativo = true
+       LIMIT 1`
+    );
+    const gestorComercialCpf = comercialRes.rows[0]?.cpf ?? null;
+
     // Status inicial: 'ativo'
     const statusInicial = 'ativo';
-    // gestor_comercial_cpf = NULL por padrão; comercial atribui manualmente via dashboard
 
     const result = await query(
       `INSERT INTO representantes (
@@ -93,6 +100,7 @@ export async function POST(request: NextRequest) {
          banco_codigo, agencia, conta, tipo_conta, titular_conta,
          pix_chave, pix_tipo,
          status,
+         gestor_comercial_cpf,
          aceite_termos, aceite_termos_em,
          aceite_disclaimer_nv, aceite_disclaimer_nv_em
        ) VALUES (
@@ -101,8 +109,9 @@ export async function POST(request: NextRequest) {
          $8,$9,$10,$11,$12,
          $13,$14,
          $15,
-         $16, CASE WHEN $16 THEN NOW() END,
-         $17, CASE WHEN $17 THEN NOW() END
+         $16,
+         $17, CASE WHEN $17 THEN NOW() END,
+         $18, CASE WHEN $18 THEN NOW() END
        )
        RETURNING id, codigo, email, nome, status, tipo_pessoa, criado_em`,
       [
@@ -121,6 +130,7 @@ export async function POST(request: NextRequest) {
         pix_chave ?? null,
         pix_tipo ?? null,
         statusInicial,
+        gestorComercialCpf,
         !!aceite_termos,
         !!aceite_disclaimer_nv,
       ]

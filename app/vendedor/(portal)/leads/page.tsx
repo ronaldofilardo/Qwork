@@ -28,6 +28,9 @@ export default function LeadsVendedor() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showNovoLead, setShowNovoLead] = useState(false);
+  const [comissionamentoDefinido, setComissionamentoDefinido] = useState<
+    boolean | null
+  >(null); // null = carregando
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -38,6 +41,7 @@ export default function LeadsVendedor() {
       const data = await res.json();
       setLeads(data.leads ?? []);
       setTotal(data.total ?? 0);
+      setComissionamentoDefinido(!!data.modeloComissionamento);
     } finally {
       setLoading(false);
     }
@@ -54,14 +58,33 @@ export default function LeadsVendedor() {
         <div className="flex items-center gap-3">
           <span className="text-sm text-gray-500">{total} lead(s)</span>
           <button
-            onClick={() => setShowNovoLead(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+            onClick={() => {
+              if (comissionamentoDefinido) setShowNovoLead(true);
+            }}
+            disabled={!comissionamentoDefinido}
+            title={
+              !comissionamentoDefinido
+                ? 'Aguardando definição do modelo de comissionamento'
+                : undefined
+            }
+            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus size={16} />
             Novo Lead
           </button>
         </div>
       </div>
+
+      {comissionamentoDefinido === false && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 text-sm flex items-start gap-2">
+          <span className="mt-0.5">⚠️</span>
+          <span>
+            <strong>Módulo de leads bloqueado.</strong> O cadastro de leads
+            ficará disponível após o Comercial definir o modelo de
+            comissionamento do representante ao qual você pertence.
+          </span>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-center py-8 text-gray-400">Carregando...</div>

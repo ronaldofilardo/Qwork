@@ -168,6 +168,8 @@ export async function criarComissaoAdmin(params: {
    * Date = parcela efetivamente paga (ex: à vista confirmado pelo admin).
    */
   parcela_confirmada_em?: Date | null;
+  /** ID do pagamento Asaas que originou esta comissão (para rastreio de split). */
+  asaas_payment_id?: string | null;
 }): Promise<{ comissao: Record<string, unknown> | null; erro?: string }> {
   const {
     lote_pagamento_id,
@@ -183,6 +185,7 @@ export async function criarComissaoAdmin(params: {
     admin_cpf,
     forcar_retida = false,
     parcela_confirmada_em = undefined,
+    asaas_payment_id = undefined,
   } = params;
 
   const parcelaNum = Math.max(1, Math.min(parcela_numero, total_parcelas));
@@ -294,7 +297,8 @@ export async function criarComissaoAdmin(params: {
        percentual_comissao_comercial, valor_comissao_comercial,
        status, mes_emissao, mes_pagamento, data_emissao_laudo,
        data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em,
-       data_pagamento, asaas_split_executado, asaas_split_confirmado_em
+       data_pagamento, asaas_split_executado, asaas_split_confirmado_em,
+       asaas_payment_id
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9,
@@ -302,7 +306,8 @@ export async function criarComissaoAdmin(params: {
        $12::status_comissao, $13::date, $14::date, NOW(),
        NULL,
        $15, $16, $17,
-       $18, $19, $20
+       $18, $19, $20,
+       $21
      ) RETURNING *`,
     [
       vinculo_id,
@@ -328,6 +333,7 @@ export async function criarComissaoAdmin(params: {
       statusInicial === 'paga' ? new Date().toISOString() : null,
       statusInicial === 'paga',
       statusInicial === 'paga' ? new Date().toISOString() : null,
+      asaas_payment_id ?? null,
     ]
   );
 
@@ -362,7 +368,6 @@ export async function criarComissaoAdmin(params: {
       `UPDATE vinculos_comissao SET ultimo_laudo_em = NOW(), status = CASE WHEN status = 'inativo' THEN 'ativo' ELSE status END WHERE id = $1`,
       [vinculo_id]
     );
-
   }
 
   return { comissao: comissaoCriada };
@@ -432,7 +437,6 @@ export async function ativarComissaoParcelaPaga(params: {
          WHERE id = $1`,
         [comissao.id]
       );
-
     } else {
       // Rep sem wallet: registra confirmação da parcela, mantém retida
       await query(
@@ -491,6 +495,8 @@ export async function criarComissaoAutomatica(params: {
   valor_parcela_liquida: number;
   parcela_numero: number;
   total_parcelas: number;
+  /** ID do pagamento Asaas que originou esta comissão (para rastreio de split). */
+  asaas_payment_id?: string | null;
 }): Promise<{
   ok: boolean;
   motivo?: string;
@@ -504,6 +510,7 @@ export async function criarComissaoAutomatica(params: {
     valor_parcela_liquida,
     parcela_numero,
     total_parcelas,
+    asaas_payment_id,
   } = params;
 
   try {
@@ -620,6 +627,7 @@ export async function criarComissaoAutomatica(params: {
             admin_cpf: 'WEBHOOK',
             forcar_retida: true,
             parcela_confirmada_em: null,
+            asaas_payment_id: asaas_payment_id ?? null,
           });
           if (res.erro && !res.erro.includes('já gerada')) {
             console.warn(
@@ -645,6 +653,7 @@ export async function criarComissaoAutomatica(params: {
           total_parcelas: 1,
           admin_cpf: 'WEBHOOK',
           parcela_confirmada_em: new Date(),
+          asaas_payment_id: asaas_payment_id ?? null,
         });
 
         if (result.erro) {
