@@ -21,7 +21,11 @@ jest.mock('@/lib/session', () => ({
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
 import { queryAsGestorRH } from '@/lib/db-gestor';
-import { requireAuth, requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
+import {
+  requireAuth,
+  requireRole,
+  requireRHWithEmpresaAccess,
+} from '@/lib/session';
 import { POST } from '@/app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;

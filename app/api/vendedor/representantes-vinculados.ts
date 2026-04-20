@@ -27,7 +27,6 @@ export async function GET(): Promise<NextResponse> {
       `SELECT
          hc.id              AS vinculo_id,
          hc.ativo,
-         hc.percentual_override,
          hc.criado_em       AS vinculado_em,
          r.id               AS representante_id,
          r.nome             AS representante_nome,

@@ -27,37 +27,6 @@ export function getUsuarioTipoLabel(tipo: UsuarioTipo): string {
 }
 
 /**
- * Mapeia perfil (antigo) para usuario_tipo (novo)
- * @deprecated Usar apenas para migração de código legado
- */
-export function mapPerfilToUsuarioTipo(perfil: string): UsuarioTipo | null {
-  const map: Record<string, UsuarioTipo> = {
-    funcionario: 'funcionario_clinica', // Default para funcionarios
-    rh: 'rh',
-    gestor: 'gestor',
-    admin: 'admin',
-    emissor: 'emissor',
-  };
-  return map[perfil] || null;
-}
-
-/**
- * Mapeia usuario_tipo para perfil (antigo)
- * @deprecated Usar apenas para compatibilidade temporária
- */
-export function mapUsuarioTipoToPerfil(usuarioTipo: UsuarioTipo): string {
-  const map: Record<UsuarioTipo, string> = {
-    funcionario_clinica: 'funcionario',
-    funcionario_entidade: 'funcionario',
-    rh: 'rh',
-    gestor: 'gestor',
-    admin: 'admin',
-    emissor: 'emissor',
-  };
-  return map[usuarioTipo] || usuarioTipo;
-}
-
-/**
  * Verifica se usuario_tipo é um tipo de funcionário (não gestor/admin)
  */
 export function isFuncionario(tipo: UsuarioTipo): boolean {

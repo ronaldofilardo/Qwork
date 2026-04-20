@@ -43,10 +43,14 @@ describe('canTransitionComissao', () => {
       ).toBe(false);
     });
 
-    it('deve rejeitar retida → cancelada sem motivo', () => {
+    it('deve permitir retida → cancelada apenas com admin_cpf (motivo opcional)', () => {
       expect(canTransitionComissao('retida', 'cancelada', CTX_ADMIN)).toBe(
-        false
+        true
       );
+    });
+
+    it('deve rejeitar retida → cancelada sem admin_cpf', () => {
+      expect(canTransitionComissao('retida', 'cancelada', {})).toBe(false);
     });
 
     it('deve rejeitar retida → paga (transição inexistente)', () => {
@@ -228,11 +232,12 @@ describe('validateComissaoTransition', () => {
     it('deve retornar valido: false com estados válidos na mensagem de erro', () => {
       const resultado = validateComissaoTransition(
         'retida',
-        'cancelada',
-        CTX_ADMIN // sem motivo
+        'paga', // transição inexistente
+        CTX_ADMIN_COM_MOTIVO
       );
       expect(resultado.valido).toBe(false);
       expect(resultado.erro).toBeTruthy();
+      expect(resultado.erro).toContain('Estados válidos');
     });
   });
 });

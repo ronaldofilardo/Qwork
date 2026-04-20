@@ -58,7 +58,6 @@ export function useRepresentanteDrawer(
     telefone: '',
     status: '',
     percentual_comissao: '',
-    percentual_vendedor_direto: '',
     asaas_wallet_id: '',
   });
   const [vendedorBancario, setVendedorBancario] = useState<number | null>(null);
@@ -86,8 +85,6 @@ export function useRepresentanteDrawer(
       telefone: rep.telefone ?? '',
       status: rep.status ?? '',
       percentual_comissao: rep.percentual_comissao?.toString() ?? '',
-      percentual_vendedor_direto:
-        rep.percentual_vendedor_direto?.toString() ?? '',
       asaas_wallet_id: rep.asaas_wallet_id ?? '',
     });
   }, [rep]);
@@ -106,10 +103,6 @@ export function useRepresentanteDrawer(
       if (form.status) body.status = form.status;
       if (form.percentual_comissao)
         body.percentual_comissao = parseFloat(form.percentual_comissao);
-      if (form.percentual_vendedor_direto)
-        body.percentual_vendedor_direto = parseFloat(
-          form.percentual_vendedor_direto
-        );
       body.asaas_wallet_id = form.asaas_wallet_id.trim() || null;
       const res = await fetch(`/api/suporte/representantes/${rep.id}`, {
         method: 'PATCH',

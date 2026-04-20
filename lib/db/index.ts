@@ -24,7 +24,3 @@ export * from './admin-queries';
 
 // Comissionamento
 export * from './comissionamento';
-
-// Aliases de compatibilidade (legacy)
-export { getEntidadesByTipo as gettomadorsByTipo } from './entidade-crud';
-export { getEntidadesPendentes as gettomadorsPendentes } from './entidade-crud';

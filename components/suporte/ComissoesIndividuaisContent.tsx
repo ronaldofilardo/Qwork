@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { ACAO_LABEL, fmt } from '@/app/admin/comissoes/types';
 import { useComissoes } from '@/app/admin/comissoes/hooks/useComissoes';
 import { ComissoesTab } from '@/app/admin/comissoes/components/ComissoesTab';
-import { CheckCircle2, XCircle, FileText, Eye, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 const MESES = [
   'Jan',
@@ -72,21 +72,10 @@ export function ComissoesIndividuaisContent() {
     valor_pago: number;
     valor_pendente: number;
     valor_provisionado: number;
-    ciclo_id: number | null;
-    ciclo_status: string | null;
-    nf_path: string | null;
-    nf_nome_arquivo: string | null;
-    nf_enviada_em: string | null;
-    nf_aprovada_em: string | null;
-    nf_rejeitada_em: string | null;
-    nf_motivo_rejeicao: string | null;
   }
 
   const [repsAgrupados, setRepsAgrupados] = useState<RepAgrupado[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
-  const [nfActionLoading, setNfActionLoading] = useState<number | null>(null);
-  const [nfMotivo, setNfMotivo] = useState('');
-  const [nfRejectId, setNfRejectId] = useState<number | null>(null);
 
   const fetchReps = useCallback(async () => {
     setLoadingReps(true);
@@ -107,23 +96,6 @@ export function ComissoesIndividuaisContent() {
       void fetchReps();
     }
   }, [abaAtiva, fetchReps]);
-
-  const handleNfAction = async (cicloId: number, acao: 'aprovar' | 'rejeitar', motivo?: string) => {
-    setNfActionLoading(cicloId);
-    try {
-      const res = await fetch(`/api/suporte/comissoes/ciclos/${cicloId}/nf`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ acao, motivo }),
-      });
-      if (res.ok) {
-        void fetchReps();
-        setNfRejectId(null);
-        setNfMotivo('');
-      }
-    } catch { /* ignore */ }
-    setNfActionLoading(null);
-  };
 
   return (
     <div className="p-6 space-y-6">
@@ -324,7 +296,7 @@ export function ComissoesIndividuaisContent() {
             </p>
           ) : (
             repsAgrupados.map((rep) => (
-              <div key={`${rep.representante_id}-${rep.ciclo_id}`} className="bg-white border rounded-xl p-4 space-y-3">
+              <div key={`${rep.representante_id}`} className="bg-white border rounded-xl p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{rep.representante_nome}</p>
@@ -341,80 +313,6 @@ export function ComissoesIndividuaisContent() {
                       Pago: {fmt(Number(rep.valor_pago))} · Pendente: {fmt(Number(rep.valor_pendente))}
                     </p>
                   </div>
-                </div>
-
-                {/* NF Status */}
-                <div className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <FileText size={14} className="text-gray-400" />
-                    <span className="text-xs text-gray-600">
-                      NF: {!rep.ciclo_id ? (
-                        <span className="text-gray-400">Sem ciclo</span>
-                      ) : rep.ciclo_status === 'nf_aprovada' ? (
-                        <span className="text-green-600 font-medium">Aprovada</span>
-                      ) : rep.ciclo_status === 'nf_enviada' ? (
-                        <span className="text-amber-600 font-medium">Aguardando revisão</span>
-                      ) : rep.nf_rejeitada_em ? (
-                        <span className="text-red-600 font-medium">Rejeitada: {rep.nf_motivo_rejeicao}</span>
-                      ) : (
-                        <span className="text-gray-400">Não enviada</span>
-                      )}
-                    </span>
-                  </div>
-
-                  {/* NF Actions */}
-                  {rep.ciclo_id && rep.ciclo_status === 'nf_enviada' && (
-                    <div className="flex items-center gap-1.5">
-                      {rep.nf_path && (
-                        <a
-                          href={rep.nf_path}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 px-2 py-1 text-xs rounded border border-gray-200 text-gray-600 hover:bg-gray-100"
-                        >
-                          <Eye size={12} /> Ver
-                        </a>
-                      )}
-                      <button
-                        onClick={() => void handleNfAction(rep.ciclo_id!, 'aprovar')}
-                        disabled={nfActionLoading === rep.ciclo_id}
-                        className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50"
-                      >
-                        <CheckCircle2 size={12} /> Aprovar
-                      </button>
-                      {nfRejectId === rep.ciclo_id ? (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="text"
-                            value={nfMotivo}
-                            onChange={(e) => setNfMotivo(e.target.value)}
-                            placeholder="Motivo..."
-                            className="border rounded px-2 py-1 text-xs w-40"
-                          />
-                          <button
-                            onClick={() => void handleNfAction(rep.ciclo_id!, 'rejeitar', nfMotivo)}
-                            disabled={!nfMotivo.trim() || nfActionLoading === rep.ciclo_id}
-                            className="px-2 py-1 text-xs rounded bg-red-50 text-red-700 hover:bg-red-100 disabled:opacity-50"
-                          >
-                            Confirmar
-                          </button>
-                          <button
-                            onClick={() => { setNfRejectId(null); setNfMotivo(''); }}
-                            className="px-1 py-1 text-xs text-gray-400 hover:text-gray-600"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => setNfRejectId(rep.ciclo_id)}
-                          className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-red-50 text-red-700 hover:bg-red-100"
-                        >
-                          <XCircle size={12} /> Rejeitar
-                        </button>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             ))
