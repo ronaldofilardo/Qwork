@@ -20,11 +20,35 @@ const ROUTE_PATH = path.join(
   'emissoes',
   'route.ts'
 );
+const GERAR_LINK_ROUTE_PATH = path.join(
+  ROOT,
+  'app',
+  'api',
+  'admin',
+  'emissoes',
+  '[loteId]',
+  'gerar-link',
+  'route.ts'
+);
+const TOKEN_INFO_ROUTE_PATH = path.join(
+  ROOT,
+  'app',
+  'api',
+  'pagamento',
+  'emissao',
+  '[token]',
+  'info',
+  'route.ts'
+);
 
 let src: string;
+let gerarLinkSrc: string;
+let tokenInfoSrc: string;
 
 beforeAll(() => {
   src = fs.readFileSync(ROUTE_PATH, 'utf-8');
+  gerarLinkSrc = fs.readFileSync(GERAR_LINK_ROUTE_PATH, 'utf-8');
+  tokenInfoSrc = fs.readFileSync(TOKEN_INFO_ROUTE_PATH, 'utf-8');
 });
 
 describe('GET /api/admin/emissoes — Arquivo', () => {
@@ -55,5 +79,15 @@ describe('GET /api/admin/emissoes — Deduplicação por lote_id', () => {
   it('deve preservar a primeira ocorrência de cada lote_id', () => {
     // Padrão: if (!seenLotes.has(row.lote_id)) { seenLotes.set(row.lote_id, row) }
     expect(src).toMatch(/!seenLotes\.has[\s\S]*?seenLotes\.set/s);
+  });
+});
+
+describe('Fluxo de cobrança — avaliações liberadas', () => {
+  it('gerar-link deve considerar avaliações com status diferente de rascunho', () => {
+    expect(gerarLinkSrc).toMatch(/status\s*!=\s*'rascunho'/);
+  });
+
+  it('pagamento por token deve refletir a mesma regra de avaliações liberadas', () => {
+    expect(tokenInfoSrc).toMatch(/status\s*!=\s*'rascunho'/);
   });
 });

@@ -28,34 +28,37 @@ describe('calcularValoresComissao', () => {
     percentual_comissao_comercial: '0',
   };
 
-  it('calcula comissão percentual corretamente', () => {
+  it('calcula comissão percentual corretamente sobre a base líquida', () => {
     const result = calcularValoresComissao({
       rep: repBase,
       vinculoPerc: vinculoBase,
       entidadeId: 1,
       valorLaudo: 100,
       totalParcelas: 1,
+      valorParcela: 97,
     });
 
     expect('resultado' in result).toBe(true);
     if ('resultado' in result) {
-      expect(result.resultado.valorComissao).toBe(10);
+      expect(result.resultado.valorComissao).toBe(9);
       expect(result.resultado.percentualRep).toBe(10);
+      expect(result.resultado.baseCalculoFinal).toBe(90);
     }
   });
 
-  it('calcula comissão percentual com múltiplas parcelas', () => {
+  it('calcula comissão percentual com múltiplas parcelas na base líquida', () => {
     const result = calcularValoresComissao({
       rep: repBase,
       vinculoPerc: vinculoBase,
       entidadeId: 1,
       valorLaudo: 100,
       totalParcelas: 2,
+      valorParcela: 48.5,
     });
 
     if ('resultado' in result) {
-      // 100 / 2 = 50 por parcela, 10% de 50 = 5
-      expect(result.resultado.valorComissao).toBe(5);
+      expect(result.resultado.valorComissao).toBe(4.5);
+      expect(result.resultado.baseCalculoFinal).toBe(45);
     }
   });
 
@@ -80,7 +83,7 @@ describe('calcularValoresComissao', () => {
     expect('erro' in result).toBe(true);
   });
 
-  it('calcula comissão comercial quando percentual comercial > 0', () => {
+  it('calcula comissão comercial quando percentual comercial > 0 sobre a base líquida', () => {
     const vinculoComercial: DadosVinculoCalculo = {
       ...vinculoBase,
       percentual_comissao_comercial: '5',
@@ -92,11 +95,12 @@ describe('calcularValoresComissao', () => {
       entidadeId: 1,
       valorLaudo: 100,
       totalParcelas: 1,
+      valorParcela: 97,
     });
 
     if ('resultado' in result) {
       expect(result.resultado.percComercialVinculo).toBe(5);
-      expect(result.resultado.valorComissaoComercial).toBe(5);
+      expect(result.resultado.valorComissaoComercial).toBe(4.5);
     }
   });
 

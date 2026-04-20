@@ -48,11 +48,102 @@ describe('/api/admin/financeiro/sociedade', () => {
       ])
     );
     expect(data.beneficiarios).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ id: 'qwork' }),
-      ])
+      expect.arrayContaining([expect.objectContaining({ id: 'qwork' })])
     );
     expect(data.eventosRecentes).toEqual([]);
+  });
+
+  it('deve auditar pagamento parcelado pelo valor da parcela paga, e não pelo total do lote', async () => {
+    mockQuery.mockImplementation(async (sql: string) => {
+      const queryText = String(sql);
+
+      if (queryText.includes('to_regclass')) {
+        return { rows: [{ exists: true }], rowCount: 1 } as never;
+      }
+
+      if (queryText.includes('FROM pagamentos p')) {
+        return {
+          rows: [
+            {
+              id: 8,
+              asaas_payment_id: 'pay_8',
+              valor: '48.00',
+              asaas_net_value: '45.00',
+              numero_parcelas: 3,
+              detalhes_parcelas: JSON.stringify([
+                {
+                  numero: 1,
+                  valor: 16,
+                  pago: true,
+                  status: 'pago',
+                  data_vencimento: '2026-04-10',
+                  data_pagamento: '2026-04-10T12:00:00.000Z',
+                },
+                {
+                  numero: 2,
+                  valor: 16,
+                  pago: false,
+                  status: 'pendente',
+                  data_vencimento: '2026-05-10',
+                  data_pagamento: null,
+                },
+                {
+                  numero: 3,
+                  valor: 16,
+                  pago: false,
+                  status: 'pendente',
+                  data_vencimento: '2026-06-10',
+                  data_pagamento: null,
+                },
+              ]),
+              status: 'pago',
+              metodo: 'credit_card',
+              criado_em: '2026-04-01T10:00:00.000Z',
+              data_pagamento: '2026-04-10T12:00:00.000Z',
+              tomador_nome: 'Clínica 1604',
+              representante_nome: 'Rep 115',
+              valor_representante: '4.80',
+              valor_comercial: '0.00',
+            },
+          ],
+          rowCount: 1,
+        } as never;
+      }
+
+      if (queryText.includes('FROM usuarios')) {
+        return { rows: [{ total: '1' }], rowCount: 1 } as never;
+      }
+
+      if (queryText.includes('FROM representantes')) {
+        return {
+          rows: [{ com_wallet: '1', sem_wallet: '0' }],
+          rowCount: 1,
+        } as never;
+      }
+
+      if (queryText.includes('FROM beneficiarios_sociedade')) {
+        return { rows: [], rowCount: 0 } as never;
+      }
+
+      return { rows: [], rowCount: 0 } as never;
+    });
+
+    const request = new Request(
+      'http://localhost:3000/api/admin/financeiro/sociedade?dias=30'
+    );
+
+    const response = await GET(request as never);
+    const data = (await response.json()) as {
+      eventosRecentes: Array<{ tomador: string; valorBruto: number }>;
+      resumo: { mes: { entradaBruta: number; totalEventos: number } };
+    };
+
+    expect(response.status).toBe(200);
+    expect(data.eventosRecentes).toHaveLength(1);
+    expect(data.eventosRecentes[0].tomador).toContain('Parcela 1/3');
+    expect(data.eventosRecentes[0].valorBruto).toBe(16);
+    expect(data.resumo.mes.entradaBruta).toBe(16);
+    expect(data.resumo.mes.totalEventos).toBe(1);
   });
 
   it('deve salvar beneficiário societário quando a persistência estiver disponível', async () => {
@@ -71,7 +162,8 @@ describe('/api/admin/financeiro/sociedade', () => {
           walletId: 'wallet-qwork-123',
           percentualParticipacao: 0,
           ativo: true,
-          observacoes: 'Wallet institucional da plataforma para recolhimento de impostos e operação do split.',
+          observacoes:
+            'Wallet institucional da plataforma para recolhimento de impostos e operação do split.',
         }),
       }
     );

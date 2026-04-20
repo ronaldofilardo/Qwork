@@ -51,6 +51,7 @@ export default function ComissoesTable({
               <th className="px-4 py-3 text-center">Parcela</th>
               <th className="px-4 py-3 text-right">Valor Laudo</th>
               <th className="px-4 py-3 text-right">Comissão</th>
+              <th className="px-4 py-3 text-center">%</th>
               <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Previsão</th>
             </tr>
@@ -82,6 +83,17 @@ export default function ComissoesTable({
                 </td>
                 <td className="px-4 py-3 text-right font-semibold text-green-700">
                   {fmt(c.valor_comissao)}
+                </td>
+                <td className="px-4 py-3 text-center text-xs text-gray-600">
+                  {parseFloat(c.percentual_comissao || '0') > 0 ? (
+                    `${parseFloat(c.percentual_comissao)}%`
+                  ) : Number(c.valor_comissao ?? 0) > 0 ? (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
+                      Fixo
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div>

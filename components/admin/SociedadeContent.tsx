@@ -28,6 +28,7 @@ interface QWorkSociedadeConfig {
 interface ResumoPeriodo {
   entradaBruta: number;
   impostos: number;
+  gateway: number;
   representantes: number;
   comercial: number;
   ronaldo: number;
@@ -44,6 +45,7 @@ interface EventoSociedade {
   metodo: string;
   valorBruto: number;
   valorImpostos: number;
+  valorGateway: number;
   valorRepresentante: number;
   valorComercial: number;
   valorSocioRonaldo: number;
@@ -157,7 +159,6 @@ export default function SociedadeContent() {
     ];
   }, [data]);
 
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12 text-gray-500">
@@ -252,6 +253,10 @@ export default function SociedadeContent() {
               <div className="flex justify-between">
                 <span>Impostos</span>
                 <span>{formatCurrency(resumo.impostos)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Gateway</span>
+                <span>{formatCurrency(resumo.gateway)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Representantes</span>
@@ -360,6 +365,7 @@ export default function SociedadeContent() {
                   <th className="px-3 py-2">Rep.</th>
                   <th className="px-3 py-2">Comercial</th>
                   <th className="px-3 py-2">Impostos</th>
+                  <th className="px-3 py-2">Gateway</th>
                   <th className="px-3 py-2">Ronaldo</th>
                   <th className="px-3 py-2">Antonio</th>
                 </tr>
@@ -384,6 +390,9 @@ export default function SociedadeContent() {
                     </td>
                     <td className="px-3 py-2">
                       {formatCurrency(evento.valorImpostos)}
+                    </td>
+                    <td className="px-3 py-2">
+                      {formatCurrency(evento.valorGateway)}
                     </td>
                     <td className="px-3 py-2">
                       {formatCurrency(evento.valorSocioRonaldo)}

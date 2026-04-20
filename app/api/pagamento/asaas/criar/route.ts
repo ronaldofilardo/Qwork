@@ -358,7 +358,8 @@ export async function POST(request: NextRequest) {
             tipoProduto,
             v.percentual_comissao ?? undefined,
             v.percentual_comissao_comercial ?? undefined,
-            custoFixoRep
+            custoFixoRep,
+            { metodoPagamento: metodo }
           );
 
           if (splitResult.viavel) {

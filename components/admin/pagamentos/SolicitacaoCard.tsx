@@ -282,7 +282,11 @@ function StatusActions({
     // Calcula preview do total com base no input atual
     const rawNum = (valorInput[loteId] || '').replace(/\D/g, '');
     const valorDigitado = rawNum ? Number(rawNum) / 100 : 0;
-    const numAvaliacoes = solicitacao.num_avaliacoes_concluidas || 0;
+    const numAvaliacoes = Number(
+      solicitacao.num_avaliacoes_cobradas ??
+        solicitacao.num_avaliacoes_concluidas ??
+        0
+    );
     const totalPreview = valorDigitado * numAvaliacoes;
 
     const modeloBadge = modelo ? (
@@ -854,7 +858,8 @@ export function SolicitacaoCard(props: SolicitacaoCardProps) {
               <Users className="w-4 h-4 text-gray-500" />
               <span className="text-gray-600">Avaliações:</span>
               <span className="font-medium text-gray-900">
-                {solicitacao.num_avaliacoes_concluidas}
+                {solicitacao.num_avaliacoes_cobradas ??
+                  solicitacao.num_avaliacoes_concluidas}
               </span>
             </div>
             <div>
