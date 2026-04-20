@@ -381,4 +381,33 @@ describe('POST /api/representante/leads', () => {
     const data = await res.json();
     expect(data.lead.cnpj).toBe('12345678000190');
   });
+
+  it('deve retornar 403 quando modelo_comissionamento é null (COMISSIONAMENTO_NAO_DEFINIDO)', async () => {
+    // mock rep percentuals query — modelo null
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: null,
+          percentual_comissao_comercial: null,
+          modelo_comissionamento: null,
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
+
+    const res = await POST(
+      makePostReq({
+        cnpj: '12345678000190',
+        contato_nome: 'Empresa Sem Comissão',
+        valor_negociado: 1000,
+        num_vidas_estimado: 50,
+      })
+    );
+
+    expect(res.status).toBe(403);
+    const d = await res.json();
+    expect(d.code).toBe('COMISSIONAMENTO_NAO_DEFINIDO');
+  });
 });

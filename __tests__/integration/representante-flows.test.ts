@@ -275,7 +275,6 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
           representante_id: 1,
           representante_nome: 'Rep',
           valor_comissao: '500',
-          nf_rpa_enviada_em: '2026-01-10',
         },
       ],
       rowCount: 1,

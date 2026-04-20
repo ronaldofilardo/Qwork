@@ -189,21 +189,26 @@ describe('4. POST /api/comercial/representantes/[id]/aprovar-comissao', () => {
     expect(src).toContain('.max(40)');
   });
 
-  it('deve verificar status apto ou apto_pendente (STATUS_INVALIDO)', () => {
-    // Aceita 'apto', 'apto_pendente' e 'aprovacao_comercial'
-    expect(src).toContain("['apto', 'apto_pendente', 'aprovacao_comercial']");
+  it('deve verificar status bloqueado (STATUS_INVALIDO)', () => {
+    // Usa blocklist: rejeitado, desativado, suspenso
+    expect(src).toContain("['rejeitado', 'desativado', 'suspenso']");
     expect(src).toContain('STATUS_INVALIDO');
   });
 
-  it('deve aceitar representante com status apto (fix bug)', () => {
-    expect(src).toContain("'apto'");
-    expect(src).toContain("'apto_pendente'");
-    // Validação via array, não comparação simples
-    expect(src).toMatch(/\['apto',\s*'apto_pendente'/);
+  it('deve aceitar representante com status ativo ou qualquer não-bloqueado', () => {
+    // Blocklist: apenas rejeitado/desativado/suspenso são bloqueados
+    expect(src).toContain("'rejeitado'");
+    expect(src).toContain("'desativado'");
+    expect(src).toContain("'suspenso'");
+    // Garante que é abordagem de blocklist (includes)
+    expect(src).toMatch(
+      /\['rejeitado',\s*'desativado',\s*'suspenso'\]\.includes/
+    );
   });
 
-  it('deve mover para aprovacao_comercial ao aprovar', () => {
-    expect(src).toContain("'aprovacao_comercial'");
+  it('deve permitir qualquer status fora do blocklist (ativo, apto, apto_pendente etc.)', () => {
+    // Não bloqueia status como 'ativo', 'apto', 'apto_pendente', 'aprovacao_comercial'
+    expect(src).not.toMatch(/\['apto',\s*'apto_pendente'/);
   });
 
   it('deve atualizar modelo_comissionamento no DB', () => {

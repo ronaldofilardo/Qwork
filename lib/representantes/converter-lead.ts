@@ -93,7 +93,7 @@ export async function converterLeadEmRepresentante(
 
     // 3. Inserir representante (trigger gera código automaticamente)
     // Status 'aguardando_senha': representante deve criar sua senha via link de convite
-    // gestor_comercial_cpf = NULL por padrão; comercial atribui manualmente via dashboard
+    // gestor_comercial_cpf = adminCpf (CPF do comercial que converteu o lead)
     const insertResult = await client.query<{
       id: number;
       codigo: string;
@@ -104,12 +104,14 @@ export async function converterLeadEmRepresentante(
         tipo_pessoa, nome, email, telefone,
         cpf, cnpj, cpf_responsavel_pj,
         asaas_wallet_id,
+        gestor_comercial_cpf,
         status, aprovado_em, aprovado_por_cpf
       ) VALUES (
         $1, $2, $3, $4,
         $5, $6, $7,
         $8,
-        'aguardando_senha', NOW(), $9
+        $9,
+        'aguardando_senha', NOW(), $10
       ) RETURNING id, codigo, nome, email`,
       [
         tipoPessoa,
@@ -120,6 +122,7 @@ export async function converterLeadEmRepresentante(
         lead.cnpj ?? null,
         lead.cpf_responsavel ?? null,
         lead.asaas_wallet_id ?? null,
+        adminCpf,
         adminCpf,
       ]
     );

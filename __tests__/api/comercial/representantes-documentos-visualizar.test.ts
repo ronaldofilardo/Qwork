@@ -11,7 +11,7 @@
  *  - 400 tipo inválido
  *  - tipo=identificacao: 404 representante não encontrado, 404 doc nulo, 200 OK
  *  - tipo=vendedor_cad: 400 sem vendedor_id, 404 vendedor não encontrado, 200 OK
- *  - tipo=vendedor_nf_rpa: 200 OK
+ *  - tipo=vendedor_nf: 200 OK
  *  - BUG FIX: path com prefixo 'storage/' → normaliza e não cria caminho duplo
  *  - BUG FIX: doc_cad_path com múltiplos caminhos separados por ';' → usa primeiro
  *  - 200 PDF com Content-Type correto
@@ -54,6 +54,9 @@ function makeReq(
 }
 
 function mockRepresentanteComDoc(docPath: string) {
+  // 1) ownership check (comercial só acessa reps atribuídos a ele)
+  mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any);
+  // 2) SELECT doc_identificacao_path
   mockQuery.mockResolvedValueOnce({
     rows: [{ doc_identificacao_path: docPath }],
     rowCount: 1,
@@ -61,6 +64,9 @@ function mockRepresentanteComDoc(docPath: string) {
 }
 
 function mockRepresentanteSemDoc() {
+  // 1) ownership check
+  mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any);
+  // 2) SELECT doc_identificacao_path — nulo
   mockQuery.mockResolvedValueOnce({
     rows: [{ doc_identificacao_path: null }],
     rowCount: 1,
@@ -68,10 +74,16 @@ function mockRepresentanteSemDoc() {
 }
 
 function mockRepresentanteNaoEncontrado() {
+  // 1) ownership check
+  mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any);
+  // 2) SELECT doc — representante não existe em representantes_perfil
   mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 }
 
 function mockVendedorComDoc(docPath: string) {
+  // 1) ownership check
+  mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any);
+  // 2) SELECT doc_path de vendedores_perfil
   mockQuery.mockResolvedValueOnce({
     rows: [{ doc_path: docPath }],
     rowCount: 1,
@@ -79,6 +91,9 @@ function mockVendedorComDoc(docPath: string) {
 }
 
 function mockVendedorNaoEncontrado() {
+  // 1) ownership check
+  mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any);
+  // 2) SELECT vendedor — não encontrado
   mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 }
 
@@ -127,6 +142,9 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
   });
 
   it('deve retornar 400 para tipo inválido', async () => {
+    // Arrange — ownership check (tipo é validado APÓS o ownership check)
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any);
+
     // Act
     const [req, ctx] = makeReq('5', 'outro_tipo');
     const res = await GET(req, ctx);
@@ -186,6 +204,9 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
   // ── tipo=vendedor_cad ─────────────────────────────────────────────────────
 
   it('deve retornar 400 quando vendedor_id não é fornecido (tipo=vendedor_cad)', async () => {
+    // Arrange — ownership check (vendedor_id check ocorre APÓS ownership)
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any);
+
     // Act
     const [req, ctx] = makeReq('5', 'vendedor_cad'); // sem vendedor_id
     const res = await GET(req, ctx);
@@ -225,7 +246,7 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
     expect(res.status).toBe(200);
   });
 
-  it('deve retornar 200 para tipo=vendedor_nf_rpa com doc_path válido', async () => {
+  it('deve retornar 200 para tipo=vendedor_nf com doc_path válido', async () => {
     // Arrange
     const storedPath =
       'storage/representantes/PF/12345678901/vendedores/98765432100/NF/nota.pdf';
@@ -233,7 +254,7 @@ describe('GET /api/comercial/representantes/[id]/documentos/visualizar', () => {
     mockReadFile.mockResolvedValueOnce(PDF_BUFFER as any);
 
     // Act
-    const [req, ctx] = makeReq('5', 'vendedor_nf_rpa', '73');
+    const [req, ctx] = makeReq('5', 'vendedor_nf', '73');
     const res = await GET(req, ctx);
 
     // Assert

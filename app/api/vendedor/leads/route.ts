@@ -85,7 +85,25 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       params
     );
 
-    return NextResponse.json({ leads: rows.rows, total, page, limit });
+    // Retorna também o modelo de comissionamento do representante para o frontend
+    const repInfo = await query<{ modelo_comissionamento: string | null }>(
+      `SELECT r.modelo_comissionamento
+         FROM public.hierarquia_comercial hc
+         JOIN public.representantes r ON r.id = hc.representante_id
+        WHERE hc.vendedor_id = $1 AND hc.ativo = true
+        LIMIT 1`,
+      [vendedorId]
+    );
+    const modeloComissionamento =
+      repInfo.rows[0]?.modelo_comissionamento ?? null;
+
+    return NextResponse.json({
+      leads: rows.rows,
+      total,
+      page,
+      limit,
+      modeloComissionamento,
+    });
   } catch (err: unknown) {
     if (
       err instanceof Error &&
@@ -245,6 +263,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       repPercentuais.rows[0]?.percentual_comissao_comercial ?? 0
     );
     const modeloCom = repPercentuais.rows[0]?.modelo_comissionamento ?? null;
+
+    // Bloquear criação de lead se representante não tem modelo de comissionamento definido
+    if (!modeloCom) {
+      return NextResponse.json(
+        {
+          error:
+            'Cadastro de leads indisponível. O representante vinculado ainda não teve o modelo de comissionamento definido.',
+          code: 'COMISSIONAMENTO_NAO_DEFINIDO',
+        },
+        { status: 403 }
+      );
+    }
+
     const valorNeg = data.valor_negociado ?? 0;
     const valorQWork =
       modeloCom !== 'custo_fixo' && valorNeg > 0

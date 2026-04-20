@@ -64,27 +64,32 @@ COMMENT ON COLUMN comissoes_laudo.asaas_split_executado IS 'Se o split Asaas foi
 COMMENT ON COLUMN comissoes_laudo.asaas_split_confirmado_em IS 'Timestamp da confirmação do split pelo webhook Asaas.';
 
 -- ====================================================================
--- 5. CORRIGIR UNIQUE CONSTRAINT em ciclos_comissao
+-- 5. CORRIGIR UNIQUE CONSTRAINT em ciclos_comissao (se a tabela existir)
 -- ====================================================================
 
--- Dropar a constraint antiga que incluía vendedor_id e tipo_beneficiario
-ALTER TABLE ciclos_comissao
-  DROP CONSTRAINT IF EXISTS uq_ciclo_beneficiario_mes;
-
--- Criar nova constraint simples: 1 ciclo por representante por mês
 DO $$
 BEGIN
-  ALTER TABLE ciclos_comissao
-    ADD CONSTRAINT uq_ciclo_rep_mes UNIQUE (representante_id, mes_referencia);
-EXCEPTION WHEN duplicate_table THEN
-  RAISE NOTICE 'Constraint uq_ciclo_rep_mes já existe — pulando.';
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'ciclos_comissao'
+  ) THEN
+    -- Dropar a constraint antiga que incluía vendedor_id e tipo_beneficiario
+    ALTER TABLE ciclos_comissao
+      DROP CONSTRAINT IF EXISTS uq_ciclo_beneficiario_mes;
+
+    -- Criar nova constraint simples: 1 ciclo por representante por mês
+    BEGIN
+      ALTER TABLE ciclos_comissao
+        ADD CONSTRAINT uq_ciclo_rep_mes UNIQUE (representante_id, mes_referencia);
+    EXCEPTION WHEN duplicate_table THEN
+      RAISE NOTICE 'Constraint uq_ciclo_rep_mes já existe — pulando.';
+    END;
+
+    COMMENT ON TABLE ciclos_comissao IS
+      'Ciclo de fechamento mensal de comissões (SISTEMA ÚNICO). Status: aberto → fechado → nf_enviada → nf_aprovada → pago.';
+  ELSE
+    RAISE NOTICE 'Tabela ciclos_comissao não existe — seção 5/6 pulada.';
+  END IF;
 END $$;
-
--- ====================================================================
--- 6. COMENTÁRIOS
--- ====================================================================
-
-COMMENT ON TABLE ciclos_comissao IS
-  'Ciclo de fechamento mensal de comissões (SISTEMA ÚNICO). Status: aberto → fechado → nf_enviada → nf_aprovada → pago.';
 
 COMMIT;
