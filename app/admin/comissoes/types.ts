@@ -13,6 +13,7 @@ export interface Comissao {
   lote_pagamento_parcelas: number | null;
   valor_laudo: string;
   valor_comissao: string;
+  valor_comissao_comercial?: string | null;
   percentual_comissao: string;
   status: string;
   motivo_congelamento: string | null;
@@ -28,6 +29,10 @@ export interface Comissao {
   nf_nome_arquivo: string | null;
   parcela_confirmada_em: string | null;
   comprovante_pagamento_path: string | null;
+  /** Percentual atual do representante (pode diferir do histórico em percentual_comissao) */
+  representante_percentual?: string | null;
+  /** Percentual comercial atual do vínculo (pode ser 0 em históricos — usar derivação 40−rep%) */
+  vinculo_percentual_comercial?: string | null;
 }
 
 export interface Resumo {

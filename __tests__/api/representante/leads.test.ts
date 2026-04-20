@@ -207,7 +207,15 @@ describe('POST /api/representante/leads', () => {
   it('deve retornar 409 quando rep já possui lead pendente para o CNPJ', async () => {
     // mock rep percentuals query (before lead check)
     mockQuery.mockResolvedValueOnce({
-      rows: [{ percentual_comissao: '5', percentual_comissao_comercial: '3', modelo_comissionamento: 'percentual', valor_custo_fixo_entidade: null, valor_custo_fixo_clinica: null }],
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
       rowCount: 1,
     } as any);
     mockQuery.mockResolvedValueOnce({
@@ -230,7 +238,15 @@ describe('POST /api/representante/leads', () => {
   it('deve retornar 409 quando outro rep já registrou lead para o CNPJ', async () => {
     // mock rep percentuals query (before lead check)
     mockQuery.mockResolvedValueOnce({
-      rows: [{ percentual_comissao: '5', percentual_comissao_comercial: '3', modelo_comissionamento: 'percentual', valor_custo_fixo_entidade: null, valor_custo_fixo_clinica: null }],
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
       rowCount: 1,
     } as any);
     mockQuery.mockResolvedValueOnce({
@@ -253,7 +269,15 @@ describe('POST /api/representante/leads', () => {
   it('deve retornar 409 quando CNPJ já é entidade existente', async () => {
     // mock rep percentuals query
     mockQuery.mockResolvedValueOnce({
-      rows: [{ percentual_comissao: '5', percentual_comissao_comercial: '3', modelo_comissionamento: 'percentual', valor_custo_fixo_entidade: null, valor_custo_fixo_clinica: null }],
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
       rowCount: 1,
     } as any);
     // lead check — nenhum pendente
@@ -279,7 +303,15 @@ describe('POST /api/representante/leads', () => {
   it('deve retornar 409 quando CNPJ já é clínica existente', async () => {
     // mock rep percentuals query
     mockQuery.mockResolvedValueOnce({
-      rows: [{ percentual_comissao: '5', percentual_comissao_comercial: '3', modelo_comissionamento: 'percentual', valor_custo_fixo_entidade: null, valor_custo_fixo_clinica: null }],
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
       rowCount: 1,
     } as any);
     // lead check — nenhum pendente
@@ -307,7 +339,15 @@ describe('POST /api/representante/leads', () => {
   it('deve criar lead e retornar 201', async () => {
     // mock rep percentuals query
     mockQuery.mockResolvedValueOnce({
-      rows: [{ percentual_comissao: '5', percentual_comissao_comercial: '3', modelo_comissionamento: 'percentual', valor_custo_fixo_entidade: null, valor_custo_fixo_clinica: null }],
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
       rowCount: 1,
     } as any);
     // lead check

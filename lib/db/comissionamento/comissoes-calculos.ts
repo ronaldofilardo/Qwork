@@ -10,6 +10,8 @@ import {
   calcularComissaoCustoFixo,
   type TipoCliente,
 } from '../../leads-config';
+import { PERCENTUAL_IMPOSTOS_PADRAO } from '../../financeiro/sociedade';
+import { derivarPercentualComercial } from '../../financeiro/calculos-centrais';
 import type { StatusComissao } from '../../types/comissionamento';
 import { calcularPrevisaoPagamento } from './utils';
 
@@ -47,8 +49,18 @@ export function calcularValoresComissao(params: {
   entidadeId: number | null;
   valorLaudo: number;
   totalParcelas: number;
+  valorParcela?: number | null;
+  percentualImpostos?: number | null;
 }): { resultado: ResultadoCalculoComissao } | { erro: string } {
-  const { rep, vinculoPerc, entidadeId, valorLaudo, totalParcelas } = params;
+  const {
+    rep,
+    vinculoPerc,
+    entidadeId,
+    valorLaudo,
+    totalParcelas,
+    valorParcela = null,
+    percentualImpostos = PERCENTUAL_IMPOSTOS_PADRAO,
+  } = params;
 
   const modeloRep: string = rep.modelo_comissionamento ?? 'percentual';
   const isCustoFixo = modeloRep === 'custo_fixo';
@@ -62,6 +74,22 @@ export function calcularValoresComissao(params: {
     vinculoPerc.percentual_comissao_comercial != null
       ? parseFloat(String(vinculoPerc.percentual_comissao_comercial))
       : 0;
+
+  const brutoPerParcel = valorLaudo / totalParcelas;
+  const valorLiquidoGateway =
+    valorParcela != null && valorParcela > 0 ? Number(valorParcela) : null;
+  const valorGateway =
+    valorLiquidoGateway != null && valorLiquidoGateway < brutoPerParcel
+      ? Math.max(0, brutoPerParcel - valorLiquidoGateway)
+      : 0;
+  const valorImpostos =
+    Math.round(
+      brutoPerParcel * (Math.max(0, Number(percentualImpostos)) / 100) * 100
+    ) / 100;
+  const baseRecebidaLiquida = Math.max(
+    0,
+    Math.round((brutoPerParcel - valorImpostos - valorGateway) * 100) / 100
+  );
 
   let percentualRep: number;
   let valorComissao: number;
@@ -89,11 +117,10 @@ export function calcularValoresComissao(params: {
         erro: `Valor negociado (R$ ${negociado.toFixed(2)}) é inferior ao custo fixo por avaliação (R$ ${custoFixoRep.toFixed(2)}).`,
       };
     }
-    const brutoPerParcel = valorLaudo / totalParcelas;
     const ratioRep = negociado > 0 ? valorRep / negociado : 0;
-    valorComissao = Math.round(ratioRep * brutoPerParcel * 100) / 100;
+    valorComissao = Math.round(ratioRep * baseRecebidaLiquida * 100) / 100;
     percentualRep = 0;
-    baseCalculoFinal = Math.max(0, valorComissao);
+    baseCalculoFinal = baseRecebidaLiquida;
   } else {
     percentualRep =
       percVinculo != null
@@ -107,15 +134,21 @@ export function calcularValoresComissao(params: {
       };
     }
 
-    const brutoPerParcel = valorLaudo / totalParcelas;
     valorComissao =
-      Math.round(((brutoPerParcel * percentualRep) / 100) * 100) / 100;
-    baseCalculoFinal = brutoPerParcel;
+      Math.round(((baseRecebidaLiquida * percentualRep) / 100) * 100) / 100;
+    baseCalculoFinal = baseRecebidaLiquida;
   }
 
+  // Derivar percentual do comercial via regra central QWork (40 − rep% se zerado)
+  const percComercialEfetivo = derivarPercentualComercial(
+    percentualRep,
+    percComercialVinculo,
+    modeloRep
+  );
+
   const valorComissaoComercial: number =
-    percComercialVinculo > 0
-      ? Math.round(((baseCalculoFinal * percComercialVinculo) / 100) * 100) /
+    percComercialEfetivo > 0
+      ? Math.round(((baseCalculoFinal * percComercialEfetivo) / 100) * 100) /
         100
       : 0;
 
@@ -123,7 +156,7 @@ export function calcularValoresComissao(params: {
     resultado: {
       valorComissao,
       percentualRep,
-      percComercialVinculo,
+      percComercialVinculo: percComercialEfetivo,
       valorComissaoComercial,
       baseCalculoFinal,
     },

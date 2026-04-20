@@ -90,6 +90,23 @@ describe('GET /api/admin/comissoes', () => {
     expect(mockQuery.mock.calls[1][1]).toContain('2026-03-01');
   });
 
+  it('deve aplicar os filtros também no resumo', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ total_comissoes: '0' }],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq('?mes=2026-03&status=retida'));
+
+    expect(String(mockQuery.mock.calls[0][0])).toContain(
+      'WHERE c.status::text = $1 AND c.mes_emissao = $2::date'
+    );
+    expect(mockQuery.mock.calls[0][1]).toEqual(['retida', '2026-03-01']);
+  });
+
   it('deve filtrar por rep_id', async () => {
     mockQuery
       .mockResolvedValueOnce({
@@ -168,5 +185,23 @@ describe('GET /api/admin/comissoes', () => {
     // WHERE não deve conter o valor inválido
     const whereParams = mockQuery.mock.calls[1][1] as unknown[];
     expect(whereParams).not.toContain('invalido');
+  });
+
+  it('deve incluir JOIN vinculos_comissao e campos representante_percentual na query de listagem', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ total_comissoes: '0' }],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq());
+
+    // Terceira chamada (index 2) = query principal de listagem
+    const listSQL = String(mockQuery.mock.calls[2][0]);
+    expect(listSQL).toContain('LEFT JOIN vinculos_comissao');
+    expect(listSQL).toContain('representante_percentual');
+    expect(listSQL).toContain('vinculo_percentual_comercial');
   });
 });

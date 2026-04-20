@@ -115,7 +115,8 @@ export default function AprovarComissaoModal({
       } = { modelo };
       if (modelo === 'percentual') {
         body.percentual = pctNum;
-        body.percentual_comissao_comercial = isNaN(pctComNum) ? 0 : pctComNum;
+        const derivedCom = !isNaN(pctNum) && pctNum > 0 ? 40 - pctNum : 0;
+        body.percentual_comissao_comercial = derivedCom;
       }
       if (modelo === 'custo_fixo') {
         body.valor_custo_fixo_entidade = cfEntidadeNum;
@@ -233,50 +234,27 @@ export default function AprovarComissaoModal({
           </div>
         )}
 
-        {/* Campo percentual comercial (modelo percentual) */}
+        {/* Campo percentual comercial (modelo percentual) — derivado automaticamente */}
         {modelo === 'percentual' && (
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              % Comissão Comercial (0% – 40%)
+              % Comissão Comercial
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                min={0}
-                max={40}
-                step={0.01}
-                value={percentualComercial}
-                onChange={(e) => setPercentualComercial(e.target.value)}
-                placeholder="Ex: 5.00"
-                className="w-full pr-8 pl-3 py-2.5 text-sm border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
-                %
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+              <span className="text-blue-700 font-bold text-sm">
+                {!isNaN(pctNum) && pctNum > 0
+                  ? (40 - pctNum).toFixed(2)
+                  : '—'}%
+              </span>
+              <span className="text-xs text-blue-500">
+                calculado automaticamente (40% − {!isNaN(pctNum) ? pctNum : '?'}% Rep)
               </span>
             </div>
-            {!isNaN(pctComNum) && pctComNum < 0 && (
-              <p className="text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle size={11} />
-                Percentual não pode ser negativo
+            {!isNaN(pctNum) && pctNum > 0 && (
+              <p className="text-xs text-gray-500">
+                Total: 40% · QWork fica com {(60).toFixed(2)}%
               </p>
             )}
-            {!somaValida && (
-              <p className="text-xs text-red-600 flex items-center gap-1">
-                <AlertCircle size={11} />
-                Soma (Rep {pctNum}% + Comercial {pctComNum}% ={' '}
-                {somaPerc.toFixed(2)}%) excede 40%
-              </p>
-            )}
-            {somaValida &&
-              modelo === 'percentual' &&
-              !isNaN(pctNum) &&
-              !isNaN(pctComNum) &&
-              pctNum > 0 && (
-                <p className="text-xs text-gray-500">
-                  Total: {somaPerc.toFixed(2)}% · QWork fica com{' '}
-                  {(100 - somaPerc).toFixed(2)}%
-                </p>
-              )}
           </div>
         )}
 

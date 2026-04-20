@@ -130,21 +130,27 @@ export default function EditRepresentanteModal({
           ? parseFloat(percentual)
           : null;
       }
+      // No modelo percentual, % comercial é derivado automaticamente como 40 − rep%
+      const effectivePercComercial =
+        modelo === 'percentual' && percentual.trim()
+          ? String(Math.max(0, 40 - parseFloat(percentual || '0')))
+          : percentualComercial;
+
       if (
-        percentualComercial.trim() !==
+        effectivePercComercial.trim() !==
         (rep.percentual_comissao_comercial != null
           ? String(rep.percentual_comissao_comercial)
           : '')
       ) {
-        body.percentual_comissao_comercial = percentualComercial.trim()
-          ? parseFloat(percentualComercial)
+        body.percentual_comissao_comercial = effectivePercComercial.trim()
+          ? parseFloat(effectivePercComercial)
           : null;
       }
       // Validar soma — aplica APENAS ao modelo percentual
       // No modelo custo_fixo, percComercial é % sobre o custo fixo (dimensão independente)
       const totalPerc =
-        parseFloat(percentual || '0') + parseFloat(percentualComercial || '0');
-      if (modelo !== 'custo_fixo' && totalPerc > 40) {
+        parseFloat(percentual || '0') + parseFloat(effectivePercComercial || '0');
+      if (modelo !== 'custo_fixo' && modelo !== 'percentual' && totalPerc > 40) {
         setErro(
           `A soma dos percentuais (rep + comercial) não pode ultrapassar 40%. Atual: ${totalPerc.toFixed(1)}%.`
         );
@@ -379,20 +385,35 @@ export default function EditRepresentanteModal({
                 </div>
                 <div>
                   <label className={labelCls}>Comissão Comercial (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="40"
-                    step="0.01"
-                    className={inputCls}
-                    value={percentualComercial}
-                    onChange={(e) => setPercentualComercial(e.target.value)}
-                    placeholder="Ex: 2.0"
-                  />
+                  {modelo === 'percentual' ? (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+                      <span className="text-blue-700 font-bold">
+                        {!isNaN(parseFloat(percentual)) && parseFloat(percentual) > 0
+                          ? (40 - parseFloat(percentual)).toFixed(2)
+                          : '—'}%
+                      </span>
+                      <span className="text-xs text-blue-500">
+                        40% − {percentual || '?'}% Rep
+                      </span>
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      min="0"
+                      max="40"
+                      step="0.01"
+                      className={inputCls}
+                      value={percentualComercial}
+                      onChange={(e) => setPercentualComercial(e.target.value)}
+                      placeholder="Ex: 2.0"
+                    />
+                  )}
                   <p className="text-xs text-gray-400 mt-1">
                     {modelo === 'custo_fixo'
                       ? '% sobre o custo fixo (não sobre o valor negociado)'
-                      : 'Soma rep + comercial ≤ 40%'}
+                      : modelo === 'percentual'
+                        ? 'Calculado automaticamente'
+                        : 'Soma rep + comercial ≤ 40%'}
                   </p>
                 </div>
                 <div className="col-span-2">

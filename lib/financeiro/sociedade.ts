@@ -7,6 +7,10 @@ export interface CalcularDistribuicaoSociedadeInput {
   valorRepresentanteFixo?: number | null;
   percentualComercial?: number | null;
   percentualImpostos?: number;
+  percentualGateway?: number | null;
+  valorTaxaGateway?: number | null;
+  valorLiquidoGateway?: number | null;
+  metodoPagamento?: string | null;
   percentualSocioRonaldo?: number;
   percentualSocioAntonio?: number;
 }
@@ -15,6 +19,8 @@ export interface DistribuicaoSociedade {
   viavel: boolean;
   valorBruto: number;
   valorImpostos: number;
+  valorGateway: number;
+  baseLiquida: number;
   valorRepresentante: number;
   margemLivre: number;
   valorComercial: number;
@@ -57,6 +63,125 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function normalizarMetodoPagamento(
+  metodo: string | null | undefined
+): 'pix' | 'boleto' | 'credit_card' | 'outro' {
+  const normalizado = String(metodo ?? '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (normalizado.includes('pix')) return 'pix';
+  if (normalizado.includes('boleto')) return 'boleto';
+  if (normalizado.includes('credit') || normalizado.includes('cartao')) {
+    return 'credit_card';
+  }
+
+  return 'outro';
+}
+
+function getPercentualGatewayFallback(
+  metodo: string | null | undefined
+): number {
+  const metodoNormalizado = normalizarMetodoPagamento(metodo);
+
+  const candidatesByMethod: Record<string, Array<string | undefined>> = {
+    pix: [
+      process.env.ASAAS_GATEWAY_FEE_PIX_PERCENT,
+      process.env.NEXUS_GATEWAY_FEE_PIX_PERCENT,
+      process.env.GATEWAY_FEE_PIX_PERCENT,
+      process.env.ASAAS_TAXA_PIX_PERCENT,
+    ],
+    boleto: [
+      process.env.ASAAS_GATEWAY_FEE_BOLETO_PERCENT,
+      process.env.NEXUS_GATEWAY_FEE_BOLETO_PERCENT,
+      process.env.GATEWAY_FEE_BOLETO_PERCENT,
+      process.env.ASAAS_TAXA_BOLETO_PERCENT,
+    ],
+    credit_card: [
+      process.env.ASAAS_GATEWAY_FEE_CREDIT_CARD_PERCENT,
+      process.env.NEXUS_GATEWAY_FEE_CREDIT_CARD_PERCENT,
+      process.env.GATEWAY_FEE_CREDIT_CARD_PERCENT,
+      process.env.ASAAS_TAXA_CARTAO_PERCENT,
+    ],
+    outro: [],
+  };
+
+  const fallback = [
+    ...(candidatesByMethod[metodoNormalizado] ?? []),
+    process.env.ASAAS_GATEWAY_FEE_DEFAULT_PERCENT,
+    process.env.NEXUS_GATEWAY_FEE_DEFAULT_PERCENT,
+    process.env.GATEWAY_FEE_DEFAULT_PERCENT,
+    '0',
+  ];
+
+  for (const raw of fallback) {
+    const parsed = Number(raw ?? NaN);
+    if (Number.isFinite(parsed)) {
+      return clamp(parsed, 0, 100);
+    }
+  }
+
+  return 0;
+}
+
+export function calcularTaxaGateway(input: {
+  valorBruto: number;
+  percentualGateway?: number | null;
+  valorTaxaGateway?: number | null;
+  valorLiquidoGateway?: number | null;
+  metodoPagamento?: string | null;
+}): {
+  valorGateway: number;
+  valorLiquidoAposGateway: number;
+  percentualGatewayAplicado: number;
+} {
+  const valorBruto = round2(Math.max(0, Number(input.valorBruto || 0)));
+
+  const taxaExplicita = Number(input.valorTaxaGateway ?? NaN);
+  if (Number.isFinite(taxaExplicita) && taxaExplicita > 0) {
+    const valorGateway = round2(clamp(taxaExplicita, 0, valorBruto));
+    return {
+      valorGateway,
+      valorLiquidoAposGateway: round2(valorBruto - valorGateway),
+      percentualGatewayAplicado:
+        valorBruto > 0 ? round2((valorGateway / valorBruto) * 100) : 0,
+    };
+  }
+
+  const valorLiquidoGateway = Number(input.valorLiquidoGateway ?? NaN);
+  if (
+    Number.isFinite(valorLiquidoGateway) &&
+    valorLiquidoGateway >= 0 &&
+    valorLiquidoGateway <= valorBruto
+  ) {
+    const valorGateway = round2(valorBruto - valorLiquidoGateway);
+    return {
+      valorGateway,
+      valorLiquidoAposGateway: round2(valorBruto - valorGateway),
+      percentualGatewayAplicado:
+        valorBruto > 0 ? round2((valorGateway / valorBruto) * 100) : 0,
+    };
+  }
+
+  const percentualGateway = clamp(
+    Number(
+      input.percentualGateway ??
+        getPercentualGatewayFallback(input.metodoPagamento)
+    ),
+    0,
+    100
+  );
+  const valorGateway = round2(valorBruto * (percentualGateway / 100));
+
+  return {
+    valorGateway,
+    valorLiquidoAposGateway: round2(valorBruto - valorGateway),
+    percentualGatewayAplicado: percentualGateway,
+  };
+}
+
 export function calcularDistribuicaoSociedade(
   input: CalcularDistribuicaoSociedadeInput
 ): DistribuicaoSociedade {
@@ -82,29 +207,43 @@ export function calcularDistribuicaoSociedade(
   );
 
   const valorImpostos = round2(valorBruto * (percentualImpostos / 100));
+  const { valorGateway } = calcularTaxaGateway({
+    valorBruto,
+    percentualGateway: input.percentualGateway,
+    valorTaxaGateway: input.valorTaxaGateway,
+    valorLiquidoGateway: input.valorLiquidoGateway,
+    metodoPagamento: input.metodoPagamento,
+  });
+  const baseLiquida = round2(
+    Math.max(0, valorBruto - valorImpostos - valorGateway)
+  );
 
   const valorRepresentante =
     input.modeloRepresentante === 'custo_fixo'
       ? round2(Math.max(0, Number(input.valorRepresentanteFixo ?? 0)))
       : round2(
-          valorBruto *
+          baseLiquida *
             (clamp(Number(input.percentualRepresentante ?? 0), 0, 100) / 100)
         );
 
-  const margemLivre = round2(valorBruto - valorImpostos - valorRepresentante);
+  const margemLivre = round2(baseLiquida - valorRepresentante);
 
   if (margemLivre < 0) {
     return {
       viavel: false,
       valorBruto,
       valorImpostos,
+      valorGateway,
+      baseLiquida,
       valorRepresentante,
       margemLivre,
       valorComercial: 0,
       valorParaSocios: 0,
       valorSocioRonaldo: 0,
       valorSocioAntonio: 0,
-      totalDistribuido: round2(valorImpostos + valorRepresentante),
+      totalDistribuido: round2(
+        valorImpostos + valorGateway + valorRepresentante
+      ),
     };
   }
 
@@ -119,6 +258,7 @@ export function calcularDistribuicaoSociedade(
   const valorSocioAntonio = round2(valorParaSocios - valorSocioRonaldo);
   const totalDistribuido = round2(
     valorImpostos +
+      valorGateway +
       valorRepresentante +
       valorComercial +
       valorSocioRonaldo +
@@ -129,6 +269,8 @@ export function calcularDistribuicaoSociedade(
     viavel: valorParaSocios >= 0,
     valorBruto,
     valorImpostos,
+    valorGateway,
+    baseLiquida,
     valorRepresentante,
     margemLivre,
     valorComercial,
