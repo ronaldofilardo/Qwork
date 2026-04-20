@@ -214,9 +214,10 @@ export async function buscarDadosTomador(
   const contratoResult = await query(
     `SELECT id, aceito, data_aceite, ip_aceite, criado_em
      FROM contratos
-     WHERE tomador_id = $1 AND aceito = true
-     ORDER BY criado_em DESC LIMIT 1`,
-    [tomadorId]
+     WHERE tomador_id = $1 AND tipo_tomador = $2 AND aceito = true
+     ORDER BY COALESCE(data_aceite, criado_em) DESC, id DESC
+     LIMIT 1`,
+    [tomadorId, tipo]
   );
   if (contratoResult.rows.length === 0) return null;
 

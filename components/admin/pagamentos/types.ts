@@ -24,6 +24,7 @@ export interface Solicitacao {
   solicitante_nome: string;
   solicitante_cpf: string;
   num_avaliacoes_concluidas: number;
+  num_avaliacoes_cobradas?: number | null;
   valor_total_calculado: number | null;
   lote_criado_em: string;
   lote_liberado_em: string;

@@ -124,8 +124,12 @@ export function usePagamentosAdmin() {
           token: data.token,
           loteId: loteId,
           nomeTomador: solicitacao.nome_tomador,
-          valorTotal: solicitacao.valor_total_calculado || 0,
-          numAvaliacoes: solicitacao.num_avaliacoes_concluidas,
+          valorTotal:
+            data.valor_total ?? solicitacao.valor_total_calculado ?? 0,
+          numAvaliacoes:
+            data.num_avaliacoes ??
+            solicitacao.num_avaliacoes_cobradas ??
+            solicitacao.num_avaliacoes_concluidas,
         });
       }
       await carregarSolicitacoes();
@@ -145,7 +149,9 @@ export function usePagamentosAdmin() {
         loteId: solicitacao.lote_id,
         nomeTomador: solicitacao.nome_tomador,
         valorTotal: solicitacao.valor_total_calculado || 0,
-        numAvaliacoes: solicitacao.num_avaliacoes_concluidas,
+        numAvaliacoes:
+          solicitacao.num_avaliacoes_cobradas ??
+          solicitacao.num_avaliacoes_concluidas,
       });
     }
   };

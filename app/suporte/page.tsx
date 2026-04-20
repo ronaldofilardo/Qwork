@@ -105,6 +105,7 @@ export default function SuportePage() {
           <ContratosTable
             endpoint="/api/suporte/contratos"
             allowGerarContrato
+            allowExpandClinicaEmpresas
           />
         );
       }

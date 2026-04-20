@@ -262,6 +262,7 @@ export async function criarComissaoAdmin(params: {
     entidadeId: entId,
     valorLaudo: valor_laudo,
     totalParcelas: totalParc,
+    valorParcela: _valor_parcela,
   });
 
   if ('erro' in calculoResult) {

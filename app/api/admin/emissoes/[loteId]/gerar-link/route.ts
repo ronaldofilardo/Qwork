@@ -19,9 +19,9 @@ export async function POST(
       `SELECT la.id, la.status, la.status_pagamento, la.valor_por_funcionario,
               la.liberado_por, la.clinica_id, la.entidade_id,
               COALESCE(e.isento_pagamento, c.isento_pagamento, false) AS isento_pagamento,
-              COUNT(a.id) AS num_avaliacoes
+              COUNT(DISTINCT a.id) FILTER (WHERE a.status != 'rascunho')::int AS num_avaliacoes
        FROM lotes_avaliacao la
-       LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
+       LEFT JOIN avaliacoes a ON a.lote_id = la.id
        LEFT JOIN entidades e ON e.id = la.entidade_id
        LEFT JOIN clinicas c ON c.id = la.clinica_id
        WHERE la.id = $1
@@ -151,6 +151,7 @@ export async function POST(
       lote_id: loteId,
       token,
       link_pagamento: linkPagamento,
+      num_avaliacoes: lote.num_avaliacoes,
       valor_total: valorTotal,
     });
   } catch (error: any) {

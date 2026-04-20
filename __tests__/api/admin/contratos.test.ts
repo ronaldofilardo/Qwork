@@ -190,18 +190,17 @@ describe('GET /api/admin/contratos', () => {
     expect(body.contratos).toHaveLength(3);
   });
 
-  it('a query usa vinculos_comissao como tabela principal com LEFT JOINs', async () => {
+  it('a query parte de todas as entidades e clínicas cadastradas com vínculo lateral opcional', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     expect(mockQuery).toHaveBeenCalledTimes(1);
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
-    expect(sql).toContain('from public.vinculos_comissao');
-    expect(sql).toContain('left join public.comissoes_laudo');
+    expect(sql).toContain('from entidades');
+    expect(sql).toContain('from clinicas');
+    expect(sql).toContain('left join lateral');
+    expect(sql).toContain('from public.vinculos_comissao v');
     expect(sql).toContain('left join public.representantes');
-    // COALESCE para CPF PF e PJ
     expect(sql).toContain('cpf_responsavel_pj');
-    // Agrega por vínculo
-    expect(sql).toContain('count(distinct cl.laudo_id)');
   });
 
   it('inclui valor_qwork na query (diferença do comercial/suporte)', async () => {
@@ -216,6 +215,15 @@ describe('GET /api/admin/contratos', () => {
     await GET();
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
     expect(sql).toContain('valor_custo_fixo_snapshot');
+  });
+
+  it('lista todos os tomadores cadastrados, inclusive sem vínculo ativo', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] } as never);
+    await GET();
+    const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
+    expect(sql).toContain('from entidades');
+    expect(sql).toContain('from clinicas');
+    expect(sql).toContain('left join lateral');
   });
 
   it('usa requireRole com perfil admin', async () => {
@@ -240,16 +248,18 @@ describe('GET /api/admin/contratos', () => {
     expect(body.contratos[0].isento_pagamento).toBe(false);
   });
 
-  it('preserva o campo isento_pagamento também nas linhas do union sem vínculo', async () => {
+  it('preserva o campo isento_pagamento para qualquer tomador cadastrado', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
     await GET();
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
     expect(sql).toContain(
-      'coalesce(clin.isento_pagamento, ent.isento_pagamento, false)::boolean as isento_pagamento'
+      'coalesce(e.isento_pagamento, false)::boolean as isento_pagamento'
     );
-    expect(sql).toContain('coalesce(ent2.isento_pagamento, false)::boolean');
+    expect(sql).toContain(
+      'coalesce(cl.isento_pagamento, false)::boolean as isento_pagamento'
+    );
     expect(sql.indexOf('as valor_qwork')).toBeLessThan(
-      sql.indexOf('as isento_pagamento')
+      sql.indexOf('tb.isento_pagamento')
     );
   });
 });

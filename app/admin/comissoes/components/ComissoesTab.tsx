@@ -126,8 +126,7 @@ export function ComissoesTab({
                 <th className="px-3 py-3 text-left">Cliente</th>
                 <th className="px-3 py-3 text-left">Lote</th>
                 <th className="px-3 py-3 text-right">Valor Total</th>
-                <th className="px-3 py-3 text-right">Comissão</th>
-                <th className="px-3 py-3 text-center">%</th>
+                <th className="px-3 py-3 text-center">Comissão</th>
                 <th className="px-3 py-3 text-center">Parcelas</th>
                 <th className="px-3 py-3 text-left">Status</th>
                 <th className="px-3 py-3 text-left">Mês Pag.</th>
@@ -146,6 +145,27 @@ export function ComissoesTab({
                           )
                       )
                     : rawAcoes;
+                const valorTotal = Number(c.valor_laudo ?? 0);
+                const totalParcelas = Math.max(
+                  1,
+                  Number(c.total_parcelas ?? 1)
+                );
+                const valorParcela = valorTotal / totalParcelas;
+                const percentual = Number(c.percentual_comissao ?? 0);
+                const usaCustoFixo =
+                  percentual <= 0 && Number(c.valor_comissao ?? 0) > 0;
+                // % efetivo do rep (usa valor atual do representante como fonte primária)
+                const repPct = parseFloat(
+                  String(
+                    c.representante_percentual ?? c.percentual_comissao ?? '0'
+                  )
+                );
+                const rawComPct = parseFloat(
+                  String(c.vinculo_percentual_comercial ?? '0')
+                );
+                // Fallback de exibição: se comercial zerado e rep > 0, derivar 40−rep%
+                const comPct =
+                  rawComPct === 0 && repPct > 0 ? 40 - repPct : rawComPct;
                 return (
                   <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3">
@@ -170,13 +190,34 @@ export function ComissoesTab({
                       )}
                     </td>
                     <td className="px-3 py-3 text-right text-gray-700">
-                      {fmt(c.valor_laudo)}
-                    </td>
-                    <td className="px-3 py-3 text-right font-semibold text-green-700">
-                      {fmt(c.valor_comissao)}
+                      <div className="font-medium">{fmt(c.valor_laudo)}</div>
+                      {totalParcelas > 1 && (
+                        <div className="text-[11px] text-gray-500">
+                          Parcela: {fmt(valorParcela)}
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-center text-gray-600 text-xs">
-                      {parseFloat(c.percentual_comissao || '0')}%
+                      {usaCustoFixo ? (
+                        <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
+                          Fixo
+                        </span>
+                      ) : (
+                        <div className="space-y-1">
+                          <div className="text-green-700 font-semibold">
+                            {repPct}% Rep
+                          </div>
+                          <div className="text-green-700">
+                            {fmt(c.valor_comissao)}
+                          </div>
+                          <div className="text-blue-600 font-semibold mt-1">
+                            {comPct}% Com
+                          </div>
+                          <div className="text-blue-600">
+                            {fmt(c.valor_comissao_comercial ?? 0)}
+                          </div>
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-3 text-center text-xs">
                       {(c.total_parcelas ?? 1) > 1 ? (
