@@ -38,6 +38,12 @@ export interface RepresentanteSession {
   dados_bancarios_solicitado_em?: string | null;
   dados_bancarios_confirmado_em?: string | null;
   precisa_trocar_senha?: boolean;
+  // Comissionamento
+  modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+  percentual_comissao?: number | null;
+  percentual_comissao_comercial?: number | null;
+  valor_custo_fixo_clinica?: number | null;
+  valor_custo_fixo_entidade?: number | null;
 }
 
 interface RepContextValue {

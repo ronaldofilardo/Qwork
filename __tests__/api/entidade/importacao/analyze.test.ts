@@ -35,16 +35,8 @@ function makeMultipartRequest(
   file?: File,
   overrideContentType?: string
 ): Request {
-  const fd = new FormData();
-  if (file) fd.append('file', file);
-
-  const req = new Request(
-    'http://localhost/api/entidade/importacao/analyze',
-    { method: 'POST', body: fd }
-  );
-
   if (overrideContentType) {
-    // Recriar com content-type forçado (simulando requisição inválida)
+    // Simula requisição inválida com content-type errado
     return new Request('http://localhost/api/entidade/importacao/analyze', {
       method: 'POST',
       body: 'invalid',
@@ -52,22 +44,43 @@ function makeMultipartRequest(
     });
   }
 
+  const fd = new FormData();
+  if (file) fd.append('file', file);
+
+  const req = new Request('http://localhost/api/entidade/importacao/analyze', {
+    method: 'POST',
+    body: fd,
+  });
+
+  // Em jsdom, Request.formData() não parseia o body corretamente —
+  // sobrescreve o método para retornar o FormData já criado.
+  Object.defineProperty(req, 'formData', {
+    value: () => Promise.resolve(fd),
+    writable: true,
+  });
+
   return req;
 }
 
 function makeXlsxFile(name = 'test.xlsx'): File {
-  return new File(['PK fake xlsx content'], name, {
+  const file = new File(['PK fake xlsx content'], name, {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
+  // Em jsdom, File.prototype.arrayBuffer não existe. Adiciona na instância
+  // (parseSpreadsheetHeaders é mockado, então o conteúdo do buffer não importa).
+  Object.defineProperty(file, 'arrayBuffer', {
+    value: () => Promise.resolve(new ArrayBuffer(8)),
+    writable: true,
+    configurable: true,
+  });
+  return file;
 }
 
 describe('POST /api/entidade/importacao/analyze', () => {
   let POST: (req: Request) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import(
-      '@/app/api/entidade/importacao/analyze/route'
-    );
+    const mod = await import('@/app/api/entidade/importacao/analyze/route');
     POST = mod.POST;
   });
 
@@ -92,8 +105,20 @@ describe('POST /api/entidade/importacao/analyze', () => {
     });
 
     sugerirMapeamento.mockReturnValue([
-      { indice: 0, nomeOriginal: 'CPF', sugestaoQWork: 'cpf', confianca: 1.0, exemploDados: ['123'] },
-      { indice: 1, nomeOriginal: 'NOME', sugestaoQWork: 'nome', confianca: 1.0, exemploDados: ['João'] },
+      {
+        indice: 0,
+        nomeOriginal: 'CPF',
+        sugestaoQWork: 'cpf',
+        confianca: 1.0,
+        exemploDados: ['123'],
+      },
+      {
+        indice: 1,
+        nomeOriginal: 'NOME',
+        sugestaoQWork: 'nome',
+        confianca: 1.0,
+        exemploDados: ['João'],
+      },
     ]);
 
     getCamposQWorkEntidade.mockReturnValue([
@@ -115,11 +140,7 @@ describe('POST /api/entidade/importacao/analyze', () => {
   });
 
   it('retorna 400 quando arquivo não é enviado', async () => {
-    const fd = new FormData();
-    const req = new Request('http://localhost/api/entidade/importacao/analyze', {
-      method: 'POST',
-      body: fd,
-    });
+    const req = makeMultipartRequest(); // sem arquivo
 
     const res = await POST(req);
     const body = await res.json();
@@ -130,12 +151,7 @@ describe('POST /api/entidade/importacao/analyze', () => {
 
   it('retorna 400 para extensão inválida (.txt)', async () => {
     const file = new File(['content'], 'dados.txt', { type: 'text/plain' });
-    const fd = new FormData();
-    fd.append('file', file);
-    const req = new Request('http://localhost/api/entidade/importacao/analyze', {
-      method: 'POST',
-      body: fd,
-    });
+    const req = makeMultipartRequest(file);
 
     const res = await POST(req);
     const body = await res.json();
@@ -150,12 +166,7 @@ describe('POST /api/entidade/importacao/analyze', () => {
     const file = new File([bigContent], 'grande.xlsx', {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
-    const fd = new FormData();
-    fd.append('file', file);
-    const req = new Request('http://localhost/api/entidade/importacao/analyze', {
-      method: 'POST',
-      body: fd,
-    });
+    const req = makeMultipartRequest(file);
 
     const res = await POST(req);
     const body = await res.json();
@@ -208,7 +219,13 @@ describe('POST /api/entidade/importacao/analyze', () => {
   it('retorna camposObrigatoriosFaltando quando campo obrigatório não tem sugestão', async () => {
     // Apenas nome tem sugestão, cpf falta
     sugerirMapeamento.mockReturnValue([
-      { indice: 1, nomeOriginal: 'NOME', sugestaoQWork: 'nome', confianca: 1.0, exemploDados: ['João'] },
+      {
+        indice: 1,
+        nomeOriginal: 'NOME',
+        sugestaoQWork: 'nome',
+        confianca: 1.0,
+        exemploDados: ['João'],
+      },
     ]);
 
     const req = makeMultipartRequest(makeXlsxFile());

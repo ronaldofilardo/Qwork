@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
-import Link from 'next/link';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Users2,
   TrendingUp,
@@ -12,33 +11,11 @@ import {
   UserCircle2,
   Copy,
   Check,
+  DollarSign,
+  Percent,
+  BadgeCheck,
 } from 'lucide-react';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
 import { useRepresentante } from '../rep-context';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  ArcElement,
-  LineElement,
-  PointElement,
-  Title,
-  Tooltip,
-  Legend
-);
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 interface Resumo {
@@ -90,32 +67,6 @@ interface VinculoItem {
   dias_para_expirar: number | null;
 }
 
-interface VendedorPerf {
-  id: number;
-  nome: string;
-  total_leads: number;
-  leads_convertidos: number;
-  volume_negociado: string;
-  volume_convertido: string;
-}
-
-interface EvolucaoItem {
-  mes: string;
-  total: number;
-  convertidos: number;
-}
-
-interface MetricasData {
-  vendedores: VendedorPerf[];
-  evolucao: EvolucaoItem[];
-  resumo: {
-    total_leads: string;
-    total_convertidos: string;
-    valor_total_negociado: string;
-    vinculos_ativos: string;
-  };
-}
-
 type DrawerTipo = 'vendedores' | 'leads' | 'vinculos' | 'leads_mes' | null;
 
 // ── Mapa de cores de status ─────────────────────────────────────────────────
@@ -134,19 +85,12 @@ const STATUS_VINCULO_CLS: Record<string, string> = {
   encerrado: 'bg-gray-100 text-gray-400',
 };
 
-// ── Paleta de gráficos ──────────────────────────────────────────────────────
-const CHART_COLORS = [
-  '#6366f1',
-  '#10b981',
-  '#f59e0b',
-  '#3b82f6',
-  '#ec4899',
-  '#14b8a6',
-  '#f97316',
-  '#8b5cf6',
-  '#06b6d4',
-  '#84cc16',
-];
+// Preço base QWork por laudo (por tipo de tomador)
+const PRECO_BASE_CLINICA = 5;
+const PRECO_BASE_ENTIDADE = 12;
+
+const fmtBRL = (v: number) =>
+  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 // ── Auxiliares ──────────────────────────────────────────────────────────────
 const fmtCpf = (v?: string | null) => {
@@ -162,24 +106,6 @@ const fmtCnpj = (v?: string | null) => {
   return d.length === 14
     ? d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
     : v;
-};
-const fmtMes = (ym: string) => {
-  const [y, m] = ym.split('-');
-  const meses = [
-    'Jan',
-    'Fev',
-    'Mar',
-    'Abr',
-    'Mai',
-    'Jun',
-    'Jul',
-    'Ago',
-    'Set',
-    'Out',
-    'Nov',
-    'Dez',
-  ];
-  return `${meses[parseInt(m) - 1]}/${y.slice(2)}`;
 };
 
 // ── Componente KPICard ──────────────────────────────────────────────────────
@@ -221,7 +147,6 @@ export default function DashboardRepresentante() {
   const { session } = useRepresentante();
   const [resumo, setResumo] = useState<Resumo | null>(null);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
-  const [metricas, setMetricas] = useState<MetricasData | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Drawer
@@ -231,22 +156,17 @@ export default function DashboardRepresentante() {
   const [vinculos, setVinculos] = useState<VinculoItem[]>([]);
   const [copiado, setCopiado] = useState(false);
 
-  const _chartRegistered = useRef(false);
-  _chartRegistered.current = true;
-
   const load = useCallback(async () => {
     try {
-      const [resumoRes, vendedoresRes, metricasRes] = await Promise.all([
+      const [resumoRes, vendedoresRes] = await Promise.all([
         fetch('/api/representante/equipe/resumo'),
         fetch('/api/representante/equipe/vendedores?page=1'),
-        fetch('/api/representante/metricas'),
       ]);
       if (resumoRes.ok) setResumo(await resumoRes.json());
       if (vendedoresRes.ok) {
         const d = await vendedoresRes.json();
         setVendedores(d.vendedores ?? []);
       }
-      if (metricasRes.ok) setMetricas(await metricasRes.json());
     } catch (e) {
       console.error(e);
     } finally {
@@ -299,125 +219,6 @@ export default function DashboardRepresentante() {
       </div>
     );
   }
-
-  const temEquipe = vendedores.length > 0;
-  const evolucao = metricas?.evolucao ?? [];
-  const vendPerf = metricas?.vendedores ?? [];
-
-  const barLeadsVinculosData = {
-    labels: ['Leads Ativos', 'Vínculos Ativos'],
-    datasets: [
-      {
-        label: 'Total',
-        data: [resumo?.leads_ativos ?? 0, resumo?.vinculos_ativos ?? 0],
-        backgroundColor: ['#6366f1', '#10b981'],
-        borderRadius: 6,
-      },
-    ],
-  };
-
-  const doughnutStatusData = {
-    labels: ['Leads Ativos', 'Vínculos Ativos', 'Leads Este Mês'],
-    datasets: [
-      {
-        data: [
-          resumo?.leads_ativos ?? 0,
-          resumo?.vinculos_ativos ?? 0,
-          resumo?.leads_mes ?? 0,
-        ],
-        backgroundColor: ['#6366f1', '#10b981', '#f59e0b'],
-        borderWidth: 2,
-        borderColor: '#fff',
-      },
-    ],
-  };
-
-  const lineEvolucaoData = {
-    labels: evolucao.map((e) => fmtMes(e.mes)),
-    datasets: [
-      {
-        label: 'Total',
-        data: evolucao.map((e) => Number(e.total)),
-        borderColor: '#6366f1',
-        backgroundColor: 'rgba(99,102,241,0.08)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 3,
-      },
-      {
-        label: 'Convertidos',
-        data: evolucao.map((e) => Number(e.convertidos)),
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16,185,129,0.08)',
-        tension: 0.4,
-        fill: true,
-        pointRadius: 3,
-      },
-    ],
-  };
-
-  const barVendedoresData =
-    temEquipe && vendPerf.length > 0
-      ? {
-          labels: vendPerf.map((v) => v.nome.split(' ')[0]),
-          datasets: [
-            {
-              label: 'Leads Totais',
-              data: vendPerf.map((v) => Number(v.total_leads)),
-              backgroundColor: CHART_COLORS.slice(0, vendPerf.length).map(
-                (c) => c + 'cc'
-              ),
-              borderRadius: 5,
-            },
-            {
-              label: 'Convertidos',
-              data: vendPerf.map((v) => Number(v.leads_convertidos)),
-              backgroundColor: '#10b981cc',
-              borderRadius: 5,
-            },
-          ],
-        }
-      : null;
-
-  const chartOpts = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { mode: 'index' as const, intersect: false },
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-      y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
-    },
-  };
-
-  const doughnutOpts = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'bottom' as const,
-        labels: { font: { size: 11 }, padding: 12, boxWidth: 10 },
-      },
-    },
-    cutout: '65%',
-  };
-
-  const lineOpts = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: { font: { size: 10 }, padding: 8, boxWidth: 8 },
-      },
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-      y: { grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
-    },
-  };
 
   const DRAWER_TITLE: Record<NonNullable<DrawerTipo>, string> = {
     vendedores: 'Vendedores na Equipe',
@@ -524,118 +325,162 @@ export default function DashboardRepresentante() {
         />
       </div>
 
-      {/* Seção de gráficos */}
-      <div>
-        <h3 className="text-base font-semibold text-gray-800 mb-4">
-          Produtividade
-        </h3>
+      {/* Seção de comissionamento */}
+      <div className="bg-white rounded-2xl border shadow-sm p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <BadgeCheck size={18} className="text-purple-600" />
+          <h3 className="text-sm font-bold text-gray-900">
+            Meu Comissionamento
+          </h3>
+        </div>
 
-        {temEquipe ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl border p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Leads × Vínculos
+        {session?.modelo_comissionamento ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Modelo */}
+            <div className="bg-gray-50 rounded-xl p-3 border">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                Modelo
               </p>
-              <div className="h-44">
-                <Bar data={barLeadsVinculosData} options={chartOpts} />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Visão Geral
-              </p>
-              <div className="h-44">
-                <Doughnut data={doughnutStatusData} options={doughnutOpts} />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Evolução de Leads
-              </p>
-              <div className="h-44">
-                {evolucao.length > 0 ? (
-                  <Line data={lineEvolucaoData} options={lineOpts} />
+              <div className="flex items-center gap-2">
+                {session.modelo_comissionamento === 'percentual' ? (
+                  <Percent size={16} className="text-green-600" />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-300 text-sm">
-                    Sem dados históricos
+                  <DollarSign size={16} className="text-blue-600" />
+                )}
+                <p className="font-bold text-gray-900">
+                  {session.modelo_comissionamento === 'percentual'
+                    ? 'Percentual'
+                    : 'Custo Fixo'}
+                </p>
+              </div>
+            </div>
+
+            {/* Percentual */}
+            {session.modelo_comissionamento === 'percentual' && (
+              <>
+                {session.percentual_comissao != null && (
+                  <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                      Minha Comissão
+                    </p>
+                    <p className="font-black text-green-700 text-lg">
+                      {session.percentual_comissao}
+                      <span className="text-sm font-bold ml-0.5">%</span>
+                    </p>
                   </div>
                 )}
-              </div>
-            </div>
+                {session.percentual_comissao_comercial != null && (
+                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                      % Comercial
+                    </p>
+                    <p className="font-black text-purple-700 text-lg">
+                      {session.percentual_comissao_comercial}
+                      <span className="text-sm font-bold ml-0.5">%</span>
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
 
-            {barVendedoresData && (
-              <div className="bg-white rounded-xl border p-5 md:col-span-2 xl:col-span-3">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Leads por Vendedor
-                  <span className="ml-2 normal-case font-normal text-gray-400">
-                    (total vs convertidos)
-                  </span>
-                </p>
-                <div className="h-48">
-                  <Bar
-                    data={barVendedoresData}
-                    options={{
-                      ...chartOpts,
-                      plugins: {
-                        ...chartOpts.plugins,
-                        legend: {
-                          display: true,
-                          position: 'top' as const,
-                          labels: {
-                            font: { size: 10 },
-                            padding: 8,
-                            boxWidth: 10,
-                          },
-                        },
-                      },
-                    }}
-                  />
-                </div>
-              </div>
+            {/* Custo fixo: Comissão Comercial ao lado do Modelo, depois Clínica | Entidade */}
+            {session.modelo_comissionamento === 'custo_fixo' && (
+              <>
+                {session.percentual_comissao_comercial != null && (
+                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                      % Comercial
+                    </p>
+                    <p className="font-black text-purple-700 text-lg">
+                      {Number(session.percentual_comissao_comercial).toFixed(2)}
+                      <span className="text-sm font-bold ml-0.5">%</span>
+                    </p>
+                  </div>
+                )}
+                {session.valor_custo_fixo_clinica != null && (
+                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                      Custo Fixo — Clínica
+                    </p>
+                    <p className="font-black text-blue-700 text-lg">
+                      {fmtBRL(Number(session.valor_custo_fixo_clinica))}
+                    </p>
+                  </div>
+                )}
+                {session.valor_custo_fixo_entidade != null && (
+                  <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                      Custo Fixo — Entidade
+                    </p>
+                    <p className="font-black text-blue-700 text-lg">
+                      {fmtBRL(Number(session.valor_custo_fixo_entidade))}
+                    </p>
+                  </div>
+                )}
+                {/* Valor mínimo de venda */}
+                {(session.valor_custo_fixo_clinica != null ||
+                  session.valor_custo_fixo_entidade != null) && (
+                  <div className="sm:col-span-2 bg-gray-900 rounded-xl p-4 border border-gray-800">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                      Valor mínimo de venda (por avaliação)
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {session.valor_custo_fixo_clinica != null && (
+                        <div className="bg-gray-800 rounded-lg px-4 py-3">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                            Clínica
+                          </p>
+                          <p className="text-xs text-gray-400 mb-0.5">
+                            {fmtBRL(PRECO_BASE_CLINICA)}
+                            {' + '}
+                            {fmtBRL(Number(session.valor_custo_fixo_clinica))}
+                            {' ='}
+                          </p>
+                          <p className="text-lg font-black text-white">
+                            {fmtBRL(
+                              PRECO_BASE_CLINICA +
+                                Number(session.valor_custo_fixo_clinica)
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      {session.valor_custo_fixo_entidade != null && (
+                        <div className="bg-gray-800 rounded-lg px-4 py-3">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                            Entidade
+                          </p>
+                          <p className="text-xs text-gray-400 mb-0.5">
+                            {fmtBRL(PRECO_BASE_ENTIDADE)}
+                            {' + '}
+                            {fmtBRL(Number(session.valor_custo_fixo_entidade))}
+                            {' ='}
+                          </p>
+                          <p className="text-lg font-black text-white">
+                            {fmtBRL(
+                              PRECO_BASE_ENTIDADE +
+                                Number(session.valor_custo_fixo_entidade)
+                            )}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-2 text-[10px] text-gray-500">
+                      Base QWork + seu custo fixo
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-white rounded-xl border p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Evolução dos Meus Leads
-              </p>
-              <div className="h-52">
-                {evolucao.length > 0 ? (
-                  <Line data={lineEvolucaoData} options={lineOpts} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-300 gap-2">
-                    <TrendingUp size={28} />
-                    <span className="text-sm">Sem dados ainda</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border p-5">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                Distribuição (Leads × Vínculos)
-              </p>
-              <div className="h-52">
-                <Doughnut data={doughnutStatusData} options={doughnutOpts} />
-              </div>
-            </div>
-
-            <div className="md:col-span-2 bg-yellow-50 border border-yellow-200 rounded-xl p-5 text-center">
-              <Users2 size={28} className="mx-auto text-yellow-400 mb-2" />
-              <p className="text-sm font-semibold text-yellow-700">
-                Adicione vendedores para ver gráficos de produtividade da
-                equipe.
-              </p>
-              <Link
-                href="/representante/equipe"
-                className="mt-3 inline-block text-sm text-blue-600 hover:underline"
-              >
-                Gerenciar Equipe →
-              </Link>
-            </div>
+          <div className="text-center py-8 text-gray-400">
+            <Percent size={32} className="mx-auto mb-2 opacity-30" />
+            <p className="text-sm font-medium">
+              Modelo de comissionamento não definido ainda.
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Entre em contato com o comercial para configurar.
+            </p>
           </div>
         )}
       </div>

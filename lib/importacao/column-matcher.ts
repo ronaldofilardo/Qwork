@@ -64,7 +64,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'cpf',
     label: 'CPF',
-    obrigatorio: false,
+    obrigatorio: true,
     sinonimos: [
       'cpf',
       'cpf_funcionario',
@@ -263,11 +263,13 @@ export function getCamposQWorkEntidade(): Array<{
   obrigatorio: boolean;
 }> {
   const CAMPOS_EXCLUIDOS = new Set(['cnpj_empresa', 'nome_empresa']);
-  return CAMPOS_QWORK.filter((c) => !CAMPOS_EXCLUIDOS.has(c.campo)).map((c) => ({
-    campo: c.campo,
-    label: c.label,
-    obrigatorio: c.obrigatorio,
-  }));
+  return CAMPOS_QWORK.filter((c) => !CAMPOS_EXCLUIDOS.has(c.campo)).map(
+    (c) => ({
+      campo: c.campo,
+      label: c.label,
+      obrigatorio: c.obrigatorio,
+    })
+  );
 }
 
 /**
