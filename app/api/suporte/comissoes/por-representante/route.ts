@@ -1,7 +1,7 @@
 /**
  * GET /api/suporte/comissoes/por-representante
  *
- * Lista comissões agrupadas por representante com resumo de NF.
+ * Lista comissões agrupadas por representante.
  * Filtro por mês (query ?mes=YYYY-MM).
  *
  * Acesso: suporte, admin
@@ -40,23 +40,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          COUNT(c.id) FILTER (WHERE c.status = 'liberada') AS qtd_liberadas,
          COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status = 'paga'), 0) AS valor_pago,
          COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status = 'retida' AND c.parcela_confirmada_em IS NOT NULL), 0) AS valor_pendente,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status = 'retida' AND c.parcela_confirmada_em IS NULL), 0) AS valor_provisionado,
-         cc.id AS ciclo_id,
-         cc.status AS ciclo_status,
-         cc.nf_path,
-         cc.nf_nome_arquivo,
-         cc.nf_enviada_em,
-         cc.nf_aprovada_em,
-         cc.nf_rejeitada_em,
-         cc.nf_motivo_rejeicao
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status = 'retida' AND c.parcela_confirmada_em IS NULL), 0) AS valor_provisionado
        FROM comissoes_laudo c
        JOIN representantes r ON r.id = c.representante_id
-       LEFT JOIN ciclos_comissao cc ON cc.representante_id = r.id
-         AND cc.mes_referencia = DATE_TRUNC('month', c.mes_emissao)
        WHERE 1=1 ${mesFilter}
-       GROUP BY r.id, r.nome, r.email, r.cnpj, r.asaas_wallet_id,
-                cc.id, cc.status, cc.nf_path, cc.nf_nome_arquivo,
-                cc.nf_enviada_em, cc.nf_aprovada_em, cc.nf_rejeitada_em, cc.nf_motivo_rejeicao
+       GROUP BY r.id, r.nome, r.email, r.cnpj, r.asaas_wallet_id
        ORDER BY r.nome`,
       params
     );

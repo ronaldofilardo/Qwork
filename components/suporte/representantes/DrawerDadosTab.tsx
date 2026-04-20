@@ -21,11 +21,6 @@ const EDIT_FIELDS = [
   { key: 'email', label: 'E-mail', type: 'email' },
   { key: 'telefone', label: 'Telefone', type: 'text' },
   { key: 'percentual_comissao', label: '% Comissao', type: 'number' },
-  {
-    key: 'percentual_vendedor_direto',
-    label: '% Venda Direta',
-    type: 'number',
-  },
   { key: 'asaas_wallet_id', label: 'Wallet ID Asaas', type: 'text' },
 ] as const;
 

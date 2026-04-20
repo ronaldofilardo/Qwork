@@ -238,7 +238,7 @@ export const PUT = async (
   _ctx: { params: { loteId: string } }
 ) => {
   try {
-    const user = await requireRole('emissor');
+    await requireRole('emissor');
   } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },

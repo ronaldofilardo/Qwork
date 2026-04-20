@@ -18,7 +18,6 @@ export interface Representante {
   cpf: string | null;
   cnpj: string | null;
   percentual_comissao: number | null;
-  percentual_vendedor_direto: number | null;
   telefone: string | null;
   asaas_wallet_id?: string | null;
   criado_em: string;
@@ -44,7 +43,6 @@ export interface FormRepresentante {
   telefone: string;
   status: string;
   percentual_comissao: string;
-  percentual_vendedor_direto: string;
   asaas_wallet_id: string;
 }
 

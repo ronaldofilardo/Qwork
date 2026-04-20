@@ -29,15 +29,22 @@ jest.mock('@/lib/contratos/contratos', () => ({
 }));
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockCriarContaResponsavel = criarContaResponsavel as jest.MockedFunction<typeof criarContaResponsavel>;
-const mockAtivarEntidade = ativarEntidade as jest.MockedFunction<typeof ativarEntidade>;
+const mockCriarContaResponsavel = criarContaResponsavel as jest.MockedFunction<
+  typeof criarContaResponsavel
+>;
+const mockAtivarEntidade = ativarEntidade as jest.MockedFunction<
+  typeof ativarEntidade
+>;
 
 describe('API Pagamento Confirmar com Recibo BYTEA', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockQuery.mockReset();
     mockCriarContaResponsavel.mockResolvedValue(undefined as any);
-    mockAtivarEntidade.mockResolvedValue({ success: true, message: 'ok' } as any);
+    mockAtivarEntidade.mockResolvedValue({
+      success: true,
+      message: 'ok',
+    } as any);
   });
 
   describe('POST /api/pagamento/confirmar', () => {
@@ -72,7 +79,9 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
 
     it('deve retornar 404 quando pagamento não encontrado', async () => {
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-      const response = await confirmarPagamento(makeRequest({ pagamento_id: 999 }) as any);
+      const response = await confirmarPagamento(
+        makeRequest({ pagamento_id: 999 }) as any
+      );
       expect(response.status).toBe(404);
     });
 
@@ -81,7 +90,10 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
         .mockResolvedValueOnce({ rows: [mockPagamento], rowCount: 1 } as any) // buscar pagamento
         .mockResolvedValueOnce({ rows: [{ id: 100 }], rowCount: 1 } as any) // update status
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // calcularParcelas base
-        .mockResolvedValueOnce({ rows: [{ tipo: 'entidade' }], rowCount: 1 } as any) // tipo tomador
+        .mockResolvedValueOnce({
+          rows: [{ tipo: 'entidade' }],
+          rowCount: 1,
+        } as any) // tipo tomador
         .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // update entidades ativa
         .mockResolvedValue({ rows: [], rowCount: 0 } as any); // demais queries
 
@@ -101,12 +113,18 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
         .mockResolvedValueOnce({ rows: [mockPagamento], rowCount: 1 } as any)
         .mockResolvedValueOnce({ rows: [{ id: 100 }], rowCount: 1 } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [{ tipo: 'entidade' }], rowCount: 1 } as any)
+        .mockResolvedValueOnce({
+          rows: [{ tipo: 'entidade' }],
+          rowCount: 1,
+        } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)
         .mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
       const response = await confirmarPagamento(
-        makeRequest({ pagamento_id: 100, metodo_pagamento: 'transferencia' }) as any
+        makeRequest({
+          pagamento_id: 100,
+          metodo_pagamento: 'transferencia',
+        }) as any
       );
       const data = await response.json();
 
@@ -119,9 +137,15 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [mockPagamento], rowCount: 1 } as any) // buscar pagamento
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // update retornou 0 rows (já pago)
-        .mockResolvedValueOnce({ rows: [{ status: 'pago' }], rowCount: 1 } as any) // statusCheck
+        .mockResolvedValueOnce({
+          rows: [{ status: 'pago' }],
+          rowCount: 1,
+        } as any) // statusCheck
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // calcularParcelas base
-        .mockResolvedValueOnce({ rows: [{ tipo: 'entidade' }], rowCount: 1 } as any) // tipo tomador
+        .mockResolvedValueOnce({
+          rows: [{ tipo: 'entidade' }],
+          rowCount: 1,
+        } as any) // tipo tomador
         .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // update entidades ativa
         .mockResolvedValue({ rows: [], rowCount: 0 } as any);
 
@@ -138,7 +162,10 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
         .mockResolvedValueOnce({ rows: [mockPagamento], rowCount: 1 } as any)
         .mockResolvedValueOnce({ rows: [{ id: 100 }], rowCount: 1 } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [{ tipo: 'entidade' }], rowCount: 1 } as any)
+        .mockResolvedValueOnce({
+          rows: [{ tipo: 'entidade' }],
+          rowCount: 1,
+        } as any)
         .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)
         .mockResolvedValue({ rows: [], rowCount: 0 } as any);
 

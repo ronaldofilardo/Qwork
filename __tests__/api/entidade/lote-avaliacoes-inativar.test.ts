@@ -236,11 +236,10 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         entidade_id: 10,
       } as any);
 
-      mockQuery
-        .mockResolvedValueOnce({
-          rows: [],
-          rowCount: 0,
-        }); // lote não encontrado para esta entidade (JOIN filtra)
+      mockQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      }); // lote não encontrado para esta entidade (JOIN filtra)
 
       const request = new NextRequest(
         'http://localhost:3000/api/entidade/lote/1/avaliacoes/1/inativar',

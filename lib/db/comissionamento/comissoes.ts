@@ -363,33 +363,6 @@ export async function criarComissaoAdmin(params: {
       [vinculo_id]
     );
 
-    // Se comissão já paga, upsert ciclo mensal (best-effort)
-    if (statusInicial === 'paga') {
-      try {
-        const mesRef = mesEmissao;
-        const upsertResult = await query<{ id: number }>(
-          `INSERT INTO ciclos_comissao (representante_id, mes_referencia, valor_total, qtd_comissoes, status)
-           VALUES ($1, $2::date, $3, 1, 'fechado')
-           ON CONFLICT (representante_id, mes_referencia) DO UPDATE
-             SET valor_total   = ciclos_comissao.valor_total + EXCLUDED.valor_total,
-                 qtd_comissoes = ciclos_comissao.qtd_comissoes + 1
-           WHERE ciclos_comissao.status NOT IN ('nf_enviada', 'nf_aprovada', 'pago')
-           RETURNING id`,
-          [comissaoCriada.representante_id, mesRef, valorComissao]
-        );
-        if (upsertResult.rows[0]) {
-          await query(
-            `UPDATE comissoes_laudo SET ciclo_id = $1 WHERE id = $2`,
-            [upsertResult.rows[0].id, comissaoCriada.id]
-          );
-        }
-      } catch (cicloErr) {
-        console.warn(
-          '[criarComissaoAdmin] Falha ao upsert ciclo (best-effort):',
-          cicloErr
-        );
-      }
-    }
   }
 
   return { comissao: comissaoCriada };
@@ -460,25 +433,6 @@ export async function ativarComissaoParcelaPaga(params: {
         [comissao.id]
       );
 
-      // Upsert ciclo_comissao: parcelas 2..N precisam consolidar o ciclo assim como a 1ª
-      const mesRef = new Date().toISOString().slice(0, 7); // YYYY-MM
-      const cicloResult = await query<{ id: number }>(
-        `INSERT INTO ciclos_comissao (representante_id, mes_referencia, status, valor_total, qtd_comissoes, criado_em, atualizado_em)
-         SELECT cl.representante_id, $1, 'aberto', cl.valor_comissao, 1, NOW(), NOW()
-         FROM comissoes_laudo cl WHERE cl.id = $2
-         ON CONFLICT (representante_id, mes_referencia) DO UPDATE
-           SET valor_total    = ciclos_comissao.valor_total + EXCLUDED.valor_total,
-               qtd_comissoes  = ciclos_comissao.qtd_comissoes + 1,
-               atualizado_em  = NOW()
-         RETURNING id`,
-        [mesRef, comissao.id]
-      );
-      if (cicloResult.rows.length > 0) {
-        await query(`UPDATE comissoes_laudo SET ciclo_id = $1 WHERE id = $2`, [
-          cicloResult.rows[0].id,
-          comissao.id,
-        ]);
-      }
     } else {
       // Rep sem wallet: registra confirmação da parcela, mantém retida
       await query(
