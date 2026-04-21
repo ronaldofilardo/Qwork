@@ -34,6 +34,13 @@ logs/
 tmp/
 temp/
 *.bak
+backups/*.sql
+backups/**/*.sql
+
+# Scripts env files (never commit credentials in scripts)
+scripts/**/.env
+scripts/**/*.env
+scripts/.env
 
 # OS files
 .DS_Store

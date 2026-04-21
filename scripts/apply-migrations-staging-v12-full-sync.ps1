@@ -73,8 +73,8 @@ $migrations = @(
     @{ file = "1201_pagamentos_link_token.sql"; desc = "Pagamentos link token" }
     @{ file = "1202_audit_delecoes_tomador.sql"; desc = "Audit delecoes tomador" }
     @{ file = "1203_percentual_comissao_comercial.sql"; desc = "Percentual comissao comercial" }
-    @{ file = "1204_custo_fixo_por_representante.sql"; desc = "Custo fixo por representante" }
-    @{ file = "1204_remove_proposta_comercial_colunas.sql"; desc = "Remove proposta comercial" }
+    @{ file = "1204a_custo_fixo_por_representante.sql"; desc = "Custo fixo por representante" }
+    @{ file = "1204b_remove_proposta_comercial_colunas.sql"; desc = "Remove proposta comercial" }
     @{ file = "1205_view_solicitacoes_emissao_modelo_comissao.sql"; desc = "View solicitacoes modelo comissao" }
     @{ file = "1206_fix_trg_reject_prohibited_roles_use_perfil.sql"; desc = "Fix trigger roles perfil" }
     @{ file = "1207_sync_v_solicitacoes_emissao_valor_negociado_vinculo.sql"; desc = "Sync view valor negociado" }
@@ -85,15 +85,15 @@ $migrations = @(
     @{ file = "1212_consolidar_comissoes_remove_sistema_antigo.sql"; desc = "Consolidar comissoes remove antigo" }
     @{ file = "1213_usuarios_asaas_wallet_id.sql"; desc = "Usuarios asaas wallet ID" }
     @{ file = "1214_add_gestor_comercial_cpf_representantes.sql"; desc = "Add gestor comercial CPF" }
-    @{ file = "1215_criar_comercial_unico_cpf_22222222222.sql"; desc = "Criar comercial único CPF" }
-    @{ file = "1215_sync_vinculos_comissao_schema.sql"; desc = "Sync vinculos comissao schema" }
+    @{ file = "1215a_criar_comercial_unico_cpf_22222222222.sql"; desc = "Criar comercial único CPF" }
+    @{ file = "1215b_sync_vinculos_comissao_schema.sql"; desc = "Sync vinculos comissao schema" }
     @{ file = "1216_criar_comercial_unico_prod_template.sql"; desc = "Criar comercial único PROD template" }
     @{ file = "1217_remove_rpa_legacy.sql"; desc = "Remove RPA legacy" }
     @{ file = "1218_rls_config_tables.sql"; desc = "RLS config tables" }
     @{ file = "1219_fix_rls_policies_rbac.sql"; desc = "Fix RLS policies RBAC" }
     @{ file = "1220_add_gestor_to_perfil_enum.sql"; desc = "Add gestor to perfil enum" }
-    @{ file = "1221_add_isento_pagamento.sql"; desc = "Add isento pagamento" }
-    @{ file = "1221_sociedade_financeira_beneficiarios.sql"; desc = "Sociedade financeira beneficiarios" }
+    @{ file = "1221a_add_isento_pagamento.sql"; desc = "Add isento pagamento" }
+    @{ file = "1221b_sociedade_financeira_beneficiarios.sql"; desc = "Sociedade financeira beneficiarios" }
     @{ file = "1222_sociedade_qwork_wallet_seed.sql"; desc = "Sociedade QWork wallet seed" }
     @{ file = "1223_status_lead_aprovado_rejeitado.sql"; desc = "Status lead aprovado rejeitado" }
     @{ file = "1224_remove_nf_comissoes_laudo.sql"; desc = "Remove NF comissoes laudo" }

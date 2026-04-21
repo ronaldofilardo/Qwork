@@ -345,7 +345,9 @@ export default function SociedadeContent() {
                       #{evento.loteId}
                     </td>
                     <td className="px-3 py-2 font-mono text-xs text-gray-600">
-                      {evento.representanteId ? `#${evento.representanteId}` : '—'}
+                      {evento.representanteId
+                        ? `#${evento.representanteId}`
+                        : '—'}
                     </td>
                     <td className="px-3 py-2 text-gray-600">
                       {new Date(evento.data).toLocaleDateString('pt-BR')}

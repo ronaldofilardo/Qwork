@@ -29,7 +29,7 @@ function readSource(relPath: string): string {
 // 1. Migration 1143 — estrutura e idempotência
 // ============================================================================
 describe('1. Migration 1143 — drop FK liberado_por', () => {
-  const migFile = 'database/migrations/1143_drop_liberado_por_fkey.sql';
+  const migFile = 'database/migrations/1143b_drop_liberado_por_fkey.sql';
   let sql: string;
 
   beforeAll(() => {

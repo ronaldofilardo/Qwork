@@ -188,12 +188,12 @@ describe('Correções 05/04/2026 — Remoção de data_liberacao_login do pagame
       ).toBe(true);
     });
 
-    it('cobre migration 1137_remover_colunas_pagamento_cadastro.sql', () => {
-      expect(content).toContain('1137_remover_colunas_pagamento_cadastro.sql');
+    it('cobre migration 1137a_remover_colunas_pagamento_cadastro.sql', () => {
+      expect(content).toContain('1137a_remover_colunas_pagamento_cadastro.sql');
     });
 
-    it('cobre migration 1139_fix_not_null_constraints.sql (usuario_tipo)', () => {
-      expect(content).toContain('1139_fix_not_null_constraints.sql');
+    it('cobre migration 1139a_fix_not_null_constraints.sql (usuario_tipo)', () => {
+      expect(content).toContain('1139a_fix_not_null_constraints.sql');
     });
 
     it('cobre migration 1141_add_link_disponibilizado_em_to_view.sql', () => {
