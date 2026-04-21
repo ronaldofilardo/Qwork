@@ -79,7 +79,10 @@ function renderPage() {
 }
 
 async function abrirModal() {
+  // Aguarda o botão ficar habilitado (fetch /api/representante/me precisa completar
+  // para definir modeloComissionamento e habilitar o botão + Novo Lead)
   const btn = await screen.findByRole('button', { name: /\+ Novo Lead/i });
+  await waitFor(() => expect(btn).not.toBeDisabled());
   fireEvent.click(btn);
   await screen.findByPlaceholderText('00.000.000/0001-00');
 }
@@ -151,12 +154,23 @@ describe('Leads — máscara e validação do formulário (sem formatarCNPJ/form
     expect(submitBtn).toBeDisabled();
   });
 
-  it('botão "Registrar Lead" fica habilitado com CNPJ válido', async () => {
+  it('botão "Registrar Lead" fica habilitado com todos os campos obrigatórios preenchidos', async () => {
+    // Causa raiz: formValido exige cnpj válido, valorNegociadoNum > 0 e numVidasEstimadoNum > 0
     renderPage();
     await abrirModal();
 
-    const input = screen.getByPlaceholderText('00.000.000/0001-00');
-    await userEvent.type(input, '11444777000161');
+    const cnpjInput = screen.getByPlaceholderText('00.000.000/0001-00');
+    await userEvent.type(cnpjInput, '11444777000161');
+
+    // Preencher valor negociado (placeholder R$ 0,00)
+    const valorInput = screen.getByPlaceholderText('R$ 0,00');
+    await userEvent.clear(valorInput);
+    await userEvent.type(valorInput, '1500');
+
+    // Preencher número de vidas estimado (placeholder Ex: 150)
+    const vidasInput = screen.getByPlaceholderText('Ex: 150');
+    await userEvent.clear(vidasInput);
+    await userEvent.type(vidasInput, '50');
 
     await waitFor(() => {
       const submitBtn = screen.getByRole('button', { name: /Registrar Lead/i });

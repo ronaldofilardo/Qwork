@@ -52,12 +52,12 @@ if ($DryRun) {
 # ====================================================================
 $migrations = @(
     # 1137a: Proteção de storage para laudos (tabela append-only + RLS + triggers)
-    "1137_laudos_storage_protection.sql",
+    "1137b_laudos_storage_protection.sql",
 
     # 1137b: Remover colunas legacy pagamento_confirmado e data_liberacao_login
     #   - Drop colunas de entidades e clinicas
     #   - Recria views tomadores e v_relatorio_emissoes
-    "1137_remover_colunas_pagamento_cadastro.sql",
+    "1137a_remover_colunas_pagamento_cadastro.sql",
 
     # 1138: Cleanup final do sistema de planos (idempotente)
     #   - Drop tables, enums, views legadas
@@ -68,15 +68,15 @@ $migrations = @(
     #   - Adiciona coluna usuario_tipo (enum) com defaults inferidos
     #   - Corrige constraints NULL em clinicas, entidades, empresas_clientes
     #   - Corrige constraints NULL em lotes_avaliacao, avaliacoes
-    "1139_fix_not_null_constraints.sql",
+    "1139a_fix_not_null_constraints.sql",
 
     # 1140a: Corrige sequência seq_vendedor_codigo (evita colisão)
-    "1140_fix_seq_vendedor_codigo_duplicatas.sql",
+    "1140a_fix_seq_vendedor_codigo_duplicatas.sql",
 
     # 1140b: Recalcula lotes stuck em 'ativo' (one-time, idempotente na prática)
     #   - Reafirma trigger com fórmula correta (inclui inativadas)
     #   - Bulk UPDATE de lotes que deveriam estar 'concluido'
-    "1140_recalcular_lotes_stuck_70_porcento.sql",
+    "1140b_recalcular_lotes_stuck_70_porcento.sql",
 
     # 1141: Atualiza view v_solicitacoes_emissao com link_disponibilizado_em
     #   - Coluna adicionada na tabela em 1131, mas view estava desatualizada

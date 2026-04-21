@@ -44,7 +44,7 @@
  * 9. Hash desacoplado de arquivo_remoto_url (5 arquivos corrigidos)
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+// Jest fornece describe, it, expect, beforeAll como globals — não precisa de import
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -421,7 +421,7 @@ describe('8. Migration 1139 — pdf_gerado_em e status enum', () => {
     ROOT,
     'database',
     'migrations',
-    '1139_laudo_pdf_gerado_status.sql'
+    '1139b_laudo_pdf_gerado_status.sql'
   );
   let src: string;
 
@@ -533,7 +533,7 @@ describe('11. Migration 1143 — zapsign_sign_url e status assinado_processando'
     ROOT,
     'database',
     'migrations',
-    '1143_add_zapsign_sign_url.sql'
+    '1143a_add_zapsign_sign_url.sql'
   );
   let src: string;
 
