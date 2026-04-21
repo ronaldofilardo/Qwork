@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
          u.email          AS vendedor_email,
          u.cpf            AS vendedor_cpf,
          vp.id            AS vendedor_perfil_id,
-         vp.codigo        AS codigo_vendedor,
          vp.aceite_termos,
          COUNT(DISTINCT lr.id) FILTER (WHERE lr.status NOT IN ('expirado','convertido')) AS leads_ativos
        FROM public.hierarquia_comercial hc
@@ -50,7 +49,7 @@ export async function GET(request: NextRequest) {
        LEFT JOIN public.leads_representante lr ON lr.vendedor_id = u.id
        WHERE hc.representante_id = $1 AND hc.ativo = ${soInativos ? 'false' : 'true'}
          AND u.ativo = ${soInativos ? 'false' : 'true'}
-       GROUP BY hc.id, u.id, vp.id, vp.codigo, vp.aceite_termos
+       GROUP BY hc.id, u.id, vp.id, vp.aceite_termos
        ORDER BY u.nome
        LIMIT $2 OFFSET $3`,
       [sess.representante_id, limit, offset]

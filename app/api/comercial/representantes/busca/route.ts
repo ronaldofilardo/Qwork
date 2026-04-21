@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 interface RepBusca {
   id: number;
   nome: string;
-  codigo: string;
   cpf: string | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: string | null;
@@ -40,7 +39,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       `SELECT
          r.id,
          r.nome,
-         r.codigo,
          r.cpf,
          r.modelo_comissionamento,
          r.percentual_comissao,
@@ -52,7 +50,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
        WHERE r.status NOT IN ('desativado', 'rejeitado')
          AND (
            r.nome  ILIKE $1
-           OR r.codigo ILIKE $1
          )
        ORDER BY r.nome
        LIMIT 10`,

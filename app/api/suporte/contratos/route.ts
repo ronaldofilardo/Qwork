@@ -84,7 +84,7 @@ export async function GET(): Promise<NextResponse> {
          tb.tipo_contratante,
          r.nome AS rep_nome,
          COALESCE(r.cpf, r.cpf_responsavel_pj) AS rep_cpf,
-         r.codigo AS rep_codigo,
+         r.id::text AS rep_codigo,
          lr.criado_em AS lead_data,
          ct.contrato_data,
          CASE

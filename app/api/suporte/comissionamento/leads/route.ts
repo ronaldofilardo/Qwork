@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
            l.status,
            l.criado_em,
            r.nome                    AS representante_nome,
-           r.codigo                  AS representante_codigo,
+           r.id::text                AS representante_codigo,
            r.modelo_comissionamento,
            r.percentual_comissao     AS rep_percentual_atual,
            r.valor_custo_fixo_entidade,

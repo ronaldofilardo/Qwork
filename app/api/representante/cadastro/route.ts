@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
          $17, CASE WHEN $17 THEN NOW() END,
          $18, CASE WHEN $18 THEN NOW() END
        )
-       RETURNING id, codigo, email, nome, status, tipo_pessoa, criado_em`,
+       RETURNING id, email, nome, status, tipo_pessoa, criado_em`,
       [
         tipo_pessoa,
         nome.trim(),
@@ -143,7 +143,6 @@ export async function POST(request: NextRequest) {
         success: true,
         representante: {
           id: representante.id,
-          codigo: representante.codigo,
           nome: representante.nome,
           email: representante.email,
           status: representante.status,

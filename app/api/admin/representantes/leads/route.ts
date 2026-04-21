@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
       `SELECT l.*,
               r.nome AS representante_nome,
               r.email AS representante_email,
-              r.codigo AS representante_codigo,
+              r.id::text AS representante_codigo,
               e.nome AS entidade_nome
        FROM leads_representante l
        JOIN representantes r ON r.id = l.representante_id

@@ -31,11 +31,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       representante_id: result.representante_id,
-      codigo: result.codigo,
       nome: result.nome,
       email: result.email,
       convite_link: result.convite_link,
-      message: `Representante ${result.nome} criado com código ${result.codigo}. Convite de criação de senha enviado para ${result.email}.`,
+      message: `Representante ${result.nome} criado. Convite de criação de senha enviado para ${result.email}.`,
     });
   } catch (err: unknown) {
     const e = err as Error;

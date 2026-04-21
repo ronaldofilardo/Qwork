@@ -13,7 +13,6 @@ import { verificarCpfEmUso } from '@/lib/cpf-conflict';
 
 export interface ConversaoResult {
   representante_id: number;
-  codigo: string;
   nome: string;
   email: string;
   convite_link: string;
@@ -96,7 +95,6 @@ export async function converterLeadEmRepresentante(
     // gestor_comercial_cpf = adminCpf (CPF do comercial que converteu o lead)
     const insertResult = await client.query<{
       id: number;
-      codigo: string;
       nome: string;
       email: string;
     }>(
@@ -112,7 +110,7 @@ export async function converterLeadEmRepresentante(
         $8,
         $9,
         'aguardando_senha', NOW(), $10
-      ) RETURNING id, codigo, nome, email`,
+      ) RETURNING id, nome, email`,
       [
         tipoPessoa,
         lead.nome,
@@ -145,7 +143,7 @@ export async function converterLeadEmRepresentante(
     );
 
     console.log(
-      `[CONVERSAO] Lead ${leadId} convertido em representante ${rep.id} (código: ${rep.codigo}) por admin ${adminCpf}`
+      `[CONVERSAO] Lead ${leadId} convertido em representante ${rep.id} por admin ${adminCpf}`
     );
     console.log(
       `[CONVERSAO] Convite enviado para ${rep.email} — token expira em ${convite.expira_em.toISOString()}`
@@ -153,7 +151,6 @@ export async function converterLeadEmRepresentante(
 
     return {
       representante_id: rep.id,
-      codigo: rep.codigo,
       nome: rep.nome,
       email: rep.email,
       convite_link: convite.link,
