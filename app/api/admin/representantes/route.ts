@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     if (busca?.trim()) {
       wheres.push(
-        `(r.nome ILIKE $${i} OR r.email ILIKE $${i} OR r.codigo ILIKE $${i})`
+        `(r.nome ILIKE $${i} OR r.email ILIKE $${i})`
       );
       params.push(`%${busca.trim()}%`);
       i++;
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     params.push(limit, offset);
     const rows = await query(
       `SELECT
-         r.id, r.nome, r.email, r.codigo, r.status, r.tipo_pessoa,
+         r.id, r.nome, r.email, r.status, r.tipo_pessoa,
          r.telefone, r.cpf, r.cnpj, r.criado_em, r.aprovado_em,
          r.aceite_termos, r.aceite_disclaimer_nv,
          r.banco_codigo, r.agencia, r.conta, r.tipo_conta, r.titular_conta, r.pix_chave, r.pix_tipo,

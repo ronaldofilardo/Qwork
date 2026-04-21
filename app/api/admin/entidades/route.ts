@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
           vc.valor_negociado AS vinculo_valor_negociado,
           r.id AS representante_id,
           r.nome AS representante_nome,
-          r.codigo AS representante_codigo
+          r.id::text AS representante_codigo
         FROM clinicas cl
         LEFT JOIN LATERAL (
           SELECT v.id, v.valor_negociado, v.representante_id
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
           vc.valor_negociado AS vinculo_valor_negociado,
           r.id AS representante_id,
           r.nome AS representante_nome,
-          r.codigo AS representante_codigo
+          r.id::text AS representante_codigo
         FROM entidades e
         LEFT JOIN LATERAL (
           SELECT v.id, v.valor_negociado, v.representante_id
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
             vc.valor_negociado AS vinculo_valor_negociado,
             r.id AS representante_id,
             r.nome AS representante_nome,
-            r.codigo AS representante_codigo
+            r.id::text AS representante_codigo
           FROM entidades e
           LEFT JOIN LATERAL (
             SELECT v.id, v.valor_negociado, v.representante_id
@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
             vc.valor_negociado AS vinculo_valor_negociado,
             r.id AS representante_id,
             r.nome AS representante_nome,
-            r.codigo AS representante_codigo
+            r.id::text AS representante_codigo
           FROM clinicas cl
           LEFT JOIN LATERAL (
             SELECT v.id, v.valor_negociado, v.representante_id

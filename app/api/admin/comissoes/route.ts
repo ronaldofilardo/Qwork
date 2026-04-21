@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       `SELECT
          c.*,
          r.nome                        AS representante_nome,
-         r.codigo                      AS representante_codigo,
+         r.id::text                    AS representante_codigo,
          r.email                       AS representante_email,
          r.tipo_pessoa                 AS representante_tipo_pessoa,
          COALESCE(e.nome, cl.nome) AS entidade_nome,

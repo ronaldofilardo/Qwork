@@ -24,7 +24,7 @@ export async function GET(
 
     const result = await query(
       `SELECT
-         r.id, r.nome, r.email, r.codigo, r.status, r.tipo_pessoa,
+         r.id, r.nome, r.email, r.status, r.tipo_pessoa,
          r.telefone, r.cpf, r.cnpj, r.cpf_responsavel_pj,
          r.criado_em, r.aprovado_em,
          r.aceite_termos, r.aceite_termos_em,

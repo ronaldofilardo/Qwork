@@ -31,7 +31,7 @@ export async function GET(): Promise<NextResponse> {
          r.id               AS representante_id,
          r.nome             AS representante_nome,
          r.email            AS representante_email,
-         r.codigo           AS representante_codigo,
+         r.id::text         AS representante_codigo,
          r.status           AS representante_status,
          COUNT(DISTINCT lr.id) FILTER (
            WHERE lr.status NOT IN ('expirado','convertido')

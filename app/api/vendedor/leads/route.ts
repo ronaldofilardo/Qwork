@@ -76,7 +76,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.data_conversao,
          r.id    AS representante_id,
          r.nome  AS representante_nome,
-         r.codigo AS representante_codigo
+         r.id::text AS representante_codigo
        FROM public.leads_representante lr
        JOIN public.representantes r ON r.id = lr.representante_id
        ${where}

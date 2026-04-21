@@ -18,7 +18,7 @@ export async function GET() {
 
     // Buscar dados completos e frescos do banco
     const result = await query(
-      `SELECT r.id, r.nome, r.email, r.codigo, r.status, r.tipo_pessoa, r.telefone,
+      `SELECT r.id, r.nome, r.email, r.status, r.tipo_pessoa, r.telefone,
               r.cpf, r.cnpj,
               r.aceite_termos, r.aceite_disclaimer_nv, r.aceite_politica_privacidade, r.criado_em, r.aprovado_em,
               r.banco_codigo, r.agencia, r.conta, r.tipo_conta, r.titular_conta,

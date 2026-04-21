@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
            l.id            AS lead_id,
            l.representante_id,
            r.nome          AS representante_nome,
-           r.codigo        AS representante_codigo,
+           r.id::text      AS representante_codigo,
            l.status        AS lead_status,
            l.data_expiracao,
            l.token_expiracao
@@ -68,41 +68,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // === PRIORIDADE 2: Código manual ===
+    // === PRIORIDADE 2: Código manual — coluna removida, ignorar ===
     if (codigo?.trim()) {
-      const codigoNorm = codigo.trim().toUpperCase();
-      const codigoResult = await query(
-        `SELECT
-           l.id            AS lead_id,
-           l.representante_id,
-           r.nome          AS representante_nome,
-           r.codigo        AS representante_codigo
-         FROM leads_representante l
-         JOIN representantes r ON r.id = l.representante_id
-         WHERE r.codigo = $1
-           AND l.cnpj   = $2
-           AND l.status = 'pendente'
-           AND l.data_expiracao > NOW()
-         LIMIT 1`,
-        [codigoNorm, cnpj]
-      );
-
-      if (codigoResult.rows.length > 0) {
-        const row = codigoResult.rows[0];
-        return NextResponse.json({
-          encontrado: true,
-          tipo_vinculo: 'codigo_representante',
-          lead_id: row.lead_id,
-          representante_id: row.representante_id,
-          representante_nome: row.representante_nome,
-          representante_codigo: row.representante_codigo,
-        });
-      }
-      // Código informado mas não encontrado: não cai para CNPJ (código errado)
       return NextResponse.json({
         encontrado: false,
-        aviso:
-          'Código de representante não encontrado ou CNPJ não está na lista de indicações deste representante.',
+        aviso: 'Busca por código não está mais disponível.',
       });
     }
 
@@ -112,7 +82,7 @@ export async function POST(request: NextRequest) {
          l.id            AS lead_id,
          l.representante_id,
          r.nome          AS representante_nome,
-         r.codigo        AS representante_codigo
+         r.id::text      AS representante_codigo
        FROM leads_representante l
        JOIN representantes r ON r.id = l.representante_id
        WHERE l.cnpj = $1

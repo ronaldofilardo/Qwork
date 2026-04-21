@@ -217,22 +217,13 @@ export async function POST(request: NextRequest) {
     );
     const vendedorId = userResult.rows[0].id;
 
-    // Gerar código sequencial via sequência do banco
-    const codigoResult = await query<{ codigo: string }>(
-      `SELECT nextval('public.seq_vendedor_codigo')::text AS codigo`,
-      [],
-      rlsSess
-    );
-    const codigo = codigoResult.rows[0].codigo;
-
     // Inserir perfil do vendedor (com novos campos PJ)
     await query(
       `INSERT INTO public.vendedores_perfil
-         (usuario_id, codigo, sexo, endereco, cidade, estado, cep, tipo_pessoa, cnpj, cpf_responsavel_pj, razao_social)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+         (usuario_id, sexo, endereco, cidade, estado, cep, tipo_pessoa, cnpj, cpf_responsavel_pj, razao_social)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         vendedorId,
-        codigo,
         sexo ?? null,
         endereco ?? null,
         cidade ?? null,
@@ -323,7 +314,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         vendedor_id: vendedorId,
-        codigo,
         vinculo_id: vinculoId,
         convite_url: convite.link,
       },
