@@ -29,6 +29,7 @@ interface PagamentoSociedadeRow {
   data_pagamento: string | null;
   tomador_nome: string | null;
   representante_nome: string | null;
+  representante_id: number | null;
   valor_representante: string | number | null;
   valor_comercial: string | number | null;
 }
@@ -48,6 +49,8 @@ interface EventoSociedade {
   valorSocioRonaldo: number;
   valorSocioAntonio: number;
   representanteNome: string | null;
+  representanteId: number | null;
+  loteId: number;
 }
 
 interface ResumoPeriodo {
@@ -174,36 +177,6 @@ function aggregateResumo(
   );
 }
 
-function buildMensagensSimuladas(eventos: EventoSociedade[]) {
-  return eventos.slice(0, 6).flatMap((evento) => {
-    const mensagens = [
-      {
-        perfil: 'admin',
-        titulo: 'Pagamento auditado na Sociedade',
-        mensagem: `Pagamento de R$ ${evento.valorBruto.toFixed(2)} de ${evento.tomador} auditado com sucesso.`,
-      },
-    ];
-
-    if (evento.valorComercial > 0) {
-      mensagens.push({
-        perfil: 'comercial',
-        titulo: 'Comissão comercial simulada',
-        mensagem: `Há R$ ${evento.valorComercial.toFixed(2)} simulados para o comercial no pagamento ${evento.pagamentoId ?? evento.id}.`,
-      });
-    }
-
-    if (evento.valorRepresentante > 0) {
-      mensagens.push({
-        perfil: 'representante',
-        titulo: 'Comissão de representante simulada',
-        mensagem: `O representante ${evento.representanteNome ?? 'vinculado'} possui R$ ${evento.valorRepresentante.toFixed(2)} simulados neste pagamento.`,
-      });
-    }
-
-    return mensagens;
-  });
-}
-
 async function getPagamentosSociedade(
   dias: number
 ): Promise<PagamentoSociedadeRow[]> {
@@ -215,7 +188,7 @@ async function getPagamentosSociedade(
       `SELECT
          la.id,
          COALESCE(p.asaas_payment_id, NULL::varchar) AS asaas_payment_id,
-         COALESCE(cl_agg.valor_laudo, 0)::numeric(10,2) AS valor,
+         COALESCE(NULLIF(cl_agg.valor_laudo, 0), p.valor, 0)::numeric(10,2) AS valor,
          COALESCE(p.asaas_net_value, 0)::numeric(10,2) AS asaas_net_value,
          la.pagamento_parcelas AS numero_parcelas,
          NULL::jsonb AS detalhes_parcelas,
@@ -226,7 +199,8 @@ async function getPagamentosSociedade(
          COALESCE(t.nome, 'Tomador #' || COALESCE(la.entidade_id, la.clinica_id)::text) AS tomador_nome,
          r.nome AS representante_nome,
          COALESCE(cl_agg.valor_representante, 0) AS valor_representante,
-         COALESCE(cl_agg.valor_comercial, 0) AS valor_comercial
+         COALESCE(cl_agg.valor_comercial, 0) AS valor_comercial,
+         cl_agg.first_rep_id AS representante_id
        FROM lotes_avaliacao la
        LEFT JOIN tomadores t ON t.id = COALESCE(la.entidade_id, la.clinica_id)
        LEFT JOIN pagamentos p ON p.status = 'pago'
@@ -522,6 +496,8 @@ export async function GET(request: NextRequest) {
             valorSocioRonaldo: distribuicao.valorSocioRonaldo,
             valorSocioAntonio: distribuicao.valorSocioAntonio,
             representanteNome: row.representante_nome ?? null,
+            representanteId: toNumber(row.representante_id) || null,
+            loteId: row.id,
           } satisfies EventoSociedade;
         });
       })
@@ -565,7 +541,6 @@ export async function GET(request: NextRequest) {
         mes: aggregateResumo(eventosRecentes, inicioMes),
       },
       eventosRecentes,
-      mensagensSimuladas: buildMensagensSimuladas(eventosRecentes),
     });
   } catch (error) {
     console.error('[GET /api/admin/financeiro/sociedade]', error);

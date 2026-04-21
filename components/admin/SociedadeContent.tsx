@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Landmark, RefreshCw, ShieldCheck, Users, Wallet } from 'lucide-react';
+import { Landmark, RefreshCw, Users, Wallet } from 'lucide-react';
 
 interface BeneficiarioSociedade {
   id: 'ronaldo' | 'antonio';
@@ -51,6 +51,8 @@ interface EventoSociedade {
   valorSocioRonaldo: number;
   valorSocioAntonio: number;
   representanteNome: string | null;
+  representanteId: number | null;
+  loteId: number;
 }
 
 interface SociedadeResponse {
@@ -73,11 +75,6 @@ interface SociedadeResponse {
     mes: ResumoPeriodo;
   };
   eventosRecentes: EventoSociedade[];
-  mensagensSimuladas: Array<{
-    perfil: string;
-    titulo: string;
-    mensagem: string;
-  }>;
 }
 
 function formatCurrency(value: number): string {
@@ -310,37 +307,6 @@ export default function SociedadeContent() {
             </div>
           </div>
         </div>
-
-        <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <div className="mb-4 flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-orange-500" />
-            <h3 className="font-semibold text-gray-900">Mensagens simuladas</h3>
-          </div>
-          <div className="space-y-3">
-            {data.mensagensSimuladas.length === 0 ? (
-              <p className="text-sm text-gray-500">
-                Nenhuma mensagem simulada ainda.
-              </p>
-            ) : (
-              data.mensagensSimuladas.map((item, index) => (
-                <div
-                  key={`${item.perfil}-${index}`}
-                  className="rounded-lg bg-gray-50 p-3 text-sm"
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="font-medium text-gray-800">
-                      {item.titulo}
-                    </span>
-                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700">
-                      {item.perfil}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">{item.mensagem}</p>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -359,6 +325,8 @@ export default function SociedadeContent() {
             <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                  <th className="px-3 py-2">Lote ID</th>
+                  <th className="px-3 py-2">Rep. ID</th>
                   <th className="px-3 py-2">Data</th>
                   <th className="px-3 py-2">Tomador</th>
                   <th className="px-3 py-2">Bruto</th>
@@ -373,6 +341,12 @@ export default function SociedadeContent() {
               <tbody className="divide-y divide-gray-100">
                 {data.eventosRecentes.map((evento) => (
                   <tr key={evento.id} className="hover:bg-gray-50">
+                    <td className="px-3 py-2 font-mono text-xs font-semibold text-blue-600">
+                      #{evento.loteId}
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-gray-600">
+                      {evento.representanteId ? `#${evento.representanteId}` : '—'}
+                    </td>
                     <td className="px-3 py-2 text-gray-600">
                       {new Date(evento.data).toLocaleDateString('pt-BR')}
                     </td>
