@@ -80,7 +80,7 @@ describe('GET /api/comercial/contratos', () => {
 
   it('retorna 401 quando não autenticado', async () => {
     mockRequireRole.mockRejectedValueOnce(new Error('Não autenticado'));
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.error).toBe('Não autenticado');
@@ -88,7 +88,7 @@ describe('GET /api/comercial/contratos', () => {
 
   it('retorna 401 quando sem permissão', async () => {
     mockRequireRole.mockRejectedValueOnce(new Error('Sem permissão'));
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(res.status).toBe(401);
     const body = await res.json();
     expect(body.error).toBe('Sem permissão');
@@ -96,7 +96,7 @@ describe('GET /api/comercial/contratos', () => {
 
   it('retorna 500 em erro interno inesperado', async () => {
     mockQuery.mockRejectedValueOnce(new Error('DB connection failed'));
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.error).toBe('Erro interno');
@@ -104,7 +104,7 @@ describe('GET /api/comercial/contratos', () => {
 
   it('retorna array vazio quando não há vínculos', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.contratos).toEqual([]);
@@ -112,7 +112,7 @@ describe('GET /api/comercial/contratos', () => {
 
   it('retorna contratos com vínculos que possuem laudos e representante', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [vinculoComLaudo] } as never);
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.contratos).toHaveLength(1);
@@ -129,7 +129,7 @@ describe('GET /api/comercial/contratos', () => {
     mockQuery.mockResolvedValueOnce({
       rows: [vinculoComLaudo, vinculoSemLaudo],
     } as never);
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.contratos).toHaveLength(2);
@@ -144,7 +144,7 @@ describe('GET /api/comercial/contratos', () => {
 
   it('a query parte das entidades e clínicas cadastradas com vínculo opcional', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
-    await GET();
+    await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(mockQuery).toHaveBeenCalledTimes(1);
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
     expect(sql).toContain('from entidades');
@@ -157,14 +157,14 @@ describe('GET /api/comercial/contratos', () => {
 
   it('não inclui campo valor_qwork na query', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
-    await GET();
+    await GET(new Request("http://localhost/api/comercial/contratos"));
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
     expect(sql).not.toContain('valor_qwork');
   });
 
   it('lista entidades e clínicas cadastradas mesmo sem vínculo', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
-    await GET();
+    await GET(new Request("http://localhost/api/comercial/contratos"));
     const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
     expect(sql).toContain('from entidades');
     expect(sql).toContain('from clinicas');
@@ -173,7 +173,8 @@ describe('GET /api/comercial/contratos', () => {
 
   it('usa requireRole com perfil comercial', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as never);
-    await GET();
+    await GET(new Request("http://localhost/api/comercial/contratos"));
     expect(mockRequireRole).toHaveBeenCalledWith('comercial', false);
   });
 });
+

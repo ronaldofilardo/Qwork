@@ -2071,7 +2071,7 @@ ALTER VIEW public.tomadores OWNER TO postgres;
 CREATE TABLE public.vinculos_comissao (
     id integer NOT NULL,
     representante_id integer NOT NULL,
-    entidade_id integer NOT NULL,
+    entidade_id integer,
     lead_id integer,
     data_inicio date NOT NULL,
     data_expiracao date NOT NULL,
@@ -2083,8 +2083,19 @@ CREATE TABLE public.vinculos_comissao (
     encerrado_motivo text,
     valor_negociado numeric(12,2) DEFAULT NULL::numeric,
     clinica_id integer,
+    percentual_comissao_representante numeric(5,2),
+    percentual_comissao_comercial numeric(5,2) DEFAULT 0 NOT NULL,
+    num_vidas_estimado integer,
     CONSTRAINT vinculo_datas_validas CHECK ((data_expiracao > data_inicio)),
-    CONSTRAINT vinculo_valor_negociado_positivo CHECK (((valor_negociado IS NULL) OR (valor_negociado >= (0)::numeric)))
+    CONSTRAINT vinculo_entidade_ou_clinica CHECK (
+        (entidade_id IS NOT NULL AND clinica_id IS NULL)
+        OR
+        (entidade_id IS NULL AND clinica_id IS NOT NULL)
+    ),
+    CONSTRAINT vinculo_valor_negociado_positivo CHECK (((valor_negociado IS NULL) OR (valor_negociado >= (0)::numeric))),
+    CONSTRAINT chk_vinculos_num_vidas_positivo CHECK ((num_vidas_estimado IS NULL OR num_vidas_estimado > 0)),
+    CONSTRAINT chk_vinculos_perc_rep_range CHECK ((percentual_comissao_representante >= 0 AND percentual_comissao_representante <= 100)),
+    CONSTRAINT vinculos_perc_comercial_range CHECK ((percentual_comissao_comercial >= 0 AND percentual_comissao_comercial <= 40))
 );
 
 
