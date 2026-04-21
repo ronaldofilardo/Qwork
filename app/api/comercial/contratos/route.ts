@@ -10,9 +10,21 @@ import { requireRole } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     await requireRole('comercial', false);
+
+    const { searchParams } = new URL(request.url);
+    const representanteId = searchParams.get('representante_id');
+    const repFilter = representanteId ? parseInt(representanteId, 10) : null;
+
+    const params: (string | number)[] = [];
+    const repCondition = repFilter
+      ? (() => {
+          params.push(repFilter);
+          return ` AND r.id = $${params.length}`;
+        })()
+      : '';
 
     const rows = await query<{
       contratante_nome: string;
@@ -143,10 +155,11 @@ export async function GET(): Promise<NextResponse> {
          FROM public.comissoes_laudo cl
          WHERE cl.vinculo_id = vc.id
        ) fin ON true
+       WHERE 1=1${repCondition}
        ORDER BY
          COALESCE(ct.contrato_data, vc.data_inicio::timestamp, tb.criado_em) DESC,
          tb.contratante_nome ASC`,
-      []
+      params
     );
 
     return NextResponse.json({ contratos: rows.rows });

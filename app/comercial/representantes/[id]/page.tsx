@@ -20,6 +20,7 @@ import {
 import EditRepresentanteModal from './EditRepresentanteModal';
 import AprovarComissaoModal from './AprovarComissaoModal';
 import KPICard from './KPICard';
+import { ContratosTable } from '@/components/shared/ContratosTable';
 import { fmtBRL, fmtDoc, fmtCpf, fmtCnpj } from './format-utils';
 
 // Preço base QWork por laudo (por tipo de tomador)
@@ -909,6 +910,20 @@ export default function ComercialRepresentanteDetalhePage() {
               ))}
             </div>
           )}
+        </div>
+        {/* ── Contratos ────────────────────────────────────────────────── */}
+        <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+          <div className="px-8 py-5 border-b flex items-center gap-3">
+            <Building2 size={20} className="text-green-600" />
+            <h2 className="text-base font-bold text-gray-900">Contratos</h2>
+          </div>
+          <div className="p-4">
+            <ContratosTable
+              endpoint={`/api/comercial/contratos?representante_id=${id}`}
+              comercial
+              allowExpandClinicaEmpresas
+            />
+          </div>
         </div>
       </div>
 

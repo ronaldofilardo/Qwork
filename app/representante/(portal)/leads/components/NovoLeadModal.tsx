@@ -358,36 +358,6 @@ export default function NovoLeadModal({
                   {fmtBRL(breakdown.valorRep)}
                 </span>
               </div>
-              {percComercial > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-gray-500">
-                    Comissão comercial ({percComercial.toFixed(1)}%)
-                  </span>
-                  <span className="text-purple-700 font-medium">
-                    {fmtBRL(breakdown.valorComercial)}
-                  </span>
-                </div>
-              )}
-              <div className="flex justify-between border-t pt-1.5">
-                <span
-                  className={
-                    breakdown.abaixoCusto
-                      ? 'text-amber-700 font-semibold'
-                      : 'text-gray-600 font-semibold'
-                  }
-                >
-                  QWork recebe
-                </span>
-                <span
-                  className={
-                    breakdown.abaixoCusto
-                      ? 'text-amber-700 font-semibold'
-                      : 'text-gray-700 font-semibold'
-                  }
-                >
-                  {fmtBRL(breakdown.valorQWork)}
-                </span>
-              </div>
               <div className="flex justify-between text-gray-400">
                 <span>Custo mínimo ({novoForm.tipo_cliente})</span>
                 <span>R$ {custoMinimo},00</span>
@@ -456,16 +426,7 @@ export default function NovoLeadModal({
                     </span>
                   </div>
                 )}
-                {breakdownCustoFixo && (
-                  <div className="flex justify-between border-t pt-1.5">
-                    <span className="text-blue-700 font-semibold">
-                      Sua comissão
-                    </span>
-                    <span className="text-blue-700 font-semibold">
-                      {fmtBRL(breakdownCustoFixo.valorRep)}
-                    </span>
-                  </div>
-                )}
+
                 {custoFixoInvalido && (
                   <div className="flex items-start gap-1.5 bg-red-100 border border-red-300 rounded px-2 py-1.5 mt-1">
                     <AlertTriangle

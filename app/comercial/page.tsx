@@ -8,18 +8,26 @@ import {
   ChevronRight,
   LayoutGrid,
   LayoutList,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  FileText,
 } from 'lucide-react';
 import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
 import { useComercial } from './comercial-context';
 import { ComercialComissoesAbas } from '@/components/comercial/ComercialComissoesAbas';
-import { ContratosTable } from '@/components/shared/ContratosTable';
 import ComercialLeadsAprovacaoPage from './leads/page';
 import type { Lead } from '@/app/admin/representantes/types';
 import { useLeads } from '@/app/admin/representantes/hooks/useLeads';
 import { useCachedDocs } from '@/app/admin/representantes/hooks/useCachedDocs';
 import { useRepActions } from '@/app/admin/representantes/hooks/useRepActions';
 import { LeadsTab } from '@/app/admin/representantes/components/LeadsTab';
+import type {
+  TomadorRow,
+  TomadorEmpresa,
+} from '@/app/api/comercial/tomadores/route';
+import { ContratosTable } from '@/components/shared/ContratosTable';
 
 interface Session {
   cpf: string;
@@ -299,9 +307,304 @@ export default function ComercialPage() {
   const fmtBRL = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // TomadoresContent — inline component to avoid separate file for single use
+  // ──────────────────────────────────────────────────────────────────────────
+  function TomadoresContent() {
+    const [tomadores, setTomadores] = useState<TomadorRow[]>([]);
+    const [loadingT, setLoadingT] = useState(true);
+    const [erroT, setErroT] = useState<string | null>(null);
+    const [expandedClinicas, setExpandedClinicas] = useState<
+      Record<number, boolean>
+    >({});
+    const [busca, setBusca] = useState('');
+
+    useEffect(() => {
+      setLoadingT(true);
+      fetch('/api/comercial/tomadores')
+        .then((r) => r.json())
+        .then((d: { tomadores?: TomadorRow[]; error?: string }) => {
+          if (d.error) {
+            setErroT(d.error);
+            return;
+          }
+          setTomadores(d.tomadores ?? []);
+        })
+        .catch(() => setErroT('Erro ao carregar tomadores'))
+        .finally(() => setLoadingT(false));
+    }, []);
+
+    const fmtDate = (d: string | null | undefined) => {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('pt-BR');
+    };
+
+    const semRep = tomadores.filter((t) => !t.rep_codigo);
+    const comRep = tomadores.filter((t) => t.rep_codigo);
+
+    const filtrar = (lista: TomadorRow[]) =>
+      busca.trim()
+        ? lista.filter(
+            (t) =>
+              t.tomador_nome.toLowerCase().includes(busca.toLowerCase()) ||
+              t.tomador_cnpj.includes(busca.replace(/\D/g, '')) ||
+              (t.rep_nome ?? '').toLowerCase().includes(busca.toLowerCase())
+          )
+        : lista;
+
+    const toggleClinica = (id: number) =>
+      setExpandedClinicas((prev) => ({ ...prev, [id]: !prev[id] }));
+
+    const TomadorRow = ({ t }: { t: TomadorRow }) => {
+      const isExpanded = !!expandedClinicas[t.tomador_id];
+      const isClinica = t.tipo === 'clinica';
+
+      return (
+        <>
+          <div
+            className={`flex items-center gap-3 px-4 py-3 border-b last:border-0 ${
+              isClinica ? 'cursor-pointer hover:bg-gray-50' : ''
+            } transition-colors`}
+            onClick={isClinica ? () => toggleClinica(t.tomador_id) : undefined}
+          >
+            {/* Tipo badge */}
+            <span
+              className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                isClinica
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-purple-100 text-purple-700'
+              }`}
+            >
+              {isClinica ? 'Clínica' : 'Entidade'}
+            </span>
+
+            {/* Nome + CNPJ */}
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 text-sm truncate">
+                {t.tomador_nome}
+              </p>
+              <p className="text-xs text-gray-400 font-mono">
+                {t.tomador_cnpj.replace(
+                  /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                  '$1.$2.$3/$4-$5'
+                )}
+              </p>
+            </div>
+
+            {/* Representante */}
+            <div className="hidden sm:block text-right shrink-0 min-w-[120px] max-w-[160px]">
+              {t.rep_nome ? (
+                <>
+                  <p className="text-xs font-semibold text-gray-700 truncate">
+                    {t.rep_nome}
+                  </p>
+                  <p className="text-[10px] font-mono text-gray-400">
+                    {t.rep_codigo}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 italic">Sem rep</p>
+              )}
+            </div>
+
+            {/* Cadastro */}
+            <div className="hidden md:block text-right shrink-0 w-[80px]">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                Cadastro
+              </p>
+              <p className="text-xs text-gray-700">{fmtDate(t.cadastro_em)}</p>
+            </div>
+
+            {/* Status vínculo */}
+            {t.vinculo_status && (
+              <span
+                className={`shrink-0 hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  t.vinculo_status === 'ativo'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {t.vinculo_status}
+              </span>
+            )}
+
+            {/* Chevron para clínica */}
+            {isClinica ? (
+              <span className="shrink-0 text-gray-400">
+                {isExpanded ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </span>
+            ) : (
+              <span className="w-4 shrink-0" />
+            )}
+          </div>
+
+          {/* Empresas colapsáveis */}
+          {isClinica && isExpanded && (
+            <div className="border-b bg-gray-50 px-6 py-3">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Empresas vinculadas
+                {t.empresas.length > 0 && ` (${t.empresas.length})`}
+              </p>
+              {t.empresas.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">
+                  Nenhuma empresa vinculada
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {t.empresas.map((emp: TomadorEmpresa) => (
+                    <div
+                      key={emp.empresa_id}
+                      className="py-2 flex flex-wrap items-start gap-x-4 gap-y-1"
+                    >
+                      <div className="flex items-center gap-2 min-w-[180px]">
+                        <Building2
+                          size={12}
+                          className="text-gray-400 shrink-0"
+                        />
+                        <span className="text-sm font-semibold text-gray-800">
+                          {emp.empresa_nome}
+                        </span>
+                      </div>
+                      {emp.empresa_cnpj && (
+                        <span className="text-gray-400 font-mono text-xs">
+                          {emp.empresa_cnpj.replace(
+                            /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                            '$1.$2.$3/$4-$5'
+                          )}
+                        </span>
+                      )}
+                      {emp.empresa_responsavel && (
+                        <span className="text-xs text-gray-600">
+                          <span className="text-gray-400">Resp.: </span>
+                          {emp.empresa_responsavel}
+                        </span>
+                      )}
+                      {(emp.empresa_contato_fone ||
+                        emp.empresa_contato_email) && (
+                        <span className="text-xs text-gray-500">
+                          {emp.empresa_contato_fone && (
+                            <span>{emp.empresa_contato_fone}</span>
+                          )}
+                          {emp.empresa_contato_fone &&
+                            emp.empresa_contato_email && (
+                              <span className="mx-1 text-gray-300">·</span>
+                            )}
+                          {emp.empresa_contato_email && (
+                            <span>{emp.empresa_contato_email}</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      );
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Tomadores</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Entidades e clínicas cadastradas, com dados de representante, lead e
+            negociação
+          </p>
+        </div>
+
+        {/* Busca */}
+        <input
+          type="text"
+          placeholder="Buscar por nome, CNPJ ou representante..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="w-full max-w-sm px-4 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400/30"
+        />
+
+        {loadingT ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin h-8 w-8 rounded-full border-4 border-green-500 border-t-transparent" />
+          </div>
+        ) : erroT ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+            {erroT}
+          </div>
+        ) : tomadores.length === 0 ? (
+          <div className="py-20 text-center text-gray-400">
+            <Building2 size={40} className="mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium">Nenhum tomador encontrado.</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Sem representante — topo */}
+            {filtrar(semRep).length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                    Sem representante ({filtrar(semRep).length})
+                  </span>
+                </div>
+                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                  {filtrar(semRep).map((t) => (
+                    <TomadorRow key={`${t.tipo}-${t.tomador_id}`} t={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Com representante */}
+            {filtrar(comRep).length > 0 && (
+              <div>
+                {filtrar(semRep).length > 0 && (
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                    Com representante ({filtrar(comRep).length})
+                  </p>
+                )}
+                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                  {filtrar(comRep).map((t) => (
+                    <TomadorRow key={`${t.tipo}-${t.tomador_id}`} t={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const renderContent = () => {
+    if (activeSection === 'tomadores') {
+      return <TomadoresContent />;
+    }
+
     if (activeSection === 'contratos') {
-      return <ContratosTable endpoint="/api/comercial/contratos" comercial />;
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Contratos</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Contratos de todos os representantes e tomadores
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+            <div className="p-4">
+              <ContratosTable
+                endpoint="/api/comercial/contratos"
+                comercial
+                allowExpandClinicaEmpresas
+              />
+            </div>
+          </div>
+        </div>
+      );
     }
 
     if (activeSection === 'comissoes') {
@@ -348,6 +651,13 @@ export default function ComercialPage() {
             >
               <DollarSign size={16} />
               Ver Comissões
+            </button>
+            <button
+              onClick={() => setActiveSection('contratos')}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <FileText size={16} />
+              Contratos
             </button>
             <button
               onClick={() => {

@@ -9,6 +9,7 @@ export type ComercialSection =
   | 'representantes'
   | 'leads'
   | 'comissoes'
+  | 'tomadores'
   | 'contratos';
 
 interface ComercialSidebarProps {
@@ -104,9 +105,9 @@ export default function ComercialSidebar({
 
       <MenuItem
         icon={Building2}
-        label="Contratos"
-        isActive={activeSection === 'contratos'}
-        onClick={() => onSectionChange('contratos')}
+        label="Tomadores"
+        isActive={activeSection === 'tomadores'}
+        onClick={() => onSectionChange('tomadores')}
       />
     </SidebarLayout>
   );
