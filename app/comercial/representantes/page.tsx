@@ -16,6 +16,8 @@ import {
   Loader2,
   UserCheck,
   Clock,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import CadastrarRepresentanteModal from './CadastrarRepresentanteModal';
 
@@ -48,6 +50,7 @@ interface RepSemGestor {
 }
 
 type Aba = 'ativos' | 'inativos' | 'sem_gestor';
+type Visualizacao = 'cards' | 'lista';
 
 export default function ComercialRepresentantesPage() {
   const router = useRouter();
@@ -55,6 +58,7 @@ export default function ComercialRepresentantesPage() {
   const [inativos, setInativos] = useState<RepMetrica[]>([]);
   const [semGestor, setSemGestor] = useState<RepSemGestor[]>([]);
   const [aba, setAba] = useState<Aba>('ativos');
+  const [visualizacao, setVisualizacao] = useState<Visualizacao>('cards');
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [showCadastrar, setShowCadastrar] = useState(false);
@@ -289,6 +293,34 @@ export default function ComercialRepresentantesPage() {
         </button>
       </div>
 
+      {/* Botões de Visualização */}
+      {aba !== 'sem_gestor' && (
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setVisualizacao('cards')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+              visualizacao === 'cards'
+                ? 'bg-green-100 text-green-700 border border-green-300'
+                : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+            }`}
+          >
+            <LayoutGrid size={14} />
+            Cards
+          </button>
+          <button
+            onClick={() => setVisualizacao('lista')}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition-all ${
+              visualizacao === 'lista'
+                ? 'bg-green-100 text-green-700 border border-green-300'
+                : 'bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200'
+            }`}
+          >
+            <List size={14} />
+            Lista
+          </button>
+        </div>
+      )}
+
       {erroToggle && (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
           <span className="font-medium">Erro:</span> {erroToggle}
@@ -424,6 +456,100 @@ export default function ComercialRepresentantesPage() {
                 ? 'Nenhum representante inativo.'
                 : 'Nenhum representante encontrado.'}
           </p>
+        </div>
+      ) : visualizacao === 'lista' ? (
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Nome
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Cadastro
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Leads Ativos
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Vínculos
+                </th>
+                <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="text-center px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                  Ação
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtrados.map((r, idx) => (
+                <tr
+                  key={r.id}
+                  className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
+                    idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                  }`}
+                  onClick={() => router.push(`/comercial/representantes/${r.id}`)}
+                >
+                  <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                    {r.nome}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {r.email}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {new Date(r.criado_em).toLocaleDateString('pt-BR')}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-purple-600">
+                    {r.leads_ativos}
+                  </td>
+                  <td className="px-6 py-4 text-sm font-bold text-blue-600">
+                    {r.vinculos_ativos}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
+                        r.status === 'desativado'
+                          ? 'bg-red-100 text-red-700'
+                          : r.status === 'ativo'
+                            ? 'bg-green-100 text-green-700'
+                            : r.status === 'apto_pendente'
+                              ? 'bg-amber-100 text-amber-700'
+                              : 'bg-gray-100 text-gray-700'
+                      }`}
+                    >
+                      {r.status === 'desativado'
+                        ? 'Inativo'
+                        : r.status === 'ativo'
+                          ? 'Ativo'
+                          : r.status === 'apto_pendente'
+                            ? 'Aguardando'
+                            : 'Pendente'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button
+                      onClick={(e) => void toggleAtivo(r, e)}
+                      disabled={togglingId === r.id}
+                      className="text-xs px-3 py-1.5 rounded-lg font-semibold transition-all disabled:opacity-60"
+                      title={r.ativo ? 'Inativar' : 'Ativar'}
+                    >
+                      {togglingId === r.id ? (
+                        <Loader2 size={12} className="animate-spin inline" />
+                      ) : r.ativo ? (
+                        <ToggleRight size={14} className="inline text-red-500" />
+                      ) : (
+                        <ToggleLeft size={14} className="inline text-green-600" />
+                      )}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
