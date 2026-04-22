@@ -1,9 +1,19 @@
 /**
  * lib/validators/cpf-unico.ts
  *
- * Verificação de unicidade de CPF em todo o sistema.
- * Regra: um CPF não pode acumular perfis de representante, vendedor e gestor
- * simultaneamente. A tabela `funcionarios` é explicitamente EXCLUÍDA dessa regra.
+ * REQUISITO DE SISTEMA — CPF único no sistema (cross-perfil).
+ *
+ * Um CPF não pode ser registrado simultaneamente como representante,
+ * lead ativo, vendedor, gestor ou rh. Esta regra é válida em TODOS os
+ * ambientes: DEV, TEST, STAGING e PROD.
+ *
+ * Camadas de enforcement:
+ *   1. Esta função (aplicação) — chamada antes de INSERT/UPDATE nas rotas.
+ *      Retorna erro amigável para o usuário antes de chegar ao banco.
+ *   2. Triggers de banco (migration 1229) — última linha de defesa.
+ *      Garantem a regra mesmo em INSERTs diretos ou de outros contextos.
+ *
+ * Exclusões explícitas: funcionarios, admin, emissor, suporte, comercial.
  *
  * Tabelas verificadas:
  *   - representantes (cpf, cpf_responsavel_pj)
