@@ -233,14 +233,15 @@ describe('lib/session — auth guards', () => {
       await expect(requireRole('admin')).rejects.toThrow('Sem permissão');
     });
 
-    it('deve lançar MFA_REQUIRED para admin sem mfa em production', async () => {
+    it('deve permitir admin mesmo sem mfaVerified (enforcement desabilitado)', async () => {
       const origEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
       const session = makeSession({ perfil: 'admin', mfaVerified: false });
       mockCookieStore.get.mockReturnValue({ value: JSON.stringify(session) });
 
-      await expect(requireRole('admin', true)).rejects.toThrow('MFA_REQUIRED');
+      const result = await requireRole('admin', true);
+      expect(result.perfil).toBe('admin');
 
       process.env.NODE_ENV = origEnv;
     });

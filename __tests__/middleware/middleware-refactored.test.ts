@@ -10,7 +10,10 @@ const MockNextResponse = jest.fn().mockImplementation((body, options) => ({
 }));
 
 const mockNextResponse = {
-  next: jest.fn(() => ({ status: 200 })),
+  next: jest.fn(() => ({
+    status: 200,
+    headers: { set: jest.fn(), get: jest.fn(), delete: jest.fn() },
+  })),
   json: jest.fn((data, options) => ({
     status: options?.status || 200,
     json: () => Promise.resolve(data),
@@ -51,6 +54,7 @@ function makeReq(
         return val ? { value: val } : undefined;
       },
     },
+    method: 'GET',
     ip: '127.0.0.1',
   } as any;
 }
@@ -283,7 +287,7 @@ describe('Middleware — MFA', () => {
     delete process.env.AUTHORIZED_ADMIN_IPS;
   });
 
-  test('bloqueia admin sem MFA em /api/admin/financeiro', () => {
+  test('permite admin sem MFA em /api/admin/financeiro (enforcement desabilitado)', () => {
     const req = makeReq('/api/admin/financeiro', {
       'bps-session': JSON.stringify({
         cpf: '00000000000',
@@ -292,7 +296,7 @@ describe('Middleware — MFA', () => {
       }),
     });
     middleware(req);
-    expect(mockNextResponse.json).toHaveBeenCalledWith(
+    expect(mockNextResponse.json).not.toHaveBeenCalledWith(
       expect.objectContaining({ error: 'MFA_REQUIRED' }),
       { status: 403 }
     );

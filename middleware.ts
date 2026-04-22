@@ -135,9 +135,6 @@ const FUNCIONARIO_ROUTES = [
   '/avaliacao',
 ];
 
-// Rotas que requerem MFA (admin)
-const MFA_REQUIRED_ROUTES = ['/api/admin/financeiro', '/admin/financeiro'];
-
 // Rotas públicas que não requerem autenticação (mesmo sob /api)
 const PUBLIC_API_ROUTES = [
   '/api/contratacao/cadastro-inicial',
@@ -246,11 +243,9 @@ function parseSession(request: NextRequest): MiddlewareSession | null {
     return null;
   }
 
-  // Edge Runtime: não usar process.env.NODE_ENV (causa eval)
-  // Mock header É permitido APENAS em desenvolvimento local via x-mock-session
-  // Sempre permitir para compatibilidade com testes e desenvolvimento
+  // Mock header É permitido APENAS em desenvolvimento local e testes (não em production)
   const mockHeader = request.headers.get('x-mock-session');
-  if (mockHeader) {
+  if (mockHeader && process.env.NODE_ENV !== 'production') {
     return parseValue(mockHeader);
   }
   return null;
@@ -348,27 +343,9 @@ export function middleware(request: NextRequest) {
       return new NextResponse('Autenticação requerida', { status: 401 });
     }
 
-    // Verificar MFA para rotas críticas apenas em produção
-    const shouldEnforceMfaInThisEnv =
-      process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
-
-    if (
-      shouldEnforceMfaInThisEnv &&
-      MFA_REQUIRED_ROUTES.some((route) => pathname.startsWith(route))
-    ) {
-      if (session.perfil === 'admin' && !session.mfaVerified) {
-        console.error(
-          `[SECURITY] Admin ${maskCpf(session.cpf)} tentou acessar ${pathname} sem MFA verificado`
-        );
-        return NextResponse.json(
-          {
-            error: 'MFA_REQUIRED',
-            message: 'Autenticação de dois fatores requerida',
-          },
-          { status: 403 }
-        );
-      }
-    }
+    // TODO: Verificar MFA para rotas críticas — desabilitado até a feature de MFA
+    // ser completamente implementada (envio de código, rota de challenge, UI de verificação).
+    // const shouldEnforceMfaInThisEnv = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
   }
 
   // ── Funcionário route segregation — block gestores ──

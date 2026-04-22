@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Send,
   Wrench,
+  Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { Solicitacao, ParcelaDetalhe } from './types';
@@ -33,6 +34,7 @@ interface SolicitacaoCardProps {
   onVerLink: (solicitacao: Solicitacao) => void;
   onVerificarPagamento: (loteId: number) => void;
   onDisponibilizarLink: (loteId: number) => void;
+  onDeletarLink: (loteId: number) => void;
   onVincularRepresentante: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
   formatDate: (dateString: string | null) => string;
@@ -243,6 +245,7 @@ function StatusActions({
   onVerLink,
   onVerificarPagamento,
   onDisponibilizarLink,
+  onDeletarLink,
 }: Omit<
   SolicitacaoCardProps,
   | 'formatCurrency'
@@ -475,7 +478,7 @@ function StatusActions({
             )}
           </p>
         )}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => onVerLink(solicitacao)}
             className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -492,6 +495,14 @@ function StatusActions({
               className={`w-4 h-4 ${isProcessando ? 'animate-spin' : ''}`}
             />
             {isProcessando ? 'Verificando...' : 'Verificar Pagamento'}
+          </button>
+          <button
+            onClick={() => onDeletarLink(loteId)}
+            disabled={isProcessando}
+            className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Deletar Link
           </button>
         </div>
       </div>

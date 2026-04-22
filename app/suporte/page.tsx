@@ -11,6 +11,7 @@ import { ComissoesIndividuaisContent } from '@/components/suporte/ComissoesIndiv
 import { PreCadastroContent } from '@/components/suporte/PreCadastroContent';
 import { SuporteLeadsComissoesContent } from '@/components/suporte/SuporteLeadsComissoesContent';
 import { ContratosTable } from '@/components/shared/ContratosTable';
+import { AvaliacoesContent } from '@/components/suporte/AvaliacoesContent';
 
 interface Session {
   cpf: string;
@@ -131,6 +132,10 @@ export default function SuportePage() {
       if (activeSubSection === 'comissoes') {
         return <SuporteLeadsComissoesContent />;
       }
+    }
+
+    if (activeSection === 'avaliacoes') {
+      return <AvaliacoesContent />;
     }
 
     return (

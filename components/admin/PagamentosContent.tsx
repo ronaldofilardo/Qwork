@@ -30,6 +30,7 @@ export default function PagamentosContent() {
     handleGerarLink,
     handleVerLink,
     handleVerificarPagamento,
+    handleDeletarLink,
     handleDisponibilizarLink,
     handleVincularRepresentante,
     getSolicitacoesFiltradas,
@@ -94,6 +95,7 @@ export default function PagamentosContent() {
           onVerLink={handleVerLink}
           onVerificarPagamento={handleVerificarPagamento}
           onDisponibilizarLink={handleDisponibilizarLink}
+          onDeletarLink={handleDeletarLink}
           onVincularRepresentante={handleVincularRepresentante}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
@@ -126,6 +128,7 @@ export default function PagamentosContent() {
               onVerLink={handleVerLink}
               onVerificarPagamento={handleVerificarPagamento}
               onDisponibilizarLink={handleDisponibilizarLink}
+              onDeletarLink={handleDeletarLink}
               onVincularRepresentante={handleVincularRepresentante}
               formatCurrency={formatCurrency}
               formatDate={formatDate}
