@@ -6,7 +6,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
-import { validarCPF } from '@/lib/cpf-utils';
+import { checkCnpjUnicoRepresentante } from '@/lib/validators/cnpj-unico';
+import { validarCPF, validarCNPJ } from '@/lib/validators';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +68,11 @@ export async function POST(request: NextRequest) {
         { error: 'CNPJ inválido (14 dígitos)' },
         { status: 400 }
       );
+    if (!validarCNPJ(cnpj))
+      return NextResponse.json(
+        { error: 'CNPJ inválido' },
+        { status: 400 }
+      );
     if (!cpf_responsavel_pj || !/^\d{11}$/.test(cpf_responsavel_pj))
       return NextResponse.json(
         { error: 'CPF do responsável PJ é obrigatório (11 dígitos)' },
@@ -77,6 +83,18 @@ export async function POST(request: NextRequest) {
         { error: 'CPF do responsável inválido' },
         { status: 400 }
       );
+
+    // Verificar CNPJ único
+    const cnpjCheck = await checkCnpjUnicoRepresentante(cnpj);
+    if (!cnpjCheck.disponivel) {
+      return NextResponse.json(
+        {
+          error:
+            cnpjCheck.message ?? 'CNPJ já cadastrado como representante',
+        },
+        { status: 409 }
+      );
+    }
 
     // Verificar CPF do responsável único no sistema
     const cpfCheck = await checkCpfUnicoSistema(cpf_responsavel_pj);
