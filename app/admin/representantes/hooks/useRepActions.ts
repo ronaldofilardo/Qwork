@@ -179,7 +179,7 @@ export function useRepActions(): UseRepActionsReturn {
         ? ` | Link de convite: ${data.convite_link}`
         : '';
       setSucesso(
-        `Representante criado: ${data.nome} — Código ${data.codigo}${linkMsg}`
+        `Representante criado: ${data.nome}${linkMsg}`
       );
       if (data.convite_link) setConviteLinkCopiavel(data.convite_link);
       setTimeout(() => setSucesso(''), 10000);

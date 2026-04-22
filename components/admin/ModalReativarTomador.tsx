@@ -79,7 +79,11 @@ export default function ModalReativarTomador({
       const res = await fetch(`/api/utils/verificar-cpf?cpf=${cpfLimpo}`);
       if (res.ok) {
         const data = await res.json();
-        setCpfIndisponivel(data.disponivel ? null : (data.motivo ?? 'CPF já cadastrado no sistema'));
+        setCpfIndisponivel(
+          data.disponivel
+            ? null
+            : (data.motivo ?? 'CPF já cadastrado no sistema')
+        );
       }
     } catch {
       // silencioso
@@ -401,7 +405,10 @@ export default function ModalReativarTomador({
                   type="text"
                   inputMode="numeric"
                   value={novoCpf}
-                  onChange={(e) => { setNovoCpf(formatarCpf(e.target.value)); setCpfIndisponivel(null); }}
+                  onChange={(e) => {
+                    setNovoCpf(formatarCpf(e.target.value));
+                    setCpfIndisponivel(null);
+                  }}
                   onBlur={handleNovoCpfBlur}
                   placeholder="00000000000"
                   maxLength={11}
@@ -409,12 +416,20 @@ export default function ModalReativarTomador({
                     cpfIndisponivel
                       ? 'border-red-400'
                       : novoCpf.length > 0 && !cpfValido
-                      ? 'border-red-300'
-                      : 'border-gray-300'
+                        ? 'border-red-300'
+                        : 'border-gray-300'
                   }`}
                 />
-                {verificandoCpf && <p className="text-xs text-gray-400 mt-0.5">Verificando CPF...</p>}
-                {cpfIndisponivel && <p className="text-xs text-red-500 mt-0.5">{cpfIndisponivel}</p>}
+                {verificandoCpf && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Verificando CPF...
+                  </p>
+                )}
+                {cpfIndisponivel && (
+                  <p className="text-xs text-red-500 mt-0.5">
+                    {cpfIndisponivel}
+                  </p>
+                )}
                 {!cpfIndisponivel && novoCpf.length > 0 && !cpfValido && (
                   <p className="text-xs text-red-500 mt-0.5">
                     CPF deve ter 11 dígitos

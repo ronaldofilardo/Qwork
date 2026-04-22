@@ -116,7 +116,8 @@ export async function checkCpfUnicoSistema(
     return {
       disponivel: false,
       perfil: 'representante_pj',
-      message: 'Este CPF já está vinculado como responsável de representante PJ',
+      message:
+        'Este CPF já está vinculado como responsável de representante PJ',
     };
   }
 
@@ -132,14 +133,19 @@ export async function checkCpfUnicoSistema(
     return {
       disponivel: false,
       perfil: 'representante_lead',
-      message: 'Este CPF já está vinculado como responsável de cadastro em análise',
+      message:
+        'Este CPF já está vinculado como responsável de cadastro em análise',
     };
   }
 
   if (usuarioResult.rows.length > 0) {
     const tipo = usuarioResult.rows[0].tipo_usuario as PerfilCpf;
     const perfilLabel =
-      tipo === 'vendedor' ? 'vendedor' : tipo === 'gestor' ? 'gestor' : 'gestor RH';
+      tipo === 'vendedor'
+        ? 'vendedor'
+        : tipo === 'gestor'
+          ? 'gestor'
+          : 'gestor RH';
     return {
       disponivel: false,
       perfil: tipo,

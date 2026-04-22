@@ -28,13 +28,13 @@ function cpfFromSeed(seed: number): string {
 }
 
 const NOW = Date.now();
-const CPF_REP_PJ    = cpfFromSeed(NOW + 2);
-const CPF_LEAD_PF   = cpfFromSeed(NOW + 3);
-const CPF_LEAD_PJ   = cpfFromSeed(NOW + 4);
-const CPF_VENDEDOR  = cpfFromSeed(NOW + 5);
-const CPF_GESTOR    = cpfFromSeed(NOW + 6);
-const CPF_RH        = cpfFromSeed(NOW + 7);
-const CPF_LIVRE     = cpfFromSeed(NOW + 8);
+const CPF_REP_PJ = cpfFromSeed(NOW + 2);
+const CPF_LEAD_PF = cpfFromSeed(NOW + 3);
+const CPF_LEAD_PJ = cpfFromSeed(NOW + 4);
+const CPF_VENDEDOR = cpfFromSeed(NOW + 5);
+const CPF_GESTOR = cpfFromSeed(NOW + 6);
+const CPF_RH = cpfFromSeed(NOW + 7);
+const CPF_LIVRE = cpfFromSeed(NOW + 8);
 
 // IDs criados durante os testes — limpos no afterAll
 let repPjId: number | null = null;
@@ -71,7 +71,9 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
     leadPfId = leadPf.rows[0].id;
 
     // Lead PJ (cpf_responsavel = CPF_LEAD_PJ, status verificado)
-    const cnpjLeadPj = String(NOW + 99).slice(-14).padStart(14, '0');
+    const cnpjLeadPj = String(NOW + 99)
+      .slice(-14)
+      .padStart(14, '0');
     const leadPj = await query(
       `INSERT INTO representantes_cadastro_leads
          (tipo_pessoa, nome, email, telefone, cnpj, razao_social, cpf_responsavel, status, doc_cnpj_key, doc_cpf_resp_key)
@@ -105,7 +107,9 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
          'Resp', '00000000002', $4, '11988880001', true)
        RETURNING id`,
       [
-        String(NOW + 777).slice(-14).padStart(14, '0'),
+        String(NOW + 777)
+          .slice(-14)
+          .padStart(14, '0'),
         `Clinica CPF Unico ${NOW}`,
         `cli_cpf_unico_${NOW}@teste.com`,
         `resp_cli_${NOW}@teste.com`,
@@ -147,11 +151,20 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
     for (const cpf of cpfsToClean) {
       await query('DELETE FROM usuarios WHERE cpf = $1', [cpf]);
     }
-    if (leadPfId) await query('DELETE FROM representantes_cadastro_leads WHERE id = $1', [leadPfId]);
-    if (leadPjId) await query('DELETE FROM representantes_cadastro_leads WHERE id = $1', [leadPjId]);
-    if (repPjId)  await query('DELETE FROM representantes WHERE id = $1', [repPjId]);
-    if (entidadeId) await query('DELETE FROM entidades WHERE id = $1', [entidadeId]);
-    if (clinicaId)  await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
+    if (leadPfId)
+      await query('DELETE FROM representantes_cadastro_leads WHERE id = $1', [
+        leadPfId,
+      ]);
+    if (leadPjId)
+      await query('DELETE FROM representantes_cadastro_leads WHERE id = $1', [
+        leadPjId,
+      ]);
+    if (repPjId)
+      await query('DELETE FROM representantes WHERE id = $1', [repPjId]);
+    if (entidadeId)
+      await query('DELETE FROM entidades WHERE id = $1', [entidadeId]);
+    if (clinicaId)
+      await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
   });
 
   // ─── 1. checkCpfUnicoSistema (nível de aplicação) ─────────────────────────
@@ -200,12 +213,16 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
     });
 
     it('ignorarRepresentanteId permite reeditar o próprio representante PJ', async () => {
-      const r = await checkCpfUnicoSistema(CPF_REP_PJ, { ignorarRepresentanteId: repPjId! });
+      const r = await checkCpfUnicoSistema(CPF_REP_PJ, {
+        ignorarRepresentanteId: repPjId!,
+      });
       expect(r.disponivel).toBe(true);
     });
 
     it('ignorarUsuarioId permite reeditar o próprio usuário (vendedor)', async () => {
-      const r = await checkCpfUnicoSistema(CPF_VENDEDOR, { ignorarUsuarioId: vendedorId! });
+      const r = await checkCpfUnicoSistema(CPF_VENDEDOR, {
+        ignorarUsuarioId: vendedorId!,
+      });
       expect(r.disponivel).toBe(true);
     });
   });
@@ -235,14 +252,18 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
     });
 
     it('trigger bloqueia INSERT em representantes PJ com cpf_responsavel_pj de vendedor ativo', async () => {
-      const cnpjDup = String(NOW + 555).slice(-14).padStart(14, '0');
+      const cnpjDup = String(NOW + 555)
+        .slice(-14)
+        .padStart(14, '0');
       await expect(
         query(
           `INSERT INTO representantes (tipo_pessoa, nome, email, telefone, cnpj, cpf_responsavel_pj, status, ativo, aceite_termos)
            VALUES ('pj', 'Dup PJ Teste', $1, '11999990099', $2, $3, 'ativo', true, false)`,
           [`dup_pj_${NOW}@teste.com`, cnpjDup, CPF_VENDEDOR]
         )
-      ).rejects.toThrow(/cpf_unico_sistema|cadastrado no sistema|bloqueada por regra/i);
+      ).rejects.toThrow(
+        /cpf_unico_sistema|cadastrado no sistema|bloqueada por regra/i
+      );
     });
 
     it('trigger bloqueia INSERT em usuarios (vendedor) com CPF de responsável PJ', async () => {
@@ -252,7 +273,9 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
            VALUES ($1, 'Dup Vendedor', $2, 'hash', 'vendedor', true)`,
           [CPF_REP_PJ, `dup_vend_${NOW}@teste.com`]
         )
-      ).rejects.toThrow(/cpf_unico_sistema|cadastrado no sistema|bloqueada por regra/i);
+      ).rejects.toThrow(
+        /cpf_unico_sistema|cadastrado no sistema|bloqueada por regra/i
+      );
     });
 
     it('trigger bloqueia INSERT em representantes_cadastro_leads (ativo) com CPF de vendedor', async () => {
@@ -263,7 +286,9 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
            VALUES ('pf', 'Dup Lead', $1, '11999990098', $2, 'pendente_verificacao', 'fake-dup')`,
           [`dup_lead_${NOW}@teste.com`, CPF_VENDEDOR]
         )
-      ).rejects.toThrow(/cpf_unico_sistema|cadastrado no sistema|bloqueada por regra/i);
+      ).rejects.toThrow(
+        /cpf_unico_sistema|cadastrado no sistema|bloqueada por regra/i
+      );
     });
 
     it('trigger NÃO bloqueia lead com status convertido (CPF de rep)', async () => {
@@ -296,8 +321,10 @@ describe('Regra de negócio: CPF único no sistema (integration)', () => {
       ).resolves.toBeDefined();
 
       // Limpar
-      await query('DELETE FROM usuarios WHERE cpf = $1 AND tipo_usuario = $2', [CPF_REP_PJ, 'admin']);
+      await query('DELETE FROM usuarios WHERE cpf = $1 AND tipo_usuario = $2', [
+        CPF_REP_PJ,
+        'admin',
+      ]);
     });
   });
 });
-
