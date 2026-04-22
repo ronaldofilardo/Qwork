@@ -36,9 +36,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (busca?.trim()) {
-      wheres.push(
-        `(r.nome ILIKE $${i} OR r.email ILIKE $${i})`
-      );
+      wheres.push(`(r.nome ILIKE $${i} OR r.email ILIKE $${i})`);
       params.push(`%${busca.trim()}%`);
       i++;
     }

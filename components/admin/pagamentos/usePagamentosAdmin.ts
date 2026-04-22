@@ -182,6 +182,33 @@ export function usePagamentosAdmin() {
     }
   };
 
+  const handleDeletarLink = async (loteId: number) => {
+    if (
+      !confirm(
+        'Deletar o link de pagamento deste lote? Ele voltará para "Aguardando Cobrança" e o tomador não terá mais acesso ao link.'
+      )
+    )
+      return;
+    try {
+      setProcessando(loteId);
+      const response = await fetch(
+        `/api/admin/emissoes/${loteId}/deletar-link`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Erro ao deletar link');
+        return;
+      }
+      await carregarSolicitacoes();
+    } catch (error) {
+      console.error('Erro ao deletar link:', error);
+      alert('Erro ao deletar link. Tente novamente.');
+    } finally {
+      setProcessando(null);
+    }
+  };
+
   const handleDisponibilizarLink = async (loteId: number) => {
     try {
       setProcessando(loteId);
@@ -312,6 +339,7 @@ export function usePagamentosAdmin() {
     handleGerarLink,
     handleVerLink,
     handleVerificarPagamento,
+    handleDeletarLink,
     handleDisponibilizarLink,
     handleVincularRepresentante,
     getSolicitacoesFiltradas,

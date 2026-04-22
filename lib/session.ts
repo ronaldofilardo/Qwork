@@ -161,7 +161,7 @@ export async function requireAuth(): Promise<Session> {
 // Verificar perfil específico
 export async function requireRole(
   role: PerfilUsuarioType | PerfilUsuarioType[],
-  enforceMfa: boolean = true
+  _enforceMfa: boolean = true
 ): Promise<Session> {
   const session = await requireAuth();
 
@@ -176,18 +176,8 @@ export async function requireRole(
     throw new Error('Sem permissão');
   }
 
-  // Verificar MFA para admins (desabilitado em desenvolvimento)
-  if (
-    enforceMfa &&
-    session.perfil === 'admin' &&
-    !session.mfaVerified &&
-    process.env.NODE_ENV === 'production'
-  ) {
-    console.log(
-      `[DEBUG] requireRole: Admin ${session.cpf} precisa verificar MFA`
-    );
-    throw new Error('MFA_REQUIRED');
-  }
+  // TODO: Verificar MFA para admins — desabilitado até a feature de MFA
+  // ser completamente implementada (envio de código, rota de challenge, UI de verificação).
 
   console.log(
     `[DEBUG] requireRole: Acesso autorizado para ${session.cpf} com perfil ${session.perfil}`

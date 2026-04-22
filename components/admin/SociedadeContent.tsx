@@ -116,15 +116,6 @@ export default function SociedadeContent() {
           : {};
 
       if (!response.ok) {
-        if (response.status === 403 && errorPayload.error === 'MFA_REQUIRED') {
-          setError(
-            errorPayload.message ??
-              'A visualização da Sociedade exige MFA verificado para admins.'
-          );
-          setData(null);
-          return;
-        }
-
         throw new Error(
           errorPayload.message ??
             errorPayload.error ??

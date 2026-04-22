@@ -31,16 +31,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[API] Erro ao listar notificações:', error);
 
-    if (error instanceof Error && error.message === 'MFA_REQUIRED') {
-      return NextResponse.json(
-        {
-          error: 'MFA_REQUIRED',
-          message: 'Autenticação de dois fatores requerida',
-        },
-        { status: 403 }
-      );
-    }
-
     return NextResponse.json(
       {
         error: 'Erro ao listar notificações',

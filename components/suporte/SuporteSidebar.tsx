@@ -9,6 +9,7 @@ import {
   Users,
   FileText,
   BarChart2,
+  ClipboardList,
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
@@ -16,8 +17,13 @@ export type SuporteSection =
   | 'tomadores'
   | 'financeiro'
   | 'representantes'
-  | 'leads';
-export type TomadoresSubSection = 'clinicas' | 'entidades' | 'pre-cadastro' | 'contratos';
+  | 'leads'
+  | 'avaliacoes';
+export type TomadoresSubSection =
+  | 'clinicas'
+  | 'entidades'
+  | 'pre-cadastro'
+  | 'contratos';
 export type FinanceiroSubSection = 'pagamentos' | 'comissoes' | 'individuais';
 export type RepresentantesSubSection = 'lista' | 'aprovacao';
 export type LeadsSubSection = 'comissoes';
@@ -188,8 +194,7 @@ export default function SuporteSidebar({
           <SubMenuItem
             label="Contratos"
             isActive={
-              activeSection === 'tomadores' &&
-              activeSubSection === 'contratos'
+              activeSection === 'tomadores' && activeSubSection === 'contratos'
             }
             onClick={() => onSectionChange('tomadores', 'contratos')}
             icon={FileText}
@@ -290,6 +295,14 @@ export default function SuporteSidebar({
           />
         </div>
       )}
+
+      {/* Avaliações */}
+      <MenuItem
+        icon={ClipboardList}
+        label="Avaliações"
+        isActive={activeSection === 'avaliacoes'}
+        onClick={() => onSectionChange('avaliacoes')}
+      />
     </SidebarLayout>
   );
 }

@@ -545,17 +545,6 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[GET /api/admin/financeiro/sociedade]', error);
 
-    if (error instanceof Error && error.message === 'MFA_REQUIRED') {
-      return NextResponse.json(
-        {
-          error: 'MFA_REQUIRED',
-          message:
-            'Autenticação de dois fatores requerida para visualizar a Sociedade.',
-        },
-        { status: 403 }
-      );
-    }
-
     return NextResponse.json(
       { error: 'Erro ao carregar auditoria da Sociedade' },
       { status: 500 }
@@ -629,17 +618,6 @@ export async function PATCH(request: NextRequest) {
     }
   } catch (error) {
     console.error('[PATCH /api/admin/financeiro/sociedade]', error);
-
-    if (error instanceof Error && error.message === 'MFA_REQUIRED') {
-      return NextResponse.json(
-        {
-          error: 'MFA_REQUIRED',
-          message:
-            'Autenticação de dois fatores requerida para editar a Sociedade.',
-        },
-        { status: 403 }
-      );
-    }
 
     return NextResponse.json(
       { error: 'Erro ao salvar beneficiário societário' },
