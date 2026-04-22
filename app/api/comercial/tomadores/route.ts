@@ -26,7 +26,6 @@ export interface TomadorRow {
   tomador_cnpj: string;
   tipo: 'entidade' | 'clinica';
   cadastro_em: string;
-  rep_codigo: string | null;
   rep_nome: string | null;
   lead_data: string | null;
   valor_negociado: string | null;
@@ -47,7 +46,6 @@ export async function GET(): Promise<NextResponse> {
       tomador_cnpj: string;
       tipo: 'entidade';
       cadastro_em: string;
-      rep_codigo: string | null;
       rep_nome: string | null;
       lead_data: string | null;
       valor_negociado: string | null;
@@ -91,7 +89,6 @@ export async function GET(): Promise<NextResponse> {
       tomador_cnpj: string;
       tipo: 'clinica';
       cadastro_em: string;
-      rep_codigo: string | null;
       rep_nome: string | null;
       lead_data: string | null;
       valor_negociado: string | null;

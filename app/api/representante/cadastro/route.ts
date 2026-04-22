@@ -82,7 +82,10 @@ export async function POST(request: NextRequest) {
     const cpfCheck = await checkCpfUnicoSistema(cpf_responsavel_pj);
     if (!cpfCheck.disponivel) {
       return NextResponse.json(
-        { error: cpfCheck.message ?? 'CPF do responsável já cadastrado no sistema' },
+        {
+          error:
+            cpfCheck.message ?? 'CPF do responsável já cadastrado no sistema',
+        },
         { status: 409 }
       );
     }

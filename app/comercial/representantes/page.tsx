@@ -24,7 +24,6 @@ interface RepMetrica {
   nome: string;
   email: string;
   status: string;
-  codigo: string;
   ativo: boolean;
   leads_ativos: number;
   leads_mes: number;
@@ -41,7 +40,6 @@ interface RepSemGestor {
   nome: string;
   email: string;
   status: string;
-  codigo: string;
   tipo_pessoa: string;
   criado_em: string;
   leads_ativos: number;
@@ -155,8 +153,7 @@ export default function ComercialRepresentantesPage() {
     const q = busca.toLowerCase();
     return (
       r.nome.toLowerCase().includes(q) ||
-      r.email.toLowerCase().includes(q) ||
-      (r.codigo ?? '').toLowerCase().includes(q)
+      r.email.toLowerCase().includes(q)
     );
   });
 
@@ -165,8 +162,7 @@ export default function ComercialRepresentantesPage() {
     const q = busca.toLowerCase();
     return (
       r.nome.toLowerCase().includes(q) ||
-      r.email.toLowerCase().includes(q) ||
-      (r.codigo ?? '').toLowerCase().includes(q)
+      r.email.toLowerCase().includes(q)
     );
   });
 

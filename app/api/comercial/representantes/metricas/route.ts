@@ -22,7 +22,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       nome: string;
       email: string;
       status: string;
-      codigo: string;
       ativo: boolean;
       leads_ativos: string;
       leads_mes: string;

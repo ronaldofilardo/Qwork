@@ -2335,15 +2335,6 @@ ALTER TABLE ONLY public.representantes
 
 
 --
--- Name: representantes representantes_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.representantes
-    ADD CONSTRAINT representantes_codigo_key UNIQUE (codigo);
-
-
-
---
 -- Name: representantes representantes_cpf_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2709,14 +2700,6 @@ CREATE INDEX idx_leads_status ON public.leads_representante USING btree (status)
 --
 
 CREATE INDEX idx_representantes_cnpj ON public.representantes USING btree (cnpj) WHERE (cnpj IS NOT NULL);
-
-
-
---
--- Name: idx_representantes_codigo; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_representantes_codigo ON public.representantes USING btree (codigo);
 
 
 
