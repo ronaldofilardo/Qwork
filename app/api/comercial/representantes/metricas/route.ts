@@ -29,6 +29,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       comissoes_pendentes: string;
       valor_pendente: string;
       aceite_contrato_em: string | null;
+      criado_em: string;
       vendedores_count: string;
       modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
       percentual_comissao: string | null;
@@ -42,7 +43,9 @@ export async function GET(request: Request): Promise<NextResponse> {
          r.nome,
          r.email,
          r.status,
-         r.ativo,         r.aceite_disclaimer_nv_em                                  AS aceite_contrato_em,
+         r.ativo,
+         r.criado_em,
+         r.aceite_disclaimer_nv_em                                  AS aceite_contrato_em,
          r.modelo_comissionamento,
          r.percentual_comissao,
          r.percentual_comissao_comercial,
@@ -77,7 +80,7 @@ export async function GET(request: Request): Promise<NextResponse> {
        LEFT JOIN public.vinculos_comissao vc ON vc.representante_id = r.id
        LEFT JOIN public.comissoes_laudo cl ON cl.vinculo_id = vc.id
        WHERE r.ativo = ${soDesativados ? 'false' : 'true'}
-       GROUP BY r.id, r.ativo, r.aceite_disclaimer_nv_em, r.modelo_comissionamento, r.percentual_comissao, r.percentual_comissao_comercial, r.valor_custo_fixo_entidade, r.valor_custo_fixo_clinica, r.asaas_wallet_id
+       GROUP BY r.id, r.ativo, r.criado_em, r.aceite_disclaimer_nv_em, r.modelo_comissionamento, r.percentual_comissao, r.percentual_comissao_comercial, r.valor_custo_fixo_entidade, r.valor_custo_fixo_clinica, r.asaas_wallet_id
        ORDER BY leads_ativos DESC, r.nome`
     );
 
@@ -88,6 +91,7 @@ export async function GET(request: Request): Promise<NextResponse> {
         email: r.email,
         status: r.status,
         ativo: r.ativo ?? true,
+        criado_em: r.criado_em,
         leads_ativos: parseInt(r.leads_ativos ?? '0', 10),
         leads_mes: parseInt(r.leads_mes ?? '0', 10),
         vinculos_ativos: parseInt(r.vinculos_ativos ?? '0', 10),
