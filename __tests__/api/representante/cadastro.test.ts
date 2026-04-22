@@ -21,7 +21,7 @@ const basePF = {
   nome: 'Maria Santos',
   email: 'maria@test.dev',
   tipo_pessoa: 'pf',
-  cpf: '12345678901',
+  cpf: '12345678909',
   aceite_termos: true,
   aceite_disclaimer_nv: true,
 };
@@ -31,7 +31,7 @@ const basePJ = {
   email: 'empresa@test.dev',
   tipo_pessoa: 'pj',
   cnpj: '12345678000190',
-  cpf_responsavel_pj: '12345678901',
+  cpf_responsavel_pj: '12345678909',
   aceite_termos: true,
   aceite_disclaimer_nv: true,
 };
@@ -91,6 +91,13 @@ describe('POST /api/representante/cadastro', () => {
 
   // --- Conflito de email 409 ---
   it('deve retornar 409 se email já existe', async () => {
+    // checkCpfUnicoSistema: 5 queries em Promise.all (todas sem conflito)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf_responsavel_pj
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf_responsavel
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usuario
+    // email check → retorna que já existe
     mockQuery.mockResolvedValueOnce({ rows: [{ id: 55 }], rowCount: 1 } as any);
 
     const res = await POST(makeReq(basePJ));
@@ -100,14 +107,21 @@ describe('POST /api/representante/cadastro', () => {
 
   // --- Cadastro PJ com sucesso ---
   it('deve cadastrar PJ com status ativo e retornar 201', async () => {
+    // checkCpfUnicoSistema: 5 queries em Promise.all (todas sem conflito)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf_responsavel_pj
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf_responsavel
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usuario
     // email check
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // gestor_comercial
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // INSERT RETURNING
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 10,
-          codigo: 'PJ00-0001',
           nome: 'Empresa LTDA',
           email: 'empresa@test.dev',
           status: 'ativo',
@@ -122,20 +136,27 @@ describe('POST /api/representante/cadastro', () => {
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(data.representante.codigo).toBe('PJ00-0001');
+    expect(data.representante.id).toBe(10);
     expect(data.representante.status).toBe('ativo');
   });
 
   // --- Cadastro PJ sem conflito ---
   it('deve cadastrar PJ com status ativo quando não há conflito PF', async () => {
+    // checkCpfUnicoSistema: 5 queries em Promise.all (todas sem conflito)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf_responsavel_pj
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf_responsavel
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usuario
     // email check
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // gestor_comercial
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // INSERT RETURNING
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 11,
-          codigo: 'PJ00-0001',
           nome: 'Empresa LTDA',
           email: 'empresa@test.dev',
           status: 'ativo',
@@ -150,13 +171,23 @@ describe('POST /api/representante/cadastro', () => {
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.representante.status).toBe('ativo');
-    // Apenas 2 chamadas ao DB: email check + INSERT
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    // 5 cpfUnico + email check + gestor + INSERT = 8 chamadas
+    expect(mockQuery).toHaveBeenCalledTimes(8);
   });
 
   // --- Unique constraint exception ---
   it('deve retornar 409 para violação de unique constraint', async () => {
+    // checkCpfUnicoSistema: 5 queries em Promise.all (todas sem conflito)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf_responsavel_pj
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf_responsavel
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usuario
+    // email check
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // gestor_comercial
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // INSERT → lança unique violation
     mockQuery.mockRejectedValueOnce(
       new Error('duplicate key value violates unique constraint')
     );
@@ -166,3 +197,5 @@ describe('POST /api/representante/cadastro', () => {
     expect((await res.json()).error).toMatch(/já cadastrado/i);
   });
 });
+
+

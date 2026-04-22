@@ -112,7 +112,11 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
       const res = await fetch(`/api/utils/verificar-cpf?cpf=${cpfLimpo}`);
       if (res.ok) {
         const data = await res.json();
-        setCpfIndisponivel(data.disponivel ? null : (data.motivo ?? 'CPF já cadastrado no sistema'));
+        setCpfIndisponivel(
+          data.disponivel
+            ? null
+            : (data.motivo ?? 'CPF já cadastrado no sistema')
+        );
       }
     } catch {
       // silencioso em caso de erro de rede
@@ -301,13 +305,20 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
               <input
                 className={`${inputCls}${cpfIndisponivel ? ' border-red-400 focus:ring-red-500/30' : ''}`}
                 value={cpf}
-                onChange={(e) => { setCpf(formatarCPF(e.target.value)); setCpfIndisponivel(null); }}
+                onChange={(e) => {
+                  setCpf(formatarCPF(e.target.value));
+                  setCpfIndisponivel(null);
+                }}
                 onBlur={handleCpfBlur}
                 placeholder="000.000.000-00"
                 maxLength={14}
               />
-              {verificandoCpf && <p className="text-xs text-gray-400 mt-1">Verificando CPF...</p>}
-              {cpfIndisponivel && <p className="text-xs text-red-500 mt-1">{cpfIndisponivel}</p>}
+              {verificandoCpf && (
+                <p className="text-xs text-gray-400 mt-1">Verificando CPF...</p>
+              )}
+              {cpfIndisponivel && (
+                <p className="text-xs text-red-500 mt-1">{cpfIndisponivel}</p>
+              )}
             </div>
 
             <div>

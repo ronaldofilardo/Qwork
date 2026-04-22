@@ -34,7 +34,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       tipo_contratante: string;
       rep_nome: string | null;
       rep_cpf: string | null;
-      rep_codigo: string | null;
       lead_data: string | null;
       contrato_data: string | null;
       tempo_dias: string | null;

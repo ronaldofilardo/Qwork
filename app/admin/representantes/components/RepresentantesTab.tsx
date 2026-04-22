@@ -141,7 +141,6 @@ export function RepresentantesTab({
             <div className="space-y-3 text-sm">
               {[
                 ['E-mail', detalhes.email],
-                ['Código', detalhes.codigo],
                 ['Tipo', detalhes.tipo_pessoa.toUpperCase()],
                 ['Status', detalhes.status],
                 [
@@ -238,7 +237,7 @@ export function RepresentantesTab({
       <div className="flex flex-wrap items-center gap-3">
         <input
           type="text"
-          placeholder="Buscar nome, e-mail ou código..."
+          placeholder="Buscar nome ou e-mail..."
           value={busca}
           onChange={(e) => {
             setBusca(e.target.value);
@@ -292,7 +291,7 @@ export function RepresentantesTab({
                   <td className="px-4 py-3">
                     <div className="font-medium text-gray-900">{r.nome}</div>
                     <div className="text-xs text-gray-400">
-                      {r.email} · <span className="font-mono">{r.codigo}</span>
+                      {r.email}
                     </div>
                   </td>
                   <td className="px-4 py-3">

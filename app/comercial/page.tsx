@@ -339,8 +339,8 @@ export default function ComercialPage() {
       return new Date(d).toLocaleDateString('pt-BR');
     };
 
-    const semRep = tomadores.filter((t) => !t.rep_codigo);
-    const comRep = tomadores.filter((t) => t.rep_codigo);
+    const semRep = tomadores.filter((t) => !t.rep_nome);
+    const comRep = tomadores.filter((t) => t.rep_nome);
 
     const filtrar = (lista: TomadorRow[]) =>
       busca.trim()
@@ -397,9 +397,6 @@ export default function ComercialPage() {
                 <>
                   <p className="text-xs font-semibold text-gray-700 truncate">
                     {t.rep_nome}
-                  </p>
-                  <p className="text-[10px] font-mono text-gray-400">
-                    {t.rep_codigo}
                   </p>
                 </>
               ) : (
@@ -897,7 +894,7 @@ export default function ComercialPage() {
                                 {r.nome}
                               </p>
                               <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">
-                                {r.codigo || 'S/ COD'}
+                                {r.email}
                               </p>
                             </div>
                           </div>
