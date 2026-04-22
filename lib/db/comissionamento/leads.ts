@@ -10,7 +10,6 @@ export interface LeadResolucao {
   lead_id: number;
   representante_id: number;
   representante_nome: string;
-  representante_codigo: string;
   tipo_vinculo: 'codigo_representante' | 'verificacao_cnpj';
 }
 
@@ -110,36 +109,34 @@ export async function gerarTokenLead(leadId: number) {
 
 /**
  * Tenta encontrar um lead ativo que corresponda ao CNPJ cadastrado.
- * Prioridade 1: código manual do representante + CNPJ
+ * Prioridade 1: id numérico do representante + CNPJ
  * Prioridade 2: CNPJ na lista de leads ativos de qualquer representante
  *
  * Nunca lança exceção — retorna null se não encontrar.
  */
 export async function resolverLeadPorCadastro(
   cnpj: string,
-  codigoRepresentante?: string
+  representanteId?: number
 ): Promise<LeadResolucao | null> {
   try {
     const cnpjLimpo = cnpj.replace(/\D/g, '');
     if (!/^\d{14}$/.test(cnpjLimpo)) return null;
 
-    // Prioridade 1: código manual + CNPJ
-    if (codigoRepresentante?.trim()) {
-      const codigoNorm = codigoRepresentante.trim().toUpperCase();
+    // Prioridade 1: id do representante + CNPJ
+    if (representanteId && Number.isFinite(representanteId)) {
       const codigoResult = await query(
         `SELECT
            l.id            AS lead_id,
            l.representante_id,
-           r.nome          AS representante_nome,
-           r.codigo        AS representante_codigo
+           r.nome          AS representante_nome
          FROM leads_representante l
          JOIN representantes r ON r.id = l.representante_id
-         WHERE r.codigo = $1
+         WHERE r.id = $1
            AND l.cnpj   = $2
            AND l.status = 'pendente'
            AND l.data_expiracao > NOW()
          LIMIT 1`,
-        [codigoNorm, cnpjLimpo]
+        [representanteId, cnpjLimpo]
       );
 
       if (codigoResult.rows.length > 0) {
@@ -148,7 +145,6 @@ export async function resolverLeadPorCadastro(
           lead_id: row.lead_id,
           representante_id: row.representante_id,
           representante_nome: row.representante_nome,
-          representante_codigo: row.representante_codigo,
           tipo_vinculo: 'codigo_representante',
         };
       }
@@ -159,8 +155,7 @@ export async function resolverLeadPorCadastro(
       `SELECT
          l.id            AS lead_id,
          l.representante_id,
-         r.nome          AS representante_nome,
-         r.codigo        AS representante_codigo
+         r.nome          AS representante_nome
        FROM leads_representante l
        JOIN representantes r ON r.id = l.representante_id
        WHERE l.cnpj = $1
@@ -177,7 +172,6 @@ export async function resolverLeadPorCadastro(
         lead_id: row.lead_id,
         representante_id: row.representante_id,
         representante_nome: row.representante_nome,
-        representante_codigo: row.representante_codigo,
         tipo_vinculo: 'verificacao_cnpj',
       };
     }

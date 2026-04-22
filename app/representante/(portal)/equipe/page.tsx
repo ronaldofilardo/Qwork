@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Users2,
   UserPlus,
-  Copy,
-  Check,
   ChevronRight,
   TrendingUp,
   X,
@@ -47,15 +45,11 @@ interface ReenvioEstado {
 
 function VendedorCard({
   v,
-  copiado,
-  onCopiar,
   onClick,
   reenvioEstado,
   onReenviar,
 }: {
   v: Vendedor;
-  copiado: boolean;
-  onCopiar: () => void;
   onClick: () => void;
   reenvioEstado?: ReenvioEstado;
   onReenviar?: () => void;
@@ -93,30 +87,10 @@ function VendedorCard({
       </div>
 
       <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
-        {/* ID do vendedor */}
-        {v.vendedor_id ? (
-          <div className="flex items-center gap-1.5">
-            <code className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
-              #{v.vendedor_id}
-            </code>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onCopiar();
-              }}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              title="Copiar ID"
-            >
-              {copiado ? (
-                <Check size={13} className="text-green-600" />
-              ) : (
-                <Copy size={13} />
-              )}
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-gray-400">—</span>
-        )}
+        {/* Vendedor ID */}
+        <code className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+          #{v.vendedor_id}
+        </code>
         {/* Leads */}
         <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
           <TrendingUp size={12} />
@@ -427,9 +401,9 @@ function EditarVendedorDrawer({
                   </span>
                 </p>
                 <p>
-                  ID do Vendedor:{' '}
+                  ID Vendedor:{' '}
                   <span className="font-mono">
-                    {vendedor?.vendedor_id ? `#${vendedor.vendedor_id}` : '-'}
+                    #{vendedor?.vendedor_id ?? '-'}
                   </span>
                 </p>
                 <p className="mt-1 text-blue-500">
@@ -956,7 +930,6 @@ export default function EquipePage() {
     nome: string;
     conviteUrl?: string;
   } | null>(null);
-  const [codigoCopiadoId, setCodigoCopiadoId] = useState<number | null>(null);
   const [editarVendedor, setEditarVendedor] = useState<Vendedor | null>(null);
   const [reativarVendedor, setReativarVendedor] = useState<Vendedor | null>(
     null
@@ -1030,16 +1003,6 @@ export default function EquipePage() {
     setShowModal(false);
     setCodigoGerado({ codigo, nome: nomeVendedor, conviteUrl });
     void carregar();
-  };
-
-  const handleCopiarCodigo = async (codigo: string, vendedorId: number) => {
-    try {
-      await navigator.clipboard.writeText(codigo);
-      setCodigoCopiadoId(vendedorId);
-      setTimeout(() => setCodigoCopiadoId(null), 2000);
-    } catch {
-      // clipboard indisponivel
-    }
   };
 
   const limit = 20;
@@ -1129,13 +1092,6 @@ export default function EquipePage() {
                 <VendedorCard
                   key={v.vinculo_id}
                   v={v}
-                  copiado={codigoCopiadoId === v.vendedor_id}
-                  onCopiar={() =>
-                    void handleCopiarCodigo(
-                      String(v.vendedor_id),
-                      v.vendedor_id
-                    )
-                  }
                   onClick={() => setEditarVendedor(v)}
                   reenvioEstado={
                     v.vendedor_perfil_id != null

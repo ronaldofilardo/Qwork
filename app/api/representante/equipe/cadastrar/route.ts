@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
     );
     const vendedorId = userResult.rows[0].id;
 
-    // Inserir perfil do vendedor (com novos campos PJ)
+    // Inserir perfil do vendedor (sem codigo — id é o identificador público)
     await query(
       `INSERT INTO public.vendedores_perfil
          (usuario_id, sexo, endereco, cidade, estado, cep, tipo_pessoa, cnpj, cpf_responsavel_pj, razao_social)

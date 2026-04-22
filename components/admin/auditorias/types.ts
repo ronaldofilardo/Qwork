@@ -160,7 +160,7 @@ export interface LeadComissaoGeral {
   status: string;
   criado_em: string;
   representante_nome: string | null;
-  representante_codigo: string | null;
+  representante_id: number | null;
   modelo_comissionamento: string | null;
 }
 
@@ -179,7 +179,7 @@ export interface LeadAbaixoMinimo {
   status: string;
   criado_em: string;
   representante_nome: string;
-  representante_codigo: string;
+  representante_id: number;
 }
 
 // ── Deleção de Tomador ────────────────────────────────────────────────────

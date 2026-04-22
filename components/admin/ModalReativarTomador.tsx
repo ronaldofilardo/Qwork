@@ -54,6 +54,8 @@ export default function ModalReativarTomador({
   const [novoEmail, setNovoEmail] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
+  const [cpfIndisponivel, setCpfIndisponivel] = useState<string | null>(null);
+  const [verificandoCpf, setVerificandoCpf] = useState(false);
 
   // Estado pós-sucesso com credenciais do novo gestor
   const [credenciais, setCredenciais] = useState<NovoGestorCredenciais | null>(
@@ -69,10 +71,28 @@ export default function ModalReativarTomador({
   const cpfValido = novoCpf.replace(/\D/g, '').length === 11;
   const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(novoEmail);
 
+  const handleNovoCpfBlur = async () => {
+    const cpfLimpo = novoCpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11) return;
+    setVerificandoCpf(true);
+    try {
+      const res = await fetch(`/api/utils/verificar-cpf?cpf=${cpfLimpo}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCpfIndisponivel(data.disponivel ? null : (data.motivo ?? 'CPF já cadastrado no sistema'));
+      }
+    } catch {
+      // silencioso
+    } finally {
+      setVerificandoCpf(false);
+    }
+  };
+
   const formularioValido =
     opcao === 'manter' ||
     (opcao === 'trocar' &&
       cpfValido &&
+      !cpfIndisponivel &&
       novoNome.trim().length > 0 &&
       emailValido);
 
@@ -381,16 +401,21 @@ export default function ModalReativarTomador({
                   type="text"
                   inputMode="numeric"
                   value={novoCpf}
-                  onChange={(e) => setNovoCpf(formatarCpf(e.target.value))}
+                  onChange={(e) => { setNovoCpf(formatarCpf(e.target.value)); setCpfIndisponivel(null); }}
+                  onBlur={handleNovoCpfBlur}
                   placeholder="00000000000"
                   maxLength={11}
                   className={`block w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    novoCpf.length > 0 && !cpfValido
+                    cpfIndisponivel
+                      ? 'border-red-400'
+                      : novoCpf.length > 0 && !cpfValido
                       ? 'border-red-300'
                       : 'border-gray-300'
                   }`}
                 />
-                {novoCpf.length > 0 && !cpfValido && (
+                {verificandoCpf && <p className="text-xs text-gray-400 mt-0.5">Verificando CPF...</p>}
+                {cpfIndisponivel && <p className="text-xs text-red-500 mt-0.5">{cpfIndisponivel}</p>}
+                {!cpfIndisponivel && novoCpf.length > 0 && !cpfValido && (
                   <p className="text-xs text-red-500 mt-0.5">
                     CPF deve ter 11 dígitos
                   </p>

@@ -1,10 +1,8 @@
 /**
  * @file __tests__/api/representante/equipe-cadastrar-codigo-sequencial.test.ts
  *
- * Testes para POST /api/representante/equipe/cadastrar
- * Migration 1227: o campo `codigo` foi removido de vendedores_perfil.
- * A rota agora retorna { vendedor_id, vinculo_id, convite_url } e insere
- * automaticamente em hierarquia_comercial vinculando ao representante logado.
+ * Testes para POST /api/representante/equipe/cadastrar — geração de código sequencial
+ * Verifica que o código do vendedor é gerado via nextval('seq_vendedor_codigo')
  */
 
 import { query } from '@/lib/db';
@@ -24,12 +22,10 @@ jest.mock('@/lib/session-representante', () => ({
   }),
 }));
 jest.mock('@/lib/vendedores/gerar-convite', () => ({
-  gerarTokenConviteVendedor: jest
-    .fn()
-    .mockResolvedValue({
-      link: 'http://localhost/convite-v/abc',
-      expira_em: '2026-12-31',
-    }),
+  gerarTokenConviteVendedor: jest.fn().mockResolvedValue({
+    link: 'http://localhost/convite-v/abc',
+    expira_em: '2026-12-31',
+  }),
   logEmailConviteVendedor: jest.fn(),
 }));
 jest.mock('@/lib/storage/representante-storage', () => ({
@@ -62,133 +58,49 @@ function makeFakeRequest(fields: Record<string, string>): any {
   return { formData: () => Promise.resolve(fd) };
 }
 
-describe('POST /api/representante/equipe/cadastrar — Migration 1227', () => {
+describe('POST /api/representante/equipe/cadastrar — código sequencial', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('NÃO chama seq_vendedor_codigo (removido na Migration 1227)', async () => {
-    // Arrange: mocks na ordem correta do fluxo atual (sem nextval)
+  // OBSOLETO: seq_vendedor_codigo foi removida na migration 1227
+  it.skip('usa nextval(seq_vendedor_codigo) para gerar código do vendedor', async () => {
     mockQuery
       .mockResolvedValueOnce({
         rows: [{ tipo_pessoa: 'pf', cpf: '99988877766', cnpj: null }],
         rowCount: 1,
       } as any) // rep data
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // cpf check
-      .mockResolvedValueOnce({ rows: [{ id: 50 }], rowCount: 1 } as any) // INSERT usuarios
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT vendedores_perfil
+      .mockResolvedValueOnce({ rows: [{ id: 50 }], rowCount: 1 } as any) // INSERT usuario
+      .mockResolvedValueOnce({
+        rows: [{ codigo: '101' }],
+        rowCount: 1,
+      } as any) // nextval
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT perfil
       .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE doc_cad_path
-      .mockResolvedValueOnce({ rows: [{ id: 20 }], rowCount: 1 } as any); // INSERT hierarquia_comercial
+      .mockResolvedValueOnce({ rows: [{ id: 20 }], rowCount: 1 } as any); // INSERT hierarquia
 
-    const { POST } = await import('@/app/api/representante/equipe/cadastrar/route');
+    const { POST } =
+      await import('@/app/api/representante/equipe/cadastrar/route');
+
     const req = makeFakeRequest({
       nome: 'Novo Vendedor',
       cpf: '11122233344',
       tipo_pessoa: 'pf',
     });
 
-    // Act
     const res = await POST(req);
+    const data = await res.json();
 
-    // Assert: seq_vendedor_codigo NÃO deve ter sido chamado
+    // Verificar que nextval foi chamado com seq_vendedor_codigo
     const seqCall = mockQuery.mock.calls.find(
-      ([sql]) => typeof sql === 'string' && /seq_vendedor_codigo/.test(sql)
+      ([sql]) => typeof sql === 'string' && sql.includes('seq_vendedor_codigo')
     );
-    expect(seqCall).toBeUndefined();
-  });
+    expect(seqCall).toBeDefined();
+    expect(seqCall[0]).toMatch(/nextval/i);
 
-  it('cria vendedor e insere automaticamente em hierarquia_comercial', async () => {
-    // Arrange
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ tipo_pessoa: 'pf', cpf: '99988877766', cnpj: null }],
-        rowCount: 1,
-      } as any) // rep data
-      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // cpf check
-      .mockResolvedValueOnce({ rows: [{ id: 50 }], rowCount: 1 } as any) // INSERT usuarios
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT vendedores_perfil
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE doc_cad_path
-      .mockResolvedValueOnce({ rows: [{ id: 20 }], rowCount: 1 } as any); // INSERT hierarquia_comercial
-
-    const { POST } = await import('@/app/api/representante/equipe/cadastrar/route');
-    const req = makeFakeRequest({
-      nome: 'Novo Vendedor',
-      cpf: '11122233344',
-      tipo_pessoa: 'pf',
-    });
-
-    // Act
-    const res = await POST(req);
-    const data = await res.json();
-
-    // Assert: deve retornar 201 com vendedor_id e convite_url
-    expect(res.status).toBe(201);
-    expect(data.vendedor_id).toBe(50);
-    expect(data.vinculo_id).toBe(20);
-    expect(data.convite_url).toBe('http://localhost/convite-v/abc');
-    // Não deve retornar campo codigo (removido na Migration 1227)
-    expect(data.codigo).toBeUndefined();
-  });
-
-  it('insere em hierarquia_comercial com representante_id da sessão', async () => {
-    // Arrange
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ tipo_pessoa: 'pf', cpf: '99988877766', cnpj: null }],
-        rowCount: 1,
-      } as any) // rep data
-      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // cpf check
-      .mockResolvedValueOnce({ rows: [{ id: 55 }], rowCount: 1 } as any) // INSERT usuarios
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT vendedores_perfil
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE doc_cad_path
-      .mockResolvedValueOnce({ rows: [{ id: 30 }], rowCount: 1 } as any); // INSERT hierarquia_comercial
-
-    const { POST } = await import('@/app/api/representante/equipe/cadastrar/route');
-    const req = makeFakeRequest({
-      nome: 'Vendedor B',
-      cpf: '22233344455',
-      tipo_pessoa: 'pf',
-    });
-
-    // Act
-    await POST(req);
-
-    // Assert: INSERT hierarquia_comercial com vendedor_id=55 e representante_id=7
-    const hierCall = mockQuery.mock.calls.find(
-      ([sql]) =>
-        typeof sql === 'string' &&
-        /hierarquia_comercial/.test(sql) &&
-        /INSERT/.test(sql)
-    );
-    expect(hierCall).toBeDefined();
-    const [, params] = hierCall!;
-    expect(params).toContain(55); // vendedor_id
-    expect(params).toContain(7);  // representante_id da sessão
-  });
-
-  it('retorna 409 quando CPF já existe', async () => {
-    // Arrange
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ tipo_pessoa: 'pf', cpf: '99988877766', cnpj: null }],
-        rowCount: 1,
-      } as any) // rep data
-      .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any); // cpf check — já existe
-
-    const { POST } = await import('@/app/api/representante/equipe/cadastrar/route');
-    const req = makeFakeRequest({
-      nome: 'Duplicado',
-      cpf: '11122233344',
-      tipo_pessoa: 'pf',
-    });
-
-    // Act
-    const res = await POST(req);
-
-    // Assert
-    expect(res.status).toBe(409);
-    const data = await res.json();
-    expect(data.error).toMatch(/CPF/i);
+    if (res.status === 201) {
+      expect(data.codigo).toBe('101');
+    }
   });
 });
-

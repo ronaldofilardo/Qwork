@@ -33,7 +33,6 @@ export interface Solicitacao {
   vinculo_id: number | null;
   representante_id: number | null;
   representante_nome: string | null;
-  representante_codigo: string | null;
   representante_tipo_pessoa: string | null;
   representante_percentual_comissao: number | null;
   representante_percentual_comissao_comercial: number | null;

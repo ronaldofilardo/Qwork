@@ -44,13 +44,14 @@ export default function VendedorPortalSidebar({
 
   const handleCopiarCodigo = async () => {
     if (!session.id) return;
+    const idStr = String(session.id);
     try {
-      await navigator.clipboard.writeText(String(session.id));
+      await navigator.clipboard.writeText(idStr);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
       const input = document.createElement('input');
-      input.value = String(session.id);
+      input.value = idStr;
       document.body.appendChild(input);
       input.select();
       document.execCommand('copy');
@@ -60,23 +61,24 @@ export default function VendedorPortalSidebar({
     }
   };
 
-  const footer = !isCollapsed ? (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-gray-500 font-mono">#{session.id}</span>
-      <button
-        onClick={handleCopiarCodigo}
-        title="Copiar ID"
-        className="p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
-        aria-label="Copiar ID do vendedor"
-      >
-        {copiado ? (
-          <Check size={13} className="text-green-600" />
-        ) : (
-          <Copy size={13} />
-        )}
-      </button>
-    </div>
-  ) : undefined;
+  const footer =
+    !isCollapsed && session.id ? (
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-gray-500 font-mono">#{session.id}</span>
+        <button
+          onClick={handleCopiarCodigo}
+          title="Copiar código"
+          className="p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
+          aria-label="Copiar código do vendedor"
+        >
+          {copiado ? (
+            <Check size={13} className="text-green-600" />
+          ) : (
+            <Copy size={13} />
+          )}
+        </button>
+      </div>
+    ) : undefined;
 
   return (
     <SidebarLayout

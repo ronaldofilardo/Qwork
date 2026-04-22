@@ -63,12 +63,7 @@ export async function salvarArquivo(
 
   const { uploadArquivoCadastro } =
     await import('@/lib/storage/cadastro-storage');
-  const result = await uploadArquivoCadastro(
-    buffer,
-    tipo,
-    cnpjLimpo,
-    tipoTomador
-  );
+  const result = await uploadArquivoCadastro(buffer, tipo, cnpjLimpo, tipoTomador);
   return result.path;
 }
 
@@ -99,7 +94,7 @@ export async function handleCadastroTomador(
     responsavel_cargo: responsavelCargo,
     responsavel_email: responsavelEmail,
     responsavel_celular: responsavelCelular,
-    codigo_representante: codigoRepresentante,
+    representante_id: representanteIdInput,
   } = data;
 
   const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
@@ -223,15 +218,119 @@ export async function handleCadastroTomador(
       throw contratoError;
     }
 
-    // Coluna 'codigo' foi removida de representantes (Migration 1227).
-    // Busca por código legado removida — o fallback por CNPJ abaixo é suficiente.
+    // Auto-vincular representante se id fornecido
     let representanteVinculado: CadastroResult['representanteVinculado'] = null;
 
-    if (codigoRepresentante?.trim()) {
-      console.warn(
-        '[CADASTRO] Campo codigo_representante recebido mas ignorado: coluna removida (Migration 1227). Usando fallback de CNPJ.',
-        { codigoRecebido: codigoRepresentante }
+    if (representanteIdInput && Number(representanteIdInput) > 0) {
+      const repIdNum = Number(representanteIdInput);
+
+      const repResult = await txClient.query<{ id: number; nome: string }>(
+        `SELECT id, nome FROM representantes WHERE id = $1 AND status = 'ativo' LIMIT 1`,
+        [repIdNum]
       );
+
+      if (repResult.rows.length > 0) {
+        const rep = repResult.rows[0];
+
+        const leadResult = await txClient.query<{
+          id: number;
+          valor_negociado: number | null;
+        }>(
+          `SELECT id, valor_negociado FROM leads_representante
+           WHERE representante_id = $1
+             AND cnpj = $2
+             AND status = 'pendente'
+             AND data_expiracao > NOW()
+           LIMIT 1`,
+          [rep.id, cnpjLimpo]
+        );
+
+        const lead = leadResult.rows[0] ?? null;
+
+        // Determinar coluna e valor para vinculos_comissao:
+        // clínica → clinica_id = entidade.id; entidade → entidade_id = entidade.id
+        const isClinica = tipo === 'clinica';
+        const vinculoColuna = isClinica ? 'clinica_id' : 'entidade_id';
+        const vinculoValor = entidade.id;
+
+        // Criar vínculo de comissão
+        try {
+          const dataInicio = new Date().toISOString().split('T')[0];
+          const dataExpiracao = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0];
+
+          await txClient.query(
+            `INSERT INTO vinculos_comissao (
+              representante_id, ${vinculoColuna}, lead_id,
+              data_inicio, data_expiracao, status
+            ) VALUES ($1, $2, $3, $4, $5, 'ativo')`,
+            [
+              rep.id,
+              vinculoValor,
+              lead?.id ?? null,
+              dataInicio,
+              dataExpiracao,
+            ]
+          );
+
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_vinculo_comissao_created',
+              representante_id: rep.id,
+              [vinculoColuna]: vinculoValor,
+              lead_id: lead?.id ?? null,
+            })
+          );
+        } catch (vinculoError) {
+          // 23505 = duplicata — vínculo já existe, atualizar lead_id se NULL
+          if ((vinculoError as any)?.code !== '23505') {
+            throw vinculoError;
+          }
+          // Backfill: vinculo existente pode ter lead_id = NULL (criado via rota admin sem lead)
+          // Atualizar para garantir que comissões apareçam em "Minhas Vendas" do representante
+          if (lead?.id != null) {
+            await txClient
+              .query(
+                `UPDATE vinculos_comissao
+               SET lead_id = $1, atualizado_em = NOW()
+               WHERE representante_id = $2 AND ${vinculoColuna} = $3 AND lead_id IS NULL`,
+                [lead.id, rep.id, vinculoValor]
+              )
+              .catch(() => {});
+          }
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_vinculo_comissao_already_exists',
+              representante_id: rep.id,
+              [vinculoColuna]: vinculoValor,
+            })
+          );
+        }
+
+        // Atualizar lead para 'convertido' se encontrado
+        if (lead) {
+          await txClient.query(
+            `UPDATE leads_representante
+             SET status = 'convertido', data_conversao = NOW()
+             WHERE id = $1`,
+            [lead.id]
+          );
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_lead_converted',
+              lead_id: lead.id,
+              representante_id: rep.id,
+            })
+          );
+        }
+
+        representanteVinculado = {
+          representante_id: rep.id,
+          representante_nome: rep.nome,
+          lead_id: lead?.id ?? null,
+        };
+      }
     }
 
     // Fallback: auto-converter leads pendentes por match de CNPJ (sem código)

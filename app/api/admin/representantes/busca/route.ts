@@ -1,6 +1,6 @@
 /**
  * GET /api/admin/representantes/busca
- * Busca representantes por nome ou código (mínimo 2 caracteres).
+ * Busca representantes por nome (mínimo 2 caracteres).
  * Usado pelo modal de vínculo de representante em contexto admin e suporte.
  * Auth: admin | suporte
  */
@@ -39,6 +39,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       `SELECT
          r.id,
          r.nome,
+
          r.cpf,
          r.modelo_comissionamento,
          r.percentual_comissao,
@@ -48,9 +49,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          r.status
        FROM public.representantes r
        WHERE r.status NOT IN ('desativado', 'rejeitado')
-         AND (
-           r.nome  ILIKE $1
-         )
+         AND r.nome  ILIKE $1
        ORDER BY r.nome
        LIMIT 10`,
       [termo]

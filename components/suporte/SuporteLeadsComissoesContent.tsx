@@ -22,8 +22,8 @@ interface LeadComissao {
   requer_aprovacao_suporte: boolean;
   status: string;
   criado_em: string;
+  representante_id: number | null;
   representante_nome: string | null;
-  representante_codigo: string | null;
   modelo_comissionamento: string | null;
   rep_percentual_atual: number | null;
   valor_custo_fixo_entidade: number | null;
@@ -221,11 +221,6 @@ export function SuporteLeadsComissoesContent() {
                         <div className="font-medium text-gray-900">
                           {l.representante_nome ?? '—'}
                         </div>
-                        {l.representante_codigo && (
-                          <div className="text-xs text-gray-400">
-                            {l.representante_codigo}
-                          </div>
-                        )}
                       </td>
                       <td className="px-3 py-3">
                         <div className="text-gray-700">{l.cnpj ?? '—'}</div>

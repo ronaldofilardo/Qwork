@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 interface Comissao {
   id: number;
   representante_nome: string;
-  representante_codigo: string;
+  representante_id: number;
   representante_email: string;
   representante_tipo_pessoa: string;
   entidade_nome: string;
@@ -457,7 +457,7 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                         {c.representante_nome}
                       </div>
                       <div className="text-xs text-gray-400 font-mono">
-                        {c.representante_codigo} ·{' '}
+                        #{c.representante_id} ·{' '}
                         {c.representante_tipo_pessoa.toUpperCase()}
                       </div>
                     </td>

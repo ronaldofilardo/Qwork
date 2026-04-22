@@ -256,6 +256,7 @@ export async function activateSubscription(
         `UPDATE pagamentos
        SET status = 'pago',
            data_pagamento = COALESCE($1::timestamp, NOW()),
+           asaas_net_value = COALESCE($4::numeric, asaas_net_value),
            dados_adicionais = jsonb_set(
              COALESCE(dados_adicionais, '{}'::jsonb),
              '{asaasConfirmedDate}',
@@ -267,6 +268,7 @@ export async function activateSubscription(
           paymentData.paymentDate || paymentData.confirmedDate,
           paymentData.confirmedDate,
           pagamentoId,
+          paymentData.netValue ?? null,
         ]
       );
 

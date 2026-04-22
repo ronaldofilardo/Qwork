@@ -263,16 +263,16 @@ export default function DashboardRepresentante() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
-              Seu ID no sistema
+              Seu código no sistema
             </p>
             <p className="font-mono font-bold text-blue-700 text-lg leading-tight">
-              {session?.id ?? '—'}
+              #{session?.id ?? '—'}
             </p>
           </div>
         </div>
         <button
           onClick={handleCopiarCodigo}
-          aria-label="Copiar ID"
+          aria-label="Copiar código"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-blue-600 hover:bg-blue-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           {copiado ? (

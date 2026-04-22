@@ -442,11 +442,9 @@ export default function ComercialRepresentanteDetalhePage() {
               <h1 className="text-3xl font-black text-gray-900 tracking-tight">
                 {rep.nome}
               </h1>
-              {rep.codigo && (
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[11px] font-bold rounded-full uppercase tracking-widest">
-                  {rep.codigo}
-                </span>
-              )}
+              <span className="px-3 py-0.5 bg-purple-100 text-purple-700 text-[11px] font-bold rounded-full uppercase tracking-widest">
+                #{rep.id}
+              </span>
             </div>
             {repFull && (repFull.cnpj || repFull.cpf) && (
               <div className="mt-1 space-y-1">
@@ -537,11 +535,6 @@ export default function ComercialRepresentanteDetalhePage() {
                 </div>
                 <div className="bg-gray-50 border rounded-xl px-4 py-3 text-sm text-gray-700 font-medium">
                   {rep.nome}
-                  {rep.codigo && (
-                    <span className="ml-2 text-xs text-gray-400 font-mono">
-                      #{rep.codigo}
-                    </span>
-                  )}
                 </div>
                 <textarea
                   value={motivoInativarRep}
@@ -891,6 +884,9 @@ export default function ComercialRepresentanteDetalhePage() {
                       </p>
                     </div>
                   </div>
+                  <code className="block text-[10px] font-mono bg-white border px-2 py-1 rounded text-gray-600">
+                    #{v.vendedor_id}
+                  </code>
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t">
                     <span className="flex items-center gap-1">
                       <TrendingUp size={11} /> {v.leads_ativos} leads
@@ -959,6 +955,9 @@ export default function ComercialRepresentanteDetalhePage() {
                       <p className="font-bold text-gray-900 text-lg">
                         {vendedorPainel.nome}
                       </p>
+                      <code className="text-[11px] font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">
+                        #{vendedorPainel.vendedor_id}
+                      </code>
                     </div>
                   </div>
                   <div className="divide-y border rounded-xl overflow-hidden">

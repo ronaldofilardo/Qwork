@@ -203,17 +203,25 @@ describe('PATCH /api/admin/entidades/[id]', () => {
         },
       ],
     } as any);
-    // 2. UPDATE entidades (ativa=true + dados responsável)
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
-    // 3. UPDATE usuarios (desativar antigo)
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
-    // 4. DELETE entidades_senhas antigo
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
-    // 5. SELECT usuarios (verificar se novo existe)
+    // 2. SELECT id FROM usuarios (busca usuário atual para ignorarUsuarioId) — novo
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-    // 6. INSERT usuarios
+    // 3-7. checkCpfUnicoSistema Promise.all (5 queries) — CPF disponível
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep.cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep.cpf_responsavel_pj
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // leads.cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // leads.cpf_responsavel
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usuarios (vendedor/gestor/rh)
+    // 8. UPDATE entidades (ativa=true + dados responsável)
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
-    // 7. INSERT/UPDATE entidades_senhas
+    // 9. UPDATE usuarios (desativar antigo)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+    // 10. DELETE entidades_senhas antigo
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+    // 11. SELECT usuarios (verificar se novo existe)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // 12. INSERT usuarios
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+    // 13. INSERT/UPDATE entidades_senhas
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
     // Act

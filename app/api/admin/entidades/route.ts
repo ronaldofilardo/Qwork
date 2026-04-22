@@ -52,8 +52,7 @@ export async function GET(request: NextRequest) {
           vc.id AS vinculo_id,
           vc.valor_negociado AS vinculo_valor_negociado,
           r.id AS representante_id,
-          r.nome AS representante_nome,
-          r.id::text AS representante_codigo
+          r.nome AS representante_nome
         FROM clinicas cl
         LEFT JOIN LATERAL (
           SELECT v.id, v.valor_negociado, v.representante_id
@@ -86,8 +85,7 @@ export async function GET(request: NextRequest) {
           vc.id AS vinculo_id,
           vc.valor_negociado AS vinculo_valor_negociado,
           r.id AS representante_id,
-          r.nome AS representante_nome,
-          r.id::text AS representante_codigo
+          r.nome AS representante_nome
         FROM entidades e
         LEFT JOIN LATERAL (
           SELECT v.id, v.valor_negociado, v.representante_id
@@ -124,8 +122,7 @@ export async function GET(request: NextRequest) {
             vc.id AS vinculo_id,
             vc.valor_negociado AS vinculo_valor_negociado,
             r.id AS representante_id,
-            r.nome AS representante_nome,
-            r.id::text AS representante_codigo
+            r.nome AS representante_nome
           FROM entidades e
           LEFT JOIN LATERAL (
             SELECT v.id, v.valor_negociado, v.representante_id
@@ -158,8 +155,7 @@ export async function GET(request: NextRequest) {
             vc.id AS vinculo_id,
             vc.valor_negociado AS vinculo_valor_negociado,
             r.id AS representante_id,
-            r.nome AS representante_nome,
-            r.id::text AS representante_codigo
+            r.nome AS representante_nome
           FROM clinicas cl
           LEFT JOIN LATERAL (
             SELECT v.id, v.valor_negociado, v.representante_id
@@ -193,7 +189,6 @@ export async function GET(request: NextRequest) {
               vinculo_id: row.vinculo_id,
               representante_id: row.representante_id,
               nome: row.representante_nome,
-              codigo: row.representante_codigo,
               valor_negociado: row.vinculo_valor_negociado
                 ? parseFloat(row.vinculo_valor_negociado)
                 : null,

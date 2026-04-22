@@ -2,8 +2,8 @@ import { COMISSAO_STATUS_BADGE } from '@/lib/status-labels';
 
 export interface Comissao {
   id: number;
+  representante_id: number;
   representante_nome: string;
-  representante_codigo: string;
   representante_email: string;
   representante_tipo_pessoa: string;
   entidade_nome: string;

@@ -75,14 +75,14 @@ export async function renovarVinculo(vinculoId: number) {
   return result.rows[0] ?? null;
 }
 
-/** Resolve código → representante e cria vínculo se não existe.
+/** Resolve id numérico → representante e cria vínculo se não existe.
  * Suporta dois fluxos:
  *  - Gestor: passa entidadeId (int)
  *  - Clínica pura (RH-flow, sem entidade espelho): passa clinicaId (int)
  * Exatamente um dos dois deve ser fornecido.
  */
-export async function vincularRepresentantePorCodigo(
-  codigo: string,
+export async function vincularRepresentantePorId(
+  representanteId: number,
   entidadeId: number | null | undefined,
   clinicaId?: number | null
 ): Promise<{
@@ -91,13 +91,12 @@ export async function vincularRepresentantePorCodigo(
   representante_nome: string;
 } | null> {
   if (!entidadeId && !clinicaId) return null;
-
-  const codigoNorm = codigo.trim().toUpperCase();
+  if (!Number.isFinite(representanteId)) return null;
 
   // Buscar representante
   const repResult = await query(
-    `SELECT id, nome, status FROM representantes WHERE codigo = $1 AND status NOT IN ('desativado','rejeitado') LIMIT 1`,
-    [codigoNorm]
+    `SELECT id, nome, status FROM representantes WHERE id = $1 AND status NOT IN ('desativado','rejeitado') LIMIT 1`,
+    [representanteId]
   );
   if (repResult.rows.length === 0) return null;
   const rep = repResult.rows[0];

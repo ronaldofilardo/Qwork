@@ -6,6 +6,7 @@ import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,6 +113,21 @@ export async function PATCH(
       }
 
       const senhaHash = await bcrypt.hash(senhaInicial, 12);
+
+      // Verificar unicidade do CPF no sistema (ignora o gestor atual desta entidade se já existir)
+      const usuarioAtualEntResult = await query(
+        `SELECT id FROM usuarios WHERE cpf = $1 AND entidade_id = $2 AND tipo_usuario = 'gestor'`,
+        [cpfLimpo, entidadeId]
+      );
+      const cpfCheck = await checkCpfUnicoSistema(cpfLimpo, {
+        ignorarUsuarioId: usuarioAtualEntResult.rows[0]?.id,
+      });
+      if (!cpfCheck.disponivel) {
+        return NextResponse.json(
+          { error: cpfCheck.message ?? 'CPF já cadastrado no sistema' },
+          { status: 409 }
+        );
+      }
 
       // Transaction: trocar gestor + reativar
       // 1. Atualizar dados do responsável na entidade

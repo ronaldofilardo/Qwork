@@ -58,6 +58,7 @@ function aplicarMascaraTelefone(valor: string): string {
 }
 
 export function useLeads() {
+  const { session: repSession } = useContext(RepContext);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -140,9 +141,8 @@ export function useLeads() {
   }, []);
 
   const copiarCodigo = async (lead: Lead) => {
-    // representante_id está disponível como id no RepContext.session (campo id)
-    // A variável não é usada no texto do clipboard, mas mantida para rastreabilidade futura
-    const texto = `Olá! Faça o cadastro da sua empresa no QWork:\n${baseUrl}/login\n\nNa etapa de confirmação, use o link de referência ou seu CPF para continuar.`;
+    const id = repSession?.id ?? '';
+    const texto = `Olá! Faça o cadastro da sua empresa no QWork:\n${baseUrl}/login\n\nNa etapa de confirmação, informe o id do representante: ${id}`;
     try {
       await navigator.clipboard.writeText(texto);
       setCopiado(lead.id);

@@ -55,6 +55,8 @@ interface Props {
 export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [cpfIndisponivel, setCpfIndisponivel] = useState<string | null>(null);
+  const [verificandoCpf, setVerificandoCpf] = useState(false);
 
   // Campos comuns
   const [tipoPessoa, setTipoPessoa] = useState<'pf' | 'pj'>('pf');
@@ -102,8 +104,29 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
     return nums.replace(/(\d{5})(\d)/, '$1-$2');
   };
 
+  const handleCpfBlur = async () => {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11) return;
+    setVerificandoCpf(true);
+    try {
+      const res = await fetch(`/api/utils/verificar-cpf?cpf=${cpfLimpo}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCpfIndisponivel(data.disponivel ? null : (data.motivo ?? 'CPF já cadastrado no sistema'));
+      }
+    } catch {
+      // silencioso em caso de erro de rede
+    } finally {
+      setVerificandoCpf(false);
+    }
+  };
+
   const handleSubmit = async (): Promise<void> => {
     setErro(null);
+    if (cpfIndisponivel) {
+      setErro(cpfIndisponivel);
+      return;
+    }
     const cpfLimpo = cpf.replace(/\D/g, '');
 
     if (!nome.trim()) {
@@ -192,6 +215,8 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
 
   const isDisabled =
     saving ||
+    verificandoCpf ||
+    !!cpfIndisponivel ||
     !nome.trim() ||
     cpf.replace(/\D/g, '').length !== 11 ||
     (tipoPessoa === 'pf'
@@ -274,12 +299,15 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
             <div>
               <label className={labelCls}>CPF *</label>
               <input
-                className={inputCls}
+                className={`${inputCls}${cpfIndisponivel ? ' border-red-400 focus:ring-red-500/30' : ''}`}
                 value={cpf}
-                onChange={(e) => setCpf(formatarCPF(e.target.value))}
+                onChange={(e) => { setCpf(formatarCPF(e.target.value)); setCpfIndisponivel(null); }}
+                onBlur={handleCpfBlur}
                 placeholder="000.000.000-00"
                 maxLength={14}
               />
+              {verificandoCpf && <p className="text-xs text-gray-400 mt-1">Verificando CPF...</p>}
+              {cpfIndisponivel && <p className="text-xs text-red-500 mt-1">{cpfIndisponivel}</p>}
             </div>
 
             <div>

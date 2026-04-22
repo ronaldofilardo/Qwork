@@ -54,6 +54,7 @@ export async function GET(
          u.nome              AS nome,
          u.email             AS email,
          u.cpf               AS cpf,
+
          COUNT(DISTINCT lr.id) FILTER (
            WHERE lr.status NOT IN ('expirado', 'convertido')
          )                   AS leads_ativos,
@@ -68,7 +69,7 @@ export async function GET(
          SELECT id FROM leads_representante WHERE vendedor_id = u.id
        )
        WHERE hc.representante_id = $1 AND hc.ativo = true
-       GROUP BY hc.id, u.id
+       GROUP BY hc.id, u.id, vp.id
        ORDER BY u.nome
        LIMIT $2 OFFSET $3`,
       [representanteId, limit, offset]

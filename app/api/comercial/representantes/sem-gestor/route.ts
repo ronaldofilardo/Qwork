@@ -22,6 +22,7 @@ export async function GET(): Promise<NextResponse> {
       nome: string;
       email: string;
       status: string;
+      codigo: string;
       tipo_pessoa: string;
       criado_em: string;
       leads_ativos: string;
@@ -32,6 +33,7 @@ export async function GET(): Promise<NextResponse> {
          r.nome,
          r.email,
          r.status,
+         r.codigo,
          r.tipo_pessoa,
          r.criado_em,
          COUNT(DISTINCT lr.id) FILTER (
@@ -56,7 +58,7 @@ export async function GET(): Promise<NextResponse> {
         nome: r.nome,
         email: r.email,
         status: r.status,
-        codigo: r.id.toString(),
+        codigo: r.codigo,
         tipo_pessoa: r.tipo_pessoa,
         criado_em: r.criado_em,
         leads_ativos: parseInt(r.leads_ativos ?? '0', 10),

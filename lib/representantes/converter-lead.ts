@@ -90,7 +90,7 @@ export async function converterLeadEmRepresentante(
       }
     }
 
-    // 3. Inserir representante (trigger gera código automaticamente)
+    // 3. Inserir representante
     // Status 'aguardando_senha': representante deve criar sua senha via link de convite
     // gestor_comercial_cpf = adminCpf (CPF do comercial que converteu o lead)
     const insertResult = await client.query<{
