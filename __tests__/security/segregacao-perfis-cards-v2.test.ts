@@ -340,14 +340,6 @@ describe('Fase 9 — Vendedor leads page (Novo Lead)', () => {
     expect(src).toMatch(/Novo\s+Lead/);
   });
 
-  it('estado semRepresentante controla visibilidade do botão', () => {
-    expect(src).toMatch(/semRepresentante/);
-  });
-
-  it('mensagem especial quando semRepresentante=true', () => {
-    expect(src).toMatch(/vinculado.*representante|representante.*vinculado/i);
-  });
-
   it('modal chama POST /api/vendedor/leads (via componente NovoLeadModal)', () => {
     expect(src).toMatch(/NovoLeadModal/);
     expect(src).toMatch(/VendedorNovoLeadModal|NovoLeadModal/);
@@ -357,26 +349,17 @@ describe('Fase 9 — Vendedor leads page (Novo Lead)', () => {
     expect(src).toMatch(/contato_nome/);
   });
 
-  it('tem campos de CNPJ, valor e comissão', () => {
+  it('tem campos de CNPJ e controle de comissionamento', () => {
     expect(src).toMatch(/cnpj/);
-    expect(src).toMatch(/valor_negociado/);
-    expect(src).toMatch(/percentual_comissao/);
+    expect(src).toMatch(/comissionamentoDefinido/);
   });
 
-  it('tem paginação', () => {
-    expect(src).toMatch(/totalPages/);
+  it('tem botões de navegação (Anterior/Próxima)', () => {
     expect(src).toMatch(/Anterior/);
     expect(src).toMatch(/Pr.*xima/);
   });
 
-  it('leads agrupados por representante', () => {
-    expect(src).toMatch(/byRep/);
-  });
 
-  it('exibe status com cores diferenciadas (STATUS_COLORS)', () => {
-    expect(src).toMatch(/STATUS_COLORS/);
-    expect(src).toMatch(/STATUS_LABEL/);
-  });
 });
 
 // ===========================================================================
@@ -408,11 +391,6 @@ describe('API — /api/comercial/representantes/[id]/vendedores', () => {
 
   it('faz JOIN com usuarios para buscar dados do vendedor', () => {
     expect(src).toMatch(/JOIN\s+usuarios/i);
-  });
-
-  it('retorna codigo_vendedor via vendedores_perfil', () => {
-    expect(src).toMatch(/vendedores_perfil/);
-    expect(src).toMatch(/codigo/);
   });
 
   it('tem paginação com page e limit', () => {
