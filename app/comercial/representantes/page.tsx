@@ -25,6 +25,7 @@ interface RepMetrica {
   email: string;
   status: string;
   ativo: boolean;
+  criado_em: string;
   leads_ativos: number;
   leads_mes: number;
   vinculos_ativos: number;
@@ -622,8 +623,17 @@ export default function ComercialRepresentantesPage() {
                 </div>
               </div>
 
+              {/* Data de Cadastro */}
+              <div className="mt-3 pt-3 border-t border-gray-50 flex items-center gap-1.5 text-xs text-gray-400 mb-2">
+                <Clock size={11} />
+                <span>
+                  Cadastro:{' '}
+                  {new Date(r.criado_em).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+
               {/* Botão Ativar/Inativar */}
-              <div className="mt-3 pt-3 border-t border-gray-50">
+              <div className="pt-3 border-t border-gray-50">
                 <button
                   onClick={(e) => void toggleAtivo(r, e)}
                   disabled={togglingId === r.id}
