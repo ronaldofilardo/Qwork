@@ -360,6 +360,15 @@ describe('Fase 9 — Vendedor leads page (Novo Lead)', () => {
   it('exibe status com cores diferenciadas (STATUS_BADGE)', () => {
     expect(src).toMatch(/STATUS_BADGE/);
   });
+
+  it('tem campo obrigatório contato_nome no modal', () => {
+    expect(src).toMatch(/contato_nome/);
+  });
+
+  it('tem campos de CNPJ e controle de comissionamento', () => {
+    expect(src).toMatch(/cnpj/);
+    expect(src).toMatch(/comissionamentoDefinido/);
+  });
 });
 
 // ===========================================================================
