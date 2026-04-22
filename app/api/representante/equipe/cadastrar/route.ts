@@ -10,10 +10,10 @@
  *   1. Autentica representante
  *   2. Valida campos + arquivos
  *   3. Insere usuário com tipo_usuario='vendedor'
- *   4. Gera código único VND-XXXXX e insere em `vendedores_perfil`
+ *   4. Insere perfil em `vendedores_perfil` (id do usuario é o identificador público)
  *   5. Upload de documentos para storage (local DEV / Backblaze PROD)
  *   6. Insere vínculo em `hierarquia_comercial`
- *   7. Retorna { vendedor_id, codigo, vinculo_id, convite_url }
+ *   7. Retorna { vendedor_id, vinculo_id, convite_url }
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
     );
     const vendedorId = userResult.rows[0].id;
 
-    // Inserir perfil do vendedor (sem codigo — id é o identificador público)
+    // Inserir perfil do vendedor (id do usuario é o identificador público)
     await query(
       `INSERT INTO public.vendedores_perfil
          (usuario_id, sexo, endereco, cidade, estado, cep, tipo_pessoa, cnpj, cpf_responsavel_pj, razao_social)
