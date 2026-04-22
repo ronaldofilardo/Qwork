@@ -197,5 +197,3 @@ describe('POST /api/representante/cadastro', () => {
     expect((await res.json()).error).toMatch(/já cadastrado/i);
   });
 });
-
-
