@@ -22,6 +22,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       nome: string;
       email: string;
       status: string;
+      codigo: string;
       ativo: boolean;
       leads_ativos: string;
       leads_mes: string;
@@ -87,7 +88,6 @@ export async function GET(request: Request): Promise<NextResponse> {
         nome: r.nome,
         email: r.email,
         status: r.status,
-        codigo: r.id.toString(),
         ativo: r.ativo ?? true,
         leads_ativos: parseInt(r.leads_ativos ?? '0', 10),
         leads_mes: parseInt(r.leads_mes ?? '0', 10),

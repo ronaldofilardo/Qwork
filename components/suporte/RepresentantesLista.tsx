@@ -163,11 +163,9 @@ function RepresentanteCard({
             >
               {st.label}
             </span>
-            {rep.codigo && (
-              <span className="text-[10px] font-mono text-gray-400">
-                {rep.codigo}
-              </span>
-            )}
+            <span className="text-[10px] font-mono font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+              #{rep.id}
+            </span>
           </div>
         </div>
       </div>
@@ -467,7 +465,6 @@ function RepresentanteDrawer({
               <div className="bg-gray-50 rounded-lg divide-y text-sm">
                 {(
                   [
-                    ['Codigo', rep.codigo ?? '-'],
                     [
                       'Documento',
                       rep.tipo_pessoa === 'pj'
@@ -620,11 +617,6 @@ function RepresentanteDrawer({
                           {fmtCPF(v.cpf)}
                         </p>
                       </div>
-                      {v.codigo && (
-                        <span className="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full flex-shrink-0">
-                          {v.codigo}
-                        </span>
-                      )}
                     </div>
 
                     <div className="px-4 py-2 border-t">

@@ -14,11 +14,8 @@ describe('Database — Triggers & Functions Comissionamento', () => {
   // ─── Functions ─────────────────────────────────────────────────
 
   describe('Functions SQL', () => {
-    const funcoes = [
-      'gerar_codigo_representante',
-      'gerar_token_lead',
-      'calcular_comissao_laudo',
-    ];
+    // 'gerar_codigo_representante' foi removida na migration 1227
+    const funcoes = ['gerar_token_lead', 'calcular_comissao_laudo'];
 
     it.each(funcoes)(
       'função %s deve existir no schema public',
@@ -43,8 +40,8 @@ describe('Database — Triggers & Functions Comissionamento', () => {
   // ─── Triggers ──────────────────────────────────────────────────
 
   describe('Triggers', () => {
+    // 'trg_gerar_codigo_representante' foi removido na migration 1227
     const triggers = [
-      { name: 'trg_gerar_codigo_representante', table: 'representantes' },
       { name: 'trg_expirar_leads', table: 'leads_representante' },
     ];
 
@@ -74,9 +71,9 @@ describe('Database — Triggers & Functions Comissionamento', () => {
     );
   });
 
-  // ─── gerar_codigo_representante logic ──────────────────────────
+  // ─── gerar_codigo_representante logic (REMOVIDA migration 1227) ──────────
 
-  describe('gerar_codigo_representante output format', () => {
+  describe.skip('gerar_codigo_representante output format', () => {
     it('código deve ter formato XXXX-XXXX (maiúsculas/dígitos)', async () => {
       mockQuery.mockResolvedValueOnce({
         rows: [{ codigo: 'AB12-CD34' }],

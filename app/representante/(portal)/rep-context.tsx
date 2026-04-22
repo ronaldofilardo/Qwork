@@ -159,9 +159,9 @@ export function RepresentanteProvider({
                       Bem-vindo(a) à QWORK!
                     </p>
                     <p className="text-xs text-blue-700 mt-0.5">
-                      Seu ID no sistema:{' '}
+                      Seu id:{' '}
                       <span className="font-mono font-bold text-blue-900">
-                        {session.id}
+                        #{session.id}
                       </span>{' '}
                       &mdash; Guarde-o, ele identifica você na plataforma.
                     </p>

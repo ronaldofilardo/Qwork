@@ -75,8 +75,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.criado_em,
          lr.data_conversao,
          r.id    AS representante_id,
-         r.nome  AS representante_nome,
-         r.id::text AS representante_codigo
+         r.nome  AS representante_nome
        FROM public.leads_representante lr
        JOIN public.representantes r ON r.id = lr.representante_id
        ${where}
@@ -169,6 +168,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     const representanteId = hierResult.rows[0].representante_id;
+    // Guard: a FK hierarquia_comercial.representante_id é ON DELETE SET NULL,
+    // então o vínculo pode existir como ativo=true mas apontar para NULL.
+    if (!representanteId) {
+      return NextResponse.json(
+        {
+          error:
+            'Vínculo com representante inválido. Contate o suporte para regularizar.',
+        },
+        { status: 400 }
+      );
+    }
 
     // Valida body
     const body = await request.json();

@@ -335,7 +335,7 @@ function StatusActions({
                   {solicitacao.representante_nome}
                 </span>
                 <span className="text-gray-400 text-xs">
-                  · Cód: {solicitacao.representante_codigo}
+                  · #{solicitacao.representante_id}
                   {solicitacao.representante_tipo_pessoa && (
                     <>
                       {' '}
@@ -606,7 +606,7 @@ function ComissaoSection({
                 {solicitacao.representante_nome}
               </p>
               <p className="text-xs text-gray-500">
-                Código: {solicitacao.representante_codigo}
+                ID: #{solicitacao.representante_id}
                 {solicitacao.representante_tipo_pessoa && (
                   <span className="ml-2 uppercase">
                     ({solicitacao.representante_tipo_pessoa})

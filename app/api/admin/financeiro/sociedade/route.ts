@@ -29,7 +29,6 @@ interface PagamentoSociedadeRow {
   data_pagamento: string | null;
   tomador_nome: string | null;
   representante_nome: string | null;
-  representante_id: number | null;
   valor_representante: string | number | null;
   valor_comercial: string | number | null;
 }
@@ -49,8 +48,6 @@ interface EventoSociedade {
   valorSocioRonaldo: number;
   valorSocioAntonio: number;
   representanteNome: string | null;
-  representanteId: number | null;
-  loteId: number;
 }
 
 interface ResumoPeriodo {
@@ -177,19 +174,51 @@ function aggregateResumo(
   );
 }
 
+function buildMensagensSimuladas(eventos: EventoSociedade[]) {
+  return eventos.slice(0, 6).flatMap((evento) => {
+    const mensagens = [
+      {
+        perfil: 'admin',
+        titulo: 'Pagamento auditado na Sociedade',
+        mensagem: `Pagamento de R$ ${evento.valorBruto.toFixed(2)} de ${evento.tomador} auditado com sucesso.`,
+      },
+    ];
+
+    if (evento.valorComercial > 0) {
+      mensagens.push({
+        perfil: 'comercial',
+        titulo: 'Comissão comercial simulada',
+        mensagem: `Há R$ ${evento.valorComercial.toFixed(2)} simulados para o comercial no pagamento ${evento.pagamentoId ?? evento.id}.`,
+      });
+    }
+
+    if (evento.valorRepresentante > 0) {
+      mensagens.push({
+        perfil: 'representante',
+        titulo: 'Comissão de representante simulada',
+        mensagem: `O representante ${evento.representanteNome ?? 'vinculado'} possui R$ ${evento.valorRepresentante.toFixed(2)} simulados neste pagamento.`,
+      });
+    }
+
+    return mensagens;
+  });
+}
+
 async function getPagamentosSociedade(
   dias: number
 ): Promise<PagamentoSociedadeRow[]> {
   try {
     // Fonte autoritativa: comissoes_laudo via lotes_avaliacao.
     // repasses_split foi removida na migration 1212 — não é mais usada.
-    // Não há FK direto pagamentos↔lotes_avaliacao; busca-se pagamento pelo match entidade_id/clinica_id + pago.
+    // JOIN com pagamentos usa dados_adicionais->>'lote_id' (gravado pelo /api/pagamento/asaas/criar)
+    // como chave primária, com fallback por entidade/clinica + janela de 24h para pagamentos antigos.
+    // Quando não há comissoes_laudo (lote sem representante), usa pagamentos.valor como valor_laudo.
     const result = await query<PagamentoSociedadeRow>(
       `SELECT
          la.id,
          COALESCE(p.asaas_payment_id, NULL::varchar) AS asaas_payment_id,
-         COALESCE(NULLIF(cl_agg.valor_laudo, 0), p.valor, 0)::numeric(10,2) AS valor,
-         COALESCE(p.asaas_net_value, 0)::numeric(10,2) AS asaas_net_value,
+         COALESCE(cl_agg.valor_laudo, p.valor, 0)::numeric(10,2) AS valor,
+         COALESCE(p.asaas_net_value, (p.dados_adicionais->>'netValue')::numeric, 0)::numeric(10,2) AS asaas_net_value,
          la.pagamento_parcelas AS numero_parcelas,
          NULL::jsonb AS detalhes_parcelas,
          'pago' AS status,
@@ -199,13 +228,20 @@ async function getPagamentosSociedade(
          COALESCE(t.nome, 'Tomador #' || COALESCE(la.entidade_id, la.clinica_id)::text) AS tomador_nome,
          r.nome AS representante_nome,
          COALESCE(cl_agg.valor_representante, 0) AS valor_representante,
-         COALESCE(cl_agg.valor_comercial, 0) AS valor_comercial,
-         cl_agg.first_rep_id AS representante_id
+         COALESCE(cl_agg.valor_comercial, 0) AS valor_comercial
        FROM lotes_avaliacao la
        LEFT JOIN tomadores t ON t.id = COALESCE(la.entidade_id, la.clinica_id)
        LEFT JOIN pagamentos p ON p.status = 'pago'
-         AND COALESCE(p.entidade_id, p.clinica_id) = COALESCE(la.entidade_id, la.clinica_id)
-         AND ABS(EXTRACT(EPOCH FROM (p.data_pagamento - la.pago_em))) < 86400
+         AND (
+           -- Primário: vínculo direto via lote_id gravado pelo /api/pagamento/asaas/criar
+           (p.dados_adicionais->>'lote_id')::int = la.id
+           OR (
+             -- Fallback: fuzzy por entidade/clinica + janela 24h (pagamentos antigos sem lote_id)
+             (p.dados_adicionais->>'lote_id') IS NULL
+             AND COALESCE(p.entidade_id, p.clinica_id) = COALESCE(la.entidade_id, la.clinica_id)
+             AND ABS(EXTRACT(EPOCH FROM (p.data_pagamento - la.pago_em))) < 86400
+           )
+         )
        LEFT JOIN LATERAL (
          SELECT
            MIN(c.representante_id) AS first_rep_id,
@@ -496,8 +532,6 @@ export async function GET(request: NextRequest) {
             valorSocioRonaldo: distribuicao.valorSocioRonaldo,
             valorSocioAntonio: distribuicao.valorSocioAntonio,
             representanteNome: row.representante_nome ?? null,
-            representanteId: toNumber(row.representante_id) || null,
-            loteId: row.id,
           } satisfies EventoSociedade;
         });
       })
@@ -541,9 +575,21 @@ export async function GET(request: NextRequest) {
         mes: aggregateResumo(eventosRecentes, inicioMes),
       },
       eventosRecentes,
+      mensagensSimuladas: buildMensagensSimuladas(eventosRecentes),
     });
   } catch (error) {
     console.error('[GET /api/admin/financeiro/sociedade]', error);
+
+    if (error instanceof Error && error.message === 'MFA_REQUIRED') {
+      return NextResponse.json(
+        {
+          error: 'MFA_REQUIRED',
+          message:
+            'Autenticação de dois fatores requerida para visualizar a Sociedade.',
+        },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json(
       { error: 'Erro ao carregar auditoria da Sociedade' },
@@ -618,6 +664,17 @@ export async function PATCH(request: NextRequest) {
     }
   } catch (error) {
     console.error('[PATCH /api/admin/financeiro/sociedade]', error);
+
+    if (error instanceof Error && error.message === 'MFA_REQUIRED') {
+      return NextResponse.json(
+        {
+          error: 'MFA_REQUIRED',
+          message:
+            'Autenticação de dois fatores requerida para editar a Sociedade.',
+        },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json(
       { error: 'Erro ao salvar beneficiário societário' },

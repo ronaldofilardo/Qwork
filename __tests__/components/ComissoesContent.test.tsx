@@ -22,8 +22,8 @@ const mockResumo = {
 
 const mockComissao = {
   id: 1,
+  representante_id: 42,
   representante_nome: 'Carlos Rep',
-  representante_codigo: 'AB12-CD34',
   representante_email: 'rep@test.dev',
   representante_tipo_pessoa: 'pf',
   entidade_nome: 'Empresa Z',
@@ -45,7 +45,6 @@ const mockComissao = {
   data_pagamento: null,
   comprovante_pagamento_path: null,
 };
-
 
 function mockAPIResponse(
   comissoes = [mockComissao],

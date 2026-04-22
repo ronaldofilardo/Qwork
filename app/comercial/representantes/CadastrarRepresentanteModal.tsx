@@ -24,6 +24,8 @@ export default function CadastrarRepresentanteModal({
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [resultado, setResultado] = useState<{ nome: string } | null>(null);
+  const [cpfIndisponivel, setCpfIndisponivel] = useState<string | null>(null);
+  const [verificandoCpf, setVerificandoCpf] = useState(false);
 
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
@@ -70,8 +72,29 @@ export default function CadastrarRepresentanteModal({
       .replace(/(\d{5})(\d)/, '$1-$2');
   };
 
+  const handleCpfBlur = async () => {
+    const cpfLimpo = cpf.replace(/\D/g, '');
+    if (cpfLimpo.length !== 11) return;
+    setVerificandoCpf(true);
+    try {
+      const res = await fetch(`/api/utils/verificar-cpf?cpf=${cpfLimpo}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCpfIndisponivel(data.disponivel ? null : (data.motivo ?? 'CPF já cadastrado no sistema'));
+      }
+    } catch {
+      // silencioso
+    } finally {
+      setVerificandoCpf(false);
+    }
+  };
+
   const handleSubmit = async (): Promise<void> => {
     setErro(null);
+    if (cpfIndisponivel) {
+      setErro(cpfIndisponivel);
+      return;
+    }
     const cpfLimpo = cpf.replace(/\D/g, '');
     if (!nome.trim()) {
       setErro('Nome é obrigatório.');
@@ -285,10 +308,13 @@ export default function CadastrarRepresentanteModal({
               <input
                 className={inputCls}
                 value={cpf}
-                onChange={(e) => setCpf(formatarCPF(e.target.value))}
+                onChange={(e) => { setCpf(formatarCPF(e.target.value)); setCpfIndisponivel(null); }}
+                onBlur={handleCpfBlur}
                 placeholder="000.000.000-00"
                 maxLength={14}
               />
+              {verificandoCpf && <p className="text-[11px] text-gray-400 mt-1">Verificando CPF...</p>}
+              {cpfIndisponivel && <p className="text-[11px] text-red-500 mt-1">{cpfIndisponivel}</p>}
             </div>
 
             <div>

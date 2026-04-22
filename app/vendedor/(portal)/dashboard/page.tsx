@@ -72,10 +72,10 @@ export default function VendedorDashboard() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-green-500">
-              Seu ID no sistema
+              Seu código no sistema
             </p>
             <p className="font-mono font-bold text-green-700 text-lg leading-tight">
-              {session?.id ?? '—'}
+              #{session?.id ?? '—'}
             </p>
           </div>
         </div>
@@ -118,6 +118,12 @@ export default function VendedorDashboard() {
               </span>
             )}
           </p>
+          {resumo?.representante && (
+            <p className="text-sm text-gray-500 mt-2 font-mono">
+              ID:{' '}
+              <span className="font-semibold">#{resumo.representante.id}</span>
+            </p>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border p-5">

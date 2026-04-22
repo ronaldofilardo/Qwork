@@ -8,7 +8,6 @@ interface Vinculo {
   representante_id: number;
   representante_nome: string;
   representante_email: string;
-  representante_codigo: string;
   representante_status: string;
   leads_ativos_representante: number;
   vinculado_em: string;
@@ -78,7 +77,7 @@ export default function VendedorRepresentantesPage() {
               <tr>
                 <th className="px-4 py-3 text-left">Representante</th>
                 <th className="px-4 py-3 text-left">Email</th>
-                <th className="px-4 py-3 text-left">Código</th>
+                <th className="px-4 py-3 text-left">ID</th>
                 <th className="px-4 py-3 text-left">Status</th>
                 <th className="px-4 py-3 text-right">Leads Ativos</th>
                 <th className="px-4 py-3 text-right">Vinculado em</th>
@@ -94,7 +93,7 @@ export default function VendedorRepresentantesPage() {
                     {v.representante_email ?? '—'}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                    {v.representante_codigo ?? '—'}
+                    #{v.representante_id}
                   </td>
                   <td className="px-4 py-3">
                     <span

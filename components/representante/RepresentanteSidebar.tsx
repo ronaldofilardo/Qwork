@@ -69,13 +69,14 @@ export default function RepresentanteSidebar({
 
   const handleCopiarCodigo = async () => {
     if (!session.id) return;
+    const idStr = String(session.id);
     try {
-      await navigator.clipboard.writeText(String(session.id));
+      await navigator.clipboard.writeText(idStr);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
       const input = document.createElement('input');
-      input.value = String(session.id);
+      input.value = idStr;
       document.body.appendChild(input);
       input.select();
       document.execCommand('copy');
@@ -94,9 +95,9 @@ export default function RepresentanteSidebar({
         <span className="text-xs text-gray-500 font-mono">#{session.id}</span>
         <button
           onClick={handleCopiarCodigo}
-          title="Copiar ID"
+          title="Copiar código"
           className="p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
-          aria-label="Copiar ID do representante"
+          aria-label="Copiar código do representante"
         >
           {copiado ? (
             <Check size={13} className="text-green-600" />

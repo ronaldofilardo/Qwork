@@ -60,7 +60,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.status,
          r.id   AS representante_id,
          r.nome AS representante_nome,
-         r.id::text AS representante_codigo,
+
          r.modelo_comissionamento,
          v.id   AS vendedor_id,
          v.nome AS vendedor_nome

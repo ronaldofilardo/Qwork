@@ -5,8 +5,8 @@ import { TrendingUp, DollarSign, FileText, Loader2 } from 'lucide-react';
 
 interface MinhaComissao {
   id: number;
+  representante_id: number;
   representante_nome: string;
-  representante_codigo: string;
   entidade_nome: string;
   valor_laudo: string;
   percentual_comissao_comercial: string;
@@ -156,7 +156,7 @@ export function MinhasComissoesComercial() {
                         {c.representante_nome}
                       </div>
                       <div className="text-xs text-gray-400 font-mono">
-                        {c.representante_codigo}
+                        #{c.representante_id}
                       </div>
                     </td>
                     <td className="px-3 py-3 text-gray-700">

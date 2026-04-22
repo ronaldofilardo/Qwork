@@ -49,8 +49,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
       query<{
         id: number;
+        representante_id: number;
         representante_nome: string;
-        representante_codigo: string;
         entidade_nome: string;
         valor_laudo: string;
         percentual_comissao_comercial: string;
@@ -62,8 +62,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       }>(
         `SELECT
            cl.id,
+           cl.representante_id,
            r.nome                                    AS representante_nome,
-           r.id::text                                AS representante_codigo,
+
            COALESCE(ent.nome, clin.nome, '—')        AS entidade_nome,
            cl.valor_laudo,
            cl.percentual_comissao_comercial,

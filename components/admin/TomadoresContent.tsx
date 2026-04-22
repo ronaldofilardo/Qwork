@@ -78,10 +78,10 @@ export function TomadoresContent({
   const [valorNegociadoInput, setValorNegociadoInput] = useState('');
   const [vinculando, setVinculando] = useState(false);
 
-  // Auto-preenchimento do valor/% quando código do rep é digitado
+  // Auto-preenchimento do valor/% quando nome do rep é digitado
   interface RepAutoFill {
+    id: number;
     nome: string;
-    codigo: string;
     modelo: 'percentual' | 'custo_fixo';
     percRep: number | null;
     percComercial: number | null;
@@ -109,21 +109,20 @@ export function TomadoresContent({
         );
         const data = await res.json();
         const reps: Array<{
+          id: number;
           nome: string;
-          codigo: string;
           modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
           percentual_comissao: string | null;
           percentual_comissao_comercial: string | null;
           valor_custo_fixo_entidade: string | null;
           valor_custo_fixo_clinica: string | null;
         }> = data.representantes ?? [];
-        const rep = reps.find(
-          (r) => r.codigo.toUpperCase() === codigoRepInput.trim().toUpperCase()
-        );
+        // Busca por nome (simples correspondência do primeiro resultado)
+        const rep = reps.length > 0 ? reps[0] : null;
         if (rep && rep.modelo_comissionamento) {
           setRepAutoFill({
             nome: rep.nome,
-            codigo: rep.codigo,
+            id: rep.id,
             modelo: rep.modelo_comissionamento,
             percRep:
               rep.percentual_comissao != null

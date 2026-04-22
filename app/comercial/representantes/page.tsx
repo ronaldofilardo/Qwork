@@ -130,10 +130,9 @@ export default function ComercialRepresentantesPage() {
     setAssumindoId(r.id);
     setErroAssumir(null);
     try {
-      const res = await fetch(
-        `/api/comercial/representantes/${r.id}/assumir`,
-        { method: 'POST' }
-      );
+      const res = await fetch(`/api/comercial/representantes/${r.id}/assumir`, {
+        method: 'POST',
+      });
       if (!res.ok) {
         const d = (await res.json().catch(() => ({}))) as { error?: string };
         throw new Error(d.error ?? 'Erro ao assumir representante');
@@ -352,7 +351,7 @@ export default function ComercialRepresentantesPage() {
                       {r.nome}
                     </h4>
                     <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
-                      {r.codigo || 'S/ COD'}
+                      #{r.id}
                     </p>
                     <p className="text-xs text-gray-400 truncate mt-0.5">
                       {r.email}
@@ -492,7 +491,7 @@ export default function ComercialRepresentantesPage() {
                     />
                   </div>
                   <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
-                    {r.codigo || 'S/ COD'}
+                    #{r.id}
                   </p>
                   {/* Badge do modelo de comissionamento */}
                   {r.modelo_comissionamento ? (

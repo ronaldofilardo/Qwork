@@ -6,6 +6,7 @@
  */
 
 import { query } from '@/lib/db';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
 
 export interface DuplicateCheckResult {
   isDuplicate: boolean;
@@ -60,40 +61,22 @@ export async function checkEmailDuplicate(
 }
 
 /**
- * Verifica se CPF já existe em representantes ou leads ativos.
+ * Verifica se CPF já existe no sistema (representantes, leads, vendedores, gestores, rh).
+ * Delega para checkCpfUnicoSistema para cobertura cross-perfil.
  */
 export async function checkCpfDuplicate(
   cpf: string
 ): Promise<DuplicateCheckResult> {
-  const [repResult, leadResult] = await Promise.all([
-    query<{ id: number }>(
-      `SELECT id FROM representantes WHERE cpf = $1 LIMIT 1`,
-      [cpf]
-    ),
-    query<{ id: string }>(
-      `SELECT id FROM representantes_cadastro_leads WHERE cpf = $1 AND status NOT IN ('rejeitado', 'convertido') LIMIT 1`,
-      [cpf]
-    ),
-  ]);
-
-  if (repResult.rows.length > 0) {
+  const result = await checkCpfUnicoSistema(cpf);
+  if (!result.disponivel) {
+    const isLead = result.perfil === 'representante_lead';
     return {
       isDuplicate: true,
       field: 'cpf',
-      message: 'Este CPF já está cadastrado como representante',
-      source: 'representante',
+      message: result.message ?? 'CPF já cadastrado no sistema',
+      source: isLead ? 'lead' : 'representante',
     };
   }
-
-  if (leadResult.rows.length > 0) {
-    return {
-      isDuplicate: true,
-      field: 'cpf',
-      message: 'Este CPF já possui um cadastro em análise',
-      source: 'lead',
-    };
-  }
-
   return NO_DUPLICATE;
 }
 

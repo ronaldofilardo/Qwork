@@ -6,6 +6,7 @@ import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,6 +112,21 @@ export async function PATCH(
       }
 
       const senhaHash = await bcrypt.hash(senhaInicial, 12);
+
+      // Verificar unicidade do CPF no sistema (ignora o gestor atual desta clínica se já existir)
+      const usuarioAtualResult = await query(
+        `SELECT id FROM usuarios WHERE cpf = $1 AND clinica_id = $2 AND tipo_usuario = 'rh'`,
+        [cpfLimpo, clinicaId]
+      );
+      const cpfCheck = await checkCpfUnicoSistema(cpfLimpo, {
+        ignorarUsuarioId: usuarioAtualResult.rows[0]?.id,
+      });
+      if (!cpfCheck.disponivel) {
+        return NextResponse.json(
+          { error: cpfCheck.message ?? 'CPF já cadastrado no sistema' },
+          { status: 409 }
+        );
+      }
 
       // 1. Atualizar dados do responsável na clínica
       await query(

@@ -5,6 +5,8 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
+import { validarCPF } from '@/lib/cpf-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,6 +72,20 @@ export async function POST(request: NextRequest) {
         { error: 'CPF do responsável PJ é obrigatório (11 dígitos)' },
         { status: 400 }
       );
+    if (!validarCPF(cpf_responsavel_pj))
+      return NextResponse.json(
+        { error: 'CPF do responsável inválido' },
+        { status: 400 }
+      );
+
+    // Verificar CPF do responsável único no sistema
+    const cpfCheck = await checkCpfUnicoSistema(cpf_responsavel_pj);
+    if (!cpfCheck.disponivel) {
+      return NextResponse.json(
+        { error: cpfCheck.message ?? 'CPF do responsável já cadastrado no sistema' },
+        { status: 409 }
+      );
+    }
 
     // Verificar se e-mail já existe
     const emailExiste = await query(

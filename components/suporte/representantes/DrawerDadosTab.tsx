@@ -26,7 +26,6 @@ const EDIT_FIELDS = [
 
 function RepresentanteInfoTabela({ rep }: { rep: Representante }) {
   const rows: [string, string][] = [
-    ['Codigo', rep.codigo ?? '-'],
     [
       'Documento',
       rep.tipo_pessoa === 'pj' ? fmtCNPJ(rep.cnpj) : fmtCPF(rep.cpf),

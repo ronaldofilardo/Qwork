@@ -51,6 +51,7 @@ export async function GET(
          u.nome           AS vendedor_nome,
          u.email          AS vendedor_email,
          u.cpf            AS vendedor_cpf,
+
          vp.sexo,
          vp.endereco,
          vp.cidade,

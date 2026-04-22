@@ -769,7 +769,7 @@ export default function ComercialPage() {
                         />
                       </div>
                       <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
-                        {r.codigo || 'S/ COD'}
+                        #{r.id}
                       </p>
                     </div>
                   </div>

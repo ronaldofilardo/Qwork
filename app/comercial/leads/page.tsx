@@ -35,8 +35,8 @@ interface LeadAprovacao {
   requer_aprovacao_comercial: boolean;
   status: string;
   criado_em: string;
+  representante_id: number;
   representante_nome: string;
-  representante_codigo: string;
 }
 
 interface VinculoSemRep {
@@ -363,7 +363,7 @@ export default function ComercialLeadsAprovacaoPage() {
                             {lead.representante_nome}
                           </div>
                           <div className="text-xs text-gray-400">
-                            #{lead.representante_codigo}
+                            #{lead.representante_id}
                           </div>
                           {lead.vendedor_nome && (
                             <div className="text-xs text-purple-600 mt-0.5">

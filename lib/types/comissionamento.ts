@@ -106,8 +106,6 @@ export interface Representante {
   cpf?: string | null;
   cnpj?: string | null;
   cpf_responsavel_pj?: string | null;
-  // Código público único de rastreamento (ex: K7X2Q9P3)
-  codigo: string;
   // Dados bancários
   banco_codigo?: string | null;
   agencia?: string | null;
@@ -317,7 +315,6 @@ export interface GerarComissaoDTO {
 
 export interface LeadComRepresentante extends LeadRepresentante {
   representante_nome: string;
-  representante_codigo: string;
 }
 
 export interface VinculoComDetalhes extends VinculoComissao {
@@ -331,7 +328,6 @@ export interface VinculoComDetalhes extends VinculoComissao {
 
 export interface ComissaoComDetalhes extends ComissaoLaudo {
   representante_nome: string;
-  representante_codigo: string;
   representante_email: string;
   representante_tipo_pessoa: TipoPessoaRepresentante;
   representante_percentual_comissao_comercial?: number | null;

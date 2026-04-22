@@ -60,7 +60,6 @@ describe('GET /api/comercial/minhas-comissoes', () => {
       {
         id: 1,
         representante_nome: 'Rep Teste',
-        representante_codigo: 'R001',
         entidade_nome: 'Entidade X',
         valor_laudo: '150.00',
         percentual_comissao_comercial: '5.00',

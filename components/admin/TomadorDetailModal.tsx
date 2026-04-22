@@ -45,8 +45,8 @@ interface Tomador {
 }
 
 interface RepAutoFill {
+  id: number;
   nome: string;
-  codigo: string;
   modelo: 'percentual' | 'custo_fixo';
   percRep: number | null;
   percComercial: number | null;

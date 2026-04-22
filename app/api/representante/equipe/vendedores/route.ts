@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
          u.email          AS vendedor_email,
          u.cpf            AS vendedor_cpf,
          vp.id            AS vendedor_perfil_id,
+
          vp.aceite_termos,
          COUNT(DISTINCT lr.id) FILTER (WHERE lr.status NOT IN ('expirado','convertido')) AS leads_ativos
        FROM public.hierarquia_comercial hc

@@ -435,43 +435,7 @@ $$;
 ALTER FUNCTION public.garantir_template_padrao_unico() OWNER TO postgres;
 
 
---
--- Name: gerar_codigo_representante(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.gerar_codigo_representante() RETURNS character varying
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  _chars  TEXT    := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  _code   TEXT    := '';
-  _i      INT;
-  _exists BOOLEAN := TRUE;
-BEGIN
-  WHILE _exists LOOP
-    _code := '';
-    FOR _i IN 1..8 LOOP
-      _code := _code || SUBSTR(_chars, CEIL(RANDOM() * LENGTH(_chars))::INT, 1);
-    END LOOP;
-    -- Formata como XXXX-XXXX para legibilidade
-    _code := SUBSTR(_code, 1, 4) || '-' || SUBSTR(_code, 5, 4);
-    SELECT EXISTS(SELECT 1 FROM public.representantes WHERE codigo = _code) INTO _exists;
-  END LOOP;
-  RETURN _code;
-END;
-$$;
-
-
-ALTER FUNCTION public.gerar_codigo_representante() OWNER TO postgres;
-
-
---
--- Name: FUNCTION gerar_codigo_representante(); Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON FUNCTION public.gerar_codigo_representante() IS 'Gera código único alfanumérico no formato XXXX-XXXX para identificação do representante';
-
-
+-- REMOVED: gerar_codigo_representante() - Migration 1227 (codigo column removed from representantes table)
 
 --
 -- Name: gerar_dados_relatorio(integer, integer, integer, date, date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1193,24 +1157,7 @@ $$;
 ALTER FUNCTION public.trg_auditar_vinculo_status() OWNER TO postgres;
 
 
---
--- Name: trg_gerar_codigo_representante(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.trg_gerar_codigo_representante() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  IF NEW.codigo IS NULL OR NEW.codigo = '' THEN
-    NEW.codigo := public.gerar_codigo_representante();
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.trg_gerar_codigo_representante() OWNER TO postgres;
-
+-- REMOVED: trg_gerar_codigo_representante() - Migration 1227 (codigo column removed from representantes table)
 
 --
 -- Name: update_funcionarios_entidades_timestamp(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -2901,13 +2848,7 @@ CREATE TRIGGER trg_leads_atualizado_em BEFORE UPDATE ON public.leads_representan
 
 
 
---
--- Name: representantes trg_representante_codigo; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER trg_representante_codigo BEFORE INSERT ON public.representantes FOR EACH ROW EXECUTE FUNCTION public.trg_gerar_codigo_representante();
-
-
+-- REMOVED: trg_representante_codigo trigger - Migration 1227 (codigo column removed from representantes table)
 
 --
 -- Name: representantes trg_representante_status_audit; Type: TRIGGER; Schema: public; Owner: postgres

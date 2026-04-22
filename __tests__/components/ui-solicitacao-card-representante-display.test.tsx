@@ -42,18 +42,11 @@ const createMockSolicitacao = (
   vinculo_id: null,
   representante_id: null,
   representante_nome: null,
-  representante_codigo: null,
   representante_tipo_pessoa: null,
   link_disponibilizado_em: null,
   representante_percentual_comissao: null,
   representante_percentual_comissao_comercial: null,
   comissao_gerada: false,
-  laudo_id: null,
-  laudo_status: null,
-  laudo_ja_emitido: false,
-  entidade_id: null,
-  clinica_id: null,
-  lead_valor_negociado: null,
   comissoes_geradas_count: 0,
   comissoes_ativas_count: 0,
   ...overrides,
@@ -83,7 +76,6 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'tese repre gaerado',
-      representante_codigo: 'GH54-DLG2',
       representante_tipo_pessoa: 'pf',
     });
 
@@ -91,14 +83,11 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
 
     const { container } = render(<SolicitacaoCard {...props} />);
 
-    // Verifica que o texto "Representante Responsável" está presente
-    expect(screen.getByText('Representante Responsável')).toBeInTheDocument();
-
-    // Verifica que o nome do representante está visível
+    // Para aguardando_cobranca, o rep aparece inline (sem header "Representante Responsável")
     expect(screen.getByText('tese repre gaerado')).toBeInTheDocument();
 
-    // Verifica que o código está visível
-    expect(screen.getByText(/GH54-DLG2/)).toBeInTheDocument();
+    // Verifica que o ID do representante está visível
+    expect(screen.getByText(/#6/)).toBeInTheDocument();
   });
 
   test('2. Não deve renderizar seção se não houver vinculo em aguardando_cobranca', () => {
@@ -128,8 +117,8 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
 
     const { container } = render(<SolicitacaoCard {...props} />);
 
-    // Procura pelo rótulo "Valor negociado:" (lead_valor_negociado é sempre R$, nunca %)
-    expect(container.textContent).toMatch(/Valor negociado:/i);
+    // Procura pelo rótulo "Negociado:" (label do lead_valor_negociado)
+    expect(container.textContent).toMatch(/Negociado:/i);
 
     // Verifica que o valor está mostrado (R$ 12,50)
     expect(container.textContent).toContain('12,50');
@@ -141,7 +130,6 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'tese repre gaerado',
-      representante_codigo: 'GH54-DLG2',
     });
 
     const props = createMockProps(solicitacao);
@@ -201,7 +189,6 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'João Silva',
-      representante_codigo: 'REP123',
     });
 
     const props = createMockProps(solicitacao);
@@ -211,7 +198,6 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
     // Deve mostrar representante info com label "Representante Responsável"
     expect(screen.getByText('Representante Responsável')).toBeInTheDocument();
     expect(screen.getByText('João Silva')).toBeInTheDocument();
-    expect(screen.getByText(/REP123/)).toBeInTheDocument();
   });
 
   test('8. Deve exibir tipo_pessoa do representante quando disponível', () => {
@@ -220,7 +206,6 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'Maria Oliveira',
-      representante_codigo: 'REP-PJ999',
       representante_tipo_pessoa: 'pj',
     });
 
@@ -232,24 +217,21 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
     expect(screen.getByText(/\(PJ\)/i)).toBeInTheDocument();
   });
 
-  test('9. Deve renderizar botão "Gerar Comissão" apenas se status=pago e comissao_gerada=false', () => {
+  test('9. Deve renderizar badge de aguardando quando sem comissao provisionada', () => {
     const solicitacao = createMockSolicitacao({
       status_pagamento: 'pago',
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'Test Rep',
-      representante_codigo: 'TEST123',
-      comissao_gerada: false,
+      comissoes_geradas_count: 0,
     });
 
     const props = createMockProps(solicitacao);
 
     const { container } = render(<SolicitacaoCard {...props} />);
 
-    // Deve ter botão "Gerar Comissão"
-    expect(
-      screen.getByRole('button', { name: /Gerar Comissão/i })
-    ).toBeInTheDocument();
+    // Sem provisionamento, deve mostrar badge de aguardando
+    expect(container.textContent).toMatch(/Aguardando/i);
   });
 
   test('10. Deve renderizar badge "Comissão gerada" se comissao_gerada=true', () => {
@@ -258,7 +240,6 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'Test Rep',
-      representante_codigo: 'TEST123',
       comissao_gerada: true,
       comissoes_geradas_count: 1,
       comissoes_ativas_count: 1,
