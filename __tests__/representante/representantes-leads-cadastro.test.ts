@@ -701,10 +701,10 @@ describe('4. Rotas admin /api/admin/representantes-leads/*', () => {
       expect(src).toMatch(/converterLeadEmRepresentante/);
     });
 
-    it('retorna representante_id, codigo e nome', () => {
+    it('retorna representante_id, nome e convite_link', () => {
       expect(src).toMatch(/representante_id/);
-      expect(src).toMatch(/codigo/);
       expect(src).toMatch(/nome/);
+      expect(src).toMatch(/convite_link/);
     });
 
     it('trata erro 404 para lead não encontrado', () => {
@@ -796,9 +796,9 @@ describe('5. lib/representantes/converter-lead — estrutura', () => {
   it('exporta ConversaoResult interface com 4 campos', () => {
     expect(src).toMatch(/export interface ConversaoResult/);
     expect(src).toMatch(/representante_id:\s*number/);
-    expect(src).toMatch(/codigo:\s*string/);
     expect(src).toMatch(/nome:\s*string/);
     expect(src).toMatch(/email:\s*string/);
+    expect(src).toMatch(/convite_link:\s*string/);
   });
 
   it('exporta função converterLeadEmRepresentante', () => {
