@@ -1,9 +1,19 @@
 /**
  * lib/validators/cpf-unico.ts
  *
- * Verificação de unicidade de CPF em todo o sistema.
- * Regra: um CPF não pode acumular perfis de representante, vendedor e gestor
- * simultaneamente. A tabela `funcionarios` é explicitamente EXCLUÍDA dessa regra.
+ * REQUISITO DE SISTEMA — CPF único no sistema (cross-perfil).
+ *
+ * Um CPF não pode ser registrado simultaneamente como representante,
+ * lead ativo, vendedor, gestor ou rh. Esta regra é válida em TODOS os
+ * ambientes: DEV, TEST, STAGING e PROD.
+ *
+ * Camadas de enforcement:
+ *   1. Esta função (aplicação) — chamada antes de INSERT/UPDATE nas rotas.
+ *      Retorna erro amigável para o usuário antes de chegar ao banco.
+ *   2. Triggers de banco (migration 1229) — última linha de defesa.
+ *      Garantem a regra mesmo em INSERTs diretos ou de outros contextos.
+ *
+ * Exclusões explícitas: funcionarios, admin, emissor, suporte, comercial.
  *
  * Tabelas verificadas:
  *   - representantes (cpf, cpf_responsavel_pj)
@@ -106,7 +116,8 @@ export async function checkCpfUnicoSistema(
     return {
       disponivel: false,
       perfil: 'representante_pj',
-      message: 'Este CPF já está vinculado como responsável de representante PJ',
+      message:
+        'Este CPF já está vinculado como responsável de representante PJ',
     };
   }
 
@@ -122,14 +133,19 @@ export async function checkCpfUnicoSistema(
     return {
       disponivel: false,
       perfil: 'representante_lead',
-      message: 'Este CPF já está vinculado como responsável de cadastro em análise',
+      message:
+        'Este CPF já está vinculado como responsável de cadastro em análise',
     };
   }
 
   if (usuarioResult.rows.length > 0) {
     const tipo = usuarioResult.rows[0].tipo_usuario as PerfilCpf;
     const perfilLabel =
-      tipo === 'vendedor' ? 'vendedor' : tipo === 'gestor' ? 'gestor' : 'gestor RH';
+      tipo === 'vendedor'
+        ? 'vendedor'
+        : tipo === 'gestor'
+          ? 'gestor'
+          : 'gestor RH';
     return {
       disponivel: false,
       perfil: tipo,

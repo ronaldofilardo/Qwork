@@ -31,16 +31,16 @@ RH → POST /api/lotes/[id]/liberar → avaliações → POST /api/lotes/[id]/so
 
 ### Perfis de usuário
 
-| Perfil | Base principal |
-| --- | --- |
-| admin | /admin e /api/admin |
-| rh | /rh e /api/rh |
-| gestor | /entidade e /api/entidade |
-| suporte | /suporte e /api/suporte |
-| comercial | /comercial e /api/comercial |
-| vendedor | /vendedor e /api/vendedor |
-| emissor | /emissor e /api/emissor |
-| funcionario | /dashboard e /avaliacao |
+| Perfil      | Base principal              |
+| ----------- | --------------------------- |
+| admin       | /admin e /api/admin         |
+| rh          | /rh e /api/rh               |
+| gestor      | /entidade e /api/entidade   |
+| suporte     | /suporte e /api/suporte     |
+| comercial   | /comercial e /api/comercial |
+| vendedor    | /vendedor e /api/vendedor   |
+| emissor     | /emissor e /api/emissor     |
+| funcionario | /dashboard e /avaliacao     |
 
 - Gestores não acessam rotas de funcionário.
 - A sessão é lida do cookie `bps-session`.
@@ -68,12 +68,12 @@ RH → POST /api/lotes/[id]/liberar → avaliações → POST /api/lotes/[id]/so
 
 ## Política de banco de dados
 
-| Ambiente | Banco | Variável principal |
-| --- | --- | --- |
-| Desenvolvimento | nr-bps_db | LOCAL_DATABASE_URL |
-| Testes | nr-bps_db_test | TEST_DATABASE_URL |
-| Staging | Neon | DATABASE_URL |
-| Produção | neondb_v2 | DATABASE_URL |
+| Ambiente        | Banco          | Variável principal |
+| --------------- | -------------- | ------------------ |
+| Desenvolvimento | nr-bps_db      | LOCAL_DATABASE_URL |
+| Testes          | nr-bps_db_test | TEST_DATABASE_URL  |
+| Staging         | Neon           | DATABASE_URL       |
+| Produção        | neondb_v2      | DATABASE_URL       |
 
 - Nunca apontar desenvolvimento local para produção.
 - Nunca definir `NODE_ENV=production` em `.env.local`.
@@ -161,6 +161,31 @@ RH → POST /api/lotes/[id]/liberar → avaliações → POST /api/lotes/[id]/so
 - O storage de laudos deve permanecer no backend, por streaming, com bucket privado.
 - ZapSign permanece desabilitado por padrão, salvo contexto explícito para habilitação.
 
+### Requisito de sistema: CPF único cross-perfil (migration 1229)
+
+Um CPF **não pode** ser registrado simultaneamente em mais de um dos seguintes perfis:
+
+| Tabela                          | Campo                | Condição                                                      |
+| ------------------------------- | -------------------- | ------------------------------------------------------------- |
+| `representantes`                | `cpf`                | qualquer status                                               |
+| `representantes`                | `cpf_responsavel_pj` | qualquer status                                               |
+| `representantes_cadastro_leads` | `cpf`                | `status NOT IN ('rejeitado', 'convertido')`                   |
+| `representantes_cadastro_leads` | `cpf_responsavel`    | `status NOT IN ('rejeitado', 'convertido')`                   |
+| `usuarios`                      | `cpf`                | `tipo_usuario IN ('vendedor','gestor','rh') AND ativo = true` |
+
+**Exclusões explícitas**: `funcionarios`, `admin`, `emissor`, `suporte`, `comercial`.
+
+**Camadas de enforcement** (ambas devem ser mantidas sincronizadas):
+
+1. **Aplicação**: `lib/validators/cpf-unico.ts` → `checkCpfUnicoSistema()` — chamada antes de qualquer INSERT/UPDATE que crie/altere esses registros. Retorna erro amigável ao usuário.
+2. **Banco de dados**: triggers `tg_representante_cpf_unico`, `tg_lead_cpf_unico`, `tg_usuario_cpf_unico` (migration 1229) — última linha de defesa para todos os ambientes (DEV, TEST, STAGING, PROD).
+
+**Regras de modificação**:
+
+- Nunca remova ou desabilite esses triggers sem aprovação explícita.
+- Ao criar novas rotas que inserem/alteram `representantes`, `representantes_cadastro_leads` ou `usuarios` (tipos bloqueantes), SEMPRE chamar `checkCpfUnicoSistema` antes do INSERT.
+- A migration 1229 deve ser aplicada em **todos** os ambientes antes de qualquer dado novo.
+
 ---
 
 ## Comandos de validação
@@ -192,4 +217,3 @@ pnpm test:e2e
 - Preserve acessibilidade, responsividade e consistência visual ao tocar UI.
 - Em áreas sensíveis, prefira evidência e verificação a suposições.
 - Ao tocar o middleware, valide se as rotas públicas e o mapa de roles continuam corretos.
-

@@ -13,7 +13,6 @@ export default function TrocarSenhaRepresentantePage() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
-  const [codigoGerado, setCodigoGerado] = useState<string | null>(null);
 
   const validarSenha = (s: string): string | null => {
     if (s.length < 8) return 'Mínimo 8 caracteres';
@@ -54,7 +53,6 @@ export default function TrocarSenhaRepresentantePage() {
         return;
       }
       setSucesso(true);
-      if (data.codigo) setCodigoGerado(data.codigo);
       // window.location.href força reload completo: o layout reinicia carregarSessao()
       // com a sessão fresca (precisa_trocar_senha=false) evitando loop do gate
       setTimeout(() => {
@@ -96,20 +94,6 @@ export default function TrocarSenhaRepresentantePage() {
               <p className="text-sm font-semibold text-gray-900">
                 Senha alterada com sucesso!
               </p>
-              {codigoGerado && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  <p className="text-xs text-blue-600 font-medium mb-1 uppercase tracking-wide">
-                    Seu código de representante
-                  </p>
-                  <p className="text-2xl font-mono font-bold text-blue-800 tracking-widest">
-                    {codigoGerado}
-                  </p>
-                  <p className="text-xs text-blue-500 mt-2">
-                    Guarde este código! Ele é usado para identificação na
-                    plataforma e por seus clientes.
-                  </p>
-                </div>
-              )}
               <p className="text-xs text-gray-500 mt-3">
                 Redirecionando para o dashboard…
               </p>

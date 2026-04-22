@@ -1,6 +1,6 @@
 /**
  * GET /api/comercial/representantes/busca
- * Busca representantes por nome ou código (mínimo 2 caracteres).
+ * Busca representantes por nome (mínimo 2 caracteres).
  * Usado pelo drawer de vínculo retroativo de representante.
  * Auth: comercial | admin
  */
@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 interface RepBusca {
   id: number;
   nome: string;
-  codigo: string;
   cpf: string | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: string | null;
