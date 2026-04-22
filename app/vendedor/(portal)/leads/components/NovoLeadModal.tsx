@@ -1,7 +1,7 @@
 'use client';
 
-import { X, Loader2, AlertCircle } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { X, Loader2, AlertCircle, AlertTriangle } from 'lucide-react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   normalizeCNPJ,
   validarCNPJ,
@@ -11,6 +11,9 @@ import {
 import {
   TIPO_CLIENTE_LABEL,
   TIPOS_CLIENTE,
+  CUSTO_POR_AVALIACAO,
+  calcularValoresComissao,
+  calcularComissaoCustoFixo,
   type TipoCliente,
 } from '@/lib/leads-config';
 
@@ -82,6 +85,55 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
   const [salvando, setSalvando] = useState(false);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
+  const [percRep, setPercRep] = useState(0);
+  const [percComercial, setPercComercial] = useState(0);
+  const [modeloComissionamento, setModeloComissionamento] = useState<
+    string | null
+  >(null);
+  const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<
+    number | null
+  >(null);
+  const [valorCustoFixoClinica, setValorCustoFixoClinica] = useState<
+    number | null
+  >(null);
+
+  // Buscar percentuais do representante vinculado ao vendedor
+  useEffect(() => {
+    void fetch('/api/vendedor/meu-representante')
+      .then((r) => r.json())
+      .then(
+        (d: {
+          representante?: {
+            percentual_comissao?: number | null;
+            percentual_comissao_comercial?: number | null;
+            modelo_comissionamento?: string | null;
+            valor_custo_fixo_entidade?: number | null;
+            valor_custo_fixo_clinica?: number | null;
+          } | null;
+        }) => {
+          setPercRep(Number(d.representante?.percentual_comissao ?? 0));
+          setPercComercial(
+            Number(d.representante?.percentual_comissao_comercial ?? 0)
+          );
+          setModeloComissionamento(
+            d.representante?.modelo_comissionamento ?? null
+          );
+          setValorCustoFixoEntidade(
+            d.representante?.valor_custo_fixo_entidade != null
+              ? Number(d.representante.valor_custo_fixo_entidade)
+              : null
+          );
+          setValorCustoFixoClinica(
+            d.representante?.valor_custo_fixo_clinica != null
+              ? Number(d.representante.valor_custo_fixo_clinica)
+              : null
+          );
+        }
+      )
+      .catch(() => {
+        /* silencioso */
+      });
+  }, []);
 
   const handleCNPJChange = (valor: string) => {
     const mascarado = aplicarMascaraCNPJ(valor);
@@ -152,6 +204,49 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
     parseFloat(form.valor_negociado.replace(/[^\d,]/g, '').replace(',', '.')) ||
     0;
 
+  // Calcular breakdown de comissão em tempo real
+  const custoFixoRep =
+    modeloComissionamento === 'custo_fixo'
+      ? form.tipo_cliente === 'entidade'
+        ? (valorCustoFixoEntidade ?? null)
+        : (valorCustoFixoClinica ?? null)
+      : null;
+
+  const breakdownCustoFixo =
+    modeloComissionamento === 'custo_fixo' &&
+    custoFixoRep !== null &&
+    valorNegociadoNum > 0
+      ? calcularComissaoCustoFixo(
+          valorNegociadoNum,
+          custoFixoRep,
+          percComercial
+        )
+      : null;
+
+  const breakdown =
+    modeloComissionamento !== 'custo_fixo' && valorNegociadoNum > 0
+      ? calcularValoresComissao(
+          valorNegociadoNum,
+          percRep,
+          percComercial,
+          form.tipo_cliente
+        )
+      : null;
+
+  const percentualTotal = percRep + percComercial;
+  const custoMinimo = CUSTO_POR_AVALIACAO[form.tipo_cliente];
+  const fmtBRL = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  // Valor mínimo obrigatório para liberar o botão
+  const valorMinimoObrigatorio =
+    modeloComissionamento === 'custo_fixo'
+      ? (custoFixoRep ?? custoMinimo)
+      : custoMinimo;
+
+  const valorAbaixoMinimo =
+    valorNegociadoNum > 0 && valorNegociadoNum < valorMinimoObrigatorio;
+
   const formValido =
     form.contato_nome.trim().length >= 3 &&
     !erros.contato_email &&
@@ -160,7 +255,8 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
     numVidasNum >= 1 &&
     !erros.num_vidas_estimado &&
     valorNegociadoNum > 0 &&
-    !erros.valor_negociado;
+    !erros.valor_negociado &&
+    !valorAbaixoMinimo;
 
   const salvar = useCallback(async () => {
     if (!form.contato_nome.trim()) {
@@ -396,6 +492,167 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
               </p>
             )}
           </div>
+
+          {/* Dica de valor mínimo */}
+          {modeloComissionamento === 'custo_fixo' ? (
+            <p className="mt-1 text-xs text-gray-400">
+              Custo fixo:{' '}
+              <span className="font-medium text-gray-600">
+                R${' '}
+                {(form.tipo_cliente === 'entidade'
+                  ? (valorCustoFixoEntidade ?? CUSTO_POR_AVALIACAO.entidade)
+                  : (valorCustoFixoClinica ?? CUSTO_POR_AVALIACAO.clinica)
+                ).toFixed(2)}
+                /avaliação
+              </span>{' '}
+              — negocie acima deste valor.
+            </p>
+          ) : (
+            <p className="mt-1 text-xs text-gray-400">
+              Mínimo recomendado:{' '}
+              <span className="font-medium text-gray-600">
+                R${' '}
+                {form.tipo_cliente === 'entidade'
+                  ? CUSTO_POR_AVALIACAO.entidade.toFixed(2)
+                  : CUSTO_POR_AVALIACAO.clinica.toFixed(2)}
+                /avaliação
+              </span>
+            </p>
+          )}
+
+          {/* Modelo não configurado */}
+          {modeloComissionamento === null && (
+            <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle
+                size={12}
+                className="text-blue-500 shrink-0 mt-0.5"
+              />
+              <p className="text-blue-700 text-xs">
+                Modelo de comissionamento ainda não configurado. O lead será
+                registrado sem simulação de comissão.
+              </p>
+            </div>
+          )}
+
+          {/* Percentual zerado */}
+          {modeloComissionamento === 'percentual' &&
+            percRep === 0 &&
+            percComercial === 0 && (
+              <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                <AlertTriangle
+                  size={12}
+                  className="text-blue-500 shrink-0 mt-0.5"
+                />
+                <p className="text-blue-700 text-xs">
+                  Percentual de comissão zerado. O lead será registrado sem
+                  simulação de valores.
+                </p>
+              </div>
+            )}
+
+          {/* Breakdown percentual */}
+          {breakdown && modeloComissionamento !== 'custo_fixo' && (
+            <div
+              className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${breakdown.abaixoCusto ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}
+            >
+              <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
+                Simulação de Comissão
+              </p>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Valor por vida</span>
+                <span className="font-semibold">
+                  {fmtBRL(valorNegociadoNum)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">
+                  Comissão rep. ({percRep.toFixed(1)}%)
+                </span>
+                <span className="text-green-700 font-medium">
+                  {fmtBRL(breakdown.valorRep)}
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Custo mínimo ({form.tipo_cliente})</span>
+                <span>R$ {custoMinimo},00</span>
+              </div>
+              {breakdown.abaixoCusto && (
+                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
+                  <AlertTriangle
+                    size={12}
+                    className="text-amber-600 shrink-0 mt-0.5"
+                  />
+                  <p className="text-amber-800 text-xs">
+                    Valor abaixo do custo mínimo — este lead precisará de
+                    aprovação do comercial.
+                  </p>
+                </div>
+              )}
+              {!breakdown.abaixoCusto && percentualTotal > 40 && (
+                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
+                  <AlertTriangle
+                    size={12}
+                    className="text-amber-600 shrink-0 mt-0.5"
+                  />
+                  <p className="text-amber-800 text-xs">
+                    Comissão combinada ({percentualTotal.toFixed(1)}%) excede
+                    40%. Lead precisará de aprovação do comercial.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Breakdown custo fixo */}
+          {breakdownCustoFixo && modeloComissionamento === 'custo_fixo' && (
+            <div
+              className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${breakdownCustoFixo.abaixoMinimo ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}
+            >
+              <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
+                Simulação de Comissão (Custo Fixo)
+              </p>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Valor por vida</span>
+                <span className="font-semibold">
+                  {fmtBRL(valorNegociadoNum)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Custo fixo rep.</span>
+                <span className="text-green-700 font-medium">
+                  {fmtBRL(custoFixoRep ?? 0)}
+                </span>
+              </div>
+              {breakdownCustoFixo.abaixoMinimo && (
+                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
+                  <AlertTriangle
+                    size={12}
+                    className="text-amber-600 shrink-0 mt-0.5"
+                  />
+                  <p className="text-amber-800 text-xs">
+                    Valor abaixo do custo fixo — este lead precisará de
+                    aprovação do comercial.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Aviso valor abaixo do mínimo */}
+          {valorAbaixoMinimo && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle
+                size={14}
+                className="text-red-500 shrink-0 mt-0.5"
+              />
+              <p className="text-red-700 text-xs">
+                Valor negociado inferior ao custo{' '}
+                {modeloComissionamento === 'custo_fixo' ? 'fixo' : 'mínimo'} (
+                {fmtBRL(valorMinimoObrigatorio)}). Ajuste o valor para
+                continuar.
+              </p>
+            </div>
+          )}
 
           {/* Observações */}
           <div>

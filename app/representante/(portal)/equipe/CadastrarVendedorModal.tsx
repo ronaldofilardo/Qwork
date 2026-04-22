@@ -177,7 +177,7 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
         setErro(data.error ?? 'Erro ao cadastrar vendedor.');
         return;
       }
-      onSuccess(data.codigo, nome.trim(), data.convite_url);
+      onSuccess(String(data.vendedor_id ?? ''), nome.trim(), data.convite_url);
     } catch {
       setErro('Erro de conexão.');
     } finally {
@@ -212,7 +212,7 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
                 Cadastrar Vendedor
               </h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                O código será gerado automaticamente
+                O vendedor será vinculado à sua equipe
               </p>
             </div>
           </div>
@@ -588,13 +588,13 @@ export function CodigoVendedorSucesso({
 
         <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-4">
           <p className="text-[10px] font-bold text-green-700 uppercase tracking-widest mb-2">
-            Código de Divulgação
+            ID do Vendedor
           </p>
           <p className="text-3xl font-black tracking-widest text-green-700 font-mono">
-            {codigo}
+            #{codigo}
           </p>
           <p className="text-xs text-green-600 mt-2">
-            Compartilhe este código nas redes sociais para divulgação
+            Use este ID para identificar o vendedor no sistema
           </p>
         </div>
 
