@@ -18,7 +18,7 @@ export async function handleRepresentanteLogin(
   contextoRequisicao: ContextoRequisicao
 ): Promise<NextResponse> {
   const repResult = await query(
-    `SELECT id, nome, email, cpf, cpf_responsavel_pj, codigo, senha_hash, senha_repres, status, tipo_pessoa, ativo
+    `SELECT id, nome, email, cpf, cpf_responsavel_pj, senha_hash, senha_repres, status, tipo_pessoa, ativo
      FROM representantes
      WHERE cpf = $1 OR cpf_responsavel_pj = $1
      LIMIT 1`,

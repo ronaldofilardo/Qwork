@@ -43,14 +43,14 @@ export default function VendedorPortalSidebar({
   const [copiado, setCopiado] = useState(false);
 
   const handleCopiarCodigo = async () => {
-    if (!session.codigo) return;
+    if (!session.id) return;
     try {
-      await navigator.clipboard.writeText(session.codigo);
+      await navigator.clipboard.writeText(String(session.id));
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
       const input = document.createElement('input');
-      input.value = session.codigo ?? '';
+      input.value = String(session.id);
       document.body.appendChild(input);
       input.select();
       document.execCommand('copy');
@@ -60,26 +60,23 @@ export default function VendedorPortalSidebar({
     }
   };
 
-  const footer =
-    !isCollapsed && session.codigo ? (
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-500 font-mono">
-          {session.codigo}
-        </span>
-        <button
-          onClick={handleCopiarCodigo}
-          title="Copiar código"
-          className="p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
-          aria-label="Copiar código do vendedor"
-        >
-          {copiado ? (
-            <Check size={13} className="text-green-600" />
-          ) : (
-            <Copy size={13} />
-          )}
-        </button>
-      </div>
-    ) : undefined;
+  const footer = !isCollapsed ? (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-gray-500 font-mono">#{session.id}</span>
+      <button
+        onClick={handleCopiarCodigo}
+        title="Copiar ID"
+        className="p-1 rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600 cursor-pointer"
+        aria-label="Copiar ID do vendedor"
+      >
+        {copiado ? (
+          <Check size={13} className="text-green-600" />
+        ) : (
+          <Copy size={13} />
+        )}
+      </button>
+    </div>
+  ) : undefined;
 
   return (
     <SidebarLayout

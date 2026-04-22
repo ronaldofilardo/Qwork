@@ -77,6 +77,10 @@ for (const file of files) {
   if (file.includes('1140_fix_seq_vendedor_codigo.test.ts')) {
     continue;
   }
+  // Skip chat-session-final-approval — valida variáveis de ambiente (strings esperadas, sem acesso real ao banco)
+  if (file.includes('chat-session-final-approval.test.ts')) {
+    continue;
+  }
 
   const content = fs.readFileSync(file, 'utf8');
   // Use regex to match nr-bps_db but NOT nr-bps_db_test

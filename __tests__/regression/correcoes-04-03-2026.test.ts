@@ -198,9 +198,6 @@ describe('5. lib/session-representante.ts — campo cpf no bps-session', () => {
   it('extrai sess.cpf do cookie', () => {
     expect(src).toMatch(/cpf\s*:\s*sess\.cpf/);
   });
-  it('extrai sess.codigo com fallback', () => {
-    expect(src).toMatch(/codigo\s*:\s*sess\.codigo\s*\|\|/);
-  });
   it('extrai sess.tipo_pessoa com fallback pf', () => {
     expect(src).toMatch(
       /tipo_pessoa\s*:\s*sess\.tipo_pessoa\s*\|\|\s*['"]pf['"]/

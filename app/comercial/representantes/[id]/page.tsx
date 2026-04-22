@@ -84,7 +84,6 @@ interface VendedorEquipe {
   nome: string;
   email: string | null;
   cpf: string | null;
-  codigo_vendedor: string | null;
   leads_ativos: number;
   vinculos_ativos: number;
 }
@@ -892,11 +891,6 @@ export default function ComercialRepresentanteDetalhePage() {
                       </p>
                     </div>
                   </div>
-                  {v.codigo_vendedor && (
-                    <code className="block text-[10px] font-mono bg-white border px-2 py-1 rounded text-gray-600">
-                      {v.codigo_vendedor}
-                    </code>
-                  )}
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t">
                     <span className="flex items-center gap-1">
                       <TrendingUp size={11} /> {v.leads_ativos} leads
@@ -965,11 +959,6 @@ export default function ComercialRepresentanteDetalhePage() {
                       <p className="font-bold text-gray-900 text-lg">
                         {vendedorPainel.nome}
                       </p>
-                      {vendedorPainel.codigo_vendedor && (
-                        <code className="text-[11px] font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">
-                          {vendedorPainel.codigo_vendedor}
-                        </code>
-                      )}
                     </div>
                   </div>
                   <div className="divide-y border rounded-xl overflow-hidden">

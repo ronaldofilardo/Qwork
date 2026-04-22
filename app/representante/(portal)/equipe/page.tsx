@@ -32,7 +32,6 @@ interface Vendedor {
   vendedor_nome: string;
   vendedor_email: string;
   vendedor_cpf: string;
-  codigo_vendedor: string | null;
   aceite_termos: boolean | null;
   leads_ativos: number;
   vinculado_em: string;
@@ -94,11 +93,11 @@ function VendedorCard({
       </div>
 
       <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
-        {/* Codigo vendedor */}
-        {v.codigo_vendedor ? (
+        {/* ID do vendedor */}
+        {v.vendedor_id ? (
           <div className="flex items-center gap-1.5">
             <code className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
-              {v.codigo_vendedor}
+              #{v.vendedor_id}
             </code>
             <button
               onClick={(e) => {
@@ -106,7 +105,7 @@ function VendedorCard({
                 onCopiar();
               }}
               className="text-gray-400 hover:text-gray-600 transition-colors"
-              title="Copiar codigo"
+              title="Copiar ID"
             >
               {copiado ? (
                 <Check size={13} className="text-green-600" />
@@ -116,7 +115,7 @@ function VendedorCard({
             </button>
           </div>
         ) : (
-          <span className="text-xs text-gray-400">Sem codigo</span>
+          <span className="text-xs text-gray-400">—</span>
         )}
         {/* Leads */}
         <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
@@ -167,7 +166,6 @@ interface VendedorCompleto {
   vendedor_nome: string;
   vendedor_email: string;
   vendedor_cpf: string;
-  codigo_vendedor: string | null;
   sexo: string | null;
   endereco: string | null;
   cidade: string | null;
@@ -429,9 +427,9 @@ function EditarVendedorDrawer({
                   </span>
                 </p>
                 <p>
-                  Codigo:{' '}
+                  ID do Vendedor:{' '}
                   <span className="font-mono">
-                    {vendedor?.codigo_vendedor ?? '-'}
+                    {vendedor?.vendedor_id ? `#${vendedor.vendedor_id}` : '-'}
                   </span>
                 </p>
                 <p className="mt-1 text-blue-500">
@@ -983,7 +981,7 @@ export default function EquipePage() {
       setReenvioState((prev) => ({ ...prev, [perfilId]: { loading: false } }));
       if (!res.ok || !data.convite_url) return;
       setCodigoGerado({
-        codigo: v.codigo_vendedor ?? '',
+        codigo: String(v.vendedor_id),
         nome: v.vendedor_nome,
         conviteUrl: data.convite_url,
       });
@@ -1133,9 +1131,10 @@ export default function EquipePage() {
                   v={v}
                   copiado={codigoCopiadoId === v.vendedor_id}
                   onCopiar={() =>
-                    v.codigo_vendedor
-                      ? handleCopiarCodigo(v.codigo_vendedor, v.vendedor_id)
-                      : undefined
+                    void handleCopiarCodigo(
+                      String(v.vendedor_id),
+                      v.vendedor_id
+                    )
                   }
                   onClick={() => setEditarVendedor(v)}
                   reenvioEstado={

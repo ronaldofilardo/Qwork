@@ -228,7 +228,7 @@ export default function DashboardRepresentante() {
   };
 
   const handleCopiarCodigo = async (): Promise<void> => {
-    const codigo = session?.codigo ?? '';
+    const codigo = String(session?.id ?? '');
     try {
       await navigator.clipboard.writeText(codigo);
     } catch {
@@ -263,16 +263,16 @@ export default function DashboardRepresentante() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
-              Seu código no sistema
+              Seu ID no sistema
             </p>
             <p className="font-mono font-bold text-blue-700 text-lg leading-tight">
-              {session?.codigo ?? '—'}
+              {session?.id ?? '—'}
             </p>
           </div>
         </div>
         <button
           onClick={handleCopiarCodigo}
-          aria-label="Copiar código"
+          aria-label="Copiar ID"
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-blue-600 hover:bg-blue-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           {copiado ? (

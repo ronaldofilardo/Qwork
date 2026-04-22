@@ -8,7 +8,7 @@ import { useVendedor } from '../vendedor-context';
 interface Resumo {
   representantes_ativos: number;
   emissoes_mes: number;
-  representante: { id: number; nome: string; codigo: string } | null;
+  representante: { id: number; nome: string } | null;
 }
 
 export default function VendedorDashboard() {
@@ -18,7 +18,7 @@ export default function VendedorDashboard() {
   const [copiado, setCopiado] = useState(false);
 
   const handleCopiarCodigo = async (): Promise<void> => {
-    const codigo = session?.codigo ?? '';
+    const codigo = String(session?.id ?? '');
     try {
       await navigator.clipboard.writeText(codigo);
     } catch {
@@ -72,10 +72,10 @@ export default function VendedorDashboard() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-green-500">
-              Seu código no sistema
+              Seu ID no sistema
             </p>
             <p className="font-mono font-bold text-green-700 text-lg leading-tight">
-              {session?.codigo ?? '—'}
+              {session?.id ?? '—'}
             </p>
           </div>
         </div>
@@ -118,14 +118,6 @@ export default function VendedorDashboard() {
               </span>
             )}
           </p>
-          {resumo?.representante?.codigo && (
-            <p className="text-sm text-gray-500 mt-2 font-mono">
-              Código:{' '}
-              <span className="font-semibold">
-                {resumo.representante.codigo}
-              </span>
-            </p>
-          )}
         </div>
 
         <div className="bg-white rounded-xl border p-5">
