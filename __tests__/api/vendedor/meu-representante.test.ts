@@ -6,8 +6,6 @@
  * usado pelo modal "Novo Lead" para exibir simulação de comissão.
  */
 
-import { NextRequest } from 'next/server';
-
 jest.mock('@/lib/db', () => ({ query: jest.fn() }));
 jest.mock('@/lib/session', () => ({ requireRole: jest.fn() }));
 
@@ -17,10 +15,6 @@ import { GET } from '@/app/api/vendedor/meu-representante/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
-
-function makeReq(): NextRequest {
-  return new NextRequest('http://localhost/api/vendedor/meu-representante');
-}
 
 describe('GET /api/vendedor/meu-representante', () => {
   beforeEach(() => {
@@ -178,5 +172,95 @@ describe('GET /api/vendedor/meu-representante', () => {
     );
     expect(hierQuery).toBeDefined();
     expect(hierQuery![1]).toContain(108); // vendedor_id
+  });
+});
+
+// ===========================================================================
+// Testes estruturais (inspeção de código-fonte)
+// ===========================================================================
+
+describe('GET /api/vendedor/meu-representante — estrutura', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const routePath = path.join(
+    process.cwd(),
+    'app/api/vendedor/meu-representante/route.ts'
+  );
+
+  describe('Validação de arquivo', () => {
+    it('arquivo route.ts existe', () => {
+      expect(fs.existsSync(routePath)).toBe(true);
+    });
+
+    it('exporta função GET', () => {
+      const src = fs.readFileSync(routePath, 'utf-8');
+      expect(src).toMatch(/export\s+async\s+function\s+GET/);
+    });
+  });
+
+  describe('Lógica de busca', () => {
+    let src: string;
+    beforeAll(() => {
+      src = fs.readFileSync(routePath, 'utf-8');
+    });
+
+    it('busca usuario pelo CPF da sessão', () => {
+      expect(src).toMatch(/WHERE\s+cpf\s*=\s*\$1/i);
+      expect(src).toMatch(/session\.cpf/);
+    });
+
+    it('faz JOIN com hierarquia_comercial e representantes', () => {
+      expect(src).toMatch(/hierarquia_comercial/i);
+      expect(src).toMatch(/representantes/i);
+      expect(src).toMatch(/vendedor_id/i);
+      expect(src).toMatch(/ativo\s*=\s*true/i);
+    });
+
+    it('retorna dados de comissionamento do representante', () => {
+      expect(src).toMatch(/percentual_comissao/);
+      expect(src).toMatch(/percentual_comissao_comercial/);
+      expect(src).toMatch(/modelo_comissionamento/);
+      expect(src).toMatch(/valor_custo_fixo_entidade/);
+      expect(src).toMatch(/valor_custo_fixo_clinica/);
+    });
+  });
+
+  describe('Response structure', () => {
+    let src: string;
+    beforeAll(() => {
+      src = fs.readFileSync(routePath, 'utf-8');
+    });
+
+    it('retorna objeto com representante property', () => {
+      expect(src).toMatch(/representante/);
+      expect(src).toMatch(/NextResponse\.json/);
+    });
+
+    it('retorna null se representante não encontrado', () => {
+      expect(src).toMatch(/representante:\s*null/);
+    });
+  });
+
+  describe('Segurança', () => {
+    let src: string;
+    beforeAll(() => {
+      src = fs.readFileSync(routePath, 'utf-8');
+    });
+
+    it('tem dynamic = force-dynamic', () => {
+      expect(src).toMatch(/export\s+const\s+dynamic\s*=\s*['"]force-dynamic['"]/);
+    });
+
+    it('limita resultado a 1 representante (LIMIT 1)', () => {
+      expect(src).toMatch(/LIMIT\s+1/i);
+    });
+
+    it('filtra por ativo = true', () => {
+      expect(src).toMatch(/ativo\s*=\s*true/i);
+    });
+
+    it('usa requireRole com perfil vendedor', () => {
+      expect(src).toMatch(/requireRole\(\s*['"]vendedor['"]/);
+    });
   });
 });

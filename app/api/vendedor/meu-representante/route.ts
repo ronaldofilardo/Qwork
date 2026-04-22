@@ -1,7 +1,12 @@
 /**
  * GET /api/vendedor/meu-representante
- * Retorna os dados de comissionamento do representante vinculado ao vendedor logado.
- * Usado pelo modal "Novo Lead" do vendedor para exibir simulação de comissão.
+ *
+ * Retorna dados de comissionamento do representante linkado ao vendedor autenticado
+ * via tabela hierarquia_comercial.
+ *
+ * Response:
+ *  - representante: { percentual_comissao, percentual_comissao_comercial, modelo_comissionamento, valor_custo_fixo_entidade, valor_custo_fixo_clinica }
+ *  - representante: null se vendedor não tiver vínculo ativo
  */
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -17,15 +22,17 @@ export async function GET(): Promise<NextResponse> {
       `SELECT id FROM public.usuarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
       [session.cpf]
     );
+
     if (userResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
         { status: 404 }
       );
     }
+
     const vendedorId = userResult.rows[0].id;
 
-    const result = await query<{
+    const repResult = await query<{
       percentual_comissao: number | null;
       percentual_comissao_comercial: number | null;
       modelo_comissionamento: string | null;
@@ -45,20 +52,14 @@ export async function GET(): Promise<NextResponse> {
       [vendedorId]
     );
 
-    if (result.rows.length === 0) {
-      return NextResponse.json({ representante: null });
+    if (repResult.rows.length === 0) {
+      return NextResponse.json({ representante: null }, { status: 200 });
     }
 
-    const row = result.rows[0];
-    return NextResponse.json({
-      representante: {
-        percentual_comissao: row.percentual_comissao,
-        percentual_comissao_comercial: row.percentual_comissao_comercial,
-        modelo_comissionamento: row.modelo_comissionamento,
-        valor_custo_fixo_entidade: row.valor_custo_fixo_entidade,
-        valor_custo_fixo_clinica: row.valor_custo_fixo_clinica,
-      },
-    });
+    return NextResponse.json(
+      { representante: repResult.rows[0] },
+      { status: 200 }
+    );
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Erro interno';
     if (msg === 'Não autenticado' || msg === 'Perfil não autorizado') {
