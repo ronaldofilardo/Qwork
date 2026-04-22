@@ -90,7 +90,37 @@ export async function converterLeadEmRepresentante(
       }
     }
 
-    // 3. Inserir representante
+    // 3. IMPORTANTE: Bloquear qualquer outro lead com mesmo cpf_responsavel (PJ)
+    // Isso evita conflito com trigger tg_representante_cpf_unico quando inserir.
+    // Só deixa o lead atual como convertido para que trigger ignore.
+    if (tipoPessoa === 'pj' && lead.cpf_responsavel) {
+      await client.query(
+        `UPDATE representantes_cadastro_leads
+         SET status = 'rejeitado',
+             motivo_rejeicao = 'Substituído por outra conversão com mesmo CPF responsável'
+         WHERE cpf_responsavel = $1
+           AND id <> $2
+           AND status NOT IN ('rejeitado', 'convertido')`,
+        [lead.cpf_responsavel, leadId]
+      );
+    }
+
+    // 4. IMPORTANTE: Marcar lead atual como 'convertido' ANTES de inserir representante
+    // Isso evita conflito com a trigger tg_lead_cpf_unico que bloqueia se o lead
+    // ainda está em status 'verificado' e tem cpf_responsavel em conflito.
+    const updateLeadResult = await client.query(
+      `UPDATE representantes_cadastro_leads
+       SET status = 'convertido', convertido_em = NOW(), verificado_por = $2
+       WHERE id = $1
+       RETURNING id`,
+      [leadId, adminCpf]
+    );
+
+    if (updateLeadResult.rows.length === 0) {
+      throw new Error('Falha ao marcar lead como convertido');
+    }
+
+    // 5. Inserir representante
     // Status 'aguardando_senha': representante deve criar sua senha via link de convite
     // gestor_comercial_cpf = adminCpf (CPF do comercial que converteu o lead)
     const insertResult = await client.query<{
@@ -127,19 +157,16 @@ export async function converterLeadEmRepresentante(
 
     const rep = insertResult.rows[0];
 
-    // 4. Gerar token de convite para criação de senha
+    // 6. Gerar token de convite para criação de senha
     const convite = await gerarTokenConvite(rep.id, client, baseUrl);
     logEmailConvite(rep.nome, rep.email, convite.link, convite.expira_em);
 
-    // 5. Atualizar lead para 'convertido'
+    // 7. Atualizar lead para referenciar o novo representante
     await client.query(
       `UPDATE representantes_cadastro_leads
-       SET status = 'convertido',
-           convertido_em = NOW(),
-           representante_id = $2,
-           verificado_por = $3
+       SET representante_id = $2
        WHERE id = $1`,
-      [leadId, rep.id, adminCpf]
+      [leadId, rep.id]
     );
 
     console.log(
