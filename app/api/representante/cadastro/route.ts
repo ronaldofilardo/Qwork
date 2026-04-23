@@ -69,10 +69,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     if (!validarCNPJ(cnpj))
-      return NextResponse.json(
-        { error: 'CNPJ inválido' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'CNPJ inválido' }, { status: 400 });
     if (!cpf_responsavel_pj || !/^\d{11}$/.test(cpf_responsavel_pj))
       return NextResponse.json(
         { error: 'CPF do responsável PJ é obrigatório (11 dígitos)' },
@@ -89,8 +86,7 @@ export async function POST(request: NextRequest) {
     if (!cnpjCheck.disponivel) {
       return NextResponse.json(
         {
-          error:
-            cnpjCheck.message ?? 'CNPJ já cadastrado como representante',
+          error: cnpjCheck.message ?? 'CNPJ já cadastrado como representante',
         },
         { status: 409 }
       );

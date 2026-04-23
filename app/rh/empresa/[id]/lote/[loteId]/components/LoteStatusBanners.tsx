@@ -83,9 +83,9 @@ export default function LoteStatusBanners({
         !lote.tem_laudo &&
         lote.status_pagamento === 'aguardando_pagamento' && (
           <div className="mt-6 pt-6 border-t border-gray-200">
-            <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg">
+            <div className="p-4 bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-300 rounded-lg">
               <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
                   <span className="text-2xl">💳</span>
                 </div>
                 <div className="flex-1">

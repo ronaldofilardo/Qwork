@@ -157,8 +157,7 @@ export default function ComercialRepresentantesPage() {
     if (!busca) return true;
     const q = busca.toLowerCase();
     return (
-      r.nome.toLowerCase().includes(q) ||
-      r.email.toLowerCase().includes(q)
+      r.nome.toLowerCase().includes(q) || r.email.toLowerCase().includes(q)
     );
   });
 
@@ -166,8 +165,7 @@ export default function ComercialRepresentantesPage() {
     if (!busca) return true;
     const q = busca.toLowerCase();
     return (
-      r.nome.toLowerCase().includes(q) ||
-      r.email.toLowerCase().includes(q)
+      r.nome.toLowerCase().includes(q) || r.email.toLowerCase().includes(q)
     );
   });
 
@@ -477,9 +475,6 @@ export default function ComercialRepresentantesPage() {
                 <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Vínculos
                 </th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
-                  Status
-                </th>
                 <th className="text-center px-6 py-3 text-xs font-bold text-gray-600 uppercase tracking-wider">
                   Ação
                 </th>
@@ -492,14 +487,14 @@ export default function ComercialRepresentantesPage() {
                   className={`border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
                     idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
                   }`}
-                  onClick={() => router.push(`/comercial/representantes/${r.id}`)}
+                  onClick={() =>
+                    router.push(`/comercial/representantes/${r.id}`)
+                  }
                 >
                   <td className="px-6 py-4 text-sm font-semibold text-gray-900">
                     {r.nome}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {r.email}
-                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{r.email}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {new Date(r.criado_em).toLocaleDateString('pt-BR')}
                   </td>
@@ -508,27 +503,6 @@ export default function ComercialRepresentantesPage() {
                   </td>
                   <td className="px-6 py-4 text-sm font-bold text-blue-600">
                     {r.vinculos_ativos}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${
-                        r.status === 'desativado'
-                          ? 'bg-red-100 text-red-700'
-                          : r.status === 'ativo'
-                            ? 'bg-green-100 text-green-700'
-                            : r.status === 'apto_pendente'
-                              ? 'bg-amber-100 text-amber-700'
-                              : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {r.status === 'desativado'
-                        ? 'Inativo'
-                        : r.status === 'ativo'
-                          ? 'Ativo'
-                          : r.status === 'apto_pendente'
-                            ? 'Aguardando'
-                            : 'Pendente'}
-                    </span>
                   </td>
                   <td className="px-6 py-4 text-center">
                     <button
@@ -540,9 +514,15 @@ export default function ComercialRepresentantesPage() {
                       {togglingId === r.id ? (
                         <Loader2 size={12} className="animate-spin inline" />
                       ) : r.ativo ? (
-                        <ToggleRight size={14} className="inline text-red-500" />
+                        <ToggleRight
+                          size={14}
+                          className="inline text-red-500"
+                        />
                       ) : (
-                        <ToggleLeft size={14} className="inline text-green-600" />
+                        <ToggleLeft
+                          size={14}
+                          className="inline text-green-600"
+                        />
                       )}
                     </button>
                   </td>
@@ -753,8 +733,7 @@ export default function ComercialRepresentantesPage() {
               <div className="mt-3 pt-3 border-t border-gray-50 flex items-center gap-1.5 text-xs text-gray-400 mb-2">
                 <Clock size={11} />
                 <span>
-                  Cadastro:{' '}
-                  {new Date(r.criado_em).toLocaleDateString('pt-BR')}
+                  Cadastro: {new Date(r.criado_em).toLocaleDateString('pt-BR')}
                 </span>
               </div>
 

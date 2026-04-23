@@ -1,9 +1,149 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { ArrowRight, Users } from 'lucide-react';
-import type { EmpresaOverview } from '@/app/api/rh/empresas-overview/route';
+import {
+  ArrowRight,
+  Users,
+  CheckCircle2,
+  Clock,
+  FileCheck2,
+  Loader2,
+  XCircle,
+  Flag,
+  CreditCard,
+  FileText,
+} from 'lucide-react';
+import type {
+  EmpresaOverview,
+  LoteAtualInfo,
+} from '@/app/api/rh/empresas-overview/route';
 import StatusBadge from './StatusBadge';
+import ProgressBarLote from './ProgressBarLote';
+
+function CicloStatusCell({ lote }: { lote: LoteAtualInfo | null }) {
+  if (!lote) return <span className="text-xs text-gray-300">—</span>;
+
+  switch (lote.status) {
+    case 'rascunho':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-gray-500">
+          <Clock size={12} className="shrink-0" />
+          Aguardando liberação
+        </span>
+      );
+
+    case 'ativo':
+      return (
+        <div className="w-28">
+          <ProgressBarLote
+            percentual={lote.percentual_conclusao}
+            total={lote.total_avaliacoes}
+            concluidas={lote.avaliacoes_concluidas}
+          />
+        </div>
+      );
+
+    case 'concluido':
+      if (lote.status_pagamento === 'pago') {
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-teal-700">
+            <FileText size={13} className="shrink-0" />
+            Pagamento confirmado - aguard. emissao
+          </span>
+        );
+      }
+
+      if (lote.status_pagamento === 'aguardando_pagamento') {
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700">
+            <CreditCard size={13} className="shrink-0" />
+            Aguardando pagamento
+          </span>
+        );
+      }
+
+      if (lote.status_pagamento === 'aguardando_cobranca') {
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+            <Clock size={13} className="shrink-0" />
+            Aguardando link de pgto
+          </span>
+        );
+      }
+
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700">
+          <CheckCircle2 size={13} className="shrink-0" />
+          Pronto para solicitar laudo
+        </span>
+      );
+
+    case 'emissao_solicitada': {
+      const pgto = lote.status_pagamento;
+
+      if (pgto === 'pago') {
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
+            <FileText size={13} className="shrink-0" />
+            Na fila de emissão
+          </span>
+        );
+      }
+
+      if (pgto === 'aguardando_pagamento') {
+        return (
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700">
+            <CreditCard size={13} className="shrink-0" />
+            Aguardando pagamento
+          </span>
+        );
+      }
+
+      // aguardando_cobranca ou null: admin ainda não gerou o link
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+          <Clock size={13} className="shrink-0" />
+          Aguardando link de pgto
+        </span>
+      );
+    }
+
+    case 'emissao_em_andamento':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-blue-700">
+          <Loader2 size={12} className="animate-spin shrink-0" />
+          Gerando laudo...
+        </span>
+      );
+
+    case 'laudo_emitido':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700">
+          <FileCheck2 size={13} className="shrink-0" />
+          Laudo disponível
+        </span>
+      );
+
+    case 'cancelado':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-red-500">
+          <XCircle size={12} className="shrink-0" />
+          Cancelado
+        </span>
+      );
+
+    case 'finalizado':
+      return (
+        <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+          <Flag size={12} className="shrink-0" />
+          Ciclo concluído
+        </span>
+      );
+
+    default:
+      return <span className="text-xs text-gray-300">—</span>;
+  }
+}
 
 interface EmpresasTableProps {
   empresas: EmpresaOverview[];
@@ -107,6 +247,13 @@ export default function EmpresasTable({
                 </div>
 
                 <div>
+                  <div className="qw-mobile-card-label">Ciclo</div>
+                  <div className="qw-mobile-card-value">
+                    <CicloStatusCell lote={lote ?? null} />
+                  </div>
+                </div>
+
+                <div>
                   <div className="qw-mobile-card-label">Elegibilidade</div>
                   <div className="qw-mobile-card-value">
                     {elegivel ? (
@@ -137,28 +284,30 @@ export default function EmpresasTable({
                 </div>
 
                 <div>
-                  <div className="qw-mobile-card-label">Laudos</div>
+                  <div className="qw-mobile-card-label">Laudos (geral)</div>
                   <div className="qw-mobile-card-value text-sm space-y-1">
                     {empresa.laudos_status.aguardando_emissao > 0 && (
-                      <p className="text-orange-600">
+                      <p className="text-amber-600">
                         {empresa.laudos_status.aguardando_emissao} aguardando
-                        link pgto
+                        link (geral)
                       </p>
                     )}
                     {empresa.laudos_status.aguardando_pagamento > 0 && (
                       <p className="text-yellow-600">
                         {empresa.laudos_status.aguardando_pagamento} aguard.
-                        pgto
+                        pgto (geral)
                       </p>
                     )}
                     {empresa.laudos_status.pago > 0 && (
                       <p className="text-teal-600">
-                        {empresa.laudos_status.pago} pago — aguard. emissão
+                        {empresa.laudos_status.pago} pago - aguard. emissao
+                        (geral)
                       </p>
                     )}
                     {empresa.laudos_status.laudo_emitido > 0 && (
                       <p className="text-green-600">
-                        {empresa.laudos_status.laudo_emitido} disponível(eis)
+                        {empresa.laudos_status.laudo_emitido} disponivel(eis)
+                        (geral)
                       </p>
                     )}
                     {empresa.laudos_status.aguardando_emissao === 0 &&
@@ -211,7 +360,10 @@ export default function EmpresasTable({
                 Elegibilidade
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Laudos
+                Ciclo
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Laudos (geral)
               </th>
               <th className="w-10 px-4 py-3" />
             </tr>
@@ -318,29 +470,36 @@ export default function EmpresasTable({
                     )}
                   </td>
 
+                  {/* Ciclo */}
+                  <td className="px-4 py-3">
+                    <CicloStatusCell lote={lote ?? null} />
+                  </td>
+
                   {/* Laudos */}
                   <td className="px-4 py-3">
                     <div className="text-xs space-y-0.5">
                       {empresa.laudos_status.aguardando_emissao > 0 && (
-                        <p className="text-orange-600">
+                        <p className="text-amber-600">
                           {empresa.laudos_status.aguardando_emissao} aguardando
-                          link pgto
+                          link (geral)
                         </p>
                       )}
                       {empresa.laudos_status.aguardando_pagamento > 0 && (
                         <p className="text-yellow-600">
                           {empresa.laudos_status.aguardando_pagamento} aguard.
-                          pgto
+                          pgto (geral)
                         </p>
                       )}
                       {empresa.laudos_status.pago > 0 && (
                         <p className="text-teal-600">
-                          {empresa.laudos_status.pago} pago — aguard. emissão
+                          {empresa.laudos_status.pago} pago - aguard. emissao
+                          (geral)
                         </p>
                       )}
                       {empresa.laudos_status.laudo_emitido > 0 && (
                         <p className="text-green-600">
-                          {empresa.laudos_status.laudo_emitido} disponível(eis)
+                          {empresa.laudos_status.laudo_emitido} disponivel(eis)
+                          (geral)
                         </p>
                       )}
                       {empresa.laudos_status.aguardando_emissao === 0 &&

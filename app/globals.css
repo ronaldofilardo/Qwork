@@ -3,17 +3,21 @@
 @tailwind utilities;
 
 :root {
-  /* Nova identidade visual QWork - Preto como base, Verde para ações */
-  --primary: #000000;
+  /* Identidade visual QWork — cores extraídas do logo oficial.
+     primary = charcoal do texto "Work" (NÃO preto puro).
+     accent  = verde do "Q" + checkmark.
+     accent-alt = segundo tom de verde intencional do logo. */
+  --primary: #2d2d2d;
   --primary-hover: #1a1a1a;
-  --primary-light: #2d2d2d;
+  --primary-light: #4a4a4a;
 
-  /* Verde do logo para botões e ações */
   --accent: #9acd32;
   --accent-hover: #7ba428;
   --accent-light: #b5e550;
+  --accent-alt: #8dc641;
 
-  /* Cor laranja do QWork */
+  /* Laranja preservado APENAS para o template de laudo aprovado (PDF/print).
+     Não usar em UI da aplicação — UI deve usar --primary ou --accent. */
   --orange: #ff6b00;
   --orange-hover: #ff8533;
 }
