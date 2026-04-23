@@ -7,7 +7,16 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
+import {
+  Eye,
+  EyeOff,
+  AlertCircle,
+  FileText,
+  Scale,
+  CheckCircle2,
+  Building2,
+} from 'lucide-react';
 import { mascararCPF, formatarCPF } from '@/lib/cpf-utils';
 
 interface CPFMascaradoProps {
@@ -38,10 +47,15 @@ export default function CPFMascarado({
         <button
           type="button"
           onClick={() => setRevelado(!revelado)}
-          className="ml-2 text-xs text-blue-600 hover:text-blue-800 underline"
+          className="ml-2 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 underline"
           title={revelado ? 'Ocultar CPF' : 'Revelar CPF completo'}
         >
-          {revelado ? '🔒 Ocultar' : '👁️ Ver'}
+          {revelado ? (
+            <EyeOff className="w-3 h-3" />
+          ) : (
+            <Eye className="w-3 h-3" />
+          )}
+          {revelado ? 'Ocultar' : 'Ver'}
         </button>
       )}
     </span>
@@ -66,39 +80,52 @@ export function ConsentimentoBadge({
 }: ConsentimentoBadgeProps) {
   if (!baseLegal) {
     return (
-      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-        ⚠️ Sem base legal
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+        <AlertCircle className="w-3 h-3 flex-shrink-0" />
+        Sem base legal
       </span>
     );
   }
 
-  const labels = {
-    contrato: { text: '📄 Contrato', color: 'bg-blue-100 text-blue-800' },
+  const labels: Record<
+    string,
+    { icon: ComponentType<{ className?: string }>; text: string; color: string }
+  > = {
+    contrato: {
+      icon: FileText,
+      text: 'Contrato',
+      color: 'bg-blue-100 text-blue-800',
+    },
     obrigacao_legal: {
-      text: '⚖️ Obrigação Legal',
+      icon: Scale,
+      text: 'Obrigação Legal',
       color: 'bg-green-100 text-green-800',
     },
     consentimento: {
-      text: '✅ Consentimento',
+      icon: CheckCircle2,
+      text: 'Consentimento',
       color: 'bg-purple-100 text-purple-800',
     },
     interesse_legitimo: {
-      text: '🏢 Interesse Legítimo',
+      icon: Building2,
+      text: 'Interesse Legítimo',
       color: 'bg-gray-100 text-gray-800',
     },
   };
 
   const label = labels[baseLegal] || labels.contrato;
+  const Icon = label.icon;
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${label.color}`}
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${label.color}`}
       title={
         dataConsentimento
           ? `Registrado em: ${new Date(dataConsentimento).toLocaleDateString('pt-BR')}`
           : undefined
       }
     >
+      <Icon className="w-3 h-3 flex-shrink-0" />
       {label.text}
     </span>
   );
