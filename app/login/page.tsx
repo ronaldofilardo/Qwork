@@ -289,7 +289,7 @@ export default function LoginPage() {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6"
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-3 sm:p-6"
       style={{
         paddingTop: 'max(12px, env(safe-area-inset-top))',
         paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
@@ -361,8 +361,8 @@ export default function LoginPage() {
                       isUnavailable
                         ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
                         : isSelected
-                          ? 'border-orange-500 bg-orange-50 cursor-pointer'
-                          : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/50 cursor-pointer',
+                          ? 'border-accent bg-accent/10 cursor-pointer'
+                          : 'border-gray-200 hover:border-accent hover:bg-accent/5 cursor-pointer',
                     ].join(' ')}
                   >
                     <div className="flex items-center justify-between">
@@ -375,7 +375,7 @@ export default function LoginPage() {
                         {opt.label}
                       </span>
                       {isSelected && !isUnavailable && (
-                        <span className="text-orange-500">
+                        <span className="text-accent-hover">
                           <svg
                             xmlns="http://www.w3.org/2000/svg"
                             viewBox="0 0 20 20"
@@ -432,7 +432,7 @@ export default function LoginPage() {
                 loading ||
                 (!!envAvailability && !envAvailability[dbEnvironment]?.allowed)
               }
-              className="w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
+              className="w-full bg-primary text-white py-3 px-4 rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
             >
               {loading ? 'Conectando...' : 'Confirmar e Entrar'}
             </button>
@@ -567,7 +567,7 @@ export default function LoginPage() {
               type="button"
               onClick={() => setBoasVindasAberto(true)}
               disabled={showConfirmacaoModal}
-              className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-primary/30 rounded-md shadow-sm bg-white text-sm font-medium text-primary hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Building2 className="w-5 h-5" />
               <span>Cadastrar Empresa</span>

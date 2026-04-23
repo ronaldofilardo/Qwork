@@ -146,15 +146,15 @@ export default function TrocarSenhaPage() {
 
   if (carregando) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
       </div>
     );
   }
 
   if (sucesso) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
         <div className="bg-white rounded-xl shadow-xl p-8 max-w-md w-full text-center">
           <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
             <ShieldCheck className="h-8 w-8 text-green-600" />
@@ -171,7 +171,7 @@ export default function TrocarSenhaPage() {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6"
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-3 sm:p-6"
       style={{
         paddingTop: 'max(12px, env(safe-area-inset-top))',
         paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
@@ -181,8 +181,8 @@ export default function TrocarSenhaPage() {
         {/* Header */}
         <div className="text-center mb-6">
           <QworkLogo size="xl" showSlogan={false} className="mb-3" />
-          <div className="mx-auto w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-            <Lock className="h-6 w-6 text-orange-600" />
+          <div className="mx-auto w-12 h-12 bg-accent/15 rounded-full flex items-center justify-center mb-3">
+            <Lock className="h-6 w-6 text-accent-hover" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">
             Crie sua nova senha
@@ -216,7 +216,7 @@ export default function TrocarSenhaPage() {
                 value={senhaAtual}
                 onChange={(e) => setSenhaAtual(e.target.value)}
                 placeholder="6 últimos dígitos do CNPJ"
-                className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base"
+                className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-base"
                 required
                 autoComplete="current-password"
               />
@@ -253,7 +253,7 @@ export default function TrocarSenhaPage() {
                 value={novaSenha}
                 onChange={(e) => setNovaSenha(e.target.value)}
                 placeholder="Mínimo 8 caracteres"
-                className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base"
+                className="block w-full px-3 py-3 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-base"
                 required
                 autoComplete="new-password"
               />
@@ -314,7 +314,7 @@ export default function TrocarSenhaPage() {
                 value={confirmarSenha}
                 onChange={(e) => setConfirmarSenha(e.target.value)}
                 placeholder="Repita a nova senha"
-                className={`block w-full px-3 py-3 pr-10 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base ${
+                className={`block w-full px-3 py-3 pr-10 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent text-base ${
                   confirmarSenha.length > 0 && !senhasConferem
                     ? 'border-red-300'
                     : 'border-gray-300'
@@ -356,7 +356,7 @@ export default function TrocarSenhaPage() {
           <button
             type="submit"
             disabled={!formularioValido || enviando}
-            className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+            className="w-full py-3 px-4 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg shadow-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           >
             {enviando ? (
               <span className="flex items-center justify-center gap-2">

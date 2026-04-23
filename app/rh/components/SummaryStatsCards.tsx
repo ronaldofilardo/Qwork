@@ -23,7 +23,7 @@ export default function SummaryStatsCards({ kpi }: SummaryStatsCardsProps) {
           <div className="mt-1.5 space-y-0.5 text-xs text-gray-500">
             <p>{kpi.total_lotes} lotes no total</p>
             {kpi.total_lotes_pendentes > 0 && (
-              <p className="text-orange-600">
+              <p className="text-amber-600">
                 {kpi.total_lotes_pendentes} aguard. emissão
               </p>
             )}
@@ -67,7 +67,7 @@ export default function SummaryStatsCards({ kpi }: SummaryStatsCardsProps) {
           <div className="mt-1.5 space-y-0.5 text-xs text-gray-500">
             <p>{kpi.total_lotes} liberados no total</p>
             {kpi.total_lotes_pendentes > 0 && (
-              <p className="text-orange-600">
+              <p className="text-amber-600">
                 {kpi.total_lotes_pendentes} pend. emissão
               </p>
             )}
@@ -77,7 +77,7 @@ export default function SummaryStatsCards({ kpi }: SummaryStatsCardsProps) {
 
       {/* Card 4 — Laudos */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm px-5 py-4 flex items-start gap-4">
-        <div className="flex-shrink-0 text-orange-500 mt-0.5">
+        <div className="flex-shrink-0 text-accent-hover mt-0.5">
           <FileText size={26} />
         </div>
         <div className="min-w-0">
@@ -89,7 +89,7 @@ export default function SummaryStatsCards({ kpi }: SummaryStatsCardsProps) {
           </p>
           <div className="mt-1.5 space-y-0.5 text-xs text-gray-500">
             {kpi.total_laudos_aguardando_emissao > 0 && (
-              <p className="text-orange-600">
+              <p className="text-amber-600">
                 {kpi.total_laudos_aguardando_emissao} aguard. emissão
               </p>
             )}

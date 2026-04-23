@@ -94,7 +94,7 @@ export default function ModalLinkPagamentoEmissao({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -102,15 +102,15 @@ export default function ModalLinkPagamentoEmissao({
       />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-h-[90vh] overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-lg sm:rounded-2xl">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
+        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-2xl sm:rounded-t-2xl">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl font-bold mb-2">
                 Link de Pagamento Gerado
               </h2>
-              <p className="text-blue-100 text-sm">
+              <p className="text-green-100 text-sm">
                 Envie este link para {nomeTomador} realizar o pagamento
               </p>
             </div>
@@ -126,26 +126,26 @@ export default function ModalLinkPagamentoEmissao({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Informações do Lote */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-900 mb-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 className="font-semibold text-green-900 mb-3">
               Informações do Pagamento
             </h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-blue-700">Lote:</p>
-                <p className="font-semibold text-blue-900">#{loteId}</p>
+                <p className="text-green-700">Lote:</p>
+                <p className="font-semibold text-green-900">#{loteId}</p>
               </div>
               <div>
-                <p className="text-blue-700">Tomador:</p>
-                <p className="font-semibold text-blue-900">{nomeTomador}</p>
+                <p className="text-green-700">Tomador:</p>
+                <p className="font-semibold text-green-900">{nomeTomador}</p>
               </div>
               <div>
-                <p className="text-blue-700">Avaliações:</p>
-                <p className="font-semibold text-blue-900">{numAvaliacoes}</p>
+                <p className="text-green-700">Avaliações:</p>
+                <p className="font-semibold text-green-900">{numAvaliacoes}</p>
               </div>
               <div>
-                <p className="text-blue-700">Valor Total:</p>
-                <p className="font-semibold text-blue-900 text-lg">
+                <p className="text-green-700">Valor Total:</p>
+                <p className="font-semibold text-green-900 text-lg">
                   {formatCurrency(valorTotal)}
                 </p>
               </div>
@@ -185,7 +185,7 @@ export default function ModalLinkPagamentoEmissao({
               </div>
             ) : (
               <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
               </div>
             )}
           </div>
@@ -198,7 +198,7 @@ export default function ModalLinkPagamentoEmissao({
             </div>
 
             <div className="flex gap-2">
-              <div className="flex-1 bg-gray-100 border border-gray-300 rounded-lg px-4 py-3 font-mono text-sm text-gray-700 break-all">
+              <div className="flex-1 bg-gray-100 border border-gray-300 rounded-lg px-3 py-3 font-mono text-xs text-gray-700 truncate">
                 {link}
               </div>
               <button
@@ -208,19 +208,19 @@ export default function ModalLinkPagamentoEmissao({
                   ${
                     copied
                       ? 'bg-green-500 text-white'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-green-600 text-white hover:bg-green-700'
                   }
                 `}
               >
                 {copied ? (
                   <>
                     <CheckCircle className="w-5 h-5" />
-                    Copiado!
+                    <span className="hidden sm:inline">Copiado!</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-5 h-5" />
-                    Copiar
+                    <span className="hidden sm:inline">Copiar</span>
                   </>
                 )}
               </button>
@@ -239,7 +239,7 @@ export default function ModalLinkPagamentoEmissao({
             <button
               onClick={() => onDisponibilizarLink(loteId)}
               disabled={isDisponibilizando}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed font-medium transition-colors"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed font-medium transition-colors"
             >
               <Send className="w-4 h-4" />
               {isDisponibilizando

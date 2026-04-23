@@ -14,7 +14,7 @@ const LOTE_STATUS_CONFIG: Record<
   concluido: { label: 'Concluído', className: 'bg-green-100 text-green-700' },
   emissao_solicitada: {
     label: 'Emissão Solicitada',
-    className: 'bg-orange-100 text-orange-700',
+    className: 'bg-amber-100 text-amber-700',
   },
   emissao_em_andamento: {
     label: 'Em Emissão',
