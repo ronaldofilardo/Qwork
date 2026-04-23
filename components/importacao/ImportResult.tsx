@@ -17,6 +17,7 @@ interface ImportStats {
   empresas_criadas: number;
   empresas_existentes: number;
   empresas_bloqueadas: number;
+  empresas_nome_atualizados?: number;
   funcionarios_criados: number;
   funcionarios_atualizados: number;
   nivel_cargo_alterados: number;
@@ -177,6 +178,13 @@ export default function ImportResult({
                   icon={<AlertTriangle size={16} className="text-amber-500" />}
                   label="Empresas bloqueadas"
                   value={stats.empresas_bloqueadas}
+                />
+              )}
+              {(stats.empresas_nome_atualizados ?? 0) > 0 && (
+                <ResultItem
+                  icon={<Building2 size={16} className="text-teal-500" />}
+                  label="Nomes atualizados"
+                  value={stats.empresas_nome_atualizados!}
                 />
               )}
             </>

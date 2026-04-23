@@ -17,6 +17,16 @@ import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Retorna true se o nome da empresa é um placeholder gerado automaticamente
+ * pelo sistema quando a planilha não continha o nome.
+ */
+function isNomePlaceholder(nome: string): boolean {
+  if (nome === 'Empresa Desconhecida') return true;
+  if (/^Empresa \d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(nome)) return true;
+  return false;
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const session = await requireClinica();
@@ -220,13 +230,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await withTransaction(async (client) => {
       let empresasCriadas = 0;
       let empresasExistentes = 0;
+      let empresasNomeAtualizados = 0;
       let funcionariosCriados = 0;
       let funcionariosVinculados = 0;
 
       for (const [cnpj, { empresa_nome, rows: empresaRows }] of empresaMap) {
         // Find or create empresa — busca global para detectar conflitos restantes
         const empresaExist = await client.query(
-          'SELECT id, clinica_id FROM empresas_clientes WHERE cnpj = $1',
+          'SELECT id, clinica_id, nome FROM empresas_clientes WHERE cnpj = $1',
           [cnpj]
         );
 
@@ -237,6 +248,18 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (Number(empresaRow.clinica_id) === clinicaId) {
             empresaId = empresaRow.id as number;
             empresasExistentes++;
+            // Atualizar nome se o banco tem placeholder e o import traz nome real
+            if (
+              empresa_nome &&
+              isNomePlaceholder(empresaRow.nome as string) &&
+              !isNomePlaceholder(empresa_nome)
+            ) {
+              await client.query(
+                'UPDATE empresas_clientes SET nome = $1, atualizado_em = NOW() WHERE id = $2',
+                [empresa_nome, empresaId]
+              );
+              empresasNomeAtualizados++;
+            }
           } else {
             // CNPJ de outra clínica (race condition — já filtrado no pré-check, mas por segurança)
             continue;
@@ -330,6 +353,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       return {
         empresasCriadas,
         empresasExistentes,
+        empresasNomeAtualizados,
         funcionariosCriados,
         funcionariosVinculados,
       };
@@ -342,7 +366,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     console.log(
       `[AUDIT] Importação bulk (empresas+funcionários): ${result.empresasCriadas} empresas criadas, ` +
-        `${result.empresasExistentes} existentes, ${result.funcionariosCriados} funcionários criados, ` +
+        `${result.empresasExistentes} existentes, ${result.empresasNomeAtualizados} nomes atualizados, ${result.funcionariosCriados} funcionários criados, ` +
         `${result.funcionariosVinculados} vinculados. Clínica ${clinicaId} por ${maskedCpf}`
     );
 
@@ -350,6 +374,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       success: true,
       empresas_criadas: result.empresasCriadas,
       empresas_existentes: result.empresasExistentes,
+      empresas_nome_atualizados: result.empresasNomeAtualizados,
       funcionarios_criados: result.funcionariosCriados,
       funcionarios_vinculados: result.funcionariosVinculados,
       total_linhas: toInsert.length,
