@@ -14,6 +14,19 @@ import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Retorna true se o nome da empresa é um placeholder gerado automaticamente
+ * pelo sistema quando a planilha não continha o nome.
+ * Padrões reconhecidos:
+ *   "Empresa 12.345.678/0001-99"  (gerado por cnpjFmtFallback)
+ *   "Empresa Desconhecida"         (gerado quando sem CNPJ)
+ */
+function isNomePlaceholder(nome: string): boolean {
+  if (nome === 'Empresa Desconhecida') return true;
+  if (/^Empresa \d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(nome)) return true;
+  return false;
+}
+
 /** Normaliza valor bruto da coluna nivel_cargo para o enum do sistema */
 function normalizarNivelCargo(raw: string): 'gestao' | 'operacional' | null {
   const v = raw
@@ -147,6 +160,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       let empresasCriadas = 0;
       let empresasExistentes = 0;
       let empresasBloqueadas = 0;
+      let empresasNomeAtualizados = 0;
       let funcionariosCriados = 0;
       let funcionariosAtualizados = 0;
       let nivelCargoAlterados = 0;
@@ -189,7 +203,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (cnpj) {
           // Busca global por CNPJ — constraint é única globalmente (não por clinica_id)
           const empresaExist = await client.query(
-            'SELECT id, clinica_id FROM empresas_clientes WHERE cnpj = $1',
+            'SELECT id, clinica_id, nome FROM empresas_clientes WHERE cnpj = $1',
             [cnpj]
           );
 
@@ -199,6 +213,19 @@ export async function POST(request: Request): Promise<NextResponse> {
               // Mesma clínica — reutilizar
               empresaId = empresaRow.id as number;
               empresasExistentes++;
+              // Atualizar nome se o banco tem placeholder e o import traz nome real
+              const nomeNovo = nomeRaw.trim();
+              if (
+                nomeNovo &&
+                isNomePlaceholder(empresaRow.nome as string) &&
+                !isNomePlaceholder(nomeNovo)
+              ) {
+                await client.query(
+                  'UPDATE empresas_clientes SET nome = $1, atualizado_em = NOW() WHERE id = $2',
+                  [nomeNovo, empresaId]
+                );
+                empresasNomeAtualizados++;
+              }
             } else {
               // Outra clínica — bloquear todos os funcionários desta empresa
               empresasBloqueadas++;
@@ -553,6 +580,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         empresasCriadas,
         empresasExistentes,
         empresasBloqueadas,
+        empresasNomeAtualizados,
         funcionariosCriados,
         funcionariosAtualizados,
         nivelCargoAlterados,
@@ -583,6 +611,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           empresasCriadas: result.empresasCriadas,
           empresasExistentes: result.empresasExistentes,
           empresasBloqueadas: result.empresasBloqueadas,
+          empresasNomeAtualizados: result.empresasNomeAtualizados,
           funcionariosCriados: result.funcionariosCriados,
           funcionariosAtualizados: result.funcionariosAtualizados,
           nivelCargoAlterados: result.nivelCargoAlterados,

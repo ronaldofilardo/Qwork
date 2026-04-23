@@ -92,6 +92,7 @@ interface ExecuteData {
     vinculosAtualizados: number;
     inativacoesRealizadas: number;
     empresasBloqueadas: number;
+    empresasNomeAtualizados?: number;
   };
   erros: Array<{ linha?: number; campo?: string; mensagem: string }>;
   avisos: Array<{ linha?: number; campo?: string; mensagem: string }>;
@@ -524,6 +525,7 @@ export default function ImportacaoPage() {
             empresas_criadas: executeData.resumo.empresasCriadas,
             empresas_existentes: executeData.resumo.empresasExistentes,
             empresas_bloqueadas: executeData.resumo.empresasBloqueadas,
+            empresas_nome_atualizados: executeData.resumo.empresasNomeAtualizados,
             funcionarios_criados: executeData.resumo.funcionariosCriados,
             funcionarios_atualizados:
               executeData.resumo.funcionariosAtualizados,
