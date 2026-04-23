@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import RadioScale from "./RadioScale";
-import { GrupoAvaliacao } from "@/lib/questoes";
+import RadioScale from './RadioScale';
+import { GrupoAvaliacao } from '@/lib/questoes';
 
 interface FormGroupProps {
   grupo: GrupoAvaliacao;
@@ -9,7 +9,7 @@ interface FormGroupProps {
   onChange: (itemId: string, valor: number) => void;
 }
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 
 export default function FormGroup({
   grupo,
@@ -24,7 +24,7 @@ export default function FormGroup({
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       {/* Cabeçalho do Grupo */}
-      <div className="bg-black px-6 py-6 sm:px-8 sm:py-8">
+      <div className="bg-[#2D2D2D] px-6 py-6 sm:px-8 sm:py-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl sm:text-2xl font-normal text-white">
             {grupo.titulo}
@@ -68,7 +68,7 @@ export default function FormGroup({
             />
           </div>
           <span className="text-white/90 text-sm font-normal whitespace-nowrap">
-            {grupo.itens.filter((item) => respostas.has(item.id)).length} de{" "}
+            {grupo.itens.filter((item) => respostas.has(item.id)).length} de{' '}
             {grupo.itens.length}
           </span>
         </div>
@@ -88,8 +88,8 @@ export default function FormGroup({
                 relative
                 ${
                   desabilitada
-                    ? "opacity-40 pointer-events-none select-none bg-gray-50"
-                    : "bg-white"
+                    ? 'opacity-40 pointer-events-none select-none bg-gray-50'
+                    : 'bg-white'
                 }
               `}
             >

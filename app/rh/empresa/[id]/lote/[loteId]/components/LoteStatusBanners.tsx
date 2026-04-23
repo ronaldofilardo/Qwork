@@ -2,6 +2,16 @@
 
 import React from 'react';
 import toast from 'react-hot-toast';
+import {
+  XCircle,
+  CheckCircle2,
+  CreditCard,
+  ClipboardList,
+  Download,
+  Lock,
+  Copy,
+  SendHorizontal,
+} from 'lucide-react';
 import { formatDate } from '@/lib/lote/utils';
 import type { LoteInfo, Estatisticas } from '../types';
 
@@ -32,7 +42,7 @@ export default function LoteStatusBanners({
           <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl">🚫</span>
+                <XCircle className="w-6 h-6 text-red-600" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-red-900 mb-1">
@@ -55,7 +65,7 @@ export default function LoteStatusBanners({
           <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
             <div className="flex items-start gap-3 mb-3">
               <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl">✅</span>
+                <CheckCircle2 className="w-6 h-6 text-green-600" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 mb-1">
@@ -71,7 +81,7 @@ export default function LoteStatusBanners({
               onClick={solicitarEmissao}
               className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-semibold text-base flex items-center justify-center gap-2 shadow-md"
             >
-              <span className="text-xl">🚀</span>
+              <SendHorizontal className="w-5 h-5" />
               <span>Solicitar Emissão do Laudo</span>
             </button>
           </div>
@@ -86,7 +96,7 @@ export default function LoteStatusBanners({
             <div className="p-4 bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-300 rounded-lg">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">💳</span>
+                  <CreditCard className="w-6 h-6 text-amber-600" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900 mb-1">
@@ -110,7 +120,7 @@ export default function LoteStatusBanners({
             <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-300 rounded-lg">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">✅</span>
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900 mb-1">
@@ -138,7 +148,7 @@ export default function LoteStatusBanners({
             <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg">
               <div className="flex items-start gap-3">
                 <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-2xl">📋</span>
+                  <ClipboardList className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900 mb-1">
@@ -163,7 +173,7 @@ export default function LoteStatusBanners({
           <div className="p-4 bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-300 rounded-lg">
             <div className="flex items-start gap-3 mb-4">
               <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl">✅</span>
+                <CheckCircle2 className="w-6 h-6 text-emerald-600" />
               </div>
               <div className="flex-1">
                 <h4 className="font-semibold text-gray-900 mb-1">
@@ -188,9 +198,10 @@ export default function LoteStatusBanners({
             {lote.laudo_id && lote.arquivo_remoto_url && (
               <button
                 onClick={downloadLaudo}
-                className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
+                className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium flex items-center justify-center gap-2"
               >
-                📄 Ver Laudo / Baixar PDF
+                <Download className="w-4 h-4" />
+                Ver Laudo / Baixar PDF
               </button>
             )}
 
@@ -198,8 +209,9 @@ export default function LoteStatusBanners({
             {lote.hash_pdf && (
               <div className="bg-white p-3 rounded-lg border border-purple-200">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-purple-800 uppercase">
-                    🔒 Hash de Integridade (SHA-256)
+                  <span className="text-xs font-semibold text-purple-800 uppercase flex items-center gap-1">
+                    <Lock className="w-3 h-3" />
+                    Hash de Integridade (SHA-256)
                   </span>
                   <button
                     onClick={(e) => {
@@ -211,7 +223,8 @@ export default function LoteStatusBanners({
                     }}
                     className="inline-flex items-center gap-1 bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
                   >
-                    📋 Copiar
+                    <Copy className="w-3 h-3" />
+                    Copiar
                   </button>
                 </div>
                 <code className="text-[10px] font-mono text-gray-700 break-all block">
