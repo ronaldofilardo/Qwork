@@ -71,7 +71,7 @@ export function getStatusColor(lote: Lote): string {
     case 'rascunho':
       return 'border-gray-500 bg-gray-50';
     case 'ativo':
-      return 'border-orange-500 bg-orange-50';
+      return 'border-amber-500 bg-amber-50';
     case 'concluido':
       return 'border-blue-500 bg-blue-50';
     case 'finalizado':

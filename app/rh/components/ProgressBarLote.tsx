@@ -16,7 +16,7 @@ export default function ProgressBarLote({
   const pct = Math.min(100, Math.max(0, Math.round(percentual)));
 
   const barColor =
-    pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-blue-500' : 'bg-orange-400';
+    pct >= 100 ? 'bg-green-500' : pct >= 50 ? 'bg-blue-500' : 'bg-amber-400';
 
   return (
     <div className={`space-y-1 ${className}`}>

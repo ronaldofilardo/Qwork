@@ -302,6 +302,9 @@ export default function ComercialPage() {
 
   const handleSectionChange = (section: ComercialSection) => {
     setActiveSection(section);
+    if (section === 'representantes') {
+      router.push('/comercial/representantes');
+    }
   };
 
   const fmtBRL = (v: number) =>

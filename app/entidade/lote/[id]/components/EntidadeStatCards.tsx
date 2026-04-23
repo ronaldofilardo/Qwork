@@ -97,7 +97,7 @@ export default function EntidadeStatCards({
 
       <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
         <div className="flex items-center justify-between mb-2">
-          <Clock className="text-orange-500" size={32} />
+          <Clock className="text-amber-500" size={32} />
           <span className="text-3xl font-bold text-gray-900">
             {estatisticas.funcionarios_pendentes}
           </span>

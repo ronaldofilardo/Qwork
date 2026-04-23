@@ -909,7 +909,7 @@ export default function DetalhesLotePage() {
 
           <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <Clock className="text-orange-500" size={32} />
+              <Clock className="text-amber-500" size={32} />
               <span className="text-3xl font-bold text-gray-900">
                 {estatisticas.funcionarios_pendentes}
               </span>
@@ -1220,25 +1220,53 @@ export default function DetalhesLotePage() {
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Nome</span>
-                      <FiltroColunaLocal coluna="nome" titulo="Nome" filtrosColuna={filtrosColuna} setFiltrosColuna={setFiltrosColuna} getValoresUnicos={getValoresUnicos} toggleFiltroColuna={toggleFiltroColuna} />
+                      <FiltroColunaLocal
+                        coluna="nome"
+                        titulo="Nome"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>CPF</span>
-                      <FiltroColunaLocal coluna="cpf" titulo="CPF" filtrosColuna={filtrosColuna} setFiltrosColuna={setFiltrosColuna} getValoresUnicos={getValoresUnicos} toggleFiltroColuna={toggleFiltroColuna} />
+                      <FiltroColunaLocal
+                        coluna="cpf"
+                        titulo="CPF"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Nível</span>
-                      <FiltroColunaLocal coluna="nivel_cargo" titulo="Nível" filtrosColuna={filtrosColuna} setFiltrosColuna={setFiltrosColuna} getValoresUnicos={getValoresUnicos} toggleFiltroColuna={toggleFiltroColuna} />
+                      <FiltroColunaLocal
+                        coluna="nivel_cargo"
+                        titulo="Nível"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Status</span>
-                      <FiltroColunaLocal coluna="status" titulo="Status" filtrosColuna={filtrosColuna} setFiltrosColuna={setFiltrosColuna} getValoresUnicos={getValoresUnicos} toggleFiltroColuna={toggleFiltroColuna} />
+                      <FiltroColunaLocal
+                        coluna="status"
+                        titulo="Status"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-28">

@@ -221,10 +221,10 @@ export default function PendenciasSection({
           const vencida = diasRestantes < 0;
           return (
             <div
-              className={`rounded-lg border p-4 flex items-start gap-3 ${vencida ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-200'}`}
+              className={`rounded-lg border p-4 flex items-start gap-3 ${vencida ? 'bg-red-50 border-red-300' : 'bg-amber-50 border-amber-200'}`}
             >
               <Wrench
-                className={`w-5 h-5 mt-0.5 flex-shrink-0 ${vencida ? 'text-red-600' : 'text-orange-600'}`}
+                className={`w-5 h-5 mt-0.5 flex-shrink-0 ${vencida ? 'text-red-600' : 'text-amber-600'}`}
               />
               <div>
                 <p

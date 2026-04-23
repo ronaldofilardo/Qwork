@@ -217,3 +217,65 @@ pnpm test:e2e
 - Preserve acessibilidade, responsividade e consistência visual ao tocar UI.
 - Em áreas sensíveis, prefira evidência e verificação a suposições.
 - Ao tocar o middleware, valide se as rotas públicas e o mapa de roles continuam corretos.
+
+---
+
+## AI Skills de Design e Qualidade
+
+Skills instaladas em `.agents/skills/`. Lidas automaticamente por Cursor, Claude Code e GitHub Copilot.
+
+### Como usar no chat (VS Code Copilot / Claude Code)
+
+**Taste Skill — design anti-slop (ativa ao gerar UI)**
+Basta pedir: `"cria um componente de tabela com Taste Skill"` ou `"use design-taste-frontend"`
+
+**Impeccable — 18 comandos explícitos de design:**
+
+| Comando | O que faz | Quando usar |
+|---------|-----------|-------------|
+| `/audit <area>` | Detecta issues A11y, performance, responsive | Antes de qualquer mudança visual |
+| `/critique <area>` | Revisão UX: hierarchy, clarity, resonance | Quando quiser feedback de design |
+| `/normalize <area>` | Alinha com design system | Após audit, para fixar inconsistências |
+| `/polish <area>` | Último passo antes de deploy | Antes de mergear feature visual |
+| `/distill <area>` | Remove complexidade | Quando UI está sobrecarregada |
+| `/clarify <area>` | Melhora UX copy e mensagens | Em forms, erros, empty states |
+| `/harden <area>` | Error handling, edge cases, i18n | Em fluxos críticos |
+| `/animate <area>` | Adiciona motion intencional | Quando precisar de transições |
+| `/colorize <area>` | Introdução estratégica de cor | Dashboard monocromático |
+| `/typeset <area>` | Corrige hierarquia de fontes | Quando titulação estiver confusa |
+| `/layout <area>` | Corrige spacing e ritmo | Quando alinhamento estiver irregular |
+| `/bolder <area>` | Amplifica designs fracos | Quando UI estiver "sem personalidade" |
+| `/quieter <area>` | Reduz excesso visual | Quando houver muito ruído visual |
+
+Combinado: `/audit /normalize /polish components/lotes`
+
+**Impeccable CLI (sem agent, detecta anti-patterns no código):**
+```bash
+npx impeccable detect app/          # escanear diretório
+npx impeccable detect app/rh        # focar em área
+npx impeccable detect --json app/   # output JSON para CI
+```
+
+### Regras de design obrigatórias (Taste Skill)
+
+- Nunca usar `Inter` como fonte. Usar Geist, Outfit, Cabinet Grotesk ou Satoshi.
+- Nunca usar fundo puro `#000000`. Usar zinc-950 ou charcoal tintado.
+- Nunca gradientes purple/blue "AI aesthetic". Usar neutrals + 1 accent.
+- Nunca `h-screen`. Usar `min-h-[100dvh]` (iOS Safari viewport bug).
+- Nunca emojis em código. Substituir por ícones Phosphor/Radix.
+- Animações: spring physics (`stiffness: 100, damping: 20`), nunca linear.
+- Motion: animar somente `transform` e `opacity`.
+- Loading, empty e error states são **obrigatórios** em componentes interativos.
+
+### Code Review automático (GitHub PRs)
+
+Configurar em: `claude.ai/admin-settings/claude-code`
+
+```
+Comentar na PR:
+  @claude review       — review + subscribe pushes futuras
+  @claude review once  — review única sem subscribe
+```
+
+Regras customizadas em: `REVIEW.md`
+Para re-instalar skills: `scripts/setup-skills.bat` (Windows) ou `bash scripts/setup-skills.sh`

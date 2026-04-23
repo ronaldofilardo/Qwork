@@ -1,5 +1,7 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import PWAInitializer from '@/components/PWAInitializer';
 import ConditionalHeader from '@/components/ConditionalHeader';
 import { Toaster } from 'react-hot-toast';
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: '#000000',
+  themeColor: '#2D2D2D',
 };
 
 export default async function RootLayout({
@@ -34,17 +36,17 @@ export default async function RootLayout({
   await Promise.resolve(); // Satisfaz require-await
 
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <head>
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#2D2D2D" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body>
+      <body className="font-sans">
         <QueryClientProvider>
           <div className="qw-content-area min-h-screen bg-white">
             <PWAInitializer />

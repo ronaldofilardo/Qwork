@@ -233,20 +233,20 @@ describe('EmpresasTable — diferencia "pago — aguard. emissão" de "emitido(s
     src = readSrc('app/rh/components/EmpresasTable.tsx');
   });
 
-  it('campo pago usa label "pago — aguard. emissão"', () => {
-    expect(src).toContain('pago — aguard. emissão');
+  it('campo pago usa label "pago - aguard. emissao (geral)"', () => {
+    expect(src).toContain('pago - aguard. emissao');
   });
 
   it('campo pago usa cor teal, não verde', () => {
     expect(src).toMatch(/text-teal-600/);
   });
 
-  it('campo laudo_emitido usa label "disponível(eis)" com cor verde', () => {
+  it('campo laudo_emitido usa label "disponivel(eis) (geral)"', () => {
     expect(src).toMatch(/laudo_emitido\s*>/);
-    expect(src).toContain('disponível(eis)');
+    expect(src).toContain('disponivel(eis)');
     // O text-green-600 deve estar associado ao laudo_emitido, não ao pago
     const emitidoBlock = src.match(
-      /laudos_status\.laudo_emitido[\s\S]{0,200}disponível\(eis\)/
+      /laudos_status\.laudo_emitido[\s\S]{0,200}disponivel\(eis\)/
     );
     expect(emitidoBlock).not.toBeNull();
   });
@@ -324,7 +324,7 @@ describe('LoteStatusBanners (detalhe RH) — banners por status_pagamento', () =
       /status_pagamento\s*===\s*['"]aguardando_pagamento['"]/
     );
     expect(src).toContain('Aguardando Pagamento');
-    expect(src).toMatch(/bg-orange-50|from-orange-50/);
+    expect(src).toMatch(/bg-amber-50|from-amber-50|bg-amber-100|to-amber-100/);
   });
 
   it('renderiza banner "Pagamento Confirmado — Aguardando Emissão" para status pago', () => {

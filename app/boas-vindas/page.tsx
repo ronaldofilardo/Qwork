@@ -108,7 +108,7 @@ export default function BoasVindasPage() {
                   </div>
                   <button
                     onClick={() => copiarParaClipboard(login || '', 'login')}
-                    className="px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition flex items-center gap-2"
+                    className="px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition flex items-center gap-2"
                   >
                     <Copy className="w-5 h-5" />
                     <span className="hidden sm:inline">
@@ -144,7 +144,7 @@ export default function BoasVindasPage() {
                   </button>
                   <button
                     onClick={() => copiarParaClipboard(senha || '', 'senha')}
-                    className="px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition flex items-center gap-2"
+                    className="px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition flex items-center gap-2"
                   >
                     <Copy className="w-5 h-5" />
                     <span className="hidden sm:inline">
@@ -184,19 +184,19 @@ export default function BoasVindasPage() {
               <p className="text-center text-gray-600 mb-4">Próximas ações:</p>
               <ol className="space-y-2 text-sm text-gray-700 mb-6">
                 <li className="flex gap-3">
-                  <span className="font-bold text-orange-500 flex-shrink-0">
+                  <span className="font-bold text-accent-hover flex-shrink-0">
                     1.
                   </span>
                   <span>Guarde suas credenciais com segurança</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="font-bold text-orange-500 flex-shrink-0">
+                  <span className="font-bold text-accent-hover flex-shrink-0">
                     2.
                   </span>
                   <span>Acesse o sistema quando realizar avaliações</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="font-bold text-orange-500 flex-shrink-0">
+                  <span className="font-bold text-accent-hover flex-shrink-0">
                     3.
                   </span>
                   <span>Solicite a emissão de laudos quando necessário</span>
@@ -209,14 +209,14 @@ export default function BoasVindasPage() {
                   <p className="text-gray-600 text-sm mb-2">
                     Redirecionando para login em:
                   </p>
-                  <div className="text-4xl font-bold text-orange-600">
+                  <div className="text-4xl font-bold text-primary">
                     {tempo}
                   </div>
                 </div>
               ) : (
                 <button
                   onClick={() => router.push('/login')}
-                  className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition font-bold flex items-center justify-center gap-2"
+                  className="w-full px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition font-bold flex items-center justify-center gap-2"
                 >
                   <LogIn className="w-5 h-5" />
                   Ir para Login Agora
@@ -232,7 +232,7 @@ export default function BoasVindasPage() {
             Dúvidas? Entre em contato{' '}
             <a
               href="mailto:suporte@qwork.com.br"
-              className="text-orange-500 hover:underline"
+              className="text-accent-hover hover:underline"
             >
               conosco
             </a>
