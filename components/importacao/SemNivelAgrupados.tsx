@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import type { FuncaoNivelInfo, NivelCargo } from './NivelCargoStep';
 
 interface SemNivelAgrupadosProps {
@@ -130,28 +130,35 @@ export default function SemNivelAgrupados({
                         definido
                       </p>
                     </div>
-                    {nivel && (
-                      <div className="flex-shrink-0 ml-4 flex items-center gap-2">
-                        {nivel === 'gestao' ? (
-                          <>
-                            <CheckCircle
-                              size={14}
-                              className="text-purple-600"
-                            />
-                            <span className="text-xs font-medium text-purple-700">
-                              Gestão
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle size={14} className="text-blue-600" />
-                            <span className="text-xs font-medium text-blue-700">
-                              Operacional
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    )}
+                    <div className="flex gap-1.5 flex-shrink-0 ml-4">
+                      <button
+                        onClick={() =>
+                          onChange(funcao, nivel === 'gestao' ? '' : 'gestao')
+                        }
+                        className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                          nivel === 'gestao'
+                            ? 'bg-purple-600 text-white border-purple-600'
+                            : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                        }`}
+                      >
+                        G
+                      </button>
+                      <button
+                        onClick={() =>
+                          onChange(
+                            funcao,
+                            nivel === 'operacional' ? '' : 'operacional'
+                          )
+                        }
+                        className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                          nivel === 'operacional'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        O
+                      </button>
+                    </div>
                   </div>
 
                   {nomes.length > 0 && (
@@ -166,45 +173,6 @@ export default function SemNivelAgrupados({
                       ))}
                     </div>
                   )}
-
-                  <div className="border-t border-gray-100 pt-3">
-                    <p className="text-xs text-gray-700 mb-2 font-semibold">
-                      {semFuncao ? (
-                        'Qual nível para funcionários sem função definida?'
-                      ) : (
-                        <>Qual nível para &ldquo;{funcao}&rdquo;?</>
-                      )}
-                    </p>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() =>
-                          onChange(funcao, nivel === 'gestao' ? '' : 'gestao')
-                        }
-                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
-                          nivel === 'gestao'
-                            ? 'bg-purple-600 text-white border-purple-600'
-                            : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-                        }`}
-                      >
-                        G — Gestão
-                      </button>
-                      <button
-                        onClick={() =>
-                          onChange(
-                            funcao,
-                            nivel === 'operacional' ? '' : 'operacional'
-                          )
-                        }
-                        className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
-                          nivel === 'operacional'
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                        }`}
-                      >
-                        O — Operacional
-                      </button>
-                    </div>
-                  </div>
                 </div>
               );
             })}
