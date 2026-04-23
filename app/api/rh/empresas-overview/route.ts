@@ -27,6 +27,7 @@ export interface LoteAtualInfo {
   id: number;
   numero_ordem: number;
   status: LoteStatusTipo;
+  status_pagamento: StatusPagamentoTipo;
   percentual_conclusao: number;
   total_avaliacoes: number;
   avaliacoes_concluidas: number;
@@ -123,6 +124,7 @@ interface EmpresaRow {
   laudos_laudo_emitido: number | null;
   // Flag do lote atual
   lote_atual_tem_laudo_emitido: boolean | null;
+  lote_atual_status_pagamento: string | null;
   // Elegibilidade: determinada em memória com base nos lotes
   // (count de funcionários elegíveis via subquery já calculada)
   count_elegiveis: number | null;
@@ -236,6 +238,7 @@ export async function GET(request: NextRequest) {
         la_atual.liberado_em::text        AS lote_liberado_em,
         la_atual.liberado_por             AS lote_liberado_por,
         la_atual.tem_laudo_emitido        AS lote_atual_tem_laudo_emitido,
+        la_atual.status_pagamento::text   AS lote_atual_status_pagamento,
 
         -- Lote anterior (numero_ordem - 1)
         la_ant.id                         AS lote_ant_id,
@@ -399,6 +402,8 @@ export async function GET(request: NextRequest) {
             liberado_em: row.lote_liberado_em,
             liberado_por: row.lote_liberado_por,
             tem_laudo_emitido: row.lote_atual_tem_laudo_emitido ?? false,
+            status_pagamento:
+              (row.lote_atual_status_pagamento as StatusPagamentoTipo) ?? null,
           }
         : null;
 

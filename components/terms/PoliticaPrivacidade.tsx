@@ -195,7 +195,7 @@ export default function PoliticaPrivacidade() {
             e-mail <strong>privacidade@qwork.com.br</strong> ou pelo canal de
             atendimento disponível na plataforma.
           </p>
-          <blockquote className="border-l-4 border-orange-500 pl-4 italic text-gray-600 mt-3">
+          <blockquote className="border-l-4 border-accent pl-4 italic text-gray-600 mt-3">
             ⚠️ <strong>Observação importante:</strong> A exclusão de dados pode
             inviabilizar o cumprimento de obrigações legais (NR-7) e a prestação
             dos serviços contratados. Avalie cuidadosamente antes de solicitar.
@@ -298,7 +298,7 @@ export default function PoliticaPrivacidade() {
           </ul>
         </section>
 
-        <section className="bg-gray-50 p-4 rounded-lg border-l-4 border-orange-500 mt-8">
+        <section className="bg-gray-50 p-4 rounded-lg border-l-4 border-accent mt-8">
           <p className="font-semibold text-gray-900">
             ✅ Ao aceitar esta Política de Privacidade, você declara ter lido,
             compreendido e concordado com todos os termos aqui descritos.

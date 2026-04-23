@@ -145,7 +145,7 @@ export default function ResetarSenhaForm() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-gray-500">Validando link...</p>
         </div>
       </div>
@@ -167,7 +167,7 @@ export default function ResetarSenhaForm() {
           </p>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center w-full px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+            className="inline-flex items-center justify-center w-full px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary-hover transition-colors"
           >
             Ir para o Login
           </Link>
@@ -236,14 +236,14 @@ export default function ResetarSenhaForm() {
         </div>
 
         <div className="mb-6 text-center">
-          <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <ShieldCheck className="w-6 h-6 text-orange-600" />
+          <div className="w-12 h-12 bg-accent/15 rounded-full flex items-center justify-center mx-auto mb-3">
+            <ShieldCheck className="w-6 h-6 text-accent-hover" />
           </div>
           <h1 className="text-xl font-semibold text-gray-900">Criar nova senha</h1>
           <p className="text-sm text-gray-500 mt-1">
             Olá, <span className="font-medium text-gray-700">{nome}</span>
           </p>
-          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-orange-50 text-orange-700 rounded-full">
+          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-accent/15 text-accent-hover rounded-full">
             {perfilLabel}
           </span>
         </div>
@@ -260,7 +260,7 @@ export default function ResetarSenhaForm() {
                 type={mostrarSenha ? 'text' : 'password'}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                className="w-full pl-9 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-9 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 placeholder="Mínimo 8 caracteres"
                 autoComplete="new-password"
                 required
@@ -286,7 +286,7 @@ export default function ResetarSenhaForm() {
                 type={mostrarConfirmacao ? 'text' : 'password'}
                 value={confirmacao}
                 onChange={(e) => setConfirmacao(e.target.value)}
-                className="w-full pl-9 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-9 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 placeholder="Repita a senha"
                 autoComplete="new-password"
                 required
@@ -347,7 +347,7 @@ export default function ResetarSenhaForm() {
           <button
             type="submit"
             disabled={!todasAtendidas || enviando}
-            className="w-full py-2.5 bg-orange-500 text-white rounded-lg font-medium text-sm hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-2.5 bg-primary text-white rounded-lg font-medium text-sm hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {enviando ? 'Salvando...' : 'Salvar nova senha'}
           </button>

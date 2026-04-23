@@ -197,7 +197,7 @@ function StatusBadge({ lote }: { lote: Lote }) {
         : lote.status === 'concluido'
           ? 'bg-blue-100 text-blue-800'
           : lote.status === 'ativo'
-            ? 'bg-orange-100 text-orange-800'
+            ? 'bg-amber-100 text-amber-800'
             : lote.status === 'cancelado'
               ? 'bg-red-100 text-red-800'
               : 'bg-gray-100 text-gray-800';
@@ -436,11 +436,11 @@ function MainActionButton({
       }}
       className={`px-4 py-2 ${
         lote.emissao_automatica
-          ? 'bg-orange-600 hover:bg-orange-700'
+          ? 'bg-primary hover:bg-primary-hover'
           : 'bg-blue-600 hover:bg-blue-700'
       } text-white rounded-md text-sm font-medium focus:outline-none focus:ring-2 ${
         lote.emissao_automatica
-          ? 'focus:ring-orange-500'
+          ? 'focus:ring-primary'
           : 'focus:ring-blue-500'
       } focus:ring-offset-2 transition-colors flex items-center gap-2`}
     >

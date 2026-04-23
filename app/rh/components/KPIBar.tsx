@@ -29,7 +29,7 @@ export default function KPIBar({ kpi }: KPIBarProps) {
     },
     {
       icon: FileText,
-      iconColor: 'text-orange-500',
+      iconColor: 'text-amber-500',
       value: kpi.total_laudos_pendentes,
       label: 'Laudos Pendentes',
     },

@@ -57,8 +57,8 @@ export default function ContratoRepresentante() {
       </section>
 
       {/* Cláusula 2 */}
-      <section className="mb-6 bg-orange-50 border-l-4 border-orange-500 rounded-r-lg p-4">
-        <h2 className="text-base font-bold text-orange-800 uppercase mb-3">
+      <section className="mb-6 bg-accent/10 border-l-4 border-accent rounded-r-lg p-4">
+        <h2 className="text-base font-bold text-primary uppercase mb-3">
           Cláusula 2 &mdash; Da Natureza da Relação
         </h2>
         <p className="text-gray-700 mb-3">
