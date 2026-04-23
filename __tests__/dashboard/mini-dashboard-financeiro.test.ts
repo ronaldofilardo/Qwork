@@ -116,8 +116,8 @@ describe('2. GET /api/rh/financeiro-resumo', () => {
     expect(src).not.toContain('export async function DELETE');
   });
 
-  it('deve ter revalidate = 300 (cache de 5 minutos)', () => {
-    expect(src).toContain('export const revalidate = 300');
+  it('deve ter revalidate = 0 (sem cache — dados por sessão)', () => {
+    expect(src).toContain('export const revalidate = 0');
   });
 
   it('deve retornar kpis, parcelas e resumo_mensal', () => {
@@ -196,8 +196,8 @@ describe('3. GET /api/entidade/financeiro-resumo', () => {
     expect(src).toContain('queryAsGestorEntidade');
   });
 
-  it('deve ter revalidate = 300', () => {
-    expect(src).toContain('export const revalidate = 300');
+  it('deve ter revalidate = 0 (sem cache)', () => {
+    expect(src).toContain('export const revalidate = 0');
   });
 
   it('deve exportar apenas GET', () => {
