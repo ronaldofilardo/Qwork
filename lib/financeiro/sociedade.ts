@@ -11,6 +11,8 @@ export interface CalcularDistribuicaoSociedadeInput {
   valorTaxaGateway?: number | null;
   valorLiquidoGateway?: number | null;
   metodoPagamento?: string | null;
+  numeroParcelas?: number | null;
+  configuracoes?: ConfiguracaoGateway[] | null;
   percentualSocioRonaldo?: number;
   percentualSocioAntonio?: number;
 }
@@ -50,6 +52,14 @@ export interface ConfiguracaoQWorkSociedade {
   percentualParticipacao: 0;
   ativo: boolean;
   observacoes?: string | null;
+}
+
+export interface ConfiguracaoGateway {
+  codigo: string;
+  descricao: string | null;
+  tipo: 'taxa_fixa' | 'percentual';
+  valor: number;
+  ativo: boolean;
 }
 
 export const PERCENTUAL_IMPOSTOS_PADRAO = 7;
@@ -132,6 +142,8 @@ export function calcularTaxaGateway(input: {
   valorTaxaGateway?: number | null;
   valorLiquidoGateway?: number | null;
   metodoPagamento?: string | null;
+  numeroParcelas?: number | null;
+  configuracoes?: ConfiguracaoGateway[] | null;
 }): {
   valorGateway: number;
   valorLiquidoAposGateway: number;
@@ -139,6 +151,7 @@ export function calcularTaxaGateway(input: {
 } {
   const valorBruto = round2(Math.max(0, Number(input.valorBruto || 0)));
 
+  // 1. Deducao explicita vinda do webhook (maior prioridade)
   const taxaExplicita = Number(input.valorTaxaGateway ?? NaN);
   if (Number.isFinite(taxaExplicita) && taxaExplicita > 0) {
     const valorGateway = round2(clamp(taxaExplicita, 0, valorBruto));
@@ -150,6 +163,7 @@ export function calcularTaxaGateway(input: {
     };
   }
 
+  // 2. Valor liquido vindo do Asaas (net_value)
   const valorLiquidoGateway = Number(input.valorLiquidoGateway ?? NaN);
   if (
     Number.isFinite(valorLiquidoGateway) &&
@@ -165,6 +179,49 @@ export function calcularTaxaGateway(input: {
     };
   }
 
+  // 3. Configuracao dinamica do banco (configuracoes_gateway)
+  if (input.configuracoes?.length) {
+    const metodoNorm = normalizarMetodoPagamento(input.metodoPagamento);
+    const parcelas = Math.max(1, Number(input.numeroParcelas ?? 1));
+
+    let codigoPrincipal: string | null = null;
+    if (metodoNorm === 'boleto') codigoPrincipal = 'boleto';
+    else if (metodoNorm === 'pix') codigoPrincipal = 'pix';
+    else if (metodoNorm === 'credit_card') {
+      if (parcelas <= 1) codigoPrincipal = 'credit_card_1x';
+      else if (parcelas <= 6) codigoPrincipal = 'credit_card_2_6x';
+      else codigoPrincipal = 'credit_card_7_12x';
+    }
+
+    if (codigoPrincipal) {
+      const configPrincipal = input.configuracoes.find(
+        (c) => c.codigo === codigoPrincipal && c.ativo
+      );
+      const configTransacao = input.configuracoes.find(
+        (c) => c.codigo === 'taxa_transacao' && c.ativo
+      );
+
+      if (configPrincipal) {
+        const taxaPrincipal =
+          configPrincipal.tipo === 'taxa_fixa'
+            ? configPrincipal.valor
+            : round2(valorBruto * (configPrincipal.valor / 100));
+        const taxaTransacao =
+          configTransacao?.tipo === 'taxa_fixa' ? configTransacao.valor : 0;
+        const valorGateway = round2(
+          clamp(taxaPrincipal + taxaTransacao, 0, valorBruto)
+        );
+        return {
+          valorGateway,
+          valorLiquidoAposGateway: round2(valorBruto - valorGateway),
+          percentualGatewayAplicado:
+            valorBruto > 0 ? round2((valorGateway / valorBruto) * 100) : 0,
+        };
+      }
+    }
+  }
+
+  // 4. Percentual explicito / 5. Fallback de env vars
   const percentualGateway = clamp(
     Number(
       input.percentualGateway ??
@@ -213,6 +270,8 @@ export function calcularDistribuicaoSociedade(
     valorTaxaGateway: input.valorTaxaGateway,
     valorLiquidoGateway: input.valorLiquidoGateway,
     metodoPagamento: input.metodoPagamento,
+    numeroParcelas: input.numeroParcelas,
+    configuracoes: input.configuracoes,
   });
   const baseLiquida = round2(
     Math.max(0, valorBruto - valorImpostos - valorGateway)
@@ -247,7 +306,12 @@ export function calcularDistribuicaoSociedade(
     };
   }
 
-  const valorComercial = round2(margemLivre * (percentualComercial / 100));
+  // Modelo percentual: comercial incide sobre baseLiquida (mesma base do representante)
+  // Modelo custo_fixo: comercial incide sobre margemLivre (o que sobra do custo fixo)
+  const valorComercial =
+    input.modeloRepresentante === 'percentual'
+      ? round2(baseLiquida * (percentualComercial / 100))
+      : round2(margemLivre * (percentualComercial / 100));
   const valorParaSocios = round2(margemLivre - valorComercial);
   const somaParticipacao = percentualSocioRonaldo + percentualSocioAntonio;
 
