@@ -8,7 +8,10 @@ import {
   validarTelefone,
   validarEmail,
 } from '@/lib/validators';
-import { type TipoCliente } from '@/lib/leads-config';
+import {
+  type TipoCliente,
+  valorMinimoCustoFixoTotal,
+} from '@/lib/leads-config';
 import type { Lead, NovoLeadForm, ErrosCampos } from '../types';
 
 interface RepMe {
@@ -191,13 +194,28 @@ export function useLeads() {
     setNovoForm((p) => ({ ...p, tipo_cliente: tipo }));
   };
 
+  const custoFixoRep =
+    modeloComissionamento === 'custo_fixo'
+      ? novoForm.tipo_cliente === 'entidade'
+        ? valorCustoFixoEntidade
+        : valorCustoFixoClinica
+      : null;
+
+  const custoFixoInvalido =
+    modeloComissionamento === 'custo_fixo' &&
+    custoFixoRep !== null &&
+    valorNegociadoNum > 0 &&
+    valorNegociadoNum <
+      valorMinimoCustoFixoTotal(novoForm.tipo_cliente, custoFixoRep);
+
   const formValido =
     normalizeCNPJ(novoForm.cnpj).length === 14 &&
     validarCNPJ(normalizeCNPJ(novoForm.cnpj)) &&
     !errosCampos.contato_email &&
     !errosCampos.contato_telefone &&
     valorNegociadoNum > 0 &&
-    numVidasEstimadoNum > 0;
+    numVidasEstimadoNum > 0 &&
+    !custoFixoInvalido;
 
   const criarLead = async (e: React.FormEvent) => {
     e.preventDefault();

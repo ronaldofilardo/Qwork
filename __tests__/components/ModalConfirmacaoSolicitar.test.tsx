@@ -6,7 +6,7 @@
  * 2. Não renderiza quando isOpen=false
  * 3. Exibe dados de contato do gestor (email e celular)
  * 4. Exibe aviso quando dados de contato estão ausentes
- * 5. Exibe prazo de 24 horas úteis
+ * 5. Exibe seção de cobrança no dashboard (substituiu Prazo de Retorno legado)
  * 6. Exibe email fixo da plataforma
  * 7. Callback onClose é chamado ao clicar em "Entendi, Fechar"
  * 8. Callback onClose é chamado ao clicar no backdrop
@@ -104,17 +104,32 @@ describe('ModalConfirmacaoSolicitar', () => {
   });
 
   // ────────────────────────────────────────────────────────────────
-  // 3. Prazo e email da plataforma
+  // 3. Cobrança no dashboard (substituiu "Prazo de Retorno" legácio)
   // ────────────────────────────────────────────────────────────────
 
-  it('deve exibir prazo de 24 horas úteis', () => {
+  it('deve exibir seção de cobrança no dashboard', () => {
     render(<ModalConfirmacaoSolicitar {...defaultProps} />);
-    expect(screen.getByText(/24 horas úteis/)).toBeInTheDocument();
+    expect(screen.getByText(/Como funciona a cobrança/i)).toBeInTheDocument();
   });
 
-  it('deve exibir menção ao horário comercial', () => {
+  it('deve mencionar Informações da Conta como destino de pagamentos', () => {
     render(<ModalConfirmacaoSolicitar {...defaultProps} />);
-    expect(screen.getByText(/horário comercial/)).toBeInTheDocument();
+    expect(screen.getByText(/Informações da Conta/i)).toBeInTheDocument();
+  });
+
+  it('não deve exibir texto de proposta comercial (legácio)', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} />);
+    expect(screen.queryByText(/proposta comercial/i)).not.toBeInTheDocument();
+  });
+
+  it('não deve exibir Prazo de Retorno (legácio)', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} />);
+    expect(screen.queryByText(/Prazo de Retorno/i)).not.toBeInTheDocument();
+  });
+
+  it('não deve exibir texto de 24 horas úteis (legácio)', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} />);
+    expect(screen.queryByText(/24 horas úteis/i)).not.toBeInTheDocument();
   });
 
   it('deve exibir o email fixo da plataforma', () => {

@@ -7,6 +7,7 @@ import {
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
   calcularComissaoCustoFixo,
+  valorMinimoCustoFixoTotal,
 } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 import type { NovoLeadForm, ErrosCampos } from '../types';
@@ -96,12 +97,13 @@ export default function NovoLeadModal({
 
   const percentualTotal = percRep + percComercial;
 
-  // Block submit for custo_fixo when value is below custo_fixo
+  // Block submit for custo_fixo when value is below minimum (custoFixoRep + CUSTO_POR_AVALIACAO[tipo])
   const custoFixoInvalido =
     modeloComissionamento === 'custo_fixo' &&
     custoFixoRep !== null &&
     valorNegociadoNum > 0 &&
-    valorNegociadoNum < custoFixoRep;
+    valorNegociadoNum <
+      valorMinimoCustoFixoTotal(novoForm.tipo_cliente, custoFixoRep);
   return (
     <div
       className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
@@ -434,8 +436,14 @@ export default function NovoLeadModal({
                       className="text-red-600 shrink-0 mt-0.5"
                     />
                     <p className="text-red-800 text-xs">
-                      Valor negociado inferior ao custo fixo (
-                      {fmtBRL(custoFixoRep)}). Ajuste o valor para continuar.
+                      Valor negociado inferior ao mínimo de{' '}
+                      {fmtBRL(
+                        valorMinimoCustoFixoTotal(
+                          novoForm.tipo_cliente,
+                          custoFixoRep!
+                        )
+                      )}
+                      . Ajuste o valor para continuar.
                     </p>
                   </div>
                 )}

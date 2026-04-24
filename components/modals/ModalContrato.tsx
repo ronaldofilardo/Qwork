@@ -116,8 +116,8 @@ export default function ModalContrato({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-2 sm:p-4">
+      <div className="bg-white rounded-xl shadow-xl w-full sm:max-w-2xl max-h-[95dvh] sm:max-h-[88vh] flex flex-col relative">
         {/* Overlay de processamento — bloqueia toda interação */}
         {processando && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 rounded-lg gap-4">
@@ -127,48 +127,57 @@ export default function ModalContrato({
           </div>
         )}
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
-          <div className="flex items-center gap-3">
-            <FileText className="w-6 h-6 text-orange-600" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Contrato de Serviço
-              </h2>
-            </div>
+        <div className="shrink-0 flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b bg-white z-10 rounded-t-xl">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-[#2D2D2D]" />
+            <h2 className="text-base sm:text-lg font-bold text-[#2D2D2D]">
+              Contrato de Serviço
+            </h2>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
+            className="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors"
           >
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        {/* Conteúdo */}
-        <div className="p-6">
+        {/* Corpo — scroll principal do modal */}
+        <div
+          data-testid="contrato-content"
+          ref={contentRef}
+          onScroll={() => {
+            if (!contentRef.current) return;
+            const el = contentRef.current;
+            const atEnd =
+              el.scrollTop + el.clientHeight >= el.scrollHeight - 10;
+            setScrolledToEnd(atEnd);
+          }}
+          className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 flex flex-col gap-4"
+        >
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-orange-600" />
             </div>
           ) : erro ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+            <div className="p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
               {erro}
             </div>
           ) : contrato ? (
             <>
               {/* Dados da Tomadora */}
               {contrato.tomador_nome && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                <div className="p-3 sm:p-4 bg-gray-50 border-l-2 border-[#2D2D2D] rounded-r-lg">
+                  <h3 className="text-xs font-bold text-[#2D2D2D] uppercase tracking-wide mb-1.5">
                     Dados da Contratante
                   </h3>
-                  <div className="space-y-1">
-                    <p className="text-sm text-blue-800">
+                  <div className="space-y-0.5">
+                    <p className="text-sm text-gray-700">
                       <span className="font-medium">Razão Social:</span>{' '}
                       {contrato.tomador_nome}
                     </p>
                     {contrato.tomador_cnpj && (
-                      <p className="text-sm text-blue-800">
+                      <p className="text-sm text-gray-700">
                         <span className="font-medium">CNPJ:</span>{' '}
                         {contrato.tomador_cnpj}
                       </p>
@@ -177,30 +186,9 @@ export default function ModalContrato({
                 </div>
               )}
 
-              {/* Conteúdo do contrato (área rolável com detecção de fim de rolagem) */}
-              <div
-                ref={(_el) => {
-                  /* noop ref placeholder for TS */
-                }}
-                className="bg-gray-50 border border-gray-200 rounded-lg p-0 overflow-hidden"
-              >
-                <div
-                  data-testid="contrato-content"
-                  ref={contentRef}
-                  onScroll={() => {
-                    if (!contentRef.current) return;
-                    const el = contentRef.current;
-                    const atEnd =
-                      el.scrollTop + el.clientHeight >= el.scrollHeight - 10;
-                    setScrolledToEnd(atEnd);
-                  }}
-                  className="max-h-[56vh] overflow-y-auto p-6 text-sm text-gray-800"
-                >
-                  {/* Exibir contrato padrão unificado (texto estático, sem dados dinâmicos) */}
-                  <div className="prose prose-slate max-w-none">
-                    <ContratoPadrao />
-                  </div>{' '}
-                </div>
+              {/* Conteúdo do contrato */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 sm:p-5">
+                <ContratoPadrao />
               </div>
             </>
           ) : (
@@ -211,12 +199,12 @@ export default function ModalContrato({
         </div>
 
         {/* Footer */}
-        <div className="flex flex-col p-6 border-t gap-4">
+        <div className="shrink-0 flex flex-col px-4 sm:px-6 py-3 sm:py-4 border-t gap-3">
           {/* Alerta sobre cobrança de manutenção */}
           {contrato &&
             contrato.tomador_tipo === 'clinica' &&
             !contrato.aceito && (
-              <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+              <div className="p-3 sm:p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
                 <div className="flex items-start">
                   <div className="flex-shrink-0">
                     <svg
@@ -248,7 +236,10 @@ export default function ModalContrato({
             )}
 
           {/* Checkbox de aceite */}
-          <div className="flex items-center gap-3">
+          <label
+            htmlFor="aceite-contrato"
+            className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none transition-colors"
+          >
             <input
               id="aceite-contrato"
               data-testid="aceite-checkbox"
@@ -256,19 +247,21 @@ export default function ModalContrato({
               checked={aceiteChecked}
               onChange={(e) => setAceiteChecked(e.target.checked)}
               disabled={!scrolledToEnd || loading}
-              className="w-4 h-4"
+              className="mt-0.5 w-4 h-4 accent-[#2D2D2D] flex-shrink-0"
             />
-            <label htmlFor="aceite-contrato" className="text-sm text-gray-700">
-              Li e concordo com os termos do contrato (role até o final para
-              habilitar)
-            </label>
-          </div>
+            <span className="text-sm text-gray-700 leading-snug">
+              Li e concordo com os termos do contrato{' '}
+              <span className="text-gray-400">
+                (role até o final para habilitar)
+              </span>
+            </span>
+          </label>
 
           {/* Botões de ação */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3">
             <button
               onClick={onClose}
-              className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+              className="px-5 py-2 text-sm bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
               disabled={loading}
             >
               Fechar
@@ -277,7 +270,7 @@ export default function ModalContrato({
             {!processando && !loading && contrato && !contrato.aceito && (
               <button
                 data-testid="aceitar-button"
-                className="px-6 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] disabled:opacity-50 flex items-center gap-2"
+                className="w-full sm:w-auto px-5 py-2 bg-[#2D2D2D] text-white rounded-lg hover:bg-[#1a1a1a] disabled:opacity-40 flex items-center justify-center gap-2 font-medium text-sm transition-colors"
                 disabled={!scrolledToEnd || !aceiteChecked}
                 onClick={() => {
                   if (!scrolledToEnd) {
