@@ -63,7 +63,12 @@ export async function salvarArquivo(
 
   const { uploadArquivoCadastro } =
     await import('@/lib/storage/cadastro-storage');
-  const result = await uploadArquivoCadastro(buffer, tipo, cnpjLimpo, tipoTomador);
+  const result = await uploadArquivoCadastro(
+    buffer,
+    tipo,
+    cnpjLimpo,
+    tipoTomador
+  );
   return result.path;
 }
 
@@ -224,8 +229,14 @@ export async function handleCadastroTomador(
     if (representanteIdInput && Number(representanteIdInput) > 0) {
       const repIdNum = Number(representanteIdInput);
 
-      const repResult = await txClient.query<{ id: number; nome: string }>(
-        `SELECT id, nome FROM representantes WHERE id = $1 AND status = 'ativo' LIMIT 1`,
+      const repResult = await txClient.query<{
+        id: number;
+        nome: string;
+        percentual_comissao: number | null;
+        percentual_comissao_comercial: number | null;
+      }>(
+        `SELECT id, nome, percentual_comissao, percentual_comissao_comercial
+         FROM representantes WHERE id = $1 AND status = 'ativo' LIMIT 1`,
         [repIdNum]
       );
 
@@ -235,8 +246,13 @@ export async function handleCadastroTomador(
         const leadResult = await txClient.query<{
           id: number;
           valor_negociado: number | null;
+          num_vidas_estimado: number | null;
+          percentual_comissao_representante: number | null;
+          percentual_comissao_comercial: number | null;
         }>(
-          `SELECT id, valor_negociado FROM leads_representante
+          `SELECT id, valor_negociado, num_vidas_estimado,
+                  percentual_comissao_representante, percentual_comissao_comercial
+           FROM leads_representante
            WHERE representante_id = $1
              AND cnpj = $2
              AND status = 'pendente'
@@ -260,15 +276,31 @@ export async function handleCadastroTomador(
             .toISOString()
             .split('T')[0];
 
+          // Percentuais: usar os do lead (negociados) ou fallback para os globais do rep
+          const percRepVinculo =
+            lead?.percentual_comissao_representante ??
+            rep.percentual_comissao ??
+            null;
+          const percComercialVinculo =
+            lead?.percentual_comissao_comercial ??
+            rep.percentual_comissao_comercial ??
+            0;
+
           await txClient.query(
             `INSERT INTO vinculos_comissao (
               representante_id, ${vinculoColuna}, lead_id,
+              percentual_comissao_representante, percentual_comissao_comercial,
+              valor_negociado, num_vidas_estimado,
               data_inicio, data_expiracao, status
-            ) VALUES ($1, $2, $3, $4, $5, 'ativo')`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ativo')`,
             [
               rep.id,
               vinculoValor,
               lead?.id ?? null,
+              percRepVinculo,
+              percComercialVinculo,
+              lead?.valor_negociado ?? null,
+              lead?.num_vidas_estimado ?? null,
               dataInicio,
               dataExpiracao,
             ]

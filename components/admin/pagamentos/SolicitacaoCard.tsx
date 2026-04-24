@@ -16,6 +16,9 @@ import {
   Send,
   Wrench,
   Trash2,
+  TrendingUp,
+  AlertCircle,
+  Info,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { Solicitacao, ParcelaDetalhe } from './types';
