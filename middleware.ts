@@ -1,5 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// ─── Maintenance Mode Check ────────────────────────────────────────────────
+/**
+ * Verifica se o sistema está em modo de manutenção.
+ * Lê variáveis de ambiente:
+ *   - MAINTENANCE_MODE_ENABLED: 'true' | 'false'
+ *   - MAINTENANCE_START: ISO 8601 string (ex: 2026-04-24T18:00:00Z)
+ *   - MAINTENANCE_END: ISO 8601 string (ex: 2026-04-27T08:00:00Z)
+ *
+ * Fallback seguro: retorna false se variáveis malformadas
+ */
+function isUnderMaintenance(): boolean {
+  // Somente ativa em produção (APP_ENV=production)
+  if (process.env.APP_ENV !== 'production') return false;
+
+  const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
+  if (!enabled) return false;
+
+  const startStr = process.env.MAINTENANCE_START;
+  const endStr = process.env.MAINTENANCE_END;
+
+  if (!startStr || !endStr) return false;
+
+  try {
+    const now = new Date();
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+
+    // Validar que as datas são válidas (não NaN)
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return false;
+    }
+
+    return now >= start && now <= end;
+  } catch {
+    return false;
+  }
+}
+
 // ─── Rate Limiting — Dual Strategy (Edge Runtime compatible) ─────────────────
 //
 // Estratégia dupla implementada no Edge (in-memory, sem DB):
@@ -234,6 +272,20 @@ function parseSession(request: NextRequest): MiddlewareSession | null {
 }
 
 export function middleware(request: NextRequest) {
+  // ── MAINTENANCE MODE CHECK — FIRST (before everything else) ──
+  if (isUnderMaintenance()) {
+    const { pathname } = request.nextUrl;
+    
+    // Exceções: /maintenance itself (não redirecionar, deixar renderizar)
+    // e _next/* (assets estáticos necessários para a página)
+    if (pathname === '/maintenance' || pathname.startsWith('/_next/')) {
+      return NextResponse.next();
+    }
+
+    // Redirecionar todos os outros requests para /maintenance
+    return NextResponse.redirect(new URL('/maintenance', request.url));
+  }
+
   // IPs autorizados para acesso admin (lido em tempo de execução)
   const AUTHORIZED_ADMIN_IPS =
     process.env.AUTHORIZED_ADMIN_IPS?.split(',') || [];
