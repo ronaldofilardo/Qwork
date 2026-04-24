@@ -17,6 +17,8 @@ import {
 } from '@/lib/validators';
 import {
   calcularRequerAprovacao,
+  calcularComissaoCustoFixo,
+  valorMinimoCustoFixoTotal,
   CUSTO_POR_AVALIACAO,
 } from '@/lib/leads-config';
 import { NotificationService } from '@/lib/notification-service';
@@ -263,8 +265,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       percentual_comissao: string | null;
       percentual_comissao_comercial: string | null;
       modelo_comissionamento: string | null;
+      valor_custo_fixo_entidade: string | null;
+      valor_custo_fixo_clinica: string | null;
     }>(
-      `SELECT percentual_comissao, percentual_comissao_comercial, modelo_comissionamento
+      `SELECT percentual_comissao, percentual_comissao_comercial, modelo_comissionamento,
+              valor_custo_fixo_entidade, valor_custo_fixo_clinica
        FROM representantes WHERE id = $1`,
       [representanteId]
     );
@@ -287,6 +292,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const valorNeg = data.valor_negociado ?? 0;
+
+    // ── Lógica de custo_fixo: validar mínimo antes de criar lead ─────────────────────────
+    let valorCustoFixoSnapshot: number | null = null;
+    if (modeloCom === 'custo_fixo' && valorNeg > 0) {
+      const custoFixoRaw =
+        data.tipo_cliente === 'entidade'
+          ? repPercentuais.rows[0]?.valor_custo_fixo_entidade
+          : repPercentuais.rows[0]?.valor_custo_fixo_clinica;
+      const valorCustoFixo =
+        custoFixoRaw != null
+          ? Number(custoFixoRaw)
+          : CUSTO_POR_AVALIACAO[data.tipo_cliente];
+      const calc = calcularComissaoCustoFixo(
+        valorNeg,
+        valorCustoFixo,
+        percCom,
+        CUSTO_POR_AVALIACAO[data.tipo_cliente]
+      );
+      if (calc.abaixoMinimo) {
+        return NextResponse.json(
+          {
+            error: `Valor negociado inferior ao mínimo para ${data.tipo_cliente}. Valor mínimo: R$ ${valorMinimoCustoFixoTotal(data.tipo_cliente, valorCustoFixo).toFixed(2)}.`,
+          },
+          { status: 400 }
+        );
+      }
+      valorCustoFixoSnapshot = valorCustoFixo;
+    }
+
     const valorQWork =
       modeloCom !== 'custo_fixo' && valorNeg > 0
         ? valorNeg * (1 - (percRep + percCom) / 100)
@@ -305,8 +339,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           contato_telefone, cnpj, valor_negociado,
           observacoes, tipo_cliente, requer_aprovacao_comercial,
           requer_aprovacao_suporte, percentual_comissao_comercial,
-          num_vidas_estimado, status, criado_em)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pendente',NOW())
+          num_vidas_estimado, valor_custo_fixo_snapshot, status, criado_em)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pendente',NOW())
        RETURNING id`,
       [
         representanteId,
@@ -322,6 +356,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         requerAprovacaoSuporteCalc,
         percCom,
         numVidas,
+        valorCustoFixoSnapshot,
       ]
     );
 

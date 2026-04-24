@@ -17,6 +17,7 @@ import {
 import {
   calcularRequerAprovacao,
   calcularComissaoCustoFixo,
+  valorMinimoCustoFixoTotal,
   CUSTO_POR_AVALIACAO,
   TIPOS_CLIENTE,
 } from '@/lib/leads-config';
@@ -213,12 +214,13 @@ export async function POST(request: NextRequest) {
       const calc = calcularComissaoCustoFixo(
         valorNum,
         valorCustoFixo,
-        percComercial
+        percComercial,
+        CUSTO_POR_AVALIACAO[tipoCliente]
       );
       if (calc.abaixoMinimo) {
         return NextResponse.json(
           {
-            error: `Valor negociado (R$ ${valorNum.toFixed(2)}) inferior ao custo fixo QWork (R$ ${valorCustoFixo.toFixed(2)}) para ${tipoCliente}.`,
+            error: `Valor negociado (R$ ${valorNum.toFixed(2)}) inferior ao mínimo para ${tipoCliente}. Valor mínimo: R$ ${valorMinimoCustoFixoTotal(tipoCliente, valorCustoFixo).toFixed(2)}.`,
           },
           { status: 400 }
         );

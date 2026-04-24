@@ -177,6 +177,8 @@ describe('POST /api/vendedor/leads', () => {
           percentual_comissao: '5',
           percentual_comissao_comercial: '3',
           modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
         },
       ],
       rowCount: 1,
@@ -374,6 +376,8 @@ describe('POST /api/vendedor/leads', () => {
           percentual_comissao: null,
           percentual_comissao_comercial: null,
           modelo_comissionamento: null,
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
         },
       ],
       rowCount: 1,
@@ -390,5 +394,50 @@ describe('POST /api/vendedor/leads', () => {
     expect(res.status).toBe(403);
     const d = await res.json();
     expect(d.code).toBe('COMISSIONAMENTO_NAO_DEFINIDO');
+  });
+
+  it('400 quando modelo custo_fixo e valor abaixo do mínimo (custoFixo+CUSTO_POR_AVALIACAO)', async () => {
+    // Rep com custo_fixo=12 para entidade; negociado=15 → margem=3 < 12 → 400
+    // 1) SELECT usuarios
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: 10 }], rowCount: 1 } as any);
+    // 2) SELECT hierarquia_comercial
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ representante_id: 5 }],
+      rowCount: 1,
+    } as any);
+    // 3) lead check — vazio
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // 4) entidade check — vazio
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // 5) clinica check — vazio
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // 6) repPercentuais — custo_fixo model
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '0',
+          percentual_comissao_comercial: '20',
+          modelo_comissionamento: 'custo_fixo',
+          valor_custo_fixo_entidade: '12.00',
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
+
+    const res = await POST(
+      makePostReq({
+        contato_nome: 'Empresa Custo Fixo',
+        cnpj: '12345678000190',
+        tipo_cliente: 'entidade',
+        valor_negociado: 15,
+        num_vidas_estimado: 10,
+      })
+    );
+
+    expect(res.status).toBe(400);
+    const d = await res.json();
+    expect(d.error).toMatch(/m[iií]nimo/i);
+    expect(d.error).toMatch(/24/); // R$12 + R$12 = R$24
   });
 });

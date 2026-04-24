@@ -3,7 +3,8 @@
 import React from 'react';
 
 /* Estilos locais sem dependência de `prose` — mantém identidade visual QWork */
-const heading = 'text-[0.6875rem] font-bold text-[#2D2D2D] uppercase tracking-widest mt-7 mb-2 border-b border-gray-200 pb-1.5';
+const heading =
+  'text-[0.6875rem] font-bold text-[#2D2D2D] uppercase tracking-widest mt-7 mb-2 border-b border-gray-200 pb-1.5';
 const para = 'text-sm text-gray-700 leading-relaxed mb-2';
 const divider = 'border-none my-0';
 
@@ -22,16 +23,23 @@ export default function ContratoPadrao() {
 
       <p className={para}>
         Pelo presente instrumento particular, de um lado,{' '}
-        <strong className="text-[#2D2D2D]">QWORK TECNOLOGIA E GESTÃO DE RISCOS LTDA</strong>, doravante
-        denominada <strong className="text-[#2D2D2D]">CONTRATADA</strong>, e, na qualidade de interveniente
-        gestora, <strong className="text-[#2D2D2D]">MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA</strong>,
-        pessoa jurídica de direito privado, inscrita no CNPJ sob nº
+        <strong className="text-[#2D2D2D]">
+          QWORK TECNOLOGIA E GESTÃO DE RISCOS LTDA
+        </strong>
+        , doravante denominada{' '}
+        <strong className="text-[#2D2D2D]">CONTRATADA</strong>, e, na qualidade
+        de interveniente gestora,{' '}
+        <strong className="text-[#2D2D2D]">
+          MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA
+        </strong>
+        , pessoa jurídica de direito privado, inscrita no CNPJ sob nº
         21.020.277/0001-56, com sede na Rua Barão do Serro Azul, nº 198, 5º
-        andar, Centro, Curitiba/PR, doravante denominada <strong className="text-[#2D2D2D]">GESTORA</strong>,
-        e, de outro lado, a <strong className="text-[#2D2D2D]">CONTRATANTE</strong>, pessoa jurídica que
-        realiza cadastro e contratação da plataforma mediante aceite eletrônico,
-        têm entre si justo e acordado o presente contrato, que se regerá pelas
-        cláusulas seguintes:
+        andar, Centro, Curitiba/PR, doravante denominada{' '}
+        <strong className="text-[#2D2D2D]">GESTORA</strong>, e, de outro lado, a{' '}
+        <strong className="text-[#2D2D2D]">CONTRATANTE</strong>, pessoa jurídica
+        que realiza cadastro e contratação da plataforma mediante aceite
+        eletrônico, têm entre si justo e acordado o presente contrato, que se
+        regerá pelas cláusulas seguintes:
       </p>
 
       <hr className={divider} />
@@ -45,19 +53,25 @@ export default function ContratoPadrao() {
         psicossociais no ambiente de trabalho.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo único.</strong> A ferramenta possui finalidade
-        exclusivamente organizacional, estatística e preventiva, em conformidade
-        com as diretrizes da Norma Regulamentadora nº 1 (NR-1), não possuindo
-        caráter clínico ou assistencial.
+        <strong className="text-[#2D2D2D]">Parágrafo único.</strong> A
+        ferramenta possui finalidade exclusivamente organizacional, estatística
+        e preventiva, em conformidade com as diretrizes da Norma Regulamentadora
+        nº 1 (NR-1), não possuindo caráter clínico ou assistencial.
       </p>
 
       <h2 className={heading}>Cláusula 2 — Da Natureza do Serviço</h2>
       <p className={para}>A CONTRATANTE declara ciência de que:</p>
       <ul className="ml-4 space-y-1 text-sm text-gray-700 mb-4 list-none">
-        <li>I – a plataforma não realiza diagnóstico psicológico ou psiquiátrico individual;</li>
+        <li>
+          I – a plataforma não realiza diagnóstico psicológico ou psiquiátrico
+          individual;
+        </li>
         <li>II – não realiza atendimento clínico, terapêutico ou médico;</li>
         <li>III – não substitui avaliação profissional individualizada;</li>
-        <li>IV – os relatórios gerados possuem natureza exclusivamente organizacional, coletiva e estatística.</li>
+        <li>
+          IV – os relatórios gerados possuem natureza exclusivamente
+          organizacional, coletiva e estatística.
+        </li>
       </ul>
 
       <h2 className={heading}>Cláusula 3 — Do Funcionamento da Plataforma</h2>
@@ -65,7 +79,10 @@ export default function ContratoPadrao() {
       <ul className="ml-4 space-y-1 text-sm text-gray-700 mb-4 list-none">
         <li>I – cadastro da empresa CONTRATANTE;</li>
         <li>II – inclusão dos colaboradores pela própria CONTRATANTE;</li>
-        <li>III – acesso individual mediante autenticação por CPF e data de nascimento;</li>
+        <li>
+          III – acesso individual mediante autenticação por CPF e data de
+          nascimento;
+        </li>
         <li>IV – preenchimento do questionário psicossocial;</li>
         <li>V – consolidação e tratamento dos dados coletados.</li>
       </ul>
@@ -77,54 +94,70 @@ export default function ContratoPadrao() {
         do serviço contratado.
       </p>
 
-      <h2 className={heading}>Cláusula 5 — Da Adesão Mínima e Emissão de Relatório</h2>
+      <h2 className={heading}>
+        Cláusula 5 — Da Adesão Mínima e Emissão de Relatório
+      </h2>
       <p className={para}>
         A CONTRATANTE declara ciência de que a geração do relatório
         organizacional consolidado está condicionada à participação mínima de
         70% (setenta por cento) dos colaboradores cadastrados.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo primeiro.</strong> O percentual mínimo estabelecido
-        visa garantir consistência estatística e validade técnica dos dados.
+        <strong className="text-[#2D2D2D]">Parágrafo primeiro.</strong> O
+        percentual mínimo estabelecido visa garantir consistência estatística e
+        validade técnica dos dados.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo segundo.</strong> O faturamento será realizado com
-        base na totalidade dos colaboradores cadastrados, independentemente do
-        percentual de adesão efetivamente atingido.
+        <strong className="text-[#2D2D2D]">Parágrafo segundo.</strong> O
+        faturamento será realizado com base na totalidade dos colaboradores
+        cadastrados, independentemente do percentual de adesão efetivamente
+        atingido.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo terceiro.</strong> A não obtenção do percentual mínimo
-        de adesão não configura inadimplemento da CONTRATADA.
+        <strong className="text-[#2D2D2D]">Parágrafo terceiro.</strong> A não
+        obtenção do percentual mínimo de adesão não configura inadimplemento da
+        CONTRATADA.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo quarto.</strong> Compete exclusivamente à CONTRATANTE
-        promover o engajamento dos colaboradores.
+        <strong className="text-[#2D2D2D]">Parágrafo quarto.</strong> Compete
+        exclusivamente à CONTRATANTE promover o engajamento dos colaboradores.
       </p>
       <p className={para}>
         Decorridos 90 (noventa) dias da ativação da plataforma, caso não haja
         emissão de relatórios, será devida cobrança mínima no valor de{' '}
-        <strong className="text-[#2D2D2D]">R$ 250,00 (duzentos e cinquenta reais)</strong>.
+        <strong className="text-[#2D2D2D]">
+          R$ 250,00 (duzentos e cinquenta reais)
+        </strong>
+        .
       </p>
       <p className={para}>
         A cobrança independe da efetiva utilização da plataforma, considerando a
         disponibilização do serviço.
       </p>
 
-      <h2 className={heading}>Cláusula 6 — Das Responsabilidades da Contratante</h2>
+      <h2 className={heading}>
+        Cláusula 6 — Das Responsabilidades da Contratante
+      </h2>
       <p className={para}>Compete à CONTRATANTE:</p>
       <ul className="ml-4 space-y-1 text-sm text-gray-700 mb-4 list-none">
         <li>I – fornecer dados corretos e atualizados;</li>
         <li>II – comunicar adequadamente seus colaboradores;</li>
         <li>III – garantir autenticidade das respostas;</li>
-        <li>IV – utilizar os relatórios exclusivamente para fins organizacionais;</li>
-        <li>V – adotar medidas internas decorrentes da análise dos resultados.</li>
+        <li>
+          IV – utilizar os relatórios exclusivamente para fins organizacionais;
+        </li>
+        <li>
+          V – adotar medidas internas decorrentes da análise dos resultados.
+        </li>
       </ul>
 
       <h2 className={heading}>Cláusula 7 — Das Responsabilidades da QWork</h2>
       <p className={para}>Compete à CONTRATADA:</p>
       <ul className="ml-4 space-y-1 text-sm text-gray-700 mb-4 list-none">
         <li>I – disponibilizar a plataforma em funcionamento regular;</li>
-        <li>II – adotar medidas técnicas razoáveis de segurança da informação;</li>
+        <li>
+          II – adotar medidas técnicas razoáveis de segurança da informação;
+        </li>
         <li>III – processar os dados e gerar relatório consolidado;</li>
         <li>IV – observar a legislação aplicável.</li>
       </ul>
@@ -139,7 +172,9 @@ export default function ContratoPadrao() {
         <li>V – resultados interpretativos adotados pela CONTRATANTE.</li>
       </ul>
 
-      <h2 className={heading}>Cláusula 9 — Da Gestão Operacional e Comercial</h2>
+      <h2 className={heading}>
+        Cláusula 9 — Da Gestão Operacional e Comercial
+      </h2>
       <p className={para}>
         A CONTRATANTE declara ciência de que a gestão operacional, comercial e
         administrativa da plataforma poderá ser realizada pela empresa
@@ -157,7 +192,10 @@ export default function ContratoPadrao() {
         A suspensão não afasta a obrigação de pagamento dos valores contratados.
       </p>
 
-      <h2 className={heading}>Cláusula 11 — Da Responsabilidade pelo Tratamento de Dados e Segurança das Informações</h2>
+      <h2 className={heading}>
+        Cláusula 11 — Da Responsabilidade pelo Tratamento de Dados e Segurança
+        das Informações
+      </h2>
       <p className={para}>
         A CONTRATANTE declara, para todos os fins, que atua na condição de
         Controladora dos dados pessoais de seus colaboradores, sendo
@@ -165,31 +203,32 @@ export default function ContratoPadrao() {
         legitimidade e segurança das informações inseridas na plataforma.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo primeiro.</strong> Compete exclusivamente à
-        CONTRATANTE adotar medidas administrativas, técnicas e organizacionais
-        adequadas para garantir a proteção dos dados pessoais sob sua
-        responsabilidade, especialmente no que se refere ao acesso,
+        <strong className="text-[#2D2D2D]">Parágrafo primeiro.</strong> Compete
+        exclusivamente à CONTRATANTE adotar medidas administrativas, técnicas e
+        organizacionais adequadas para garantir a proteção dos dados pessoais
+        sob sua responsabilidade, especialmente no que se refere ao acesso,
         compartilhamento interno, armazenamento e uso das informações.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo segundo.</strong> A CONTRATADA não será responsável
-        por incidentes de segurança, vazamentos, acessos indevidos ou qualquer
-        forma de uso inadequado dos dados que decorram de falha, negligência,
-        imprudência ou descumprimento das obrigações legais por parte da
-        CONTRATANTE.
+        <strong className="text-[#2D2D2D]">Parágrafo segundo.</strong> A
+        CONTRATADA não será responsável por incidentes de segurança, vazamentos,
+        acessos indevidos ou qualquer forma de uso inadequado dos dados que
+        decorram de falha, negligência, imprudência ou descumprimento das
+        obrigações legais por parte da CONTRATANTE.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo terceiro.</strong> A CONTRATANTE se responsabiliza
-        integralmente por quaisquer danos, prejuízos, sanções administrativas ou
-        reclamações judiciais decorrentes do tratamento indevido dos dados sob
-        sua responsabilidade, obrigando-se a ressarcir a CONTRATADA por
-        eventuais prejuízos que venha a sofrer em razão de tais ocorrências.
+        <strong className="text-[#2D2D2D]">Parágrafo terceiro.</strong> A
+        CONTRATANTE se responsabiliza integralmente por quaisquer danos,
+        prejuízos, sanções administrativas ou reclamações judiciais decorrentes
+        do tratamento indevido dos dados sob sua responsabilidade, obrigando-se
+        a ressarcir a CONTRATADA por eventuais prejuízos que venha a sofrer em
+        razão de tais ocorrências.
       </p>
       <p className={para}>
-        <strong className="text-[#2D2D2D]">Parágrafo quarto.</strong> A CONTRATADA compromete-se a adotar
-        medidas técnicas razoáveis de segurança da informação no âmbito da
-        plataforma, limitadas à sua atuação como operadora, nos termos da Lei nº
-        13.709/2018.
+        <strong className="text-[#2D2D2D]">Parágrafo quarto.</strong> A
+        CONTRATADA compromete-se a adotar medidas técnicas razoáveis de
+        segurança da informação no âmbito da plataforma, limitadas à sua atuação
+        como operadora, nos termos da Lei nº 13.709/2018.
       </p>
 
       <h2 className={heading}>Cláusula 12 — Da Natureza Jurídica</h2>
@@ -199,7 +238,9 @@ export default function ContratoPadrao() {
       </p>
 
       <h2 className={heading}>Cláusula 13 — Da Vigência e Rescisão</h2>
-      <p className={para}>O contrato terá vigência mínima de 90 (noventa) dias.</p>
+      <p className={para}>
+        O contrato terá vigência mínima de 90 (noventa) dias.
+      </p>
       <p className={para}>
         A rescisão antecipada por iniciativa da CONTRATANTE antes do prazo
         mínimo implicará pagamento de multa equivalente ao valor restante do
@@ -220,9 +261,18 @@ export default function ContratoPadrao() {
       <p className={para}>É expressamente vedado à CONTRATANTE:</p>
       <ul className="ml-4 space-y-1 text-sm text-gray-700 mb-4 list-none">
         <li>I – copiar, reproduzir, modificar ou adaptar a plataforma;</li>
-        <li>II – realizar engenharia reversa, descompilação ou qualquer tentativa de acesso à estrutura interna do sistema;</li>
-        <li>III – utilizar as informações, metodologia ou lógica da plataforma para desenvolvimento de soluções concorrentes;</li>
-        <li>IV – ceder, sublicenciar ou disponibilizar o sistema a terceiros fora das condições contratadas.</li>
+        <li>
+          II – realizar engenharia reversa, descompilação ou qualquer tentativa
+          de acesso à estrutura interna do sistema;
+        </li>
+        <li>
+          III – utilizar as informações, metodologia ou lógica da plataforma
+          para desenvolvimento de soluções concorrentes;
+        </li>
+        <li>
+          IV – ceder, sublicenciar ou disponibilizar o sistema a terceiros fora
+          das condições contratadas.
+        </li>
       </ul>
       <p className={para}>
         O descumprimento desta cláusula sujeitará a CONTRATANTE ao pagamento de
@@ -253,13 +303,15 @@ export default function ContratoPadrao() {
 
       <h2 className={heading}>Cláusula 17 — Do Foro</h2>
       <p className={para}>
-        Fica eleito o foro da comarca de <strong className="text-[#2D2D2D]">Curitiba/PR</strong>, com
-        renúncia expressa de qualquer outro, por mais privilegiado que seja.
+        Fica eleito o foro da comarca de{' '}
+        <strong className="text-[#2D2D2D]">Curitiba/PR</strong>, com renúncia
+        expressa de qualquer outro, por mais privilegiado que seja.
       </p>
 
       {/* Rodapé do contrato */}
       <div className="mt-8 pt-5 border-t border-gray-200 text-xs text-gray-400 text-center">
-        QWork Tecnologia e Gestão de Riscos Ltda — Documento gerado eletronicamente
+        QWork Tecnologia e Gestão de Riscos Ltda — Documento gerado
+        eletronicamente
       </div>
     </div>
   );

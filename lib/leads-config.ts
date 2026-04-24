@@ -137,11 +137,13 @@ export function minimoCustoFixoPorEval(
  * Se valorNegociado ≤ valorCustoFixo, abaixoMinimo=true e valorRep=0.
  *
  * @param percComercial Percentual do comercial sobre a margem (0–40). Default = 0.
+ * @param custoMinimoQWork Mínimo que o QWork deve receber por avaliação (CUSTO_POR_AVALIACAO[tipo]). 0 = comportamento legado.
  */
 export function calcularComissaoCustoFixo(
   valorNegociado: number,
   valorCustoFixo: number,
-  percComercial = 0
+  percComercial = 0,
+  custoMinimoQWork = 0
 ): ValoresComissaoCustoFixo {
   if (valorNegociado <= 0 || valorCustoFixo <= 0) {
     return {
@@ -160,6 +162,23 @@ export function calcularComissaoCustoFixo(
     valorRep: margem,
     valorComercial,
     valorQWork,
-    abaixoMinimo: valorRep < 0,
+    abaixoMinimo:
+      valorRep < 0 || (custoMinimoQWork > 0 && margem < custoMinimoQWork),
   };
+}
+
+/**
+ * Retorna o valor mínimo total de venda por avaliação no modelo custo_fixo.
+ *
+ * Fórmula: custoFixoRep + CUSTO_POR_AVALIACAO[tipo]
+ * Exemplo: R$12 (rep) + R$12 (QWork entidade) = R$24
+ *
+ * O custo do QWork (CUSTO_POR_AVALIACAO) inclui a comissão do comercial,
+ * que é paga da parte do QWork, não adicionada ao total.
+ */
+export function valorMinimoCustoFixoTotal(
+  tipo: TipoCliente,
+  custoFixoRep: number
+): number {
+  return custoFixoRep + CUSTO_POR_AVALIACAO[tipo];
 }

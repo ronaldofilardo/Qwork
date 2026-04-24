@@ -2,6 +2,7 @@ import {
   calcularComissaoCustoFixo,
   calcularValoresComissao,
   calcularRequerAprovacao,
+  valorMinimoCustoFixoTotal,
   CUSTO_POR_AVALIACAO,
 } from '@/lib/leads-config';
 
@@ -72,6 +73,32 @@ describe('calcularComissaoCustoFixo — modelo custo_fixo', () => {
     expect(result.valorComercial).toBe(0);
     expect(result.abaixoMinimo).toBe(true);
   });
+
+  it('deve marcar abaixoMinimo=true quando margem < custoMinimoQWork (bug fix)', () => {
+    // Arrange — rep#42 case: negociado=15, custoFixo=12 → margem=3; custoMinimoQWork=12 → abaixoMinimo
+    const result = calcularComissaoCustoFixo(15, 12, 20, 12);
+
+    // Assert
+    expect(result.abaixoMinimo).toBe(true);
+    expect(result.valorRep).toBe(3); // margem = 15 - 12 (não bloqueado na lógica, apenas flag)
+  });
+
+  it('deve passar quando margem == custoMinimoQWork (exatamente no limite)', () => {
+    // Arrange — negociado=24, custoFixo=12 → margem=12 == custoMinimoQWork=12
+    const result = calcularComissaoCustoFixo(24, 12, 20, 12);
+
+    // Assert
+    expect(result.abaixoMinimo).toBe(false);
+  });
+
+  it('deve manter compatibilidade legada quando custoMinimoQWork=0 (default)', () => {
+    // Arrange — sem custoMinimoQWork: qualquer margem positiva é válida
+    const result = calcularComissaoCustoFixo(15, 12, 20);
+
+    // Assert — legado: abaixoMinimo=false mesmo com margem pequena
+    expect(result.abaixoMinimo).toBe(false);
+    expect(result.valorRep).toBe(3);
+  });
 });
 
 describe('calcularValoresComissao — modelo percentual', () => {
@@ -133,5 +160,46 @@ describe('calcularRequerAprovacao', () => {
 
   it('deve retornar false quando valorNegociado <= 0', () => {
     expect(calcularRequerAprovacao(0, 10, 5, 'entidade')).toBe(false);
+  });
+});
+
+describe('valorMinimoCustoFixoTotal', () => {
+  it('deve retornar custoFixoRep + CUSTO_POR_AVALIACAO[entidade] (R$12)', () => {
+    expect(valorMinimoCustoFixoTotal('entidade', 12)).toBe(24);
+    expect(valorMinimoCustoFixoTotal('entidade', 10)).toBe(22);
+    expect(valorMinimoCustoFixoTotal('entidade', 0)).toBe(
+      CUSTO_POR_AVALIACAO['entidade']
+    );
+  });
+
+  it('deve retornar custoFixoRep + CUSTO_POR_AVALIACAO[clinica] (R$5)', () => {
+    expect(valorMinimoCustoFixoTotal('clinica', 8)).toBe(13);
+    expect(valorMinimoCustoFixoTotal('clinica', 0)).toBe(
+      CUSTO_POR_AVALIACAO['clinica']
+    );
+  });
+
+  it('deve ser consistente com a validação de abaixoMinimo', () => {
+    const custoFixoRep = 12;
+    const tipo = 'entidade' as const;
+    const minimo = valorMinimoCustoFixoTotal(tipo, custoFixoRep); // 24
+
+    // Valor exato no limite → não é abaixo do mínimo
+    const noLimite = calcularComissaoCustoFixo(
+      minimo,
+      custoFixoRep,
+      20,
+      CUSTO_POR_AVALIACAO[tipo]
+    );
+    expect(noLimite.abaixoMinimo).toBe(false);
+
+    // Um centavo abaixo → é abaixo do mínimo
+    const abaixo = calcularComissaoCustoFixo(
+      minimo - 0.01,
+      custoFixoRep,
+      20,
+      CUSTO_POR_AVALIACAO[tipo]
+    );
+    expect(abaixo.abaixoMinimo).toBe(true);
   });
 });

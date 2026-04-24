@@ -258,25 +258,26 @@ export function ModalConfirmacaoSolicitar({
                   ⚠️ Nenhum dado de contato foi encontrado{' '}
                   {contexto === 'rh'
                     ? 'no cadastro do perfil RH. Verifique se seu email e celular estão preenchidos em "Informações da Conta".'
-                    : 'no cadastro. Para receber a proposta comercial, entre em contato diretamente com a plataforma pelo email abaixo.'}
+                    : 'no cadastro. Entre em contato com a plataforma pelo email abaixo.'}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Seção: Prazo */}
+          {/* Seção: Cobrança no dashboard */}
           <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-3">
             <div className="flex items-start gap-2">
               <span className="text-base mt-0.5" aria-hidden="true">
-                ⏱️
+                💳
               </span>
               <div>
                 <p className="text-sm font-semibold text-indigo-900">
-                  Prazo de Retorno
+                  Como funciona a cobrança
                 </p>
                 <p className="text-sm text-indigo-800 mt-0.5">
-                  Você receberá uma proposta comercial com valores em até{' '}
-                  <strong>24 horas úteis</strong>, durante o horário comercial.
+                  Quando houver valores em aberto, você será notificado no seu
+                  dashboard em <strong>Informações da Conta</strong>. Acesse a
+                  aba para ver os pagamentos pendentes e realizar o pagamento.
                 </p>
               </div>
             </div>

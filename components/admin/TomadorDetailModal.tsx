@@ -212,9 +212,6 @@ export default function TomadorDetailModal({
                   <p className="font-semibold text-gray-900">
                     {tomador.representante.nome}
                   </p>
-                  <p className="text-sm text-purple-700">
-                    Código: {tomador.representante.codigo}
-                  </p>
                   {tomador.representante.valor_negociado != null && (
                     <p className="text-sm text-gray-700">
                       Valor negociado:{' '}

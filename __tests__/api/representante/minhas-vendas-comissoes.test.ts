@@ -111,21 +111,21 @@ describe('GET /api/representante/minhas-vendas/comissoes', () => {
 
     expect(res.status).toBe(200);
     expect(data.comissoes).toHaveLength(2);
-    
+
     // Verificar laudo_id
     expect(data.comissoes[0].laudo_id).toBe(50);
     expect(data.comissoes[1].laudo_id).toBe(50);
-    
+
     // Verificar lote_pagamento_id
     expect(data.comissoes[0].lote_pagamento_id).toBe(5);
     expect(data.comissoes[1].lote_pagamento_id).toBe(5);
-    
+
     // Verificar parcelas
     expect(data.comissoes[0].parcela_numero).toBe(1);
     expect(data.comissoes[0].total_parcelas).toBe(2);
     expect(data.comissoes[1].parcela_numero).toBe(2);
     expect(data.comissoes[1].total_parcelas).toBe(2);
-    
+
     // Verificar valor_parcela (valor_laudo / total_parcelas)
     expect(data.comissoes[0].valor_parcela).toBe('100.00');
     expect(data.comissoes[1].valor_parcela).toBe('100.00');
