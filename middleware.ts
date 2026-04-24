@@ -1,52 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Importar configuração de manutenção (caminho relativo ao build de produção)
+import maintenanceConfig from '@/config/maintenance.json';
+
 // ─── Maintenance Mode Check ────────────────────────────────────────────────
 /**
  * Verifica se o sistema está em modo de manutenção.
- * Lê variáveis de ambiente:
- *   - MAINTENANCE_MODE_ENABLED: 'true' | 'false'
- *   - MAINTENANCE_START: ISO 8601 string (ex: 2026-04-24T18:00:00Z)
- *   - MAINTENANCE_END: ISO 8601 string (ex: 2026-04-27T08:00:00Z)
- *
- * Fallback seguro: retorna false se variáveis malformadas
+ * Lê de config/maintenance.json (commitado no repo, confiável em Edge Runtime)
  */
 function isUnderMaintenance(): boolean {
-  // Maintenance mode só se aplica ao ambiente de produção (APP_ENV=production)
-  // Staging e feature/v2 continuam acessíveis normalmente
-  const appEnv = process.env.APP_ENV;
-  if (appEnv !== 'production') {
-    console.log('[MAINTENANCE] APP_ENV não é production:', appEnv);
-    return false;
-  }
-
-  const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
-  console.log('[MAINTENANCE] MAINTENANCE_MODE_ENABLED:', process.env.MAINTENANCE_MODE_ENABLED);
-  if (!enabled) return false;
-
-  const startStr = process.env.MAINTENANCE_START;
-  const endStr = process.env.MAINTENANCE_END;
-
-  if (!startStr || !endStr) {
-    console.log('[MAINTENANCE] Datas não configuradas', { startStr, endStr });
-    return false;
-  }
-
   try {
+    if (!maintenanceConfig.enabled) {
+      console.log('[MAINTENANCE] Manutenção desativada');
+      return false;
+    }
+
     const now = new Date();
-    const start = new Date(startStr);
-    const end = new Date(endStr);
+    const start = new Date(maintenanceConfig.startTime);
+    const end = new Date(maintenanceConfig.endTime);
 
     // Validar que as datas são válidas (não NaN)
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      console.log('[MAINTENANCE] Datas inválidas', { start, end });
+      console.log('[MAINTENANCE] Datas inválidas no config', {
+        start,
+        end,
+      });
       return false;
     }
 
     const isMaintenance = now >= start && now <= end;
-    console.log('[MAINTENANCE] Verificação final:', { now: now.toISOString(), start: start.toISOString(), end: end.toISOString(), isMaintenance });
+    console.log('[MAINTENANCE] Status:', {
+      now: now.toISOString(),
+      start: start.toISOString(),
+      end: end.toISOString(),
+      isMaintenance,
+    });
+
     return isMaintenance;
   } catch (err) {
-    console.log('[MAINTENANCE] Erro ao verificar datas:', err);
+    console.error('[MAINTENANCE] Erro ao verificar config:', err);
     return false;
   }
 }
