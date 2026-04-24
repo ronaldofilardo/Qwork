@@ -165,11 +165,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar percentuais do representante
+    // Buscar percentuais e modelo do representante
     const repResult = await query<{
       percentual_comissao: string | null;
       percentual_comissao_comercial: string | null;
-      modelo_comissionamento: string | null;
+      modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
       valor_custo_fixo_entidade: string | null;
       valor_custo_fixo_clinica: string | null;
     }>(
@@ -197,6 +197,14 @@ export async function POST(request: NextRequest) {
     const percComercial = Number(
       repResult.rows[0]?.percentual_comissao_comercial ?? 0
     );
+    const modeloComissionamento =
+      repResult.rows[0]?.modelo_comissionamento ?? null;
+    const valorCustoFixoRaw =
+      tipoCliente === 'clinica'
+        ? repResult.rows[0]?.valor_custo_fixo_clinica
+        : repResult.rows[0]?.valor_custo_fixo_entidade;
+    const valorCustoFixoRep =
+      valorCustoFixoRaw != null ? Number(valorCustoFixoRaw) : 0;
 
     // ── Lógica de custo_fixo ──────────────────────────────────────────────
     let requerAprovacao = false;
@@ -285,8 +293,13 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query(
-      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao, percentual_comissao_representante, percentual_comissao_comercial, tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado, valor_custo_fixo_snapshot)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      `INSERT INTO leads_representante (
+         representante_id, cnpj, razao_social, contato_nome, contato_email,
+         contato_telefone, valor_negociado, percentual_comissao,
+         percentual_comissao_representante, percentual_comissao_comercial,
+         tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado,
+         valor_custo_fixo_snapshot, modelo_comissionamento
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
        RETURNING *`,
       [
         sess.representante_id,
@@ -303,6 +316,7 @@ export async function POST(request: NextRequest) {
         requerAprovacao,
         numVidas,
         valorCustoFixoSnapshot,
+        modeloComissionamento,
       ]
     );
 
