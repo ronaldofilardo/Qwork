@@ -32,12 +32,16 @@ describe('Regressão 24/04/2026 — SQL limite manutenção com INTERVAL correto
   describe('1. Padrão bugado removido', () => {
     it('não usa $1 diretamente com INTERVAL (bug: integer + interval)', () => {
       // O padrão antigo era: SET col = $1 + INTERVAL onde $1 = tomador_id (integer)
-      expect(content).not.toMatch(/limite_primeira_cobranca_manutencao\s*=\s*\$1\s*\+\s*INTERVAL/);
+      expect(content).not.toMatch(
+        /limite_primeira_cobranca_manutencao\s*=\s*\$1\s*\+\s*INTERVAL/
+      );
     });
 
     it('não executa dois UPDATEs separados para limite_primeira_cobranca_manutencao', () => {
       // O padrão antigo tinha dois UPDATE consecutivos para a mesma coluna
-      const matches = content.match(/SET limite_primeira_cobranca_manutencao\s*=/g);
+      const matches = content.match(
+        /SET limite_primeira_cobranca_manutencao\s*=/g
+      );
       // Deve haver apenas uma ocorrência (query consolidada)
       expect(matches).not.toBeNull();
       expect(matches!.length).toBe(1);
@@ -69,7 +73,9 @@ describe('Regressão 24/04/2026 — SQL limite manutenção com INTERVAL correto
     });
 
     it('operação é não-bloqueante (catch isolado)', () => {
-      expect(content).toContain('[CONTRATOS] Erro ao fixar limite de manutenção (não-bloqueante)');
+      expect(content).toContain(
+        '[CONTRATOS] Erro ao fixar limite de manutenção (não-bloqueante)'
+      );
     });
   });
 });

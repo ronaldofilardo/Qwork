@@ -136,17 +136,17 @@ describe('GET /api/comercial/minhas-comissoes', () => {
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.comissoes).toHaveLength(2);
-    
+
     // Verificar que laudo_id está sendo retornado
     expect(data.comissoes[0].laudo_id).toBe(100);
     expect(data.comissoes[1].laudo_id).toBe(100);
-    
+
     // Verificar que parcela_numero e total_parcelas estão sendo retornados
     expect(data.comissoes[0].parcela_numero).toBe(1);
     expect(data.comissoes[0].total_parcelas).toBe(3);
     expect(data.comissoes[1].parcela_numero).toBe(2);
     expect(data.comissoes[1].total_parcelas).toBe(3);
-    
+
     // Verificar que valor_laudo e valor_parcela estão sendo retornados
     expect(data.comissoes[0].valor_laudo).toBe('150.00');
     expect(data.comissoes[0].valor_parcela).toBe('50.00');
@@ -235,7 +235,9 @@ describe('GET /api/comercial/minhas-comissoes', () => {
 
     const resumoSQL = mockQuery.mock.calls[0][0] as string;
     expect(resumoSQL).toContain('gestor_comercial_cpf');
-    expect(resumoSQL).toContain('JOIN representantes r ON r.id = cl.representante_id');
+    expect(resumoSQL).toContain(
+      'JOIN representantes r ON r.id = cl.representante_id'
+    );
   });
 
   it('SQL de resumo deve incluir retida e congelada_aguardando_admin em valor_pendente', async () => {
