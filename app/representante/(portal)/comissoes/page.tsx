@@ -1,6 +1,5 @@
 'use client';
 
-
 import { useComissoes } from './hooks/useComissoes';
 import { fmt, STATUS_BADGE } from './types';
 import ComissoesTable from './components/ComissoesTable';
@@ -38,7 +37,8 @@ export default function ComissoesRepresentante() {
               cor: 'text-amber-700',
               bg: 'bg-amber-50',
               borderCor: 'border-amber-200',
-              title: 'Comissões retidas aguardando pagamento da parcela pelo cliente',
+              title:
+                'Comissões retidas aguardando pagamento da parcela pelo cliente',
             },
             {
               label: 'A Receber',
@@ -47,7 +47,8 @@ export default function ComissoesRepresentante() {
               cor: 'text-blue-700',
               bg: 'bg-blue-50',
               borderCor: 'border-blue-200',
-              title: 'Parcelas pagas aguardando consolidação em ciclo',
+              title:
+                'Comissões retidas aguardando pagamento do cliente ou liberação manual pelo admin',
             },
             {
               label: 'Liberado',
@@ -92,29 +93,24 @@ export default function ComissoesRepresentante() {
           Pipeline de Pagamento
         </h2>
         <div className="flex items-center gap-1 flex-wrap">
-          {['retida', 'liberada', 'paga'].map(
-            (s, i, arr) => (
-              <div key={s} className="flex items-center gap-1">
-                <button
-                  onClick={() => {
-                    setStatusFiltro(statusFiltro === s ? '' : s);
-                    setPage(1);
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${STATUS_BADGE[s]?.cor ?? 'bg-gray-100 text-gray-600'} ${statusFiltro === s ? 'ring-2 ring-offset-1 ring-blue-400' : 'opacity-70 hover:opacity-100'}`}
-                >
-                  {STATUS_BADGE[s]?.label}
-                </button>
-                {i < arr.length - 1 && (
-                  <span className="text-gray-300 text-xs">→</span>
-                )}
-              </div>
-            )
-          )}
+          {['retida', 'liberada', 'paga'].map((s, i, arr) => (
+            <div key={s} className="flex items-center gap-1">
+              <button
+                onClick={() => {
+                  setStatusFiltro(statusFiltro === s ? '' : s);
+                  setPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${STATUS_BADGE[s]?.cor ?? 'bg-gray-100 text-gray-600'} ${statusFiltro === s ? 'ring-2 ring-offset-1 ring-blue-400' : 'opacity-70 hover:opacity-100'}`}
+              >
+                {STATUS_BADGE[s]?.label}
+              </button>
+              {i < arr.length - 1 && (
+                <span className="text-gray-300 text-xs">→</span>
+              )}
+            </div>
+          ))}
           <span className="text-gray-200 mx-2">|</span>
-          {[
-            'congelada_aguardando_admin',
-            'cancelada',
-          ].map((s) => (
+          {['congelada_aguardando_admin', 'cancelada'].map((s) => (
             <button
               key={s}
               onClick={() => {

@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
            COUNT(*) FILTER (WHERE c.status::text = 'retida')                                                         AS pendentes,
            COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                                         AS liberadas,
            COUNT(*) FILTER (WHERE c.status::text = 'paga')                                                             AS pagas,
-           COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'retida'), 0)                                 AS valor_pendente,
+           COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text IN ('retida', 'congelada_aguardando_admin')), 0) AS valor_pendente,
            COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'), 0)                               AS valor_liberado,
            COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'), 0)                                   AS valor_pago_total
          FROM comissoes_laudo c
@@ -96,6 +96,7 @@ export async function GET(request: NextRequest) {
          c.percentual_comissao,
          c.valor_laudo,
          c.valor_comissao,
+         (c.valor_laudo / c.total_parcelas)         AS valor_parcela,
          c.status,
          c.motivo_congelamento,
          c.mes_emissao,

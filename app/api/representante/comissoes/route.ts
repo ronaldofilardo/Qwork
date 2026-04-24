@@ -49,12 +49,12 @@ export async function GET(request: NextRequest) {
     // Resumo total para o representante
     const resumo = await query(
       `SELECT
-       COUNT(*) FILTER (WHERE c.status::text = 'retida')                                        AS pendentes,
-       COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                    AS liberadas,
-       COUNT(*) FILTER (WHERE c.status::text = 'paga')                                        AS pagas,
-       COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'retida'), 0)              AS valor_pendente,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'),0)            AS valor_liberado,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'),0)                AS valor_pago_total
+           COUNT(*) FILTER (WHERE c.status::text = 'retida')                                                              AS pendentes,
+       COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                                            AS liberadas,
+       COUNT(*) FILTER (WHERE c.status::text = 'paga')                                                                AS pagas,
+       COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text IN ('retida', 'congelada_aguardando_admin')), 0)    AS valor_pendente,
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'), 0)                                  AS valor_liberado,
+         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'), 0)                                      AS valor_pago_total
        FROM comissoes_laudo c
        WHERE c.representante_id = $1`,
       [sess.representante_id]

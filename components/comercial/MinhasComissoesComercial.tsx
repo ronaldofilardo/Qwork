@@ -8,7 +8,11 @@ interface MinhaComissao {
   representante_id: number;
   representante_nome: string;
   entidade_nome: string;
+  laudo_id: number | null;
+  parcela_numero: number;
+  total_parcelas: number;
   valor_laudo: string;
+  valor_parcela: string;
   percentual_comissao_comercial: string;
   valor_comissao_comercial: string;
   mes_emissao: string;
@@ -21,6 +25,8 @@ interface Resumo {
   total_laudos: string;
   total_recebido: string;
   media_por_laudo: string;
+  valor_pendente: string;
+  valor_liberado: string;
 }
 
 const fmt = (v: string | number) =>
@@ -88,30 +94,49 @@ export function MinhasComissoesComercial() {
 
       {/* Resumo */}
       {resumo && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {[
+            {
+              label: 'A Receber',
+              value: fmt(resumo.valor_pendente),
+              icon: <TrendingUp className="w-5 h-5 text-amber-600" />,
+              cor: 'text-amber-700',
+              title:
+                'Comissões pendentes de liberação (retida ou aguardando admin)',
+            },
+            {
+              label: 'Liberado',
+              value: fmt(resumo.valor_liberado),
+              icon: <TrendingUp className="w-5 h-5 text-purple-600" />,
+              cor: 'text-purple-700',
+              title: 'Comissões liberadas aguardando pagamento',
+            },
             {
               label: 'Total Recebido',
               value: fmt(resumo.total_recebido),
               icon: <DollarSign className="w-5 h-5 text-green-600" />,
               cor: 'text-green-700',
+              title: 'Total histórico de comissões pagas',
             },
             {
               label: 'Laudos Pagos',
               value: resumo.total_laudos,
               icon: <FileText className="w-5 h-5 text-blue-600" />,
               cor: 'text-blue-700',
+              title: 'Quantidade de laudos com comissão paga',
             },
             {
               label: 'Média por Laudo',
               value: fmt(resumo.media_por_laudo),
-              icon: <TrendingUp className="w-5 h-5 text-purple-600" />,
-              cor: 'text-purple-700',
+              icon: <TrendingUp className="w-5 h-5 text-slate-600" />,
+              cor: 'text-slate-700',
+              title: 'Média de comissão por laudo pago',
             },
           ].map((c) => (
             <div
               key={c.label}
               className="bg-white rounded-xl border p-4 flex items-center gap-3"
+              title={(c as { title?: string }).title}
             >
               <div className="p-2 bg-gray-50 rounded-lg">{c.icon}</div>
               <div>
@@ -140,8 +165,10 @@ export function MinhasComissoesComercial() {
               <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
                 <tr>
                   <th className="px-3 py-3 text-left">Representante</th>
+                  <th className="px-3 py-3 text-left">Laudo ID</th>
                   <th className="px-3 py-3 text-left">Contratante</th>
-                  <th className="px-3 py-3 text-right">Valor Laudo</th>
+                  <th className="px-3 py-3 text-center">Parcela</th>
+                  <th className="px-3 py-3 text-right">Valor Parcela</th>
                   <th className="px-3 py-3 text-center">%</th>
                   <th className="px-3 py-3 text-right">Comissão</th>
                   <th className="px-3 py-3 text-left">Data Pagamento</th>
@@ -159,11 +186,17 @@ export function MinhasComissoesComercial() {
                         #{c.representante_id}
                       </div>
                     </td>
+                    <td className="px-3 py-3 text-gray-700 font-mono text-xs">
+                      {c.laudo_id ? `#${c.laudo_id}` : '—'}
+                    </td>
                     <td className="px-3 py-3 text-gray-700">
                       {c.entidade_nome}
                     </td>
+                    <td className="px-3 py-3 text-center text-xs text-gray-600">
+                      {c.parcela_numero}/{c.total_parcelas}
+                    </td>
                     <td className="px-3 py-3 text-right text-gray-700">
-                      {fmt(c.valor_laudo)}
+                      {fmt(c.valor_parcela)}
                     </td>
                     <td className="px-3 py-3 text-center text-xs text-gray-600">
                       {parseFloat(c.percentual_comissao_comercial || '0')}%
