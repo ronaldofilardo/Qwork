@@ -1,36 +1,65 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { formatDate, formatDuration } from './helpers';
+import { RefreshCw, Loader2 } from 'lucide-react';
+import { formatDate } from './helpers';
 import type {
-  AcessoGestor,
-  AcessoRH,
-  AcessoSuporte,
-  AcessoComercial,
-  AcessoRepresentante,
-  AcessoVendedor,
+  AcessoGestorUnificado,
+  AcessoOperacional,
   AuditoriaAvaliacao,
   AuditoriaLote,
   AuditoriaLaudo,
   AceiteUsuario,
+  AcessoSuporte,
+  LeadAbaixoMinimo,
 } from './types';
+
+/* ─── Refresh Button ─── */
+
+function RefreshButton({
+  onClick,
+  loading,
+}: {
+  onClick: () => void;
+  loading: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={loading}
+      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50 transition-colors"
+    >
+      {loading ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : (
+        <RefreshCw className="w-3.5 h-3.5" />
+      )}
+      Atualizar
+    </button>
+  );
+}
 
 /* ─── Shared Table Shell ─── */
 
 function TableShell({
   title,
   subtitle,
+  headerRight,
   children,
 }: {
   title: string;
   subtitle: string;
+  headerRight?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        <p className="text-sm text-gray-600">{subtitle}</p>
+      <div className="px-6 py-4 border-b border-gray-200 flex items-start justify-between gap-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          <p className="text-sm text-gray-600">{subtitle}</p>
+        </div>
+        {headerRight && <div className="flex-shrink-0">{headerRight}</div>}
       </div>
       <div className="overflow-x-auto">{children}</div>
     </div>
@@ -73,131 +102,381 @@ function Td({
   );
 }
 
-/* ─── 1. Acesso Gestor ─── */
+/* ─── 1. Gestores (Gestor de Entidade + RH) ─── */
 
-export function TabelaAcessosGestor({ data }: { data: AcessoGestor[] }) {
+const GESTOR_TIPO_BADGE: Record<string, string> = {
+  gestor: 'bg-purple-100 text-purple-800',
+  rh: 'bg-blue-100 text-blue-800',
+};
+
+const GESTOR_TIPO_LABEL: Record<string, string> = {
+  gestor: 'Gestor',
+  rh: 'RH',
+};
+
+export function TabelaGestores({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: AcessoGestorUnificado[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroEntidade, setFiltroEntidade] = useState('');
+  const [filtroClinica, setFiltroClinica] = useState('');
+
+  const entidades = useMemo(() => {
+    const set = new Set(
+      data.filter((d) => d.empresa_nome).map((d) => d.empresa_nome as string)
+    );
+    return Array.from(set).sort();
+  }, [data]);
+
+  const clinicas = useMemo(() => {
+    const set = new Set(
+      data.filter((d) => d.clinica_nome).map((d) => d.clinica_nome as string)
+    );
+    return Array.from(set).sort();
+  }, [data]);
+
+  const filtrados = useMemo(() => {
+    return data.filter((d) => {
+      if (filtroTipo && d.tipo !== filtroTipo) return false;
+      if (filtroEntidade && d.empresa_nome !== filtroEntidade) return false;
+      if (filtroClinica && d.clinica_nome !== filtroClinica) return false;
+      return true;
+    });
+  }, [data, filtroTipo, filtroEntidade, filtroClinica]);
+
+  const temFiltro = filtroTipo || filtroEntidade || filtroClinica;
+
+  function limparFiltros() {
+    setFiltroTipo('');
+    setFiltroEntidade('');
+    setFiltroClinica('');
+  }
+
   return (
-    <TableShell
-      title="Acessos de Gestores de Entidade"
-      subtitle={`Total: ${data.length} registros`}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>Empresa</Th>
-            <Th>CNPJ</Th>
-            <Th>Login</Th>
-            <Th>Logout</Th>
-            <Th>Duração</Th>
-            <Th>IP</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((a) => (
-            <tr key={a.id} className="hover:bg-gray-50">
-              <Td className="text-gray-900">{a.empresa_nome ?? '—'}</Td>
-              <Td mono>{a.empresa_cnpj ?? '—'}</Td>
-              <Td>{formatDate(a.login_timestamp)}</Td>
-              <Td>{formatDate(a.logout_timestamp)}</Td>
-              <Td>{formatDuration(a.session_duration)}</Td>
-              <Td mono>{a.ip_address}</Td>
-            </tr>
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <select
+          value={filtroTipo}
+          onChange={(e) => setFiltroTipo(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos os tipos</option>
+          <option value="gestor">Gestor</option>
+          <option value="rh">RH</option>
+        </select>
+
+        <select
+          value={filtroEntidade}
+          onChange={(e) => setFiltroEntidade(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todas as entidades</option>
+          {entidades.map((e) => (
+            <option key={e} value={e}>
+              {e}
+            </option>
           ))}
-        </tbody>
-      </table>
-    </TableShell>
+        </select>
+
+        <select
+          value={filtroClinica}
+          onChange={(e) => setFiltroClinica(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todas as clínicas</option>
+          {clinicas.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
+
+        {temFiltro && (
+          <button
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Limpar filtros
+          </button>
+        )}
+
+        <span className="ml-auto text-xs text-gray-500">
+          {filtrados.length} de {data.length} registros
+        </span>
+      </div>
+
+      <TableShell
+        title="Acessos de Gestores"
+        subtitle="Gestores de Entidade e Gestores RH"
+        headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+      >
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <Th>Tipo</Th>
+              <Th>Empresa / Entidade</Th>
+              <Th>Clínica</Th>
+              <Th>CNPJ</Th>
+              <Th>Login</Th>
+              <Th>Logout</Th>
+              <Th>IP</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
+                    : 'Clique em "Atualizar" para carregar os dados.'}
+                </td>
+              </tr>
+            )}
+            {filtrados.map((a) => (
+              <tr key={`${a.tipo}-${a.id}`} className="hover:bg-gray-50">
+                <Td>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${GESTOR_TIPO_BADGE[a.tipo] ?? 'bg-gray-100 text-gray-800'}`}
+                  >
+                    {GESTOR_TIPO_LABEL[a.tipo] ?? a.tipo}
+                  </span>
+                </Td>
+                <Td className="text-gray-900">{a.empresa_nome ?? '—'}</Td>
+                <Td>{a.clinica_nome ?? '—'}</Td>
+                <Td mono>{a.empresa_cnpj ?? '—'}</Td>
+                <Td>{formatDate(a.login_timestamp)}</Td>
+                <Td>{formatDate(a.logout_timestamp)}</Td>
+                <Td mono>{a.ip_address}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
+    </div>
   );
 }
 
-/* ─── 2. Acesso RH ─── */
+/* ─── 2. Avaliações ─── */
 
-export function TabelaAcessosRH({ data }: { data: AcessoRH[] }) {
-  return (
-    <TableShell
-      title="Acessos de Gestores RH"
-      subtitle={`Total: ${data.length} registros`}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>Clínica</Th>
-            <Th>Login</Th>
-            <Th>Logout</Th>
-            <Th>Duração</Th>
-            <Th>IP</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((a) => (
-            <tr key={a.id} className="hover:bg-gray-50">
-              <Td className="text-gray-900">{a.clinica_nome}</Td>
-              <Td>{formatDate(a.login_timestamp)}</Td>
-              <Td>{formatDate(a.logout_timestamp)}</Td>
-              <Td>{formatDuration(a.session_duration)}</Td>
-              <Td mono>{a.ip_address}</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
-  );
+const AVALIACAO_STATUS_BADGE: Record<string, string> = {
+  iniciada: 'bg-blue-100 text-blue-800',
+  em_andamento: 'bg-yellow-100 text-yellow-800',
+  concluida: 'bg-green-100 text-green-800',
+  inativada: 'bg-red-100 text-red-800',
+};
+
+const AVALIACAO_STATUS_LABEL: Record<string, string> = {
+  iniciada: 'Iniciada',
+  em_andamento: 'Em andamento',
+  concluida: 'Concluída',
+  inativada: 'Inativada',
+};
+
+function formatCpfAvaliacao(cpf: string | null | undefined): string {
+  if (!cpf) return '—';
+  const d = cpf.replace(/\D/g, '').trim();
+  if (d.length !== 11) return cpf.trim();
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
 }
 
-/* ─── 3. Avaliações ─── */
+export function TabelaAvaliacoes({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: AuditoriaAvaliacao[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  const [filtroStatus, setFiltroStatus] = useState('');
+  const [filtroEmpresa, setFiltroEmpresa] = useState('');
+  const [filtroLote, setFiltroLote] = useState('');
+  const [filtroDataInicio, setFiltroDataInicio] = useState('');
+  const [filtroDataFim, setFiltroDataFim] = useState('');
 
-export function TabelaAvaliacoes({ data }: { data: AuditoriaAvaliacao[] }) {
+  const normalizar = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+  const filtrados = useMemo(() => {
+    return data.filter((a) => {
+      if (filtroStatus && a.avaliacao_status !== filtroStatus) return false;
+
+      if (filtroEmpresa.trim()) {
+        const termo = normalizar(filtroEmpresa.trim());
+        const empresaOk = normalizar(a.empresa_nome ?? '').includes(termo);
+        const entidadeOk = normalizar(a.entidade_nome ?? '').includes(termo);
+        if (!empresaOk && !entidadeOk) return false;
+      }
+
+      if (filtroLote.trim()) {
+        if (!a.lote.includes(filtroLote.trim())) return false;
+      }
+
+      if (filtroDataInicio) {
+        const ref = new Date(filtroDataInicio).getTime();
+        const val = a.liberado_em ? new Date(a.liberado_em).getTime() : null;
+        if (!val || val < ref) return false;
+      }
+
+      if (filtroDataFim) {
+        const ref = new Date(filtroDataFim).getTime() + 86399000;
+        const val = a.liberado_em ? new Date(a.liberado_em).getTime() : null;
+        if (!val || val > ref) return false;
+      }
+
+      return true;
+    });
+  }, [
+    data,
+    filtroStatus,
+    filtroEmpresa,
+    filtroLote,
+    filtroDataInicio,
+    filtroDataFim,
+  ]);
+
+  const temFiltro =
+    filtroStatus ||
+    filtroEmpresa.trim() ||
+    filtroLote.trim() ||
+    filtroDataInicio ||
+    filtroDataFim;
+
+  function limparFiltros() {
+    setFiltroStatus('');
+    setFiltroEmpresa('');
+    setFiltroLote('');
+    setFiltroDataInicio('');
+    setFiltroDataFim('');
+  }
+
   return (
-    <TableShell
-      title="Auditoria de Avaliações"
-      subtitle={`Total: ${data.length} registros`}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>ID</Th>
-            <Th>Tomador / Empresa</Th>
-            <Th>Lote</Th>
-            <Th>Data Liberação</Th>
-            <Th>Data Conclusão</Th>
-            <Th center>Concluída</Th>
-            <Th center>Inativada</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((a) => (
-            <tr key={a.avaliacao_id} className="hover:bg-gray-50">
-              <Td className="text-gray-900">{a.avaliacao_id}</Td>
-              <Td>{a.empresa_nome ?? '—'}</Td>
-              <Td>{a.lote}</Td>
-              <Td>{formatDate(a.liberado_em)}</Td>
-              <Td>{formatDate(a.concluida_em)}</Td>
-              <Td center>
-                <span
-                  className={`px-2 py-1 rounded text-xs font-semibold ${
-                    a.concluida
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {a.concluida ? 'Sim' : 'Não'}
-                </span>
-              </Td>
-              <Td center>
-                <span
-                  className={`px-2 py-1 rounded text-xs font-semibold ${
-                    a.inativada
-                      ? 'bg-red-100 text-red-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {a.inativada ? 'Sim' : 'Não'}
-                </span>
-              </Td>
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos os status</option>
+          <option value="iniciada">Iniciada</option>
+          <option value="em_andamento">Em andamento</option>
+          <option value="concluida">Concluída</option>
+          <option value="inativada">Inativada</option>
+        </select>
+
+        <input
+          type="text"
+          placeholder="Empresa ou entidade..."
+          value={filtroEmpresa}
+          onChange={(e) => setFiltroEmpresa(e.target.value)}
+          className="w-52 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="text"
+          placeholder="Lote..."
+          value={filtroLote}
+          onChange={(e) => setFiltroLote(e.target.value)}
+          className="w-28 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="date"
+          title="Data de liberação — início"
+          value={filtroDataInicio}
+          onChange={(e) => setFiltroDataInicio(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="date"
+          title="Data de liberação — fim"
+          value={filtroDataFim}
+          onChange={(e) => setFiltroDataFim(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        {temFiltro && (
+          <button
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Limpar filtros
+          </button>
+        )}
+
+        <span className="ml-auto text-xs text-gray-500">
+          {filtrados.length} de {data.length} registros
+        </span>
+      </div>
+
+      <TableShell
+        title="Auditoria de Avaliações"
+        subtitle={`Total: ${data.length} registros`}
+        headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+      >
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <Th>Empresa</Th>
+              <Th>Entidade</Th>
+              <Th>Clínica</Th>
+              <Th>CPF</Th>
+              <Th>Lote</Th>
+              <Th>Liberação</Th>
+              <Th>Conclusão</Th>
+              <Th>Status</Th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
+                    : 'Clique em "Atualizar" para carregar os dados.'}
+                </td>
+              </tr>
+            )}
+            {filtrados.map((a) => (
+              <tr key={a.avaliacao_id} className="hover:bg-gray-50">
+                <Td>{a.empresa_nome ?? '—'}</Td>
+                <Td>{a.entidade_nome ?? '—'}</Td>
+                <Td>{a.clinica_nome ?? '—'}</Td>
+                <Td mono>{formatCpfAvaliacao(a.cpf)}</Td>
+                <Td>{a.lote}</Td>
+                <Td>{formatDate(a.liberado_em)}</Td>
+                <Td>{formatDate(a.concluida_em)}</Td>
+                <Td>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${AVALIACAO_STATUS_BADGE[a.avaliacao_status] ?? 'bg-gray-100 text-gray-800'}`}
+                  >
+                    {AVALIACAO_STATUS_LABEL[a.avaliacao_status] ??
+                      a.avaliacao_status}
+                  </span>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
+    </div>
   );
 }
 
@@ -229,11 +508,20 @@ const LOTE_STATUS_LABELS: Record<string, string> = {
   finalizado: 'Finalizado',
 };
 
-export function TabelaLotes({ data }: { data: AuditoriaLote[] }) {
+export function TabelaLotes({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: AuditoriaLote[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
   return (
     <TableShell
       title="Auditoria de Lotes"
       subtitle={`Total: ${data.length} registros`}
+      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
     >
       <table className="w-full">
         <thead className="bg-gray-50">
@@ -289,14 +577,19 @@ const LAUDO_STATUS_STYLES: Record<string, string> = {
 export function TabelaLaudos({
   data,
   onVerDetalhe,
+  onAtualizar,
+  loading,
 }: {
   data: AuditoriaLaudo[];
   onVerDetalhe: (laudoId: number) => void;
+  onAtualizar: () => void;
+  loading: boolean;
 }) {
   return (
     <TableShell
       title="Auditoria de Laudos"
       subtitle={`Total: ${data.length} registros`}
+      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
     >
       <table className="w-full">
         <thead className="bg-gray-50">
@@ -346,147 +639,175 @@ export function TabelaLaudos({
   );
 }
 
-/* ─── 6. Acesso Suporte ─── */
+/* ─── 5. Operacionais (Suporte + Comercial + Representante + Vendedor) ─── */
 
-export function TabelaAcessosSuporte({ data }: { data: AcessoSuporte[] }) {
-  return (
-    <TableShell
-      title="Acessos de Suporte"
-      subtitle={`Total: ${data.length} registros`}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>Nome</Th>
-            <Th>Login</Th>
-            <Th>Logout</Th>
-            <Th>Duração</Th>
-            <Th>IP</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((a) => (
-            <tr key={a.id} className="hover:bg-gray-50">
-              <Td className="text-gray-900">{a.nome ?? '—'}</Td>
-              <Td>{formatDate(a.login_timestamp)}</Td>
-              <Td>{formatDate(a.logout_timestamp)}</Td>
-              <Td>{formatDuration(a.session_duration)}</Td>
-              <Td mono>{a.ip_address}</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
-  );
+function formatCpf(cpf: string | null | undefined): string {
+  if (!cpf) return '—';
+  const digits = cpf.replace(/\D/g, '').trim();
+  if (digits.length !== 11) return cpf.trim();
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
-/* ─── 7. Acesso Comercial ─── */
+const OPERACIONAL_PERFIL_BADGE: Record<string, string> = {
+  suporte: 'bg-sky-100 text-sky-800',
+  comercial: 'bg-indigo-100 text-indigo-800',
+  representante: 'bg-orange-100 text-orange-800',
+  vendedor: 'bg-yellow-100 text-yellow-800',
+};
 
-export function TabelaAcessosComercial({ data }: { data: AcessoComercial[] }) {
-  return (
-    <TableShell
-      title="Acessos Comercial"
-      subtitle={`Total: ${data.length} registros`}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>Nome</Th>
-            <Th>Login</Th>
-            <Th>Logout</Th>
-            <Th>Duração</Th>
-            <Th>IP</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((a) => (
-            <tr key={a.id} className="hover:bg-gray-50">
-              <Td className="text-gray-900">{a.nome ?? '—'}</Td>
-              <Td>{formatDate(a.login_timestamp)}</Td>
-              <Td>{formatDate(a.logout_timestamp)}</Td>
-              <Td>{formatDuration(a.session_duration)}</Td>
-              <Td mono>{a.ip_address}</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
-  );
-}
+const OPERACIONAL_PERFIL_LABEL: Record<string, string> = {
+  suporte: 'Suporte',
+  comercial: 'Comercial',
+  representante: 'Representante',
+  vendedor: 'Vendedor',
+};
 
-/* ─── 8. Acesso Representante ─── */
-
-export function TabelaAcessosRepresentante({
+export function TabelaOperacionais({
   data,
+  onAtualizar,
+  loading,
 }: {
-  data: AcessoRepresentante[];
+  data: AcessoOperacional[];
+  onAtualizar: () => void;
+  loading: boolean;
 }) {
+  const [filtroPerfil, setFiltroPerfil] = useState('');
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtroCpf, setFiltroCpf] = useState('');
+
+  const normalizar = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+  const filtrados = useMemo(() => {
+    return data.filter((a) => {
+      if (filtroPerfil && a.perfil !== filtroPerfil) return false;
+
+      if (filtroNome.trim()) {
+        const termo = normalizar(filtroNome.trim());
+        if (!normalizar(a.nome ?? '').includes(termo)) return false;
+      }
+
+      if (filtroCpf.trim()) {
+        const digits = filtroCpf.replace(/\D/g, '');
+        const cpfDigits = (a.cpf ?? '').replace(/\D/g, '');
+        if (digits && !cpfDigits.includes(digits)) return false;
+      }
+
+      return true;
+    });
+  }, [data, filtroPerfil, filtroNome, filtroCpf]);
+
+  const temFiltro = filtroPerfil || filtroNome.trim() || filtroCpf.trim();
+
+  function limparFiltros() {
+    setFiltroPerfil('');
+    setFiltroNome('');
+    setFiltroCpf('');
+  }
+
   return (
-    <TableShell
-      title="Acessos de Representantes"
-      subtitle={`Total: ${data.length} registros`}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>Representante</Th>
-            <Th>Login</Th>
-            <Th>Logout</Th>
-            <Th>Duração</Th>
-            <Th>IP</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((a) => (
-            <tr key={a.id} className="hover:bg-gray-50">
-              <Td className="text-gray-900">{a.representante_nome ?? '—'}</Td>
-              <Td>{formatDate(a.login_timestamp)}</Td>
-              <Td>{formatDate(a.logout_timestamp)}</Td>
-              <Td>{formatDuration(a.session_duration)}</Td>
-              <Td mono>{a.ip_address}</Td>
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <select
+          value={filtroPerfil}
+          onChange={(e) => setFiltroPerfil(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos os perfis</option>
+          <option value="suporte">Suporte</option>
+          <option value="comercial">Comercial</option>
+          <option value="representante">Representante</option>
+          <option value="vendedor">Vendedor</option>
+        </select>
+
+        <input
+          type="text"
+          placeholder="Filtrar por nome..."
+          value={filtroNome}
+          onChange={(e) => setFiltroNome(e.target.value)}
+          className="w-52 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <input
+          type="text"
+          placeholder="Filtrar por CPF..."
+          value={filtroCpf}
+          onChange={(e) => setFiltroCpf(e.target.value)}
+          className="w-44 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        {temFiltro && (
+          <button
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Limpar filtros
+          </button>
+        )}
+
+        <span className="ml-auto text-xs text-gray-500">
+          {filtrados.length} de {data.length} registros
+        </span>
+      </div>
+
+      <TableShell
+        title="Acessos Operacionais"
+        subtitle="Suporte · Comercial · Representantes · Vendedores"
+        headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+      >
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <Th>Perfil</Th>
+              <Th>Nome</Th>
+              <Th>CPF</Th>
+              <Th>CNPJ</Th>
+              <Th>Login</Th>
+              <Th>Logout</Th>
+              <Th>IP</Th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
+                    : 'Clique em "Atualizar" para carregar os dados.'}
+                </td>
+              </tr>
+            )}
+            {filtrados.map((a) => (
+              <tr key={`${a.perfil}-${a.id}`} className="hover:bg-gray-50">
+                <Td>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${OPERACIONAL_PERFIL_BADGE[a.perfil] ?? 'bg-gray-100 text-gray-800'}`}
+                  >
+                    {OPERACIONAL_PERFIL_LABEL[a.perfil] ?? a.perfil}
+                  </span>
+                </Td>
+                <Td className="text-gray-900">{a.nome ?? '—'}</Td>
+                <Td mono>{formatCpf(a.cpf)}</Td>
+                <Td mono>{a.cnpj ?? '—'}</Td>
+                <Td>{formatDate(a.login_timestamp)}</Td>
+                <Td>{formatDate(a.logout_timestamp)}</Td>
+                <Td mono>{a.ip_address}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
+    </div>
   );
 }
 
-/* ─── 9. Acesso Vendedor ─── */
-
-export function TabelaAcessosVendedor({ data }: { data: AcessoVendedor[] }) {
-  return (
-    <TableShell
-      title="Acessos de Vendedores"
-      subtitle={`Total: ${data.length} registros`}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>Nome</Th>
-            <Th>Login</Th>
-            <Th>Logout</Th>
-            <Th>Duração</Th>
-            <Th>IP</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((a) => (
-            <tr key={a.id} className="hover:bg-gray-50">
-              <Td className="text-gray-900">{a.nome ?? '—'}</Td>
-              <Td>{formatDate(a.login_timestamp)}</Td>
-              <Td>{formatDate(a.logout_timestamp)}</Td>
-              <Td>{formatDuration(a.session_duration)}</Td>
-              <Td mono>{a.ip_address}</Td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
-  );
-}
-
-/* ─── 10. Aceites (consolidado por usuário) ─── */
+/* ─── 6. Aceites (consolidado por usuário) ─── */
 
 const PERFIL_BADGE: Record<string, string> = {
   rh: 'bg-blue-100 text-blue-800',
@@ -503,13 +824,6 @@ const PERFIL_LABEL: Record<string, string> = {
   vendedor: 'Vendedor',
   funcionario: 'Funcionário',
 };
-
-function formatCpf(cpf: string | null | undefined): string {
-  if (!cpf) return '—';
-  const digits = cpf.replace(/\D/g, '').trim();
-  if (digits.length !== 11) return cpf.trim();
-  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
-}
 
 function AceiteCell({
   aceito,
@@ -540,8 +854,18 @@ function AceiteCell({
 }
 
 // eslint-disable-next-line max-lines-per-function
-export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
-  const [busca, setBusca] = useState('');
+export function TabelaAceites({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: AceiteUsuario[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  const [filtroPerfil, setFiltroPerfil] = useState('');
+  const [filtroCpf, setFiltroCpf] = useState('');
+  const [filtroNome, setFiltroNome] = useState('');
 
   const normalizar = (s: string) =>
     s
@@ -549,41 +873,82 @@ export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
+  const perfisDisponiveis = useMemo(() => {
+    const set = new Set(data.map((u) => u.perfil).filter(Boolean));
+    return Array.from(set).sort();
+  }, [data]);
+
   const filtrados = useMemo(() => {
-    const termo = busca.trim();
-    if (!termo) return data;
-    const termoNorm = normalizar(termo);
-    const termoDigits = termo.replace(/\D/g, '');
     return data.filter((u) => {
-      const cpfRaw = (u.cpf ?? '').replace(/\s/g, '');
-      const cpfDigits = cpfRaw.replace(/\D/g, '');
-      const cpfFormatado = formatCpf(cpfRaw);
-      return (
-        normalizar(u.nome ?? '').includes(termoNorm) ||
-        (termoDigits.length > 0 && cpfDigits.includes(termoDigits)) ||
-        cpfFormatado.includes(termo)
-      );
+      if (filtroPerfil && u.perfil !== filtroPerfil) return false;
+
+      if (filtroCpf.trim()) {
+        const digits = filtroCpf.replace(/\D/g, '');
+        const cpfDigits = (u.cpf ?? '').replace(/\D/g, '');
+        if (digits && !cpfDigits.includes(digits)) return false;
+      }
+
+      if (filtroNome.trim()) {
+        const termoNorm = normalizar(filtroNome.trim());
+        if (!normalizar(u.nome ?? '').includes(termoNorm)) return false;
+      }
+
+      return true;
     });
-  }, [busca, data]);
+  }, [filtroPerfil, filtroCpf, filtroNome, data]);
+
+  const temFiltro = filtroPerfil || filtroCpf.trim() || filtroNome.trim();
+
+  function limparFiltros() {
+    setFiltroPerfil('');
+    setFiltroCpf('');
+    setFiltroNome('');
+  }
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {/* Filtro por Perfil */}
+        <select
+          value={filtroPerfil}
+          onChange={(e) => setFiltroPerfil(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+        >
+          <option value="">Todos os perfis</option>
+          {perfisDisponiveis.map((p) => (
+            <option key={p} value={p}>
+              {PERFIL_LABEL[p] ?? p}
+            </option>
+          ))}
+        </select>
+
+        {/* Filtro por CPF */}
         <input
           type="text"
-          placeholder="Buscar por nome ou CPF..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="w-72 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Filtrar por CPF..."
+          value={filtroCpf}
+          onChange={(e) => setFiltroCpf(e.target.value)}
+          className="w-44 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
-        {busca && (
+
+        {/* Filtro por Nome */}
+        <input
+          type="text"
+          placeholder="Filtrar por nome..."
+          value={filtroNome}
+          onChange={(e) => setFiltroNome(e.target.value)}
+          className="w-52 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+
+        {temFiltro && (
           <button
-            onClick={() => setBusca('')}
-            className="text-xs text-gray-400 hover:text-gray-600"
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
           >
-            Limpar
+            Limpar filtros
           </button>
         )}
+
         <span className="ml-auto text-xs text-gray-500">
           {filtrados.length} de {data.length} usuários
         </span>
@@ -591,6 +956,7 @@ export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
       <TableShell
         title="Aceites por Usuário"
         subtitle={`Total: ${data.length} usuários`}
+        headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
       >
         <table className="w-full">
           <thead className="bg-gray-50">
@@ -612,9 +978,9 @@ export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
                   colSpan={8}
                   className="px-4 py-8 text-center text-sm text-gray-400"
                 >
-                  {busca
-                    ? 'Nenhum resultado para a busca.'
-                    : 'Nenhum registro encontrado.'}
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
+                    : 'Clique em "Atualizar" para carregar os dados.'}
                 </td>
               </tr>
             )}
@@ -670,5 +1036,171 @@ export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
         </table>
       </TableShell>
     </div>
+  );
+}
+
+/* ─── TabelaAcessosSuporte ─── */
+
+export function TabelaAcessosSuporte({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: AcessoSuporte[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  return (
+    <TableShell
+      title="Acessos — Suporte"
+      subtitle={`${data.length} registro(s)`}
+      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+    >
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <Th>Nome</Th>
+            <Th>CPF</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>IP</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {data.map((row) => (
+            <tr key={row.id} className="hover:bg-gray-50">
+              <Td>{row.nome ?? '—'}</Td>
+              <Td mono>{row.cpf}</Td>
+              <Td>{formatDate(row.login_timestamp)}</Td>
+              <Td>
+                {row.logout_timestamp ? formatDate(row.logout_timestamp) : '—'}
+              </Td>
+              <Td mono>{row.ip_address ?? '—'}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableShell>
+  );
+}
+
+/* ─── TabelaComissoesLeads ─── */
+
+export function TabelaComissoesLeads({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: LeadAbaixoMinimo[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  const fmtBRL = (v: number | null | undefined) =>
+    v != null
+      ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+      : '—';
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
+
+  return (
+    <TableShell
+      title="Comissões — Leads"
+      subtitle={`${data.length} registro(s)`}
+      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+    >
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <Th>Representante</Th>
+            <Th>CNPJ</Th>
+            <Th center>Tipo</Th>
+            <Th center>Vidas</Th>
+            <Th>Valor</Th>
+            <Th center>% Rep</Th>
+            <Th center>% Comercial</Th>
+            <Th center>Status</Th>
+            <Th center>Aprovação</Th>
+            <Th center>Data</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {data.length === 0 && (
+            <tr>
+              <td
+                colSpan={10}
+                className="px-4 py-8 text-center text-sm text-gray-400"
+              >
+                Nenhum lead encontrado.
+              </td>
+            </tr>
+          )}
+          {data.map((row) => {
+            const requer = row.requer_aprovacao_comercial;
+            return (
+              <tr
+                key={row.id}
+                className={`hover:bg-gray-50 ${requer ? 'bg-amber-50/40' : ''}`}
+              >
+                <Td>
+                  <div className="font-medium">{row.representante_nome}</div>
+                  <div className="text-xs text-gray-400">
+                    #{row.representante_codigo}
+                  </div>
+                </Td>
+                <Td mono>{row.cnpj}</Td>
+                <Td center>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                      row.tipo_cliente === 'entidade'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-purple-100 text-purple-700'
+                    }`}
+                  >
+                    {row.tipo_cliente === 'entidade' ? 'Entidade' : 'Clínica'}
+                  </span>
+                </Td>
+                <Td center>{row.num_vidas_estimado ?? '—'}</Td>
+                <Td>{fmtBRL(Number(row.valor_negociado))}</Td>
+                <Td center>
+                  {row.percentual_comissao_representante?.toFixed(1) ??
+                    row.percentual_comissao?.toFixed(1) ??
+                    '—'}
+                  %
+                </Td>
+                <Td center>
+                  {row.percentual_comissao_comercial?.toFixed(1) ?? '—'}%
+                </Td>
+                <Td center>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                      row.status === 'pendente'
+                        ? 'bg-yellow-100 text-yellow-700'
+                        : row.status === 'aprovado'
+                          ? 'bg-green-100 text-green-700'
+                          : row.status === 'rejeitado'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-gray-100 text-gray-600'
+                    }`}
+                  >
+                    {row.status}
+                  </span>
+                </Td>
+                <Td center>
+                  {requer ? (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                      Pendente
+                    </span>
+                  ) : (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                      OK
+                    </span>
+                  )}
+                </Td>
+                <Td center>{fmtDate(row.criado_em)}</Td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </TableShell>
   );
 }

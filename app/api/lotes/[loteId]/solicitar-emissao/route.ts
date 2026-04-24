@@ -269,58 +269,12 @@ export async function POST(
            RETURNING id`,
           [loteId]
         );
-        const count = autoInativadasResult.rowCount ?? 0;
-        if (count > 0) {
+        const inativadasNaTx = autoInativadasResult.rowCount ?? 0;
+        if (inativadasNaTx > 0) {
           console.log(
-            `[INFO] ${count} avaliação(ões) inativada(s) automaticamente no lote ${loteId}`
+            `[INFO] ${inativadasNaTx} avaliação(ões) inativada(s) automaticamente no lote ${loteId}`
           );
         }
-
-        // 10. Criar notificação para ADMIN sobre solicitação de cobrança
-        // TODO: Ajustar para usar destinatario_cpf/destinatario_tipo ao invés de destinatario_role
-        /*
-        await q(
-          `INSERT INTO notificacoes (
-             tipo, 
-             prioridade, 
-             destinatario_role,
-             titulo, 
-             mensagem,
-             lote_id,
-             dados_contexto
-           )
-           VALUES (
-             'solicitacao_emissao'::tipo_notificacao,
-             'alta'::prioridade_notificacao,
-             'admin',
-             $1,
-             $2,
-             $3,
-             jsonb_build_object(
-               'solicitante_cpf', $4::text,
-               'solicitante_nome', $5::text,
-               'solicitante_tipo', $6::text,
-               'clinica_id', $7,
-               'empresa_id', $8,
-               'entidade_id', $9
-             )
-           )`,
-          [
-            'Nova solicitação de emissão',
-            `${user.perfil === 'rh' ? 'Clínica' : 'Entidade'} solicitou emissão de laudo para lote #${loteId}`,
-            loteId,
-            user.cpf,
-            user.nome,
-            user.perfil,
-            lote.clinica_id,
-            lote.empresa_id,
-            lote.entidade_id,
-          ]
-        );
-        */
-        console.log(
-          '[INFO] Notificação para admin temporariamente desabilitada'
-        );
 
         // 11. Criar notificação de sucesso para o solicitante
         let destinatarioTipo: string = user.perfil;
@@ -358,7 +312,7 @@ export async function POST(
           ]
         );
 
-        return count;
+        return inativadasNaTx;
       });
     } catch (emissaoError) {
       console.error(

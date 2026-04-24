@@ -102,11 +102,13 @@ export async function converterLeadEmRepresentante(
       `INSERT INTO representantes (
         tipo_pessoa, nome, email, telefone,
         cpf, cnpj, cpf_responsavel_pj,
+        asaas_wallet_id,
         status, aprovado_em, aprovado_por_cpf
       ) VALUES (
         $1, $2, $3, $4,
         $5, $6, $7,
-        'aguardando_senha', NOW(), $8
+        $8,
+        'aguardando_senha', NOW(), $9
       ) RETURNING id, codigo, nome, email`,
       [
         tipoPessoa,
@@ -116,6 +118,7 @@ export async function converterLeadEmRepresentante(
         lead.cpf ?? null,
         lead.cnpj ?? null,
         lead.cpf_responsavel ?? null,
+        lead.asaas_wallet_id ?? null,
         adminCpf,
       ]
     );

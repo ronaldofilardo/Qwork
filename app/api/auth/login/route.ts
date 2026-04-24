@@ -47,75 +47,100 @@ export async function POST(request: Request) {
       );
     }
 
-    // PASSO 1: Buscar usuário — suportar tabela `funcionarios` (após migração) e fallback para `usuarios`
-    console.log(`[LOGIN] Buscando usuário CPF ${cpf} em funcionarios...`);
-    const funcResult = await query(
-      `SELECT * FROM funcionarios WHERE cpf = $1 LIMIT 1`,
-      [cpf]
-    );
+    // PASSO 1: Buscar usuário — procurar em `usuarios` PRIMEIRO para tipos de sistema (suporte, comercial, vendedor)
+    // Depois fallback para `funcionarios` (funcionários normais, gestores RH/Entidade)
 
     let usuario: any = null;
     let foundInFuncionarios = false;
+    let foundInUsuarios = false;
 
-    const funcRows = funcResult && funcResult.rows ? funcResult.rows : [];
+    // TIPOS DE SISTEMA: procurar em `usuarios` primeiro
+    const SYSTEM_ACCOUNT_TYPES = [
+      'suporte',
+      'comercial',
+      'vendedor',
+      'admin',
+      'emissor',
+    ];
 
-    if (funcRows.length > 0) {
-      foundInFuncionarios = true;
-      usuario = funcRows[0];
-      // Normalizar nomes de campos que podem variar após migração
-      // IMPORTANTE: usuario_tipo é o campo do banco (funcionario_clinica, funcionario_entidade, rh, gestor, etc)
-      // tipo_usuario é a variável JavaScript normalizada para sessão (funcionario, rh, gestor, admin, emissor)
-      const rawPerfil =
-        usuario.usuario_tipo || usuario.tipo_usuario || usuario.perfil;
+    console.log(`[LOGIN] Buscando usuário CPF ${cpf}...`);
 
-      // Normalizar perfil: funcionario_clinica e funcionario_entidade viram 'funcionario'
-      usuario.tipo_usuario =
-        rawPerfil === 'funcionario_clinica' ||
-        rawPerfil === 'funcionario_entidade'
-          ? 'funcionario'
-          : rawPerfil;
+    // Tentar buscar em usuarios (contas de sistema + funcionários que migraram)
+    const usuarioFirstPass = await query(
+      `SELECT cpf, nome, email, tipo_usuario, clinica_id, entidade_id, ativo, senha_hash FROM usuarios WHERE cpf = $1 LIMIT 1`,
+      [cpf]
+    );
 
-      usuario.tomador_id =
-        usuario.entidade_id ||
-        usuario.clinica_id ||
-        usuario.empresa_id ||
-        usuario.empresaId;
-      usuario.entidade_id = usuario.entidade_id || usuario.entidadeId || null;
-      usuario.clinica_id = usuario.clinica_id || usuario.clinicaId || null;
-      usuario.senha_hash =
-        usuario.senha_hash || usuario.senhaHash || usuario.senha;
-      console.log(`[LOGIN] Usuário encontrado em funcionarios:`, {
-        cpf: usuario.cpf,
-        usuario_tipo_raw: rawPerfil,
-        tipo: usuario.tipo_usuario,
-        tomador_id: usuario.tomador_id,
-        entidade_id: usuario.entidade_id,
-        ativo: usuario.ativo,
-      });
-    } else {
+    const usuarioRows =
+      usuarioFirstPass && usuarioFirstPass.rows ? usuarioFirstPass.rows : [];
+
+    // Se encontrou em usuarios E é um tipo de sistema, usar de lá
+    if (
+      usuarioRows.length > 0 &&
+      SYSTEM_ACCOUNT_TYPES.includes(usuarioRows[0].tipo_usuario)
+    ) {
+      foundInUsuarios = true;
+      usuario = usuarioRows[0];
       console.log(
-        `[LOGIN] Não encontrado em funcionarios; buscando em usuarios...`
+        `[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
       );
-      const usuarioResult = await query(
-        `SELECT cpf, nome, tipo_usuario, clinica_id, entidade_id, ativo, senha_hash FROM usuarios WHERE cpf = $1`,
+    } else {
+      // Procurar em funcionarios como alternativa
+      console.log(`[LOGIN] Buscando usuário CPF ${cpf} em funcionarios...`);
+      const funcResult = await query(
+        `SELECT * FROM funcionarios WHERE cpf = $1 LIMIT 1`,
         [cpf]
       );
 
-      const usuarioRows =
-        usuarioResult && usuarioResult.rows ? usuarioResult.rows : [];
+      const funcRows = funcResult && funcResult.rows ? funcResult.rows : [];
 
-      if (usuarioRows.length === 0) {
+      if (funcRows.length > 0) {
+        foundInFuncionarios = true;
+        usuario = funcRows[0];
+        // Normalizar nomes de campos que podem variar após migração
+        // IMPORTANTE: usuario_tipo é o campo do banco (funcionario_clinica, funcionario_entidade, rh, gestor, etc)
+        // tipo_usuario é a variável JavaScript normalizada para sessão (funcionario, rh, gestor, admin, emissor)
+        const rawPerfil =
+          usuario.usuario_tipo || usuario.tipo_usuario || usuario.perfil;
+
+        // Normalizar perfil: funcionario_clinica e funcionario_entidade viram 'funcionario'
+        usuario.tipo_usuario =
+          rawPerfil === 'funcionario_clinica' ||
+          rawPerfil === 'funcionario_entidade'
+            ? 'funcionario'
+            : rawPerfil;
+
+        usuario.tomador_id =
+          usuario.entidade_id ||
+          usuario.clinica_id ||
+          usuario.empresa_id ||
+          usuario.empresaId;
+        usuario.entidade_id = usuario.entidade_id || usuario.entidadeId || null;
+        usuario.clinica_id = usuario.clinica_id || usuario.clinicaId || null;
+        usuario.senha_hash =
+          usuario.senha_hash || usuario.senhaHash || usuario.senha;
+        console.log(`[LOGIN] ✓ Usuário encontrado em funcionarios:`, {
+          cpf: usuario.cpf,
+          usuario_tipo_raw: rawPerfil,
+          tipo: usuario.tipo_usuario,
+          tomador_id: usuario.tomador_id,
+          entidade_id: usuario.entidade_id,
+          ativo: usuario.ativo,
+        });
+      } else if (usuarioRows.length > 0) {
+        // Encontrou em usuarios mas não é tipo sistema — usar mesmo assim
+        foundInUsuarios = true;
+        usuario = usuarioRows[0];
+        console.log(
+          `[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
+        );
+      } else {
+        // Não encontrou em nenhum lugar
+        console.log(
+          `[LOGIN] ✗ Não encontrado em funcionarios nem usuarios; tentando representante...`
+        );
         return await handleRepresentanteLogin(cpf, senha, contextoRequisicao);
       }
-
-      usuario = usuarioRows[0];
-      console.log(`[LOGIN] Usuário encontrado em usuarios:`, {
-        cpf: usuario.cpf,
-        tipo: usuario.tipo_usuario,
-        clinica_id: usuario.clinica_id,
-        entidade_id: usuario.entidade_id,
-        ativo: usuario.ativo,
-      });
     }
     console.log(`[LOGIN] Usuário encontrado:`, {
       cpf: usuario.cpf,
@@ -160,6 +185,17 @@ export async function POST(request: Request) {
       // Usuário vindo da tabela `funcionarios`: senha já disponível na linha
       console.log(
         `[LOGIN] Usuário vindo de funcionarios; usando senha de funcionarios`
+      );
+      senhaHash = usuario.senha_hash;
+      tomadorId = usuario.entidade_id || usuario.clinica_id || null;
+      tomadorAtivo = usuario.ativo ?? true;
+    } else if (
+      foundInUsuarios &&
+      SYSTEM_ACCOUNT_TYPES.includes(usuario.tipo_usuario)
+    ) {
+      // Usuário de sistema (suporte, comercial, vendedor, admin, emissor): senha em usuarios
+      console.log(
+        `[LOGIN] Usuário de sistema (${usuario.tipo_usuario}); usando senha de usuarios`
       );
       senhaHash = usuario.senha_hash;
       tomadorId = usuario.entidade_id || usuario.clinica_id || null;
@@ -356,6 +392,7 @@ export async function POST(request: Request) {
     createSession({
       cpf: usuario.cpf,
       nome: usuario.nome,
+      email: usuario.email,
       perfil: perfil as any,
       tomador_id: tomadorId,
       clinica_id: usuario.clinica_id,
@@ -385,6 +422,7 @@ export async function POST(request: Request) {
         createSession({
           cpf: usuario.cpf,
           nome: usuario.nome,
+          email: usuario.email,
           perfil: perfil as any,
           tomador_id: tomadorId,
           clinica_id: usuario.clinica_id,

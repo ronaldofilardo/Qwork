@@ -28,8 +28,8 @@ export interface PreCadastroItem {
   telefone: string | null;
   status: string;
   criado_em: string;
-  contrato_id: number;
-  contrato_criado_em: string;
+  contrato_id: number | null;
+  contrato_criado_em: string | null;
   tipo: 'clinica' | 'entidade';
   responsavel_nome: string | null;
   responsavel_cargo: string | null;
@@ -79,10 +79,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
      * globalmente únicos. O UNION ALL une os resultados de ambas antes de
      * fazer o JOIN com contratos.
      *
-     * Status relevantes:
-     *   - aguardando_aceite_contrato : fluxo parou exatamente no aceite do contrato
-     *   - aguardando_aceite          : fluxo parou antes do aceite (link da proposta)
-     *   - pendente                   : cadastro chegou mas nenhum avanço
+     * Novos cadastros entram com `ativa = false` (aguardando aceite).
+     * O filtro NÃO usa ativa — usa o status do contrato para distinguir:
+     *   - status = 'aguardando_aceite' + aceito IS NOT TRUE → pendente (mostrar)
+     *   - status = 'inativa'           → soft-deleted pelo suporte (ocultar)
+     *   - status = 'aguardando_aceite' + aceito = true      → contrato aceito (ocultar)
+     *   - c.id IS NULL                 → sem contrato gerado (mostrar, caso raro)
      *
      * O filtro de tipo é sempre passado como $1 ('todos' significa sem filtro).
      */
@@ -102,21 +104,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         c.id        AS contrato_id,
         c.criado_em AS contrato_criado_em
       FROM (
-        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo, ativa,
+        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo,
                responsavel_nome, responsavel_cargo, responsavel_celular
         FROM entidades
         UNION ALL
-        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo, ativa,
+        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo,
                responsavel_nome, responsavel_cargo, responsavel_celular
         FROM clinicas
       ) t
-      LEFT JOIN contratos c ON c.tomador_id = t.id AND c.tipo_tomador = t.tipo
-      WHERE c.aceito = false
-        AND t.status IN (
-          'aguardando_aceite_contrato',
-          'aguardando_aceite',
-          'pendente'
-        )
+      LEFT JOIN LATERAL (
+        SELECT id, aceito, status, criado_em
+        FROM contratos
+        WHERE tomador_id = t.id AND tipo_tomador = t.tipo
+        ORDER BY criado_em DESC
+        LIMIT 1
+      ) c ON true
+      WHERE (c.id IS NULL OR (c.status = 'aguardando_aceite' AND c.aceito IS NOT TRUE))
         AND ($1 = 'todos' OR t.tipo = $1)
       ORDER BY COALESCE(c.criado_em, t.criado_em) DESC
     `;

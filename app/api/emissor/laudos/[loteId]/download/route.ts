@@ -8,8 +8,10 @@ export const GET = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
@@ -26,8 +28,9 @@ export const GET = async (
     }
 
     // Verificar se o laudo existe e pertence ao emissor
-    // ✅ EMISSOR: Permite download de laudos com status='emitido' (antes de enviar ao bucket)
-    // A validação de bucket é apenas para RH/Entidade, não para emissor
+    // ✅ EMISSOR: Permite download de laudos gerados ou emitidos/enviados
+    // Inclui status ZapSign (pdf_gerado, aguardando_assinatura) para permitir
+    // download pré-assinatura quando necessário
     const laudoQuery = await query(
       `
       SELECT
@@ -38,7 +41,7 @@ export const GET = async (
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.lote_id = $1 
         AND l.emissor_cpf = $2 
-        AND l.status IN ('emitido', 'enviado')
+        AND l.status IN ('pdf_gerado', 'aguardando_assinatura', 'assinado_processando', 'emitido', 'enviado')
     `,
       [loteId, user.cpf],
       user

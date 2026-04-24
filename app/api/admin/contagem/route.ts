@@ -17,6 +17,9 @@ interface ContagemMetricas {
 export interface ItemEntidade {
   id: number;
   nome: string;
+  ativa: boolean;
+  criado_em: string;
+  data_aceite: string | null;
   ativos: number;
   inativos: number;
 }
@@ -24,6 +27,9 @@ export interface ItemEntidade {
 export interface ItemClinica {
   id: number;
   nome: string;
+  ativa: boolean;
+  criado_em: string;
+  data_aceite: string | null;
   empresas_clientes: number;
   ativos: number;
   inativos: number;
@@ -168,23 +174,38 @@ export async function GET(
       `SELECT
          e.id,
          e.nome,
+         e.ativa,
+         e.criado_em,
+         ct.data_aceite,
          COUNT(CASE WHEN f.ativo = true  THEN 1 END)::int AS ativos,
          COUNT(CASE WHEN f.ativo = false THEN 1 END)::int AS inativos
        FROM entidades e
        LEFT JOIN funcionarios_entidades fe ON fe.entidade_id = e.id
        LEFT JOIN funcionarios f ON f.id = fe.funcionario_id
-       GROUP BY e.id, e.nome
+       LEFT JOIN (
+         SELECT tomador_id, MAX(data_aceite) AS data_aceite
+         FROM contratos
+         WHERE tipo_tomador = 'entidade' AND aceito = true
+         GROUP BY tomador_id
+       ) ct ON ct.tomador_id = e.id
+       GROUP BY e.id, e.nome, e.ativa, e.criado_em, ct.data_aceite
        ORDER BY e.nome`
     );
     const lista_entidades: ItemEntidade[] = listaEntidadesResult.rows.map(
       (r: {
         id: number;
         nome: string;
+        ativa: boolean;
+        criado_em: string;
+        data_aceite: string | null;
         ativos: string | number;
         inativos: string | number;
       }) => ({
         id: r.id,
         nome: r.nome,
+        ativa: r.ativa,
+        criado_em: r.criado_em,
+        data_aceite: r.data_aceite ?? null,
         ativos: parseInt(String(r.ativos)) || 0,
         inativos: parseInt(String(r.inativos)) || 0,
       })
@@ -198,6 +219,9 @@ export async function GET(
       `SELECT
          c.id,
          c.nome,
+         c.ativa,
+         c.criado_em,
+         ct.data_aceite,
          COALESCE(emp.total, 0)::int    AS empresas_clientes,
          COALESCE(func.ativos, 0)::int  AS ativos,
          COALESCE(func.inativos, 0)::int AS inativos
@@ -216,18 +240,30 @@ export async function GET(
          JOIN funcionarios f ON f.id = fc.funcionario_id
          GROUP BY fc.clinica_id
        ) func ON func.clinica_id = c.id
+       LEFT JOIN (
+         SELECT tomador_id, MAX(data_aceite) AS data_aceite
+         FROM contratos
+         WHERE tipo_tomador = 'clinica' AND aceito = true
+         GROUP BY tomador_id
+       ) ct ON ct.tomador_id = c.id
        ORDER BY c.nome`
     );
     const lista_clinicas: ItemClinica[] = listaClinicasResult.rows.map(
       (r: {
         id: number;
         nome: string;
+        ativa: boolean;
+        criado_em: string;
+        data_aceite: string | null;
         empresas_clientes: string | number;
         ativos: string | number;
         inativos: string | number;
       }) => ({
         id: r.id,
         nome: r.nome,
+        ativa: r.ativa,
+        criado_em: r.criado_em,
+        data_aceite: r.data_aceite ?? null,
         empresas_clientes: parseInt(String(r.empresas_clientes)) || 0,
         ativos: parseInt(String(r.ativos)) || 0,
         inativos: parseInt(String(r.inativos)) || 0,

@@ -1,7 +1,13 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Building2, Download } from 'lucide-react';
+import {
+  Building2,
+  Download,
+  Wrench,
+  AlertTriangle,
+  CheckCircle,
+} from 'lucide-react';
 import PagamentosFinanceiros from '@/components/shared/PagamentosFinanceiros';
 import PagamentosEmAberto from '@/components/shared/PagamentosEmAberto';
 import MiniDashboardFinanceiro from '@/components/shared/financeiro/MiniDashboardFinanceiro';
@@ -32,6 +38,15 @@ interface AccountInfo {
   representante?: Representante | null;
 }
 
+interface ManutencaoStatus {
+  alerta: boolean;
+  limite_cobranca?: string | null;
+  dias_restantes?: number | null;
+  vencida?: boolean;
+  laudo_emitido?: boolean;
+  ja_cobrada?: boolean;
+}
+
 export default function EntidadeContaSection() {
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
   const [orgInfo, setOrgInfo] = useState<ContaSectionState | null>(null);
@@ -40,6 +55,8 @@ export default function EntidadeContaSection() {
   const [downloadingContrato, setDownloadingContrato] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [isSavingLogo, setIsSavingLogo] = useState(false);
+  const [manutencaoStatus, setManutencaoStatus] =
+    useState<ManutencaoStatus | null>(null);
 
   const handleBaixarContrato = async () => {
     try {
@@ -68,9 +85,10 @@ export default function EntidadeContaSection() {
 
   const loadAccountInfo = useCallback(async () => {
     try {
-      const [infoRes, logoRes] = await Promise.all([
+      const [infoRes, logoRes, manutencaoRes] = await Promise.all([
         fetch(`/api/entidade/account-info?_=${Date.now()}`),
         fetch('/api/entidade/logo'),
+        fetch('/api/entidade/manutencao-status'),
       ]);
 
       if (infoRes.ok) {
@@ -92,6 +110,11 @@ export default function EntidadeContaSection() {
       if (logoRes.ok) {
         const logoData = await logoRes.json();
         setLogoUrl(logoData.logo_url ?? null);
+      }
+
+      if (manutencaoRes.ok) {
+        const mData = await manutencaoRes.json();
+        setManutencaoStatus(mData);
       }
     } catch (error) {
       console.error('Erro ao carregar informações da conta:', error);
@@ -338,6 +361,50 @@ export default function EntidadeContaSection() {
           )}
         </div>
         {/* fim grid dados+logo */}
+
+        {/* Alerta Taxa de Manutenção */}
+        {manutencaoStatus?.alerta && manutencaoStatus.limite_cobranca && (
+          <div
+            className={`rounded-lg border p-4 ${manutencaoStatus.vencida ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-300'}`}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={`mt-0.5 ${manutencaoStatus.vencida ? 'text-red-600' : 'text-orange-600'}`}
+              >
+                {manutencaoStatus.vencida ? (
+                  <AlertTriangle className="w-5 h-5" />
+                ) : (
+                  <Wrench className="w-5 h-5" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p
+                  className={`font-semibold text-sm ${manutencaoStatus.vencida ? 'text-red-800' : 'text-orange-800'}`}
+                >
+                  {manutencaoStatus.vencida
+                    ? 'Taxa de Manutenção Vencida'
+                    : 'Taxa de Manutenção a Vencer'}
+                </p>
+                <p
+                  className={`text-sm mt-1 ${manutencaoStatus.vencida ? 'text-red-700' : 'text-orange-700'}`}
+                >
+                  {manutencaoStatus.vencida
+                    ? `O prazo de ${Math.abs(manutencaoStatus.dias_restantes ?? 0)} dia(s) para geração do primeiro laudo foi excedido. Uma taxa de manutenção de R$\u00a0250,00 será cobrada pelo suporte.`
+                    : `Você tem ${manutencaoStatus.dias_restantes} dia(s) para gerar o primeiro laudo antes de uma taxa de manutenção de R$\u00a0250,00 ser aplicada (prazo: ${new Date(manutencaoStatus.limite_cobranca).toLocaleDateString('pt-BR')}).`}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        {manutencaoStatus?.ja_cobrada && !manutencaoStatus.laudo_emitido && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <p className="text-sm text-blue-800">
+              Taxa de manutenção já registrada. Ao gerar o primeiro laudo, um
+              crédito de R$\u00a0250,00 será aplicado automaticamente.
+            </p>
+          </div>
+        )}
 
         {/* Pagamentos em Aberto */}
         <PagamentosEmAberto apiUrl="/api/entidade/pagamentos-em-aberto" />

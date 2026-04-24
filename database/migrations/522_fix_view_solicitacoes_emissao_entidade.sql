@@ -42,7 +42,7 @@ SELECT
   END AS laudo_ja_emitido,
   -- Tipo de solicitante
   CASE
-    WHEN c.id IS NOT NULL THEN 'rh'
+    WHEN la.clinica_id IS NOT NULL THEN 'rh'
     WHEN la.entidade_id IS NOT NULL THEN 'gestor'
     ELSE 'desconhecido'
   END AS tipo_solicitante,

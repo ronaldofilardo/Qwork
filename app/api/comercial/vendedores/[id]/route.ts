@@ -64,33 +64,6 @@ export async function PATCH(
       );
     }
 
-    // Verificar comissões pendentes antes de inativar
-    const comissoesPendentes = await query<{ total: string }>(
-      `SELECT COUNT(*) AS total
-       FROM comissoes_laudo cl
-       JOIN vinculos_comissao vc ON vc.id = cl.vinculo_id
-       WHERE vc.lead_id IN (
-         SELECT id FROM leads_representante WHERE vendedor_id = $1
-       )
-       AND cl.status NOT IN ('paga', 'cancelada')`,
-      [vendedorId]
-    );
-    const totalPendente = parseInt(
-      comissoesPendentes.rows[0]?.total ?? '0',
-      10
-    );
-    if (totalPendente > 0) {
-      return NextResponse.json(
-        {
-          error: 'Vendedor possui comissões pendentes',
-          detail: `Existem ${totalPendente} comissão(ões) não quitadas. Regularize antes de inativar.`,
-          code: 'COMISSOES_PENDENTES',
-          total_pendente: totalPendente,
-        },
-        { status: 409 }
-      );
-    }
-
     const motivo = parsed.data.motivo ?? 'Inativação via painel comercial';
     const operadorCpf = (session as { cpf?: string }).cpf ?? 'desconhecido';
     const operadorInfo = `comercial:${operadorCpf}`;

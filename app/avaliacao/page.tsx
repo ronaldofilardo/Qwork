@@ -253,7 +253,7 @@ export default function NovaAvaliacaoPage() {
       setTimeout(() => {
         setCurrentIndex(proximoIndex);
         setIsSaving(false);
-      }, 400);
+      }, 220);
     } else {
       // Se é a última questão, mostrar modal IMEDIATAMENTE
       setShowCompletionModal(true);

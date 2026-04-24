@@ -221,6 +221,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const requerAprovacao = calcularRequerAprovacao(
       data.valor_negociado ?? 0,
       0,
+      0,
       data.tipo_cliente
     );
 

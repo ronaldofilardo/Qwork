@@ -304,6 +304,78 @@ export default function FlowStepsExplainer({
             O checkbox no cabeçalho da tabela seleciona todas as empresas
             elegíveis de uma vez.
           </p>
+          <div className="flex items-center gap-2 mt-2 mb-1">
+            <div className="h-px flex-1 bg-blue-200" />
+            <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-wide">
+              Formatação dos dados
+            </span>
+            <div className="h-px flex-1 bg-blue-200" />
+          </div>
+          <ul className="space-y-0.5 text-xs text-blue-700">
+            <li>
+              <strong>CNPJ:</strong> responsável por segregar cada empresa e
+              seus respectivos funcionários{' '}
+              <span className="text-blue-500">
+                (coluna classificadora de cada linha)
+              </span>
+            </li>
+            <li>
+              <strong>Nome da Empresa:</strong> para que a empresa, e também o
+              laudo, possa ser nominal{' '}
+              <span className="text-blue-500">
+                (deve estar presente em todas as linhas)
+              </span>
+            </li>
+            <li>
+              <strong>Data de Nascimento:</strong> dd/mm/aaaa{' '}
+              <span className="text-blue-500">
+                (use texto ou formato dd/mm/aaaa para evitar perda por
+                formatação do Excel)
+              </span>
+            </li>
+            <li>
+              <strong>CPF:</strong> deve conter apenas 11 dígitos{' '}
+              <span className="text-blue-500">(sem pontos ou hífen)</span>
+            </li>
+            <li>
+              <strong>Função:</strong> importante para determinar a versão do
+              questionário. Caso não tenha, o sistema permite selecionar na
+              etapa <span className="italic">&ldquo;4. Níveis&rdquo;</span> em{' '}
+              <strong>nivel_cargo</strong>.
+            </li>
+          </ul>
+        </div>
+      )}
+
+      {/* Seção de Formatação dos Dados — exclusiva para entidades */}
+      {!isClinica && (
+        <div className="mt-2 pt-2 border-t border-blue-200 space-y-2">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="h-px flex-1 bg-blue-200" />
+            <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-wide">
+              Formatação dos dados
+            </span>
+            <div className="h-px flex-1 bg-blue-200" />
+          </div>
+          <ul className="space-y-0.5 text-xs text-blue-700">
+            <li>
+              <strong>Data de Nascimento:</strong> dd/mm/aaaa{' '}
+              <span className="text-blue-500">
+                (use texto ou formato dd/mm/aaaa para evitar perda por
+                formatação do Excel)
+              </span>
+            </li>
+            <li>
+              <strong>CPF:</strong> deve conter apenas 11 dígitos{' '}
+              <span className="text-blue-500">(sem pontos ou hífen)</span>
+            </li>
+            <li>
+              <strong>Função:</strong> importante para determinar a versão do
+              questionário. Caso não tenha, o sistema permite selecionar na
+              etapa <span className="italic">&ldquo;3. Avaliações&rdquo;</span>{' '}
+              ou via edição individual do funcionário.
+            </li>
+          </ul>
         </div>
       )}
     </div>

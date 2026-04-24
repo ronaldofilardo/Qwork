@@ -97,11 +97,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
             {
               id: 1,
               status: 'ativo',
+              numero_ordem: 5,
               empresa_nome: 'Empresa A',
               clinica_nome: 'Clínica A',
-              total_liberadas: '5',
-              concluidas: '3',
-              inativadas: '0',
+              total_liberadas: 5,
+              concluidas: 3,
+              inativadas: 0,
             },
           ],
           rowCount: 1,
@@ -129,11 +130,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
           {
             id: 1,
             status: 'ativo',
+            numero_ordem: 3,
             empresa_nome: 'Empresa A',
             clinica_nome: 'Clínica A',
-            total_liberadas: '4',
-            concluidas: '4',
-            inativadas: '0',
+            total_liberadas: 4,
+            concluidas: 4,
+            inativadas: 0,
           },
         ],
         rowCount: 1,
@@ -169,6 +171,8 @@ describe('/api/emissor/laudos/[loteId]', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
+      expect(data.lote.numero_ordem).toBe(3);
+      expect(data.lote.total_avaliacoes).toBe(4);
       expect(data.laudoPadronizado.observacoesEmissor).toBe(
         'Observações existentes'
       );
@@ -185,11 +189,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
           {
             id: 1,
             status: 'ativo',
+            numero_ordem: 2,
             empresa_nome: 'Empresa A',
             clinica_nome: 'Clínica A',
-            total_liberadas: '4',
-            concluidas: '4',
-            inativadas: '0',
+            total_liberadas: 4,
+            concluidas: 4,
+            inativadas: 0,
           },
         ],
         rowCount: 1,
@@ -213,6 +218,11 @@ describe('/api/emissor/laudos/[loteId]', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.previa).toBe(true);
+      expect(data.lote.numero_ordem).toBe(2);
+      expect(data.lote.total_avaliacoes).toBe(4);
+      expect(data.mensagem).toBe(
+        'Preview do laudo - clique em "Gerar Laudo" para emitir'
+      );
       expect(data.laudoPadronizado).toBeDefined();
     });
   });
@@ -287,12 +297,13 @@ describe('/api/emissor/laudos/[loteId]', () => {
           {
             id: 1,
             status: 'concluido',
+            numero_ordem: 1,
             status_pagamento: 'pago',
             pago_em: '2025-01-01',
             empresa_nome: 'Empresa A',
-            total_liberadas: '4',
-            concluidas: '4',
-            inativadas: '0',
+            total_liberadas: 4,
+            concluidas: 4,
+            inativadas: 0,
           },
         ],
         rowCount: 1,
@@ -300,6 +311,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
 
       // laudoExistente - nenhum laudo
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+      // filaEntry - lote em fila de emissão
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ id: 1 }],
+        rowCount: 1,
+      } as any);
 
       const mockReq = {} as Request;
       const mockParams = { params: { loteId: '1' } };
@@ -361,9 +378,11 @@ describe('/api/emissor/laudos/[loteId]', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.message).toBe('Laudo enviado para clínica');
+      // Verificar que query foi chamada com os parâmetros corretos para UPDATE
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining("status = 'enviado'"),
-        expect.arrayContaining([1, '99999999999'])
+        expect.stringContaining('UPDATE laudos'),
+        expect.arrayContaining([1, '99999999999']),
+        mockEmissor
       );
     });
 

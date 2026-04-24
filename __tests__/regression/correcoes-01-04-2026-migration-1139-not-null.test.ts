@@ -31,6 +31,13 @@ describe('Migration 1139 — Correções NOT NULL + usuario_tipo em funcionarios
   // ============================================================================
   // Helpers: leitura do schema via SQL (apenas leitura — sem escrita no banco)
   // ============================================================================
+
+  // Pre-aquece a conexão DB antes dos testes, aumenta timeout para testes de integração
+  beforeAll(async () => {
+    const { query } = await import('@/lib/db');
+    await query('SELECT 1', undefined, { cpf: '00000000000', perfil: 'admin' });
+  }, 30000);
+
   async function getColumnInfo(
     tableName: string,
     columnName: string
@@ -57,17 +64,17 @@ describe('Migration 1139 — Correções NOT NULL + usuario_tipo em funcionarios
     it('coluna existe em funcionarios', async () => {
       const col = await getColumnInfo('funcionarios', 'usuario_tipo');
       expect(col).not.toBeNull();
-    });
+    }, 30000);
 
     it('é NOT NULL', async () => {
       const col = await getColumnInfo('funcionarios', 'usuario_tipo');
       expect(col?.is_nullable).toBe('NO');
-    });
+    }, 30000);
 
     it('é do tipo usuario_tipo_enum', async () => {
       const col = await getColumnInfo('funcionarios', 'usuario_tipo');
       expect(col?.udt_name).toBe('usuario_tipo_enum');
-    });
+    }, 30000);
 
     it('enum usuario_tipo_enum contém os valores esperados', async () => {
       const { query } = await import('@/lib/db');

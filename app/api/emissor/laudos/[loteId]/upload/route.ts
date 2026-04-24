@@ -37,8 +37,10 @@ export async function POST(
   const startTime = Date.now();
 
   // 1. Autenticação: SOMENTE emissor
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user: Awaited<ReturnType<typeof requireRole>>;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       {
         error: 'Acesso negado. Apenas emissores podem fazer upload de laudos.',
@@ -213,12 +215,17 @@ export async function POST(
       `[UPLOAD] Iniciando upload do laudo ${laudoId} (lote ${laudo.lote_id}) para Backblaze...`
     );
 
-    const uploadResult = await uploadLaudoToBackblaze(laudoId, laudo.lote_id, buffer);
+    const uploadResult = await uploadLaudoToBackblaze(
+      laudoId,
+      laudo.lote_id,
+      buffer
+    );
 
     if (!uploadResult) {
       return NextResponse.json(
         {
-          error: 'Upload Backblaze não disponível (configuração ausente ou serviço desabilitado)',
+          error:
+            'Upload Backblaze não disponível (configuração ausente ou serviço desabilitado)',
           success: false,
         },
         { status: 503 }

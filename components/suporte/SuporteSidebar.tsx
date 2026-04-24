@@ -214,6 +214,14 @@ export default function SuporteSidebar({
             }
             onClick={() => onSectionChange('financeiro', 'individuais')}
           />
+          <SubMenuItem
+            label="Ciclos NF/RPA"
+            isActive={
+              activeSection === 'financeiro' &&
+              activeSubSection === 'ciclos_comissao'
+            }
+            onClick={() => onSectionChange('financeiro', 'ciclos_comissao')}
+          />
         </div>
       )}
 

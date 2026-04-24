@@ -13,6 +13,10 @@ interface GuideStep {
   subSteps?: SubStep[];
 }
 
+interface ImportacaoFlowGuideProps {
+  isClinica?: boolean;
+}
+
 const importacaoSteps: GuideStep[] = [
   {
     label: '1. Upload da Planilha',
@@ -60,7 +64,9 @@ const importacaoSteps: GuideStep[] = [
   },
 ];
 
-export default function ImportacaoFlowGuide() {
+export default function ImportacaoFlowGuide({
+  isClinica = true,
+}: ImportacaoFlowGuideProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoveredSubKey, setHoveredSubKey] = useState<string | null>(null);
 
@@ -147,27 +153,34 @@ export default function ImportacaoFlowGuide() {
         <div className="flex items-center gap-2 mb-1">
           <div className="h-px flex-1 bg-blue-200" />
           <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-wide">
-            Colunas obrigatórias
+            Colunas obrigatórias e formatação de dados
           </span>
           <div className="h-px flex-1 bg-blue-200" />
         </div>
         <ul className="space-y-0.5 text-xs text-blue-700">
+          {isClinica && (
+            <li>
+              <strong>Empresa:</strong> CNPJ{' '}
+              <span className="text-blue-500">[coluna classificadora]</span> e
+              nome em todas as linhas.
+            </li>
+          )}
           <li>
-            <strong>Empresa:</strong> CNPJ{' '}
-            <span className="text-blue-500">[coluna classificadora]</span> e
-            nome em todas as linhas.
-          </li>
-          <li>
-            <strong>Funcionário:</strong> Nome, CPF, data de nascimento e função{' '}
+            <strong>Data de Nascimento:</strong> dd/mm/aaaa{' '}
             <span className="text-blue-500">
-              [determinante para o nível do questionário]
+              (use texto ou formato dd/mm/aaaa para evitar perda por formatação
+              do Excel)
             </span>
-            .
           </li>
           <li>
-            <strong>Nível-cargo:</strong> Na fase{' '}
-            <span className="italic">&ldquo;4. Importação&rdquo;</span> o modal
-            automático define operacional ou gestão por função.
+            <strong>CPF:</strong> deve conter apenas 11 dígitos{' '}
+            <span className="text-blue-500">(sem pontos ou hífen)</span>
+          </li>
+          <li>
+            <strong>Função:</strong> importante para determinar a versão do
+            questionário. Caso não tenha, o sistema permite selecionar na etapa{' '}
+            <span className="italic">&ldquo;4. Níveis&rdquo;</span> em{' '}
+            <strong>nivel_cargo</strong>.
           </li>
         </ul>
       </div>

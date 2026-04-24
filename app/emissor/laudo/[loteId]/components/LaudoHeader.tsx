@@ -1,20 +1,40 @@
 'use client';
 
+type LaudoStatus =
+  | 'rascunho'
+  | 'pdf_gerado'
+  | 'aguardando_assinatura'
+  | 'assinado_processando'
+  | 'emitido'
+  | 'enviado'
+  | null;
+
 interface LaudoHeaderProps {
   onBack: () => void;
   isPrevia: boolean;
+  laudoStatus: LaudoStatus;
   gerandoLaudo: boolean;
+  assinandoLaudo: boolean;
   onOpenUploadModal: () => void;
   onGerarLaudo: () => void;
+  onAssinarDigitalmente: () => void;
 }
 
 export default function LaudoHeader({
   onBack,
   isPrevia,
+  laudoStatus,
   gerandoLaudo,
+  assinandoLaudo,
   onOpenUploadModal,
   onGerarLaudo,
+  onAssinarDigitalmente,
 }: LaudoHeaderProps) {
+  const showGerarButtons =
+    isPrevia && (!laudoStatus || laudoStatus === 'rascunho');
+  const showAssinarButton = laudoStatus === 'pdf_gerado';
+  const showAguardandoBanner = laudoStatus === 'aguardando_assinatura';
+
   return (
     <div className="mb-4 flex items-center justify-between">
       <button
@@ -23,7 +43,8 @@ export default function LaudoHeader({
       >
         ← Voltar ao Dashboard
       </button>
-      {isPrevia && (
+
+      {showGerarButtons && (
         <div className="flex gap-3">
           <button
             onClick={onOpenUploadModal}
@@ -73,6 +94,45 @@ export default function LaudoHeader({
               </>
             )}
           </button>
+        </div>
+      )}
+
+      {showAssinarButton && (
+        <button
+          onClick={onAssinarDigitalmente}
+          disabled={assinandoLaudo}
+          className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-2.5 rounded-lg font-semibold hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          {assinandoLaudo ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+              Enviando...
+            </>
+          ) : (
+            <>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+              Assinar Digitalmente
+            </>
+          )}
+        </button>
+      )}
+
+      {showAguardandoBanner && (
+        <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-2.5 rounded-lg text-sm font-medium">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-600 border-t-transparent flex-shrink-0"></div>
+          Aguardando assinatura digital...
         </div>
       )}
     </div>

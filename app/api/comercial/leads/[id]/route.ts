@@ -9,7 +9,7 @@ import { requireRole } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 
 const acaoSchema = z.object({
-  acao: z.enum(['aprovar', 'rejeitar']),
+  acao: z.enum(['aprovar', 'rejeitar', 'remover']),
   obs: z.string().max(500).optional(),
 });
 
@@ -51,7 +51,14 @@ export async function PATCH(
     }
 
     const lead = existing.rows[0];
-    if (lead.status !== 'pendente' || !lead.requer_aprovacao_comercial) {
+    if (lead.status !== 'pendente') {
+      return NextResponse.json(
+        { error: 'Este lead não está pendente' },
+        { status: 409 }
+      );
+    }
+
+    if (acao !== 'remover' && !lead.requer_aprovacao_comercial) {
       return NextResponse.json(
         { error: 'Este lead não está pendente de aprovação comercial' },
         { status: 409 }
@@ -69,6 +76,7 @@ export async function PATCH(
         [leadId, session.cpf, obs ?? null]
       );
     } else {
+      // rejeitar ou remover
       await query(
         `UPDATE public.leads_representante
          SET status = 'rejeitado',
@@ -84,7 +92,11 @@ export async function PATCH(
       success: true,
       acao,
       message:
-        acao === 'aprovar' ? 'Lead aprovado com sucesso.' : 'Lead rejeitado.',
+        acao === 'aprovar'
+          ? 'Lead aprovado com sucesso.'
+          : acao === 'remover'
+            ? 'Lead removido com sucesso.'
+            : 'Lead rejeitado.',
     });
   } catch (err: unknown) {
     if (

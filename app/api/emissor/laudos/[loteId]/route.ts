@@ -16,8 +16,10 @@ export const GET = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
@@ -36,18 +38,19 @@ export const GET = async (
     // Verificar se o lote existe e está pronto
     const loteCheck = await query(
       `
-      SELECT la.id, la.status,
-             COALESCE(e.nome, c.nome) as empresa_nome, 
+      SELECT la.id, la.status, la.numero_ordem,
+             COALESCE(e.nome, ec.nome) as empresa_nome, 
              c.nome as clinica_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
              COUNT(a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
       LEFT JOIN entidades e ON la.entidade_id = e.id
+      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN clinicas c ON la.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.status, e.nome, c.nome
+      GROUP BY la.id, la.status, e.nome, ec.nome, c.nome
     `,
       [loteId],
       user
@@ -75,7 +78,7 @@ export const GET = async (
     // Buscar laudo (se existir) antes de validar conclusão para permitir visualizar laudos emitidos
     const laudoQuery = await query(
       `
-      SELECT id, observacoes, status, criado_em, emitido_em, enviado_em, hash_pdf
+      SELECT id, observacoes, status, criado_em, emitido_em, enviado_em, hash_pdf, pdf_gerado_em
       FROM laudos
       WHERE lote_id = $1
     `,
@@ -84,11 +87,18 @@ export const GET = async (
     );
     const existingLaudo = laudoQuery.rows[0];
 
-    // Verificar se o laudo foi emitido (tem emitido_em preenchido)
-    const laudoFoiEmitido = existingLaudo && existingLaudo.emitido_em;
+    // Verificar se o laudo foi emitido (status pós-geração)
+    const STATUSES_POS_GERACAO = [
+      'pdf_gerado',
+      'aguardando_assinatura',
+      'emitido',
+      'enviado',
+    ];
+    const laudoFoiGerado =
+      existingLaudo && STATUSES_POS_GERACAO.includes(existingLaudo.status);
 
-    // Modo preview: lote não concluído OU laudo não foi emitido ainda
-    const isPrevia = !isLoteConcluido || !laudoFoiEmitido;
+    // Modo preview: lote não concluído OU laudo ainda não foi gerado
+    const isPrevia = !isLoteConcluido || !laudoFoiGerado;
 
     // Se o lote não está concluído e não existe laudo, rejeitar com 400 (não está pronto)
     if (!isLoteConcluido && !existingLaudo) {
@@ -125,7 +135,7 @@ export const GET = async (
         ),
         etapa4: observacoesConclusao,
         observacoesEmissor: null,
-        status: 'emitido',
+        status: 'rascunho',
         criadoEm: new Date().toISOString(),
         emitidoEm: new Date().toISOString(),
         enviadoEm: null,
@@ -142,7 +152,8 @@ export const GET = async (
           clinica_nome: lote.clinica_nome,
           status: lote.status,
           avaliacoes_concluidas: lote.concluidas,
-          total_avaliacoes: lote.total,
+          total_avaliacoes: lote.total_liberadas,
+          numero_ordem: lote.numero_ordem,
           emissao_automatica: false,
           previsao_emissao: null,
         },
@@ -188,12 +199,14 @@ export const GET = async (
         clinica_nome: lote.clinica_nome,
         status: lote.status,
         avaliacoes_concluidas: lote.concluidas,
-        total_avaliacoes: lote.total,
+        total_avaliacoes: lote.total_liberadas,
+        numero_ordem: lote.numero_ordem,
       },
       laudoPadronizado,
+      laudo_status: laudo?.status ?? null,
       previa: isPrevia,
       mensagem: isPrevia
-        ? `Pré-visualização do laudo. ${lote.concluidas}/${lote.total} avaliações concluídas.`
+        ? `Pré-visualização do laudo. ${lote.concluidas}/${lote.total_liberadas} avaliações concluídas.`
         : laudo
           ? 'Laudo disponível para visualização'
           : null,
@@ -224,12 +237,14 @@ export const PUT = async (
   _req: Request,
   _ctx: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user)
+  try {
+    await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
     );
+  }
 
   // Bloquear edição de observações (exceto em emissão de emergência)
   return NextResponse.json(
@@ -251,12 +266,15 @@ export const PATCH = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user)
+  let user;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
     );
+  }
 
   try {
     const loteId = parseInt(params.loteId);
@@ -344,8 +362,10 @@ export const POST = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user: Awaited<ReturnType<typeof requireRole>>;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
@@ -365,16 +385,17 @@ export const POST = async (
     const loteCheck = await query(
       `
       SELECT la.id, la.status, la.status_pagamento, la.pago_em,
-             COALESCE(e.nome, c.nome) as empresa_nome,
+             COALESCE(e.nome, ec.nome) as empresa_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
              COUNT(a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
       LEFT JOIN entidades e ON la.entidade_id = e.id
+      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN clinicas c ON la.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, c.nome
+      GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, ec.nome, c.nome
     `,
       [loteId],
       user
@@ -432,17 +453,20 @@ export const POST = async (
     if (laudoExistente.rows.length > 0) {
       const existing = laudoExistente.rows[0];
       // Se já foi enviado, bloquear
-      if (existing.status === 'enviado') {
+      // Bloquear regeneração de laudos em qualquer status pós-rascunho (imutabilidade)
+      const STATUS_IMUTAVEL = [
+        'pdf_gerado',
+        'aguardando_assinatura',
+        'emitido',
+        'enviado',
+      ];
+      if (STATUS_IMUTAVEL.includes(existing.status)) {
         return NextResponse.json(
-          { error: 'Laudo já foi enviado para este lote', success: false },
-          { status: 400 }
-        );
-      }
-
-      // Se já foi emitido (mesmo que não enviado), bloquear emissão - laudo é imutável
-      if (existing.emitido_em) {
-        return NextResponse.json(
-          { error: 'Laudo já foi gerado para este lote', success: false },
+          {
+            error: 'Laudo já foi gerado para este lote',
+            success: false,
+            detalhes: `Status atual: ${existing.status}`,
+          },
           { status: 400 }
         );
       }
@@ -470,14 +494,19 @@ export const POST = async (
     );
 
     try {
-      const { gerarLaudoCompletoEmitirPDF } = await import('@/lib/laudo-auto');
-      const laudoId = await gerarLaudoCompletoEmitirPDF(loteId, user.cpf, user);
+      const { gerarPDFLaudo } = await import('@/lib/laudo-auto');
+      const resultado = await gerarPDFLaudo(loteId, user.cpf, user);
 
       return NextResponse.json(
         {
           success: true,
-          message: 'Laudo gerado com sucesso',
-          laudo_id: laudoId,
+          message:
+            resultado.status === 'pdf_gerado'
+              ? 'PDF gerado com sucesso. Clique em "Assinar Digitalmente" para prosseguir.'
+              : 'Laudo gerado com sucesso',
+          laudo_id: resultado.laudoId,
+          status: resultado.status,
+          pdf_gerado: resultado.status === 'pdf_gerado',
         },
         { status: 200 }
       );

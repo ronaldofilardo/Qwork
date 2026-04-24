@@ -1,7 +1,7 @@
 'use client';
 
 import { X, Loader2, Plus, AlertCircle, AlertTriangle } from 'lucide-react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   normalizeCNPJ,
   validarCNPJ,
@@ -9,10 +9,10 @@ import {
   validarEmail,
 } from '@/lib/validators';
 import {
-  CUSTO_POR_AVALIACAO,
-  calcularRequerAprovacao,
   TIPO_CLIENTE_LABEL,
   TIPOS_CLIENTE,
+  CUSTO_POR_AVALIACAO,
+  calcularValoresComissao,
   type TipoCliente,
 } from '@/lib/leads-config';
 
@@ -27,8 +27,8 @@ interface Form {
   contato_telefone: string;
   cnpj: string;
   valor_negociado: string;
-  percentual_comissao: string;
   tipo_cliente: TipoCliente;
+  num_vidas_estimado: string;
 }
 
 interface Erros {
@@ -36,7 +36,7 @@ interface Erros {
   contato_email: string;
   contato_telefone: string;
   cnpj: string;
-  percentual_comissao: string;
+  num_vidas_estimado: string;
 }
 
 const FORM_INICIAL: Form = {
@@ -45,8 +45,8 @@ const FORM_INICIAL: Form = {
   contato_telefone: '',
   cnpj: '',
   valor_negociado: '',
-  percentual_comissao: '',
   tipo_cliente: 'entidade',
+  num_vidas_estimado: '',
 };
 
 const ERROS_INICIAL: Erros = {
@@ -54,7 +54,7 @@ const ERROS_INICIAL: Erros = {
   contato_email: '',
   contato_telefone: '',
   cnpj: '',
-  percentual_comissao: '',
+  num_vidas_estimado: '',
 };
 
 function aplicarMascaraCNPJ(valor: string): string {
@@ -81,6 +81,19 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
   const [erros, setErros] = useState<Erros>(ERROS_INICIAL);
   const [salvando, setSalvando] = useState(false);
   const [erroGeral, setErroGeral] = useState<string | null>(null);
+  const [percRep, setPercRep] = useState(0);
+  const [percComercial, setPercComercial] = useState(0);
+
+  // Buscar percentuais do representante logado
+  useEffect(() => {
+    void fetch('/api/representante/me')
+      .then((r) => r.json())
+      .then((d: { representante?: { percentual_comissao?: number | null; percentual_comissao_comercial?: number | null } }) => {
+        setPercRep(Number(d.representante?.percentual_comissao ?? 0));
+        setPercComercial(Number(d.representante?.percentual_comissao_comercial ?? 0));
+      })
+      .catch(() => {/* silencioso */});
+  }, []);
 
   const handleCNPJChange = (valor: string) => {
     const mascarado = aplicarMascaraCNPJ(valor);
@@ -109,31 +122,45 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     else setErros((p) => ({ ...p, contato_email: '' }));
   };
 
+  const handleNumVidasChange = (valor: string) => {
+    const limpo = valor.replace(/\D/g, '');
+    setForm((p) => ({ ...p, num_vidas_estimado: limpo }));
+    if (!limpo || parseInt(limpo) < 1)
+      setErros((p) => ({ ...p, num_vidas_estimado: 'Informe ao menos 1 vida' }));
+    else setErros((p) => ({ ...p, num_vidas_estimado: '' }));
+  };
+
   const valorNegociadoNum =
     parseFloat(form.valor_negociado.replace(/[^\d,]/g, '').replace(',', '.')) ||
     0;
 
-  const percentualComissaoNum =
-    parseFloat(
-      form.percentual_comissao.replace(/[^\d,]/g, '').replace(',', '.')
-    ) || 0;
+  const numVidasNum = parseInt(form.num_vidas_estimado) || 0;
 
-  const custoAtual = CUSTO_POR_AVALIACAO[form.tipo_cliente];
-  const requerAprovacao = calcularRequerAprovacao(
-    valorNegociadoNum,
-    percentualComissaoNum,
-    form.tipo_cliente
-  );
+  // Calcular breakdown em tempo real
+  const breakdown = valorNegociadoNum > 0
+    ? calcularValoresComissao(valorNegociadoNum, percRep, percComercial, form.tipo_cliente)
+    : null;
+
+  const custoMinimo = CUSTO_POR_AVALIACAO[form.tipo_cliente];
+
+  const fmtBRL = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const formValido =
     form.contato_nome.trim().length >= 3 &&
     !erros.contato_email &&
     !erros.contato_telefone &&
-    !erros.cnpj;
+    !erros.cnpj &&
+    numVidasNum >= 1 &&
+    !erros.num_vidas_estimado;
 
   const salvar = useCallback(async () => {
     if (!form.contato_nome.trim()) {
       setErroGeral('Nome do contato é obrigatório.');
+      return;
+    }
+    if (numVidasNum < 1) {
+      setErroGeral('Quantidade de vidas estimada é obrigatória.');
       return;
     }
     setSalvando(true);
@@ -142,6 +169,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
       const body: Record<string, unknown> = {
         contato_nome: form.contato_nome.trim(),
         tipo_cliente: form.tipo_cliente,
+        num_vidas_estimado: numVidasNum,
       };
       if (form.contato_email.trim())
         body.contato_email = form.contato_email.trim();
@@ -149,8 +177,6 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
         body.contato_telefone = form.contato_telefone.trim();
       if (form.cnpj.trim()) body.cnpj = normalizeCNPJ(form.cnpj);
       if (form.valor_negociado.trim()) body.valor_negociado = valorNegociadoNum;
-      if (form.percentual_comissao.trim())
-        body.percentual_comissao = percentualComissaoNum;
 
       const res = await fetch('/api/representante/minhas-vendas/leads', {
         method: 'POST',
@@ -168,7 +194,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     } finally {
       setSalvando(false);
     }
-  }, [form, valorNegociadoNum, percentualComissaoNum, onSuccess]);
+  }, [form, valorNegociadoNum, numVidasNum, onSuccess]);
 
   return (
     <div
@@ -177,7 +203,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h2 className="font-bold text-gray-900">Novo Lead Direto</h2>
           <button
@@ -217,12 +243,6 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
                 </button>
               ))}
             </div>
-            <p className="mt-1 text-xs text-gray-500">
-              Custo por avaliação:{' '}
-              <span className="font-semibold text-gray-700">
-                R$ {custoAtual},00
-              </span>
-            </p>
           </div>
 
           {/* Nome do Contato */}
@@ -280,7 +300,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
           {/* CNPJ */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              CNPJ (se disponível)
+              CNPJ <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -295,78 +315,92 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
             )}
           </div>
 
-          {/* Valor + Comissão */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Valor negociado (R$)
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={form.valor_negociado}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^\d]/g, '');
-                  if (!raw) {
-                    setForm((f) => ({ ...f, valor_negociado: '' }));
-                    return;
-                  }
-                  const formatted = (Number(raw) / 100).toLocaleString(
-                    'pt-BR',
-                    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                  );
-                  setForm((f) => ({
-                    ...f,
-                    valor_negociado: `R$ ${formatted}`,
-                  }));
-                }}
-                placeholder="R$ 0,00"
-                className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Comissão (%)
-              </label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.1"
-                value={form.percentual_comissao}
-                onChange={(e) => {
-                  setForm((f) => ({
-                    ...f,
-                    percentual_comissao: e.target.value,
-                  }));
-                  const n = parseFloat(e.target.value);
-                  if (isNaN(n) || n < 0 || n > 100)
-                    setErros((p) => ({
-                      ...p,
-                      percentual_comissao: 'Entre 0 e 100',
-                    }));
-                  else setErros((p) => ({ ...p, percentual_comissao: '' }));
-                }}
-                placeholder="0.0"
-                className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${erros.percentual_comissao ? 'border-red-400 focus:ring-red-400' : 'focus:ring-green-500/30 focus:border-green-400'}`}
-              />
-              {erros.percentual_comissao && (
-                <p className="mt-1 text-xs text-red-500">
-                  {erros.percentual_comissao}
-                </p>
-              )}
-            </div>
+          {/* Qtde de Vidas Estimada */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Qtde de vidas estimada <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="1"
+              value={form.num_vidas_estimado}
+              onChange={(e) => handleNumVidasChange(e.target.value)}
+              placeholder="Ex: 50"
+              className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${erros.num_vidas_estimado ? 'border-red-400 focus:ring-red-400' : numVidasNum >= 1 ? 'border-green-400 focus:ring-green-400' : 'focus:ring-green-500/30 focus:border-green-400'}`}
+            />
+            {erros.num_vidas_estimado && (
+              <p className="mt-1 text-xs text-red-500">{erros.num_vidas_estimado}</p>
+            )}
           </div>
 
-          {/* Aviso de aprovação comercial */}
-          {requerAprovacao && form.contato_nome.trim().length >= 3 && (
-            <div className="flex items-start gap-2 bg-orange-50 border border-orange-200 text-orange-700 rounded-lg px-4 py-3 text-xs">
-              <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-              <span>
-                Este lead requer <strong>aprovação do Comercial</strong> antes
-                de ser processado (margem abaixo do custo por avaliação de R${' '}
-                {custoAtual},00).
-              </span>
+          {/* Valor negociado */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Valor negociado por vida (R$) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.valor_negociado}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^\d]/g, '');
+                if (!raw) {
+                  setForm((f) => ({ ...f, valor_negociado: '' }));
+                  return;
+                }
+                const formatted = (Number(raw) / 100).toLocaleString('pt-BR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                });
+                setForm((f) => ({
+                  ...f,
+                  valor_negociado: `R$ ${formatted}`,
+                }));
+              }}
+              placeholder="R$ 0,00"
+              className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
+            />
+          </div>
+
+          {/* Breakdown de comissão */}
+          {breakdown && (
+            <div className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${breakdown.abaixoCusto ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}>
+              <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">Simulação de Comissão</p>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Valor por vida</span>
+                <span className="font-semibold">{fmtBRL(valorNegociadoNum)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Sua comissão ({percRep.toFixed(1)}%)</span>
+                <span className="text-green-700 font-medium">{fmtBRL(breakdown.valorRep)}</span>
+              </div>
+              {percComercial > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Comissão comercial ({percComercial.toFixed(1)}%)</span>
+                  <span className="text-blue-700 font-medium">{fmtBRL(breakdown.valorComercial)}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t pt-1.5">
+                <span className={breakdown.abaixoCusto ? 'text-amber-700 font-semibold' : 'text-gray-600 font-semibold'}>
+                  QWork recebe
+                </span>
+                <span className={breakdown.abaixoCusto ? 'text-amber-700 font-semibold' : 'text-gray-700 font-semibold'}>
+                  {fmtBRL(breakdown.valorQWork)}
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-400">
+                <span>Custo mínimo ({form.tipo_cliente})</span>
+                <span>R$ {custoMinimo},00</span>
+              </div>
+              {breakdown.abaixoCusto && (
+                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
+                  <AlertTriangle size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-amber-800 text-xs">
+                    Valor abaixo do custo mínimo — este lead precisará de aprovação do comercial.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>

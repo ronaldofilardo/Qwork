@@ -50,7 +50,6 @@ export async function GET(
       `SELECT
          hc.id               AS vinculo_id,
          hc.criado_em        AS vinculado_em,
-         hc.percentual_override,
          u.id                AS vendedor_id,
          u.nome              AS nome,
          u.email             AS email,

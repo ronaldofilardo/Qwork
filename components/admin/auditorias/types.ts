@@ -1,78 +1,41 @@
-export interface AcessoGestor {
+export interface AcessoGestorUnificado {
   id: number;
   cpf: string;
-  clinica_id: number | null;
-  empresa_id: number | null;
+  tipo: 'gestor' | 'rh';
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  ip_address: string;
+  // gestor fields
   empresa_nome: string | null;
   empresa_cnpj: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
+  entidade_id: number | null;
+  // rh fields
+  clinica_id: number | null;
+  clinica_nome: string | null;
 }
 
-export interface AcessoRH {
+export interface AcessoOperacional {
   id: number;
   cpf: string;
-  clinica_id: number;
-  clinica_nome: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoSuporte {
-  id: number;
-  cpf: string;
+  perfil: 'suporte' | 'comercial' | 'representante' | 'vendedor';
   nome: string | null;
+  cnpj: string | null;
   login_timestamp: string;
   logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoComercial {
-  id: number;
-  cpf: string;
-  nome: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoRepresentante {
-  id: number;
-  cpf: string;
-  representante_nome: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoVendedor {
-  id: number;
-  cpf: string;
-  nome: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
   ip_address: string;
 }
 
 export interface AuditoriaAvaliacao {
   avaliacao_id: number;
-  lote_id: number;
+  cpf: string;
   lote: string;
   liberado_em: string | null;
-  concluida: boolean;
-  inativada: boolean;
-  iniciada_em: string | null;
+  avaliacao_status: string;
   concluida_em: string | null;
   criado_em: string;
   empresa_nome: string | null;
+  entidade_nome: string | null;
+  clinica_nome: string | null;
 }
 
 export interface AuditoriaLote {
@@ -161,16 +124,107 @@ export interface AuditoriaLaudoDetalhe {
 }
 
 export type AuditoriaSubTab =
-  | 'acesso-gestor'
-  | 'acesso-rh'
+  | 'gestores'
   | 'avaliacoes'
   | 'lotes'
   | 'laudos'
+  | 'operacionais'
+  | 'aceites'
+  | 'delecao'
   | 'acesso-suporte'
-  | 'acesso-comercial'
-  | 'acesso-representante'
-  | 'acesso-vendedor'
-  | 'aceites';
+  | 'comissoes-leads';
+
+// ── Acesso por Perfil Operacional (Suporte/Comercial/Representante/Vendedor) ──
+
+export interface AcessoSuporte {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  nome: string | null;
+}
+
+export interface AcessoComercial {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  nome: string | null;
+}
+
+export interface AcessoRepresentante {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  representante_nome: string | null;
+}
+
+export interface AcessoVendedor {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  nome: string | null;
+}
+
+// ── Lead Abaixo do Custo Mínimo ─────────────────────────────────────────────
+
+export interface LeadAbaixoMinimo {
+  id: number;
+  cnpj: string;
+  razao_social: string | null;
+  contato_nome: string | null;
+  tipo_cliente: string;
+  valor_negociado: number | null;
+  percentual_comissao: number | null;
+  percentual_comissao_representante: number | null;
+  percentual_comissao_comercial: number | null;
+  num_vidas_estimado: number | null;
+  requer_aprovacao_comercial: boolean;
+  status: string;
+  criado_em: string;
+  representante_nome: string;
+  representante_codigo: string;
+}
+
+// ── Deleção de Tomador ────────────────────────────────────────────────────
+
+export interface DelecaoHistoricoItem {
+  id: number;
+  cnpj: string;
+  nome: string;
+  tipo: string;
+  tomador_id: number;
+  admin_cpf: string;
+  admin_nome: string;
+  resumo: Record<string, number>;
+  criado_em: string;
+}
+
+export interface DelecaoPreview {
+  tomador: {
+    id: number;
+    nome: string;
+    cnpj: string;
+    tipo: string;
+    responsavel_cpf: string | null;
+    status: string | null;
+  };
+  contagens: Record<string, number>;
+}
 
 // ── Aceites (consolidado por usuário) ─────────────────────────────────────
 
@@ -193,8 +247,8 @@ export interface AceiteUsuario {
 export interface AuditoriasContentProps {
   auditoriaSubTab: AuditoriaSubTab;
   setAuditoriaSubTab: (tab: AuditoriaSubTab) => void;
-  acessosGestor: AcessoGestor[];
-  acessosRH: AcessoRH[];
+  gestores: AcessoGestorUnificado[];
+  operacionais: AcessoOperacional[];
   auditoriaAvaliacoes: AuditoriaAvaliacao[];
   auditoriaLotes: AuditoriaLote[];
   auditoriaLaudos: AuditoriaLaudo[];

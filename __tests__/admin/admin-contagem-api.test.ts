@@ -150,6 +150,9 @@ describe('GET /api/admin/contagem', () => {
           {
             id: 1,
             nome: 'RELEGERE',
+            ativa: true,
+            criado_em: '2025-01-01T00:00:00.000Z',
+            data_aceite: '2025-01-10T00:00:00.000Z',
             ativos: 4,
             inativos: 4,
           },
@@ -162,6 +165,9 @@ describe('GET /api/admin/contagem', () => {
           {
             id: 42,
             nome: 'RLJ COMERCIAL EXPORTADORA LTDA',
+            ativa: true,
+            criado_em: '2025-02-01T00:00:00.000Z',
+            data_aceite: '2025-02-15T00:00:00.000Z',
             empresas_clientes: 2, // DISTINCT empresa_id de funcionarios_clinicas
             ativos: 6, // fc.ativo = true
             inativos: 3, // fc.ativo = false

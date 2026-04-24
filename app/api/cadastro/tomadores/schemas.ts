@@ -117,7 +117,7 @@ const ALLOWED_FILE_TYPES = [
   'image/jpg',
   'image/png',
 ];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
 
 export interface CadastroArquivos {
   cartao_cnpj: File;
@@ -158,7 +158,7 @@ export function validarArquivos(
     contrato_social.size > MAX_FILE_SIZE ||
     doc_identificacao.size > MAX_FILE_SIZE
   ) {
-    return { success: false, error: 'Arquivos não podem exceder 5MB' };
+    return { success: false, error: 'Arquivos não podem exceder 3MB' };
   }
 
   return {

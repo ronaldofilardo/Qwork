@@ -153,10 +153,8 @@ describe('2. solicitar-emissao/route.ts — notificação admin inválida removi
     expect(src).toContain('solicitacao_emissao_em = NOW()');
   });
 
-  it('deve usar transação (BEGIN/COMMIT/ROLLBACK)', () => {
-    expect(src).toContain("query('BEGIN')");
-    expect(src).toContain("query('COMMIT')");
-    expect(src).toContain("query('ROLLBACK')");
+  it('deve usar transação via transactionWithContext', () => {
+    expect(src).toContain('transactionWithContext');
   });
 
   it('deve usar advisory lock para prevenir race condition', () => {

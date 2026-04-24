@@ -9,6 +9,8 @@ import {
   Building2,
   RefreshCw,
   Briefcase,
+  Trash2,
+  RotateCcw,
 } from 'lucide-react';
 
 interface ContagemMetricas {
@@ -24,6 +26,9 @@ interface ContagemMetricas {
 interface ItemEntidade {
   id: number;
   nome: string;
+  ativa: boolean;
+  criado_em: string;
+  data_aceite: string | null;
   ativos: number;
   inativos: number;
 }
@@ -31,6 +36,9 @@ interface ItemEntidade {
 interface ItemClinica {
   id: number;
   nome: string;
+  ativa: boolean;
+  criado_em: string;
+  data_aceite: string | null;
   empresas_clientes: number;
   ativos: number;
   inativos: number;
@@ -43,6 +51,18 @@ interface ContagemData {
   lista_clinicas: ItemClinica[];
   success: boolean;
   error?: string;
+}
+
+type TomadorTipo = 'entidade' | 'clinica';
+type TomadorAction = 'softdelete' | 'reativar';
+
+function formatarDataCurta(iso: string | null | undefined): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 }
 
 interface MetricaCardProps {
@@ -69,21 +89,37 @@ function MetricaCard({ icon: Icon, label, valor, cor }: MetricaCardProps) {
   );
 }
 
-function TabelaAtivoInativo({
+// ── Tabela com datas + botões de ação ─────────────────────────────────────────
+
+interface TabelaRow {
+  id: number;
+  nome: string;
+  extra?: number;
+  ativos: number;
+  inativos: number;
+  ativa?: boolean;
+  criado_em?: string;
+  data_aceite?: string | null;
+}
+
+function TabelaDetalhe({
   loading,
   rows,
   colunaExtra,
+  tipo,
+  onAction,
+  actionLoading,
 }: {
   loading: boolean;
-  rows: Array<{
-    id: number;
-    nome: string;
-    extra?: number;
-    extraLabel?: string;
-    ativos: number;
-    inativos: number;
-  }>;
+  rows: TabelaRow[];
   colunaExtra?: string;
+  tipo?: TomadorTipo;
+  onAction?: (
+    id: number,
+    tipo: TomadorTipo,
+    action: TomadorAction
+  ) => Promise<void>;
+  actionLoading?: Set<number>;
 }) {
   if (loading) {
     return (
@@ -116,40 +152,102 @@ function TabelaAtivoInativo({
                 {colunaExtra}
               </th>
             )}
+            <th className="text-left py-2 px-2 text-gray-500 font-medium whitespace-nowrap hidden xl:table-cell">
+              Cadastrado em
+            </th>
+            <th className="text-left py-2 px-2 text-gray-500 font-medium whitespace-nowrap hidden xl:table-cell">
+              Aceite em
+            </th>
             <th className="text-center py-2 px-2 text-emerald-600 font-medium">
               Ativos
             </th>
             <th className="text-center py-2 pl-2 text-red-500 font-medium">
               Inativos
             </th>
+            {tipo && onAction && (
+              <th className="text-center py-2 pl-2 text-gray-500 font-medium w-10">
+                Ação
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
-            <tr
-              key={row.id}
-              className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
-            >
-              <td className="py-2 pr-3 text-gray-800 font-medium">
-                {row.nome}
-              </td>
-              {colunaExtra !== undefined && (
-                <td className="text-center py-2 px-2 text-gray-700">
-                  {row.extra ?? 0}
+          {rows.map((row) => {
+            const inativo = row.ativa === false;
+            const carregando = actionLoading?.has(row.id) ?? false;
+            return (
+              <tr
+                key={row.id}
+                className={`border-b border-gray-50 transition-colors ${
+                  inativo ? 'opacity-50 bg-gray-50' : 'hover:bg-gray-50'
+                }`}
+              >
+                <td
+                  className={`py-2 pr-3 font-medium ${
+                    inativo ? 'line-through text-gray-400' : 'text-gray-800'
+                  }`}
+                >
+                  {row.nome}
                 </td>
-              )}
-              <td className="text-center py-2 px-2">
-                <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold">
-                  {row.ativos}
-                </span>
-              </td>
-              <td className="text-center py-2 pl-2">
-                <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-semibold">
-                  {row.inativos}
-                </span>
-              </td>
-            </tr>
-          ))}
+                {colunaExtra !== undefined && (
+                  <td className="text-center py-2 px-2 text-gray-700">
+                    {row.extra ?? 0}
+                  </td>
+                )}
+                <td className="py-2 px-2 text-gray-500 text-xs whitespace-nowrap hidden xl:table-cell">
+                  {formatarDataCurta(row.criado_em)}
+                </td>
+                <td className="py-2 px-2 text-gray-500 text-xs whitespace-nowrap hidden xl:table-cell">
+                  {formatarDataCurta(row.data_aceite ?? null)}
+                </td>
+                <td className="text-center py-2 px-2">
+                  <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold">
+                    {row.ativos}
+                  </span>
+                </td>
+                <td className="text-center py-2 pl-2">
+                  <span className="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-full bg-red-50 text-red-600 font-semibold">
+                    {row.inativos}
+                  </span>
+                </td>
+                {tipo && onAction && (
+                  <td className="text-center py-2 pl-2">
+                    {inativo ? (
+                      <button
+                        onClick={() => void onAction(row.id, tipo, 'reativar')}
+                        disabled={carregando}
+                        title="Reativar tomador"
+                        aria-label="Reativar tomador"
+                        className="p-1 rounded text-green-600 hover:bg-green-50 transition-colors disabled:opacity-40 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-400"
+                      >
+                        {carregando ? (
+                          <RefreshCw size={14} className="animate-spin" />
+                        ) : (
+                          <RotateCcw size={14} />
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() =>
+                          void onAction(row.id, tipo, 'softdelete')
+                        }
+                        disabled={carregando}
+                        title="Desativar tomador"
+                        aria-label="Desativar tomador"
+                        className="p-1 rounded text-red-500 hover:bg-red-50 transition-colors disabled:opacity-40 cursor-pointer focus:outline-none focus:ring-2 focus:ring-red-400"
+                      >
+                        {carregando ? (
+                          <RefreshCw size={14} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
+                      </button>
+                    )}
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
@@ -162,12 +260,20 @@ function PainelContagemVertical({
   loading,
   listaEntidades,
   listaClinicas,
+  onAction,
+  actionLoading,
 }: {
   titulo: string;
   metricas: ContagemMetricas;
   loading: boolean;
   listaEntidades?: ItemEntidade[];
   listaClinicas?: ItemClinica[];
+  onAction?: (
+    id: number,
+    tipo: TomadorTipo,
+    action: TomadorAction
+  ) => Promise<void>;
+  actionLoading?: Set<number>;
 }) {
   const isEntidades = titulo === 'Entidades';
 
@@ -251,11 +357,17 @@ function PainelContagemVertical({
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
               Detalhamento por Entidade
             </p>
-            <TabelaAtivoInativo
+            <TabelaDetalhe
               loading={loading}
+              tipo="entidade"
+              onAction={onAction}
+              actionLoading={actionLoading}
               rows={listaEntidades.map((e) => ({
                 id: e.id,
                 nome: e.nome,
+                ativa: e.ativa,
+                criado_em: e.criado_em,
+                data_aceite: e.data_aceite,
                 ativos: e.ativos,
                 inativos: e.inativos,
               }))}
@@ -266,12 +378,18 @@ function PainelContagemVertical({
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">
               Detalhamento por Clínica
             </p>
-            <TabelaAtivoInativo
+            <TabelaDetalhe
               loading={loading}
               colunaExtra="Empresas"
+              tipo="clinica"
+              onAction={onAction}
+              actionLoading={actionLoading}
               rows={listaClinicas.map((c) => ({
                 id: c.id,
                 nome: c.nome,
+                ativa: c.ativa,
+                criado_em: c.criado_em,
+                data_aceite: c.data_aceite,
                 extra: c.empresas_clientes,
                 ativos: c.ativos,
                 inativos: c.inativos,
@@ -289,6 +407,7 @@ export function ContagemContent() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [ultimaAtualizacao, setUltimaAtualizacao] = useState<Date | null>(null);
+  const [actionLoading, setActionLoading] = useState<Set<number>>(new Set());
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -310,6 +429,34 @@ export function ContagemContent() {
       setLoading(false);
     }
   }, []);
+
+  const handleAction = useCallback(
+    async (id: number, tipo: TomadorTipo, action: TomadorAction) => {
+      setActionLoading((prev) => new Set(prev).add(id));
+      try {
+        const res = await fetch(`/api/admin/tomadores/${id}/softdelete`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, tipo }),
+        });
+        if (!res.ok) {
+          const body = (await res.json()) as { error?: string };
+          throw new Error(body.error ?? 'Erro ao executar ação');
+        }
+        // Recarregar dados para refletir mudança
+        await carregar();
+      } catch (err) {
+        setErro(err instanceof Error ? err.message : 'Erro ao executar ação');
+      } finally {
+        setActionLoading((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
+    },
+    [carregar]
+  );
 
   useEffect(() => {
     carregar();
@@ -359,6 +506,8 @@ export function ContagemContent() {
           }
           loading={loading}
           listaEntidades={dados?.lista_entidades}
+          onAction={handleAction}
+          actionLoading={actionLoading}
         />
 
         {/* Painel Clínicas */}
@@ -376,6 +525,8 @@ export function ContagemContent() {
           }
           loading={loading}
           listaClinicas={dados?.lista_clinicas}
+          onAction={handleAction}
+          actionLoading={actionLoading}
         />
       </div>
 
