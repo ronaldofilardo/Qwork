@@ -129,12 +129,10 @@ export default function ModalContrato({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
-            <FileText className="w-6 h-6 text-orange-600" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">
-                Contrato de Serviço
-              </h2>
-            </div>
+            <FileText className="w-5 h-5 text-[#2D2D2D]" />
+            <h2 className="text-lg font-bold text-[#2D2D2D]">
+              Contrato de Serviço
+            </h2>
           </div>
           <button
             onClick={onClose}
@@ -158,17 +156,17 @@ export default function ModalContrato({
             <>
               {/* Dados da Tomadora */}
               {contrato.tomador_nome && (
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                <div className="mb-5 p-4 bg-gray-50 border-l-2 border-[#2D2D2D] rounded-r-lg">
+                  <h3 className="text-xs font-bold text-[#2D2D2D] uppercase tracking-wide mb-2">
                     Dados da Contratante
                   </h3>
-                  <div className="space-y-1">
-                    <p className="text-sm text-blue-800">
+                  <div className="space-y-0.5">
+                    <p className="text-sm text-gray-700">
                       <span className="font-medium">Razão Social:</span>{' '}
                       {contrato.tomador_nome}
                     </p>
                     {contrato.tomador_cnpj && (
-                      <p className="text-sm text-blue-800">
+                      <p className="text-sm text-gray-700">
                         <span className="font-medium">CNPJ:</span>{' '}
                         {contrato.tomador_cnpj}
                       </p>
@@ -194,12 +192,9 @@ export default function ModalContrato({
                       el.scrollTop + el.clientHeight >= el.scrollHeight - 10;
                     setScrolledToEnd(atEnd);
                   }}
-                  className="max-h-[56vh] overflow-y-auto p-6 text-sm text-gray-800"
+                  className="max-h-[56vh] overflow-y-auto p-6"
                 >
-                  {/* Exibir contrato padrão unificado (texto estático, sem dados dinâmicos) */}
-                  <div className="prose prose-slate max-w-none">
-                    <ContratoPadrao />
-                  </div>{' '}
+                  <ContratoPadrao />
                 </div>
               </div>
             </>
@@ -248,7 +243,10 @@ export default function ModalContrato({
             )}
 
           {/* Checkbox de aceite */}
-          <div className="flex items-center gap-3">
+          <label
+            htmlFor="aceite-contrato"
+            className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer select-none transition-colors"
+          >
             <input
               id="aceite-contrato"
               data-testid="aceite-checkbox"
@@ -256,13 +254,13 @@ export default function ModalContrato({
               checked={aceiteChecked}
               onChange={(e) => setAceiteChecked(e.target.checked)}
               disabled={!scrolledToEnd || loading}
-              className="w-4 h-4"
+              className="mt-0.5 w-4 h-4 accent-[#2D2D2D] flex-shrink-0"
             />
-            <label htmlFor="aceite-contrato" className="text-sm text-gray-700">
-              Li e concordo com os termos do contrato (role até o final para
-              habilitar)
-            </label>
-          </div>
+            <span className="text-sm text-gray-700 leading-snug">
+              Li e concordo com os termos do contrato{' '}
+              <span className="text-gray-400">(role até o final para habilitar)</span>
+            </span>
+          </label>
 
           {/* Botões de ação */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -277,7 +275,7 @@ export default function ModalContrato({
             {!processando && !loading && contrato && !contrato.aceito && (
               <button
                 data-testid="aceitar-button"
-                className="px-6 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-2.5 bg-[#2D2D2D] text-white rounded-lg hover:bg-[#1a1a1a] disabled:opacity-40 flex items-center gap-2 font-medium text-sm transition-colors"
                 disabled={!scrolledToEnd || !aceiteChecked}
                 onClick={() => {
                   if (!scrolledToEnd) {
