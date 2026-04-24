@@ -53,6 +53,17 @@ export interface Solicitacao {
   valor_negociado_vinculo?: number | null;
   detalhes_parcelas?: ParcelaDetalhe[] | null;
   tipo_cobranca?: 'laudo' | 'manutencao' | null;
+  // Comissionamento enriquecido — cadeia: vínculo > lead snapshot > global do representante
+  vinculo_percentual_rep?: number | null;
+  vinculo_percentual_comercial?: number | null;
+  lead_modelo_comissionamento?: string | null;
+  lead_percentual_rep?: number | null;
+  lead_percentual_comercial?: number | null;
+  lead_valor_custo_fixo_snapshot?: number | null;
+  rep_modelo_comissionamento?: string | null;
+  rep_percentual_comissao_comercial?: number | null;
+  rep_valor_custo_fixo_entidade?: number | null;
+  rep_valor_custo_fixo_clinica?: number | null;
 }
 
 export type FilterTab =
