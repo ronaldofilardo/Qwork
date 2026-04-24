@@ -94,6 +94,7 @@ export async function GET(request: NextRequest) {
          r.tipo_pessoa                 AS representante_tipo_pessoa,
          COALESCE(e.nome, cl.nome) AS entidade_nome,
          c.lote_pagamento_id,
+         (c.valor_laudo / c.total_parcelas) AS valor_parcela,
          la.pagamento_metodo           AS lote_pagamento_metodo,
          la.pagamento_parcelas         AS lote_pagamento_parcelas,
          r.percentual_comissao         AS representante_percentual,
