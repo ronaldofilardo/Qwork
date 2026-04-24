@@ -13,15 +13,23 @@ import { NextRequest, NextResponse } from 'next/server';
 function isUnderMaintenance(): boolean {
   // Maintenance mode só se aplica ao ambiente de produção (APP_ENV=production)
   // Staging e feature/v2 continuam acessíveis normalmente
-  if (process.env.APP_ENV !== 'production') return false;
+  const appEnv = process.env.APP_ENV;
+  if (appEnv !== 'production') {
+    console.log('[MAINTENANCE] APP_ENV não é production:', appEnv);
+    return false;
+  }
 
   const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
+  console.log('[MAINTENANCE] MAINTENANCE_MODE_ENABLED:', process.env.MAINTENANCE_MODE_ENABLED);
   if (!enabled) return false;
 
   const startStr = process.env.MAINTENANCE_START;
   const endStr = process.env.MAINTENANCE_END;
 
-  if (!startStr || !endStr) return false;
+  if (!startStr || !endStr) {
+    console.log('[MAINTENANCE] Datas não configuradas', { startStr, endStr });
+    return false;
+  }
 
   try {
     const now = new Date();
@@ -30,11 +38,15 @@ function isUnderMaintenance(): boolean {
 
     // Validar que as datas são válidas (não NaN)
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      console.log('[MAINTENANCE] Datas inválidas', { start, end });
       return false;
     }
 
-    return now >= start && now <= end;
-  } catch {
+    const isMaintenance = now >= start && now <= end;
+    console.log('[MAINTENANCE] Verificação final:', { now: now.toISOString(), start: start.toISOString(), end: end.toISOString(), isMaintenance });
+    return isMaintenance;
+  } catch (err) {
+    console.log('[MAINTENANCE] Erro ao verificar datas:', err);
     return false;
   }
 }
