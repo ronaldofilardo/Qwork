@@ -29,9 +29,9 @@ interface NovoLeadModalProps {
   onClose: () => void;
   percRep: number;
   percComercial: number;
-  modeloComissionamento: string | null;
-  valorCustoFixoEntidade: number | null;
-  valorCustoFixoClinica: number | null;
+  modeloComissionamento?: 'percentual' | 'custo_fixo' | null;
+  valorCustoFixoEntidade?: number | null;
+  valorCustoFixoClinica?: number | null;
 }
 
 export default function NovoLeadModal({

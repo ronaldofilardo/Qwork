@@ -18,9 +18,6 @@ export const CUSTO_POR_AVALIACAO: Record<TipoCliente, number> = {
   clinica: 5,
 } as const;
 
-/** @deprecated use CUSTO_POR_AVALIACAO */
-export const CUSTO_PRODUTO = CUSTO_POR_AVALIACAO;
-
 /** Percentual máximo de comissão do representante */
 export const MAX_PERCENTUAL_COMISSAO = 40;
 

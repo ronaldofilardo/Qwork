@@ -308,6 +308,8 @@ export async function POST(request: NextRequest) {
                   r.asaas_wallet_id,
                   r.modelo_comissionamento,
                   r.percentual_comissao,
+                  vc.percentual_comissao_representante,
+                  vc.percentual_comissao_comercial,
                   r.status AS rep_status,
                   r.valor_custo_fixo_clinica,
                   r.valor_custo_fixo_entidade
@@ -331,23 +333,27 @@ export async function POST(request: NextRequest) {
             asaas_wallet_id: string;
             modelo_comissionamento: 'percentual' | 'custo_fixo';
             percentual_comissao?: number | null;
-            rep_status: string;
-            valor_custo_fixo_clinica?: number | null;
+            percentual_comissao_representante?: number | null;
+            percentual_comissao_comercial?: number | null;
             valor_custo_fixo_entidade?: number | null;
+            valor_custo_fixo_clinica?: number | null;
+            rep_status: string;
           };
 
           const tipoProduto =
             tomador.tipo === 'clinica' ? 'clinica' : 'entidade';
 
-          // Custo fixo do rep para o tipo de produto atual
-          const custoFixoRep =
+          // Usar percentual negociado no vínculo; fallback para global do representante
+          const percRepFinal =
+            v.percentual_comissao_representante ??
+            v.percentual_comissao ??
+            undefined;
+          const percComercialFinal =
+            v.percentual_comissao_comercial ?? undefined;
+          const valorCustoFixoRep =
             tipoProduto === 'clinica'
-              ? v.valor_custo_fixo_clinica != null
-                ? Number(v.valor_custo_fixo_clinica)
-                : undefined
-              : v.valor_custo_fixo_entidade != null
-                ? Number(v.valor_custo_fixo_entidade)
-                : undefined;
+              ? (v.valor_custo_fixo_clinica ?? undefined)
+              : (v.valor_custo_fixo_entidade ?? undefined);
 
           // L3 fix: split deve ser calculado sobre o valor POR PARCELA, não o total.
           // O Asaas aplica fixedValue a cada parcela individualmente, portanto se
@@ -356,9 +362,13 @@ export async function POST(request: NextRequest) {
             v.modelo_comissionamento,
             valorParcela,
             tipoProduto,
-            v.percentual_comissao ?? undefined,
-            v.percentual_comissao_comercial ?? undefined,
-            custoFixoRep,
+            percRepFinal !== undefined ? Number(percRepFinal) : undefined,
+            percComercialFinal !== undefined
+              ? Number(percComercialFinal)
+              : undefined,
+            valorCustoFixoRep !== undefined
+              ? Number(valorCustoFixoRep)
+              : undefined,
             { metodoPagamento: metodo }
           );
 

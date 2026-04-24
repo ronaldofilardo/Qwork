@@ -13,7 +13,20 @@ export async function GET() {
         vs.*,
         pg.detalhes_parcelas,
         COALESCE(cl.isento_pagamento, ent.isento_pagamento, false)::boolean AS isento_pagamento,
-        COALESCE(av.num_avaliacoes_cobradas, 0)::int AS num_avaliacoes_cobradas
+        COALESCE(av.num_avaliacoes_cobradas, 0)::int AS num_avaliacoes_cobradas,
+        -- Percentuais negociados especificamente para este vínculo/tomador
+        vc_ext.percentual_comissao_representante  AS vinculo_percentual_rep,
+        vc_ext.percentual_comissao_comercial       AS vinculo_percentual_comercial,
+        -- Snapshot do lead: modelo e valores no momento da negociação
+        lr_ext.modelo_comissionamento              AS lead_modelo_comissionamento,
+        lr_ext.percentual_comissao_representante   AS lead_percentual_rep,
+        lr_ext.percentual_comissao_comercial       AS lead_percentual_comercial,
+        lr_ext.valor_custo_fixo_snapshot           AS lead_valor_custo_fixo_snapshot,
+        -- Representante: dados globais de fallback
+        r_ext.modelo_comissionamento               AS rep_modelo_comissionamento,
+        r_ext.percentual_comissao_comercial        AS rep_percentual_comissao_comercial,
+        r_ext.valor_custo_fixo_entidade            AS rep_valor_custo_fixo_entidade,
+        r_ext.valor_custo_fixo_clinica             AS rep_valor_custo_fixo_clinica
       FROM v_solicitacoes_emissao vs
       LEFT JOIN clinicas cl ON cl.id = vs.clinica_id
       LEFT JOIN entidades ent ON ent.id = vs.entidade_id
@@ -22,6 +35,12 @@ export async function GET() {
         FROM avaliacoes a
         WHERE a.lote_id = vs.lote_id
       ) av ON true
+      LEFT JOIN vinculos_comissao vc_ext
+        ON vc_ext.id = vs.vinculo_id
+      LEFT JOIN leads_representante lr_ext
+        ON lr_ext.id = vc_ext.lead_id
+      LEFT JOIN representantes r_ext
+        ON r_ext.id = vs.representante_id
       LEFT JOIN LATERAL (
         -- Prioriza o pagamento que referencia explicitamente este lote (dados_adicionais->lote_id).
         -- Fallback: pagamento mais recente da entidade/clínica (pagamentos antigos sem lote_id).

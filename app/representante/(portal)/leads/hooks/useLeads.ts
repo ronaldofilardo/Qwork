@@ -18,7 +18,7 @@ interface RepMe {
   representante?: {
     percentual_comissao?: number | null;
     percentual_comissao_comercial?: number | null;
-    modelo_comissionamento?: string | null;
+    modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
     valor_custo_fixo_entidade?: number | null;
     valor_custo_fixo_clinica?: number | null;
   };
@@ -85,7 +85,7 @@ export function useLeads() {
   const [percRep, setPercRep] = useState(0);
   const [percComercial, setPercComercial] = useState(0);
   const [modeloComissionamento, setModeloComissionamento] = useState<
-    string | null
+    'percentual' | 'custo_fixo' | null
   >(null);
   const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<
     number | null
