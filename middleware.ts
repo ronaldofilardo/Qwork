@@ -11,7 +11,8 @@ import { NextRequest, NextResponse } from 'next/server';
  * Fallback seguro: retorna false se variáveis malformadas
  */
 function isUnderMaintenance(): boolean {
-  // Somente ativa em produção (APP_ENV=production)
+  // Maintenance mode só se aplica ao ambiente de produção (APP_ENV=production)
+  // Staging e feature/v2 continuam acessíveis normalmente
   if (process.env.APP_ENV !== 'production') return false;
 
   const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
