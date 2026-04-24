@@ -15,6 +15,9 @@ type EnvAvailability = Record<
   { allowed: boolean; reason: string }
 >;
 
+// Aviso de manutenção: visível até o início da janela de manutenção (18h BRT = 21:00 UTC)
+const MAINTENANCE_START_UTC = new Date('2026-04-24T21:00:00Z');
+
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
@@ -25,6 +28,9 @@ export default function LoginPage() {
   const [boasVindasAberto, setBoasVindasAberto] = useState(false);
   const [showConfirmacaoModal, setShowConfirmacaoModal] = useState(false);
   const [showTermosModal, setShowTermosModal] = useState(false);
+  const [showMaintenanceWarning, setShowMaintenanceWarning] = useState(
+    () => new Date() < MAINTENANCE_START_UTC
+  );
   const [showDbSelector, setShowDbSelector] = useState(false);
   const [dbEnvironment, setDbEnvironment] =
     useState<DbEnvironment>('development');
@@ -295,6 +301,64 @@ export default function LoginPage() {
         paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
       }}
     >
+      {/* Modal de Aviso de Manutenção Programada */}
+      {showMaintenanceWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Cabeçalho amber */}
+            <div className="bg-amber-500 px-6 py-4 flex items-center gap-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-6 h-6 text-white flex-shrink-0"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <h2 className="text-white font-bold text-base">
+                Manutenção Programada
+              </h2>
+            </div>
+
+            {/* Corpo */}
+            <div className="px-6 py-5 space-y-3">
+              <p className="text-gray-800 text-sm font-medium">
+                O sistema entrará em manutenção hoje,{' '}
+                <strong>sexta-feira (24/04), às 18h</strong>, e retornará na{' '}
+                <strong>segunda-feira (27/04), às 8h</strong>.
+              </p>
+              <p className="text-gray-600 text-sm">
+                A partir das 18h de hoje o acesso ao sistema ficará
+                temporariamente indisponível. Se precisar de suporte urgente,
+                entre em contato pelo e-mail{' '}
+                <a
+                  href="mailto:suporte@qwork.app.br"
+                  className="text-amber-600 underline hover:text-amber-700"
+                >
+                  suporte@qwork.app.br
+                </a>
+                .
+              </p>
+            </div>
+
+            {/* Rodapé */}
+            <div className="px-6 pb-5">
+              <button
+                type="button"
+                onClick={() => setShowMaintenanceWarning(false)}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
+              >
+                Entendido, continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Confirmação de Identidade */}
       {showConfirmacaoModal && dadosConfirmacao && (
         <ModalConfirmacaoIdentidade
