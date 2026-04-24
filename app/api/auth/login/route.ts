@@ -12,7 +12,50 @@ import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { handleRepresentanteLogin, validarSenhaFuncionario } from './helpers';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * Verifica se o sistema está em modo de manutenção
+ * (redundante ao middleware, mas garante bloqueio em nível de API)
+ */
+function isSystemUnderMaintenance(): boolean {
+  if (process.env.APP_ENV !== 'production') return false;
+  
+  const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
+  if (!enabled) return false;
+
+  const startStr = process.env.MAINTENANCE_START;
+  const endStr = process.env.MAINTENANCE_END;
+
+  if (!startStr || !endStr) return false;
+
+  try {
+    const now = new Date();
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return false;
+    }
+
+    return now >= start && now <= end;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(request: Request) {
+  // 🔒 SEGURANÇA: Bloqueio de manutenção — verificação dupla
+  if (isSystemUnderMaintenance()) {
+    console.log('[LOGIN] Sistema em manutenção — bloqueando login');
+    return NextResponse.json(
+      { 
+        error: 'Sistema em manutenção programada',
+        message: 'Retornamos em breve. Voltamos em 27 de abril, às 8h.',
+      },
+      { status: 503 }
+    );
+  }
+
   // 🔒 SEGURANÇA: Rate limiting distribuído (DB-backed) — 5 tentativas / 5 min por IP
   const rateLimitResult = await rateLimitAsync(
     request as unknown as NextRequest,
