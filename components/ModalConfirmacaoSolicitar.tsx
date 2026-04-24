@@ -9,13 +9,15 @@
  * - Só é exibido uma vez por lote por sessão (sessionStorage)
  * - Não impacta o fluxo de solicitação (puramente informativo)
  * - Exibe contato do gestor cadastrado (email e celular)
- * - Informa prazo de 24 horas úteis em horário comercial
+ * - Exibe dados da clínica/entidade (tomadorInfo)
+ * - Informa que o link de cobrança fica em "Informações da Conta"
  * - Email fixo da plataforma: contato@qwork.app.br
  */
 
 'use client';
 
 import { useEffect } from 'react';
+import type { TomadorInfo } from '@/lib/lote/types';
 
 const PLATAFORMA_EMAIL = 'contato@qwork.app.br';
 const SESSION_KEY_PREFIX = 'modal_solicitar_emissao_';
@@ -44,19 +46,6 @@ export function marcarExibidaParaLote(loteId: number): void {
   }
 }
 
-interface TomadorInfo {
-  nome: string;
-  cnpj: string;
-  email: string;
-  telefone: string;
-  endereco: string;
-  cidade: string;
-  estado: string;
-  responsavel_nome: string;
-  responsavel_cpf: string;
-  responsavel_email: string;
-}
-
 interface ModalConfirmacaoSolicitarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -80,6 +69,10 @@ export function ModalConfirmacaoSolicitar({
   const temDadosContato = Boolean(gestorEmail || gestorCelular);
   const labelPerfil =
     contexto === 'rh' ? 'do seu perfil RH' : 'do gestor cadastrado';
+  const labelTomador =
+    contexto === 'rh'
+      ? 'Dados da Clínica (Tomador)'
+      : 'Dados da Entidade (Tomador)';
 
   // Marcar como exibida quando abrir
   useEffect(() => {
@@ -141,7 +134,7 @@ export function ModalConfirmacaoSolicitar({
           {tomadorInfo && (
             <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 space-y-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Dados da Clínica (Tomador)
+                {labelTomador}
               </p>
               <div>
                 <span className="text-sm font-semibold text-gray-900">
@@ -255,16 +248,16 @@ export function ModalConfirmacaoSolicitar({
             ) : (
               <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
                 <p className="text-sm text-amber-800">
-                  ⚠️ Nenhum dado de contato foi encontrado{' '}
+                  ⚠️{' '}
                   {contexto === 'rh'
-                    ? 'no cadastro do perfil RH. Verifique se seu email e celular estão preenchidos em "Informações da Conta".'
-                    : 'no cadastro. Entre em contato com a plataforma pelo email abaixo.'}
+                    ? 'Seus dados de contato (email e celular) não foram encontrados no perfil RH. Verifique se estão preenchidos em “Informações da Conta”.'
+                    : 'Seus dados de contato não foram encontrados no cadastro. Para atualizações sobre este lote, entre em contato com a plataforma pelo email abaixo.'}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Seção: Cobrança no dashboard */}
+          {/* Seção: Sobre a cobrança */}
           <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-3">
             <div className="flex items-start gap-2">
               <span className="text-base mt-0.5" aria-hidden="true">
@@ -272,12 +265,13 @@ export function ModalConfirmacaoSolicitar({
               </span>
               <div>
                 <p className="text-sm font-semibold text-indigo-900">
-                  Como funciona a cobrança
+                  Sobre a cobrança
                 </p>
                 <p className="text-sm text-indigo-800 mt-0.5">
-                  Quando houver valores em aberto, você será notificado no seu
-                  dashboard em <strong>Informações da Conta</strong>. Acesse a
-                  aba para ver os pagamentos pendentes e realizar o pagamento.
+                  O valor por avaliação foi definido pelo representante ou
+                  vendedor responsável no momento do cadastro. O link de
+                  cobrança ficará disponível em{' '}
+                  <strong>Informações da Conta</strong> do seu painel.
                 </p>
               </div>
             </div>
