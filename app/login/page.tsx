@@ -8,6 +8,7 @@ import ModalBoasVindasCadastro from '@/components/modals/ModalBoasVindasCadastro
 import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIdentidade';
 import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
 import { Building2 } from 'lucide-react';
+import maintenanceConfig from '@/config/maintenance.json';
 
 type DbEnvironment = 'development' | 'staging' | 'production';
 type EnvAvailability = Record<
@@ -15,8 +16,19 @@ type EnvAvailability = Record<
   { allowed: boolean; reason: string }
 >;
 
-// Aviso de manutenção: visível até o início da janela de manutenção (18h BRT = 21:00 UTC)
-const MAINTENANCE_START_UTC = new Date('2026-04-24T21:00:00Z');
+// Aviso de manutenção: lê de config/maintenance.json
+const MAINTENANCE_START_UTC = new Date(maintenanceConfig.startTime);
+const MAINTENANCE_END_UTC = new Date(maintenanceConfig.endTime);
+
+/**
+ * Verifica se o sistema está ou estará em manutenção
+ * (mostra aviso 12h antes se habilitado)
+ */
+function isMaintenanceActive(): boolean {
+  if (!maintenanceConfig.enabled) return false;
+  const now = new Date();
+  return now >= MAINTENANCE_START_UTC && now <= MAINTENANCE_END_UTC;
+}
 
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
@@ -29,7 +41,7 @@ export default function LoginPage() {
   const [showConfirmacaoModal, setShowConfirmacaoModal] = useState(false);
   const [showTermosModal, setShowTermosModal] = useState(false);
   const [showMaintenanceWarning, setShowMaintenanceWarning] = useState(
-    () => new Date() < MAINTENANCE_START_UTC
+    maintenanceConfig.enabled && new Date() < MAINTENANCE_END_UTC
   );
   const [showDbSelector, setShowDbSelector] = useState(false);
   const [dbEnvironment, setDbEnvironment] =
@@ -327,19 +339,15 @@ export default function LoginPage() {
             {/* Corpo */}
             <div className="px-6 py-5 space-y-3">
               <p className="text-gray-800 text-sm font-medium">
-                O sistema entrará em manutenção hoje,{' '}
-                <strong>sexta-feira (24/04), às 18h</strong>, e retornará na{' '}
-                <strong>segunda-feira (27/04), às 8h</strong>.
+                {maintenanceConfig.message || 'Sistema em manutenção.'}
               </p>
               <p className="text-gray-600 text-sm">
-                A partir das 18h de hoje o acesso ao sistema ficará
-                temporariamente indisponível. Se precisar de suporte urgente,
-                entre em contato pelo e-mail{' '}
+                Se precisar de suporte urgente, entre em contato pelo e-mail{' '}
                 <a
-                  href="mailto:suporte@qwork.app.br"
+                  href={`mailto:${maintenanceConfig.contactEmail}`}
                   className="text-amber-600 underline hover:text-amber-700"
                 >
-                  suporte@qwork.app.br
+                  {maintenanceConfig.contactEmail}
                 </a>
                 .
               </p>
