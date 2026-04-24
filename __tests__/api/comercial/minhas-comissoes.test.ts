@@ -147,8 +147,10 @@ describe('GET /api/comercial/minhas-comissoes', () => {
     expect(data.comissoes[1].parcela_numero).toBe(2);
     expect(data.comissoes[1].total_parcelas).toBe(3);
     
-    // Verificar que valor_parcela está sendo retornado (valor_laudo / total_parcelas)
+    // Verificar que valor_laudo e valor_parcela estão sendo retornados
+    expect(data.comissoes[0].valor_laudo).toBe('150.00');
     expect(data.comissoes[0].valor_parcela).toBe('50.00');
+    expect(data.comissoes[1].valor_laudo).toBe('150.00');
     expect(data.comissoes[1].valor_parcela).toBe('50.00');
   });
 
@@ -266,7 +268,7 @@ describe('GET /api/comercial/minhas-comissoes', () => {
     expect(data.resumo.total_laudos).toBe('0');
   });
 
-  it('SQL de listagem deve incluir laudo_id e valor_parcela calculado', async () => {
+  it('SQL de listagem deve incluir laudo_id, valor_laudo e valor_parcela calculado', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [emptyResumo], rowCount: 1 } as any)
       .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
@@ -276,6 +278,7 @@ describe('GET /api/comercial/minhas-comissoes', () => {
 
     const listSQL = mockQuery.mock.calls[2][0] as string;
     expect(listSQL).toContain('cl.laudo_id');
+    expect(listSQL).toContain('cl.valor_laudo');
     expect(listSQL).toContain('cl.parcela_numero');
     expect(listSQL).toContain('cl.total_parcelas');
     expect(listSQL).toContain('(cl.valor_laudo / cl.total_parcelas)');

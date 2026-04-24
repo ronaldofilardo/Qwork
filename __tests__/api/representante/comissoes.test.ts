@@ -229,4 +229,71 @@ describe('GET /api/representante/comissoes', () => {
     expect(data.page).toBe(2);
     expect(data.limit).toBe(30);
   });
+
+  it('deve retornar laudo_id e valor_parcela calculado', async () => {
+    const comissao = {
+      id: 1,
+      laudo_id: 123,
+      lote_pagamento_id: 5,
+      status: 'paga',
+      valor_comissao: '1000.00',
+      valor_laudo: '3000.00',
+      valor_parcela: '1000.00', // 3000 / 3
+      total_parcelas: 3,
+      parcela_numero: 1,
+      entidade_nome: 'Empresa Z',
+    };
+
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            pendentes: '0',
+            liberadas: '0',
+            pagas: '1',
+            valor_pendente: '0',
+            valor_liberado: '0',
+            valor_pago_total: '1000.00',
+          },
+        ],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [comissao], rowCount: 1 } as any);
+
+    const res = await GET(makeReq());
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.comissoes).toHaveLength(1);
+    expect(data.comissoes[0].laudo_id).toBe(123);
+    expect(data.comissoes[0].lote_pagamento_id).toBe(5);
+    expect(data.comissoes[0].valor_parcela).toBe('1000.00');
+  });
+
+  it('SQL de listagem deve incluir laudo_id, lote_pagamento_id e valor_parcela (laudo / total_parcelas)', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            pendentes: '0',
+            liberadas: '0',
+            pagas: '0',
+            valor_pendente: '0',
+            valor_liberado: '0',
+            valor_pago_total: '0',
+          },
+        ],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq());
+
+    const listSQL = mockQuery.mock.calls[2][0] as string;
+    expect(listSQL).toContain('c.laudo_id');
+    expect(listSQL).toContain('c.lote_pagamento_id');
+    expect(listSQL).toContain('(c.valor_laudo / c.total_parcelas)');
+    expect(listSQL).toContain('AS valor_parcela');
+  });
 });

@@ -3,7 +3,10 @@ import { COMISSAO_STATUS_BADGE } from '@/lib/status-labels';
 export interface Comissao {
   id: number;
   entidade_nome: string;
+  laudo_id: number | null;
+  lote_pagamento_id: number | null;
   valor_laudo: string;
+  valor_parcela: string;
   valor_comissao: string;
   percentual_comissao: string;
   status: string;

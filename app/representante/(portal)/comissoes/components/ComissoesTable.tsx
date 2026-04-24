@@ -46,10 +46,11 @@ export default function ComissoesTable({
           <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
               <th className="px-4 py-3 text-left">Cliente</th>
-              <th className="px-4 py-3 text-left">Laudo</th>
+              <th className="px-4 py-3 text-left">Lote ID</th>
               <th className="px-4 py-3 text-left">Mês Emissão</th>
               <th className="px-4 py-3 text-center">Parcela</th>
               <th className="px-4 py-3 text-right">Valor Laudo</th>
+              <th className="px-4 py-3 text-right">Valor Parcela</th>
               <th className="px-4 py-3 text-right">Comissão</th>
               <th className="px-4 py-3 text-center">%</th>
               <th className="px-4 py-3 text-left">Status</th>
@@ -63,7 +64,7 @@ export default function ComissoesTable({
                   {c.entidade_nome}
                 </td>
                 <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                  {c.numero_laudo ?? '—'}
+                  {c.lote_pagamento_id ? `#${c.lote_pagamento_id}` : '—'}
                 </td>
                 <td className="px-4 py-3 text-gray-500">
                   {c.mes_emissao
@@ -80,6 +81,9 @@ export default function ComissoesTable({
                 </td>
                 <td className="px-4 py-3 text-right text-gray-700">
                   {fmt(c.valor_laudo)}
+                </td>
+                <td className="px-4 py-3 text-right text-gray-700">
+                  {fmt(c.valor_parcela)}
                 </td>
                 <td className="px-4 py-3 text-right font-semibold text-green-700">
                   {fmt(c.valor_comissao)}

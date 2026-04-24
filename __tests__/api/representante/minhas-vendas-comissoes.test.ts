@@ -67,7 +67,7 @@ describe('GET /api/representante/minhas-vendas/comissoes', () => {
     expect(res.status).toBe(401);
   });
 
-  it('deve retornar comissões com laudo_id, parcelas e valor_parcela', async () => {
+  it('deve retornar comissões com laudo_id, lote_pagamento_id, parcelas e valor_parcela', async () => {
     const resumo = {
       pendentes: '0',
       liberadas: '0',
@@ -80,6 +80,7 @@ describe('GET /api/representante/minhas-vendas/comissoes', () => {
       {
         id: 5,
         laudo_id: 50,
+        lote_pagamento_id: 5,
         parcela_numero: 1,
         total_parcelas: 2,
         valor_laudo: '200.00',
@@ -90,6 +91,7 @@ describe('GET /api/representante/minhas-vendas/comissoes', () => {
       {
         id: 6,
         laudo_id: 50,
+        lote_pagamento_id: 5,
         parcela_numero: 2,
         total_parcelas: 2,
         valor_laudo: '200.00',
@@ -113,6 +115,10 @@ describe('GET /api/representante/minhas-vendas/comissoes', () => {
     // Verificar laudo_id
     expect(data.comissoes[0].laudo_id).toBe(50);
     expect(data.comissoes[1].laudo_id).toBe(50);
+    
+    // Verificar lote_pagamento_id
+    expect(data.comissoes[0].lote_pagamento_id).toBe(5);
+    expect(data.comissoes[1].lote_pagamento_id).toBe(5);
     
     // Verificar parcelas
     expect(data.comissoes[0].parcela_numero).toBe(1);

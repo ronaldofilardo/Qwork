@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
          c.percentual_comissao,
          c.valor_laudo,
          c.valor_comissao,
+         (c.valor_laudo / c.total_parcelas)         AS valor_parcela,
          c.status,
          c.motivo_congelamento,
          c.mes_emissao,

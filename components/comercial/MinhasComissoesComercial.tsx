@@ -168,6 +168,7 @@ export function MinhasComissoesComercial() {
                   <th className="px-3 py-3 text-left">Laudo ID</th>
                   <th className="px-3 py-3 text-left">Contratante</th>
                   <th className="px-3 py-3 text-center">Parcela</th>
+                  <th className="px-3 py-3 text-right">Valor Laudo</th>
                   <th className="px-3 py-3 text-right">Valor Parcela</th>
                   <th className="px-3 py-3 text-center">%</th>
                   <th className="px-3 py-3 text-right">Comissão</th>
@@ -194,6 +195,9 @@ export function MinhasComissoesComercial() {
                     </td>
                     <td className="px-3 py-3 text-center text-xs text-gray-600">
                       {c.parcela_numero}/{c.total_parcelas}
+                    </td>
+                    <td className="px-3 py-3 text-right text-gray-700">
+                      {fmt(c.valor_laudo)}
                     </td>
                     <td className="px-3 py-3 text-right text-gray-700">
                       {fmt(c.valor_parcela)}
