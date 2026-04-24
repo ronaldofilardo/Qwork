@@ -3,7 +3,7 @@ import type { FC } from 'react';
 const MaintenancePage: FC = () => {
   const message =
     process.env.MAINTENANCE_MESSAGE ||
-    'Estamos em manutenção técnica. Voltamos em breve.';
+    'Sistema em manutenção programada. Retornamos na segunda-feira, 27 de abril, às 8h.';
   const contact =
     process.env.MAINTENANCE_CONTACT_EMAIL || 'suporte@qwork.app.br';
 
