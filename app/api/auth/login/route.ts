@@ -40,10 +40,13 @@ export async function POST(request: Request) {
   // 🔒 SEGURANÇA: Bloqueio de manutenção — verificação dupla
   if (isSystemUnderMaintenance()) {
     console.log('[LOGIN] Sistema em manutenção — bloqueando login');
+    const endTime = new Date(maintenanceConfig.endTime);
     return NextResponse.json(
       {
-        error: 'Sistema em manutenção programada',
-        message: maintenanceConfig.message || 'Retornamos em breve.',
+        error: 'MAINTENANCE_MODE',
+        message: maintenanceConfig.message || 'Sistema em manutenção programada.',
+        maintenanceUntil: endTime.toISOString(),
+        contactEmail: maintenanceConfig.contactEmail,
       },
       { status: 503 }
     );
