@@ -10,28 +10,21 @@ import {
 import { NextRequest } from 'next/server';
 import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { handleRepresentanteLogin, validarSenhaFuncionario } from './helpers';
+import maintenanceConfig from '@/config/maintenance.json';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Verifica se o sistema está em modo de manutenção
- * (redundante ao middleware, mas garante bloqueio em nível de API)
+ * Lê de config/maintenance.json (mesmo arquivo do middleware)
  */
 function isSystemUnderMaintenance(): boolean {
-  if (process.env.APP_ENV !== 'production') return false;
-  
-  const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
-  if (!enabled) return false;
-
-  const startStr = process.env.MAINTENANCE_START;
-  const endStr = process.env.MAINTENANCE_END;
-
-  if (!startStr || !endStr) return false;
-
   try {
+    if (!maintenanceConfig.enabled) return false;
+
     const now = new Date();
-    const start = new Date(startStr);
-    const end = new Date(endStr);
+    const start = new Date(maintenanceConfig.startTime);
+    const end = new Date(maintenanceConfig.endTime);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       return false;
@@ -48,9 +41,9 @@ export async function POST(request: Request) {
   if (isSystemUnderMaintenance()) {
     console.log('[LOGIN] Sistema em manutenção — bloqueando login');
     return NextResponse.json(
-      { 
+      {
         error: 'Sistema em manutenção programada',
-        message: 'Retornamos em breve. Voltamos em 27 de abril, às 8h.',
+        message: maintenanceConfig.message || 'Retornamos em breve.',
       },
       { status: 503 }
     );
