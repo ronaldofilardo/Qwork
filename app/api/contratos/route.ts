@@ -160,20 +160,14 @@ export async function POST(request: NextRequest) {
         // Clínicas: a data limite é por empresa (definida ao criar empresa)
         if (tabelaTomador === 'entidades') {
           try {
+            // Usa data_aceite do contrato se disponível, caso contrário NOW()
+            // IMPORTANTE: $1 deve ser um timestamp, não o ID (integer) do tomador
             await query(
               `UPDATE entidades
-               SET limite_primeira_cobranca_manutencao = $1 + INTERVAL '90 days'
-               WHERE id = $1 AND limite_primeira_cobranca_manutencao IS NULL`,
-              [updated.tomador_id]
-            );
-            // Usar data_aceite do contrato recém-aceito
-            await query(
-              `UPDATE entidades
-               SET limite_primeira_cobranca_manutencao = (
-                 SELECT data_aceite + INTERVAL '90 days'
-                 FROM contratos
-                 WHERE id = $2 AND data_aceite IS NOT NULL
-               )
+               SET limite_primeira_cobranca_manutencao = COALESCE(
+                 (SELECT data_aceite FROM contratos WHERE id = $2 AND data_aceite IS NOT NULL),
+                 NOW()
+               ) + INTERVAL '90 days'
                WHERE id = $1 AND limite_primeira_cobranca_manutencao IS NULL`,
               [updated.tomador_id, updated.id]
             );
