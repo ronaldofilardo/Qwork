@@ -170,8 +170,39 @@ describe('GET /api/representante/comissoes', () => {
 
     // A query de lista (3ª chamada) deve usar COALESCE(e.nome, cl.nome) ou e.nome, nunca e.razao_social
     const listSQL = mockQuery.mock.calls[2][0] as string;
-    expect(listSQL).toMatch(/COALESCE\(e\.nome.*\)\s+AS\s+entidade_nome|e\.nome\s+AS\s+entidade_nome/i);
+    expect(listSQL).toMatch(
+      /COALESCE\(e\.nome.*\)\s+AS\s+entidade_nome|e\.nome\s+AS\s+entidade_nome/i
+    );
     expect(listSQL).not.toMatch(/e\.razao_social/i);
+  });
+
+  it('SQL de resumo deve incluir congelada_aguardando_admin em valor_pendente', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            pendentes: '0',
+            liberadas: '0',
+            pagas: '0',
+            valor_pendente: '0',
+            valor_liberado: '0',
+            valor_pago_total: '0',
+          },
+        ],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq());
+
+    const resumoSQL = mockQuery.mock.calls[0][0] as string;
+    // valor_pendente deve incluir retida E congelada_aguardando_admin
+    expect(resumoSQL).toContain("'retida'");
+    expect(resumoSQL).toContain("'congelada_aguardando_admin'");
+    expect(resumoSQL).toContain('valor_pendente');
+    // congelada_rep_suspenso NÃO deve estar no agrupamento de valor_pendente
+    // (é filtrado pela lógica de negócio — rep suspenso não recebe)
   });
 
   it('deve paginar resultados (limit=30)', async () => {
