@@ -13,6 +13,7 @@ interface Comissao {
   lote_pagamento_metodo: string | null;
   lote_pagamento_parcelas: number | null;
   valor_laudo: string;
+  valor_parcela: string;
   valor_comissao: string;
   percentual_comissao: string;
   parcela_numero: number;
@@ -434,6 +435,7 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                 <th className="px-3 py-3 text-left">Cliente</th>
                 <th className="px-3 py-3 text-left">Lote</th>
                 <th className="px-3 py-3 text-right">Valor Total</th>
+                <th className="px-3 py-3 text-right">Valor Parcela</th>
                 <th className="px-3 py-3 text-right">Comissão</th>
                 <th className="px-3 py-3 text-center">%</th>
                 <th className="px-3 py-3 text-center">Parcelas</th>
@@ -471,6 +473,9 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                     </td>
                     <td className="px-3 py-3 text-right text-gray-700">
                       {fmt(c.valor_laudo)}
+                    </td>
+                    <td className="px-3 py-3 text-right text-gray-700">
+                      {fmt(c.valor_parcela)}
                     </td>
                     <td className="px-3 py-3 text-right font-semibold text-green-700">
                       {fmt(c.valor_comissao)}
