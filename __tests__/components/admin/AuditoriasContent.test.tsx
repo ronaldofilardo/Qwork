@@ -3,10 +3,12 @@
  * Testes: AuditoriasContent
  *
  * Garante que:
- *  1. Sub-tabs de auditoria são renderizadas corretamente
- *  2. Interface AuditoriaLaudo usa campos corretos (clinica_nome, empresa_cliente_nome, tomador_nome)
- *  3. Coluna "Tomador" é exibida (não "Emissor")
- *  4. Troca de sub-tab funciona (chama fetch com endpoint correto)
+ *  1. As 7 sub-tabs de auditoria são renderizadas corretamente
+ *  2. Aba padrão inicial é "Gestores"
+ *  3. NÃO há auto-fetch ao montar o componente (dados carregam apenas via Atualizar)
+ *  4. Clicar em "Atualizar" na aba ativa dispara fetch com endpoint correto
+ *  5. Navegar para outra aba não causa fetch automático
+ *  6. Clicar em "Atualizar" após navegar carrega dados da nova aba
  */
 
 import React from 'react';
@@ -22,26 +24,6 @@ import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
 
 // ── Mock fetch global ─────────────────────────────────────────────────────────
 
-const makeLaudo = (overrides: Record<string, unknown> = {}) => ({
-  laudo_id: 1,
-  lote_id: 10,
-  clinica_nome: 'Clínica Teste',
-  empresa_cliente_nome: 'Empresa Teste',
-  tomador_nome: 'Tomador Teste SA',
-  clinica_id: 1,
-  empresa_id: 2,
-  entidade_id: 3,
-  numero_lote: 'LOTE-001',
-  status: 'emitido',
-  hash_pdf: null,
-  criado_em: '2026-02-18T10:00:00Z',
-  emitido_em: '2026-02-18T11:00:00Z',
-  enviado_em: null,
-  atualizado_em: null,
-  solicitado_em: '2026-02-18T09:00:00Z',
-  ...overrides,
-});
-
 function mockFetchWith(data: Record<string, unknown>) {
   global.fetch = jest.fn().mockResolvedValue({
     ok: true,
@@ -54,81 +36,90 @@ function mockFetchWith(data: Record<string, unknown>) {
 describe('AuditoriasContent', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // mock padrão: retorna dados vazios para a tab inicial (acesso-gestor)
-    mockFetchWith({ acessos: [] });
+    mockFetchWith({ gestores: [] });
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it('deve renderizar as sub-tabs de auditoria', async () => {
+  it('deve renderizar as 7 sub-tabs de auditoria', async () => {
     await act(async () => {
       render(<AuditoriasContent />);
     });
-    expect(screen.getByText('Acesso Gestor')).toBeInTheDocument();
-    expect(screen.getByText('Acesso RH')).toBeInTheDocument();
+    expect(screen.getByText('Gestores')).toBeInTheDocument();
     expect(screen.getByText('Avaliações')).toBeInTheDocument();
     expect(screen.getByText('Lotes')).toBeInTheDocument();
     expect(screen.getByText('Laudos')).toBeInTheDocument();
+    expect(screen.getByText('Operacionais')).toBeInTheDocument();
     expect(screen.getByText('Aceites')).toBeInTheDocument();
+    expect(screen.getByText('Deleção')).toBeInTheDocument();
   });
 
-  it('deve chamar fetch com endpoint de aceites ao clicar na tab Aceites', async () => {
-    mockFetchWith({ acessos: [] });
+  it('deve exibir título "Auditorias"', async () => {
+    await act(async () => {
+      render(<AuditoriasContent />);
+    });
+    expect(screen.getByText('Auditorias')).toBeInTheDocument();
+  });
 
+  it('NÃO deve chamar fetch ao montar o componente', async () => {
     await act(async () => {
       render(<AuditoriasContent />);
     });
 
-    mockFetchWith({ aceites: [] });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
 
+  it('deve chamar fetch com endpoint de gestores ao clicar em Atualizar na aba Gestores', async () => {
     await act(async () => {
-      fireEvent.click(screen.getByText('Aceites'));
+      render(<AuditoriasContent />);
+    });
+
+    mockFetchWith({ gestores: [] });
+
+    // Aba Gestores é a inicial — o botão "Atualizar" dentro de TabelaGestores deve estar visível
+    const btnAtualizar = screen.getByText('Atualizar');
+    await act(async () => {
+      fireEvent.click(btnAtualizar);
     });
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('aceites'),
+        expect.stringContaining('gestores'),
         expect.anything()
       );
     });
   });
 
-  it('deve chamar fetch com endpoint correto ao trocar de sub-tab', async () => {
-    mockFetchWith({ acessos: [] });
-
+  it('deve NÃO chamar fetch automaticamente ao trocar para aba Laudos', async () => {
     await act(async () => {
       render(<AuditoriasContent />);
     });
-
-    mockFetchWith({ acessos: [] });
-
-    await act(async () => {
-      fireEvent.click(screen.getByText('Acesso RH'));
-    });
-
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('acessos-rh'),
-        expect.anything()
-      );
-    });
-  });
-
-  it('deve exibir laudos ao selecionar tab laudos', async () => {
-    // Tab inicial (acesso-gestor) retorna vazio
-    mockFetchWith({ acessos: [] });
-
-    await act(async () => {
-      render(<AuditoriasContent />);
-    });
-
-    // Ao clicar em Laudos, mock retorna laudos
-    mockFetchWith({ laudos: [makeLaudo()] });
 
     await act(async () => {
       fireEvent.click(screen.getByText('Laudos'));
+    });
+
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('deve chamar fetch com endpoint de laudos ao clicar Atualizar na aba Laudos', async () => {
+    await act(async () => {
+      render(<AuditoriasContent />);
+    });
+
+    // Navegar para Laudos
+    await act(async () => {
+      fireEvent.click(screen.getByText('Laudos'));
+    });
+
+    mockFetchWith({ laudos: [] });
+
+    // Clicar em Atualizar dentro de TabelaLaudos
+    const btnAtualizar = screen.getByText('Atualizar');
+    await act(async () => {
+      fireEvent.click(btnAtualizar);
     });
 
     await waitFor(() => {
@@ -139,53 +130,54 @@ describe('AuditoriasContent', () => {
     });
   });
 
-  it('deve exibir título "Auditorias"', async () => {
+  it('deve chamar fetch com endpoint de aceites ao clicar Atualizar na aba Aceites', async () => {
     await act(async () => {
       render(<AuditoriasContent />);
     });
-    expect(screen.getByText('Auditorias')).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Aceites'));
+    });
+
+    mockFetchWith({ aceites: [] });
+
+    const btnAtualizar = screen.getByText('Atualizar');
+    await act(async () => {
+      fireEvent.click(btnAtualizar);
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('aceites'),
+        expect.anything()
+      );
+    });
   });
 
-  it('deve exibir botão "Atualizar"', async () => {
+  it('deve exibir botão "Atualizar" na aba ativa', async () => {
     await act(async () => {
       render(<AuditoriasContent />);
     });
     expect(screen.getByText('Atualizar')).toBeInTheDocument();
   });
 
-  it('deve chamar fetch ao montar o componente (tab inicial: acesso-gestor)', async () => {
-    mockFetchWith({ acessos: [] });
-
+  it('deve exibir erro na UI quando fetch retorna erro', async () => {
     await act(async () => {
       render(<AuditoriasContent />);
     });
 
-    await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('acesso-gestor'),
-        expect.anything()
-      );
-    });
-  });
-
-  it('deve chamar fetch novamente ao clicar em Atualizar', async () => {
-    mockFetchWith({ acessos: [] });
-
-    await act(async () => {
-      render(<AuditoriasContent />);
-    });
-
-    const fetchCallsBeforeRefresh = (global.fetch as jest.Mock).mock.calls
-      .length;
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'Acesso negado' }),
+    }) as jest.Mock;
 
     await act(async () => {
       fireEvent.click(screen.getByText('Atualizar'));
     });
 
     await waitFor(() => {
-      expect((global.fetch as jest.Mock).mock.calls.length).toBeGreaterThan(
-        fetchCallsBeforeRefresh
-      );
+      expect(screen.getByText(/Erro ao carregar dados/)).toBeInTheDocument();
     });
   });
 });
+

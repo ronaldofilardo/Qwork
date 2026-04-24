@@ -10,6 +10,8 @@ import {
   ChevronRight,
   AlertCircle,
   Plus,
+  Wrench,
+  AlertTriangle,
 } from 'lucide-react';
 import FuncionariosSection from '@/components/funcionarios/FuncionariosSection';
 import EmpresaFormModal from '@/components/clinica/EmpresaFormModal';
@@ -24,6 +26,7 @@ interface Empresa {
   representante_nome: string;
   representante_fone: string;
   representante_email: string;
+  limite_primeira_cobranca_manutencao?: string | null;
 }
 
 interface EmpresasStats {
@@ -245,6 +248,12 @@ export default function EmpresasSection() {
                   <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 hidden lg:table-cell">
                     Avaliações
                   </th>
+                  <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 hidden xl:table-cell">
+                    <div className="flex items-center justify-center gap-1">
+                      <Wrench className="w-3.5 h-3.5 text-orange-500" />
+                      Limite 1º Laudo
+                    </div>
+                  </th>
                   <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700">
                     Status
                   </th>
@@ -293,6 +302,29 @@ export default function EmpresasSection() {
                       <td className="py-3 px-4 text-center text-sm text-gray-700 hidden lg:table-cell">
                         {empresa.total_avaliacoes || 0}
                       </td>
+                      <td className="py-3 px-4 text-center hidden xl:table-cell">
+                        {empresa.limite_primeira_cobranca_manutencao ? (
+                          (() => {
+                            const limite = new Date(
+                              empresa.limite_primeira_cobranca_manutencao
+                            );
+                            const hoje = new Date();
+                            const vencida = limite < hoje;
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${vencida ? 'bg-red-100 text-red-700' : 'bg-orange-50 text-orange-700'}`}
+                              >
+                                {vencida && (
+                                  <AlertTriangle className="w-3 h-3" />
+                                )}
+                                {limite.toLocaleDateString('pt-BR')}
+                              </span>
+                            );
+                          })()
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-center">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -321,7 +353,7 @@ export default function EmpresasSection() {
                     </tr>
                     {expandedEmpresa === empresa.id && (
                       <tr key={`${empresa.id}-details`}>
-                        <td colSpan={6} className="bg-gray-50 p-6">
+                        <td colSpan={7} className="bg-gray-50 p-6">
                           <FuncionariosSection
                             contexto="clinica"
                             empresaId={empresa.id}

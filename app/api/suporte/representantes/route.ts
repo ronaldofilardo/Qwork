@@ -63,6 +63,8 @@ export async function GET(request: NextRequest) {
       cpf: string | null;
       cnpj: string | null;
       percentual_comissao: number | null;
+      modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+      asaas_wallet_id: string | null;
       criado_em: string;
       total_vendedores: number;
     }>(
@@ -76,6 +78,8 @@ export async function GET(request: NextRequest) {
          r.cpf,
          r.cnpj,
          r.percentual_comissao,
+         r.modelo_comissionamento,
+         r.asaas_wallet_id,
          r.criado_em,
          (
            SELECT COUNT(DISTINCT hc2.vendedor_id)

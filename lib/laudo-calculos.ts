@@ -160,18 +160,19 @@ export async function gerarDadosGeraisEmpresa(
   session?: any
 ): Promise<DadosGeraisEmpresa> {
   // Buscar informações do lote e empresa/entidade com fallback
+  // Para lotes de clínica: empresa vem de empresas_clientes (via la.empresa_id)
+  // Para lotes de entidade: empresa vem de entidades (via la.entidade_id)
   const loteResult = await query(
     `
     SELECT
       la.descricao,
-      
       la.liberado_em,
-      COALESCE(e.nome, c.nome) as empresa_nome,
-      COALESCE(e.cnpj, c.cnpj) as cnpj,
-      COALESCE(e.endereco, c.endereco) as endereco,
-      COALESCE(e.cidade, c.cidade) as cidade,
-      COALESCE(e.estado, c.estado) as estado,
-      COALESCE(e.cep, c.cep) as cep,
+      COALESCE(e.nome, ec.nome) as empresa_nome,
+      COALESCE(e.cnpj, ec.cnpj) as cnpj,
+      COALESCE(e.endereco, ec.endereco) as endereco,
+      COALESCE(e.cidade, ec.cidade) as cidade,
+      COALESCE(e.estado, ec.estado) as estado,
+      COALESCE(e.cep, ec.cep) as cep,
       c.nome as clinica_nome,
       COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
       COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
@@ -179,10 +180,14 @@ export async function gerarDadosGeraisEmpresa(
       MAX(CASE WHEN a.status = 'concluida' THEN a.envio END) as ultima_conclusao
     FROM lotes_avaliacao la
     LEFT JOIN entidades e ON la.entidade_id = e.id
+    LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
     LEFT JOIN clinicas c ON la.clinica_id = c.id
     LEFT JOIN avaliacoes a ON la.id = a.lote_id
     WHERE la.id = $1
-    GROUP BY la.id, la.descricao, la.liberado_em, e.nome, e.cnpj, e.endereco, e.cidade, e.estado, e.cep, c.nome, c.cnpj, c.endereco, c.cidade, c.estado, c.cep
+    GROUP BY la.id, la.descricao, la.liberado_em,
+             e.nome, e.cnpj, e.endereco, e.cidade, e.estado, e.cep,
+             ec.nome, ec.cnpj, ec.endereco, ec.cidade, ec.estado, ec.cep,
+             c.nome
   `,
     [loteId],
     session
@@ -369,12 +374,12 @@ Declaro que os dados são estritamente agregados e anônimos, em conformidade co
   return {
     observacoesLaudo,
     textoConclusao,
-    dataEmissao: `São Paulo, ${dataEmissaoFormatada}`,
+    dataEmissao: `Curitiba, ${dataEmissaoFormatada}`,
     assinatura: {
-      nome: 'Dr. Marcelo Oliveira',
+      nome: 'GILSON DANTAS DAMASCENO',
       titulo: 'Psicólogo',
-      registro: 'CRP 06/123456',
-      empresa: 'Coordenador Responsável Técnico – Qwork',
+      registro: 'CRP 08/4053',
+      empresa: 'Responsável Técnico',
     },
   };
 }

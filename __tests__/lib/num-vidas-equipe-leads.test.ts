@@ -10,22 +10,21 @@ import {
 
 describe('num_vidas_estimado — field propagation', () => {
   test('calcularValoresComissao with standard values', () => {
-    const bd = calcularValoresComissao(100, 10, 5, 'entidade');
+    const bd = calcularValoresComissao(100, 10, 0, 'entidade');
     expect(bd.valorRep).toBe(10);
-    expect(bd.valorVendedor).toBe(5);
-    expect(bd.valorQWork).toBe(85);
-    expect(bd.percentualTotal).toBe(15);
+    expect(bd.valorQWork).toBe(90);
+    expect(bd.percentualTotal).toBe(10);
     expect(bd.abaixoCusto).toBe(false);
   });
 
   test('calcularRequerAprovacao returns true when below cost', () => {
     // valor=15, percRep=30, valorQWork = 15*(1-0.30) = 10.5 < 15 (entidade)
-    expect(calcularRequerAprovacao(15, 30, 'entidade', 0)).toBe(true);
+    expect(calcularRequerAprovacao(15, 30, 0, 'entidade')).toBe(true);
   });
 
   test('calcularRequerAprovacao returns false when above cost', () => {
     // valor=100, percRep=10, valorQWork = 100*(1-0.10) = 90 > 15
-    expect(calcularRequerAprovacao(100, 10, 'entidade', 0)).toBe(false);
+    expect(calcularRequerAprovacao(100, 10, 0, 'entidade')).toBe(false);
   });
 
   test('MAX_PERCENTUAL_COMISSAO is 40', () => {
@@ -33,7 +32,7 @@ describe('num_vidas_estimado — field propagation', () => {
   });
 
   test('CUSTO_POR_AVALIACAO values', () => {
-    expect(CUSTO_POR_AVALIACAO.entidade).toBe(15);
+    expect(CUSTO_POR_AVALIACAO.entidade).toBe(12);
     expect(CUSTO_POR_AVALIACAO.clinica).toBe(5);
   });
 });
@@ -82,20 +81,19 @@ describe('equipe/leads — commission split validation', () => {
   });
 
   test('calcularValoresComissao with split shows correct breakdown', () => {
-    const bd = calcularValoresComissao(200, 15, 10, 'entidade');
+    const bd = calcularValoresComissao(200, 15, 0, 'entidade');
     expect(bd.valorRep).toBe(30); // 200 * 15%
-    expect(bd.valorVendedor).toBe(20); // 200 * 10%
-    expect(bd.valorQWork).toBe(150); // 200 - 30 - 20
-    expect(bd.percentualTotal).toBe(25);
+    expect(bd.valorQWork).toBe(170); // 200 - 30
+    expect(bd.percentualTotal).toBe(15);
     expect(bd.abaixoCusto).toBe(false);
   });
 
   test('below-cost scenario distributes from pool', () => {
-    // valor=16, percRep=20, percVend=10, tipo=entidade (custo=15)
-    // valorQWork = 16*(1-0.30) = 11.2 < 15 → abaixoCusto
-    const bd = calcularValoresComissao(16, 20, 10, 'entidade');
+    // valor=13, percRep=20, tipo=entidade (custo=12)
+    // valorQWork = 13 - 2.6 = 10.4 < 12 → abaixoCusto
+    const bd = calcularValoresComissao(13, 20, 0, 'entidade');
     expect(bd.abaixoCusto).toBe(true);
-    // Pool = max(0, 16 - 15) = 1
+    // Pool = max(0, 13 - 12) = 1
     expect(bd.poolDisponivel).toBe(1);
   });
 });

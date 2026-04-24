@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { TrendingUp, Link2, DollarSign, ChevronRight } from 'lucide-react';
+import {
+  TrendingUp,
+  Link2,
+  DollarSign,
+  ChevronRight,
+  Percent,
+} from 'lucide-react';
 
 interface ResumoMinhasVendas {
   total_leads: number;
@@ -10,6 +16,8 @@ interface ResumoMinhasVendas {
   vinculos_ativos: number;
   valor_pendente: string;
   valor_pago_total: string;
+  modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+  percentual_comissao?: number | null;
 }
 
 function fmt(v: string | number) {
@@ -30,33 +38,48 @@ export default function MinhasVendasPage() {
           credentials: 'same-origin',
           cache: 'no-store',
         };
-        const [leadsRes, vinculosRes, comissoesRes] = await Promise.all([
+        const [leadsRes, vinculosRes, comissoesRes, meRes] = await Promise.all([
           fetch('/api/representante/minhas-vendas/leads?page=1', opts),
           fetch('/api/representante/minhas-vendas/vinculos?page=1', opts),
           fetch('/api/representante/minhas-vendas/comissoes?page=1', opts),
+          fetch('/api/representante/me', opts),
         ]);
 
-        const [leadsData, vinculosData, comissoesData] = await Promise.all([
-          leadsRes.ok
-            ? (leadsRes.json() as Promise<{
-                total: number;
-                contagens: Record<string, number>;
-              }>)
-            : Promise.resolve({
-                total: 0,
-                contagens: {} as Record<string, number>,
-              }),
-          vinculosRes.ok
-            ? (vinculosRes.json() as Promise<{ total: number }>)
-            : Promise.resolve({ total: 0 }),
-          comissoesRes.ok
-            ? (comissoesRes.json() as Promise<{
-                resumo: { valor_pendente: string; valor_pago_total: string };
-              }>)
-            : Promise.resolve({
-                resumo: { valor_pendente: '0', valor_pago_total: '0' },
-              }),
-        ]);
+        const [leadsData, vinculosData, comissoesData, meData] =
+          await Promise.all([
+            leadsRes.ok
+              ? (leadsRes.json() as Promise<{
+                  total: number;
+                  contagens: Record<string, number>;
+                }>)
+              : Promise.resolve({
+                  total: 0,
+                  contagens: {} as Record<string, number>,
+                }),
+            vinculosRes.ok
+              ? (vinculosRes.json() as Promise<{ total: number }>)
+              : Promise.resolve({ total: 0 }),
+            comissoesRes.ok
+              ? (comissoesRes.json() as Promise<{
+                  resumo: { valor_pendente: string; valor_pago_total: string };
+                }>)
+              : Promise.resolve({
+                  resumo: { valor_pendente: '0', valor_pago_total: '0' },
+                }),
+            meRes.ok
+              ? (meRes.json() as Promise<{
+                  representante?: {
+                    modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+                    percentual_comissao?: number | null;
+                  };
+                }>)
+              : Promise.resolve({
+                  representante: {
+                    modelo_comissionamento: null,
+                    percentual_comissao: null,
+                  },
+                }),
+          ]);
 
         setResumo({
           total_leads: leadsData.total,
@@ -64,6 +87,10 @@ export default function MinhasVendasPage() {
           vinculos_ativos: vinculosData.total,
           valor_pendente: comissoesData.resumo?.valor_pendente ?? '0',
           valor_pago_total: comissoesData.resumo?.valor_pago_total ?? '0',
+          modelo_comissionamento:
+            meData.representante?.modelo_comissionamento ?? null,
+          percentual_comissao:
+            meData.representante?.percentual_comissao ?? null,
         });
       } finally {
         setLoading(false);
@@ -157,26 +184,62 @@ export default function MinhasVendasPage() {
       </div>
 
       {resumo && (
-        <div className="bg-white rounded-xl border p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">
-            Resumo Financeiro
-          </h2>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">
-                Total Recebido
-              </p>
-              <p className="text-xl font-bold text-green-700">
-                {fmt(resumo.valor_pago_total)}
-              </p>
+        <div className="space-y-4">
+          {/* Modelo de Comissionamento */}
+          {resumo.modelo_comissionamento && (
+            <div className="bg-blue-50 rounded-xl border border-blue-200 p-5">
+              <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                <Percent size={16} className="text-blue-600" />
+                Tipo de Comissionamento
+              </h2>
+              <div className="flex items-center gap-3">
+                {resumo.modelo_comissionamento === 'percentual' ? (
+                  <>
+                    <p className="text-sm font-semibold text-blue-700">
+                      Percentual
+                    </p>
+                    {resumo.percentual_comissao != null && (
+                      <p className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-bold rounded-lg">
+                        {typeof resumo.percentual_comissao === 'number'
+                          ? resumo.percentual_comissao.toFixed(2)
+                          : parseFloat(
+                              String(resumo.percentual_comissao)
+                            ).toFixed(2)}
+                        %
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm font-semibold text-green-700">
+                    Custo Fixo
+                  </p>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">
-                A Receber
-              </p>
-              <p className="text-xl font-bold text-blue-700">
-                {fmt(resumo.valor_pendente)}
-              </p>
+          )}
+
+          {/* Resumo Financeiro */}
+          <div className="bg-white rounded-xl border p-5">
+            <h2 className="text-sm font-semibold text-gray-700 mb-3">
+              Resumo Financeiro
+            </h2>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">
+                  Total Recebido
+                </p>
+                <p className="text-xl font-bold text-green-700">
+                  {fmt(resumo.valor_pago_total)}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs uppercase tracking-wide mb-1">
+                  A Receber
+                </p>
+                <p className="text-xl font-bold text-blue-700">
+                  {fmt(resumo.valor_pendente)}
+                </p>
+              </div>
             </div>
           </div>
         </div>

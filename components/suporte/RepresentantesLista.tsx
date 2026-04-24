@@ -40,7 +40,8 @@ interface Representante {
   cpf: string | null;
   cnpj: string | null;
   percentual_comissao: number | null;
-  percentual_vendedor_direto: number | null;
+  modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+  asaas_wallet_id: string | null;
   telefone: string | null;
   criado_em: string;
   total_vendedores: number;
@@ -170,10 +171,17 @@ function RepresentanteCard({
         <div className="flex items-center gap-1.5">
           <Wallet size={12} />
           <span>
-            {rep.percentual_comissao != null
-              ? `${rep.percentual_comissao}% comissao`
-              : 'Sem comissao'}
+            {rep.modelo_comissionamento === 'custo_fixo'
+              ? 'Custo Fixo'
+              : rep.percentual_comissao != null
+                ? `${rep.percentual_comissao}% comissao`
+                : 'Sem comissao'}
           </span>
+          {rep.modelo_comissionamento && !rep.asaas_wallet_id && (
+            <span className="ml-1 text-[9px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5 uppercase tracking-wide">
+              Wallet
+            </span>
+          )}
         </div>
       </div>
     </button>
@@ -206,7 +214,6 @@ function RepresentanteDrawer({
     telefone: '',
     status: '',
     percentual_comissao: '',
-    percentual_vendedor_direto: '',
   });
 
   const [vendedorBancario, setVendedorBancario] = useState<number | null>(null);
@@ -239,8 +246,6 @@ function RepresentanteDrawer({
       telefone: rep.telefone ?? '',
       status: rep.status ?? '',
       percentual_comissao: rep.percentual_comissao?.toString() ?? '',
-      percentual_vendedor_direto:
-        rep.percentual_vendedor_direto?.toString() ?? '',
     });
   }, [rep]);
 
@@ -259,10 +264,6 @@ function RepresentanteDrawer({
       if (form.status) body.status = form.status;
       if (form.percentual_comissao)
         body.percentual_comissao = parseFloat(form.percentual_comissao);
-      if (form.percentual_vendedor_direto)
-        body.percentual_vendedor_direto = parseFloat(
-          form.percentual_vendedor_direto
-        );
 
       const res = await fetch(`/api/suporte/representantes/${rep.id}`, {
         method: 'PATCH',
@@ -500,11 +501,6 @@ function RepresentanteDrawer({
                     {
                       key: 'percentual_comissao',
                       label: '% Comissao',
-                      type: 'number',
-                    },
-                    {
-                      key: 'percentual_vendedor_direto',
-                      label: '% Venda Direta',
                       type: 'number',
                     },
                   ].map(({ key, label, type }) => (

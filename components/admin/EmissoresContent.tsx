@@ -11,6 +11,8 @@ interface Usuario {
   ativo: boolean;
   perfil: 'emissor' | 'suporte' | 'comercial' | 'rh' | 'gestor';
   total_laudos_emitidos: number;
+  crp?: string | null;
+  titulo_profissional?: string | null;
 }
 
 const perfilLabels: Record<string, { label: string; color: string }> = {
@@ -124,11 +126,19 @@ export function EmissoresContent() {
                             {usuario.email}
                           </p>
                           {usuario.perfil === 'emissor' && (
-                            <div className="flex gap-4 mt-3 text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <FileText className="w-4 h-4" />
-                                {usuario.total_laudos_emitidos} laudos emitidos
-                              </span>
+                            <div className="flex flex-col gap-1 mt-2">
+                              {usuario.titulo_profissional && (
+                                <p className="text-sm text-gray-600">
+                                  {usuario.titulo_profissional}
+                                  {usuario.crp ? ` — CRP ${usuario.crp}` : ''}
+                                </p>
+                              )}
+                              <div className="flex gap-4 mt-1 text-sm text-gray-600">
+                                <span className="flex items-center gap-1">
+                                  <FileText className="w-4 h-4" />
+                                  {usuario.total_laudos_emitidos} laudos emitidos
+                                </span>
+                              </div>
                             </div>
                           )}
                         </div>

@@ -13,6 +13,7 @@ export function usePagamentosAdmin() {
   const [codigoRepInput, setCodigoRepInput] = useState<Record<number, string>>(
     {}
   );
+  const [manutencaoCount, setManutencaoCount] = useState(0);
 
   const carregarSolicitacoes = useCallback(async () => {
     try {
@@ -47,9 +48,27 @@ export function usePagamentosAdmin() {
     }
   }, []);
 
+  const carregarManutencaoCount = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/manutencao/relatorio');
+      if (!response.ok)
+        throw new Error('Erro ao carregar contagem de manutenção');
+
+      const data = await response.json();
+      const total =
+        (data.entidades?.length || 0) + (data.empresas?.length || 0);
+
+      setManutencaoCount(total);
+    } catch (error) {
+      console.error('Erro ao carregar contagem de manutenção:', error);
+      setManutencaoCount(0);
+    }
+  }, []);
+
   useEffect(() => {
     carregarSolicitacoes();
-  }, [carregarSolicitacoes]);
+    carregarManutencaoCount();
+  }, [carregarSolicitacoes, carregarManutencaoCount]);
 
   const handleDefinirValor = async (loteId: number) => {
     const valorString = valorInput[loteId];
@@ -208,12 +227,14 @@ export function usePagamentosAdmin() {
 
   const getSolicitacoesFiltradas = () => {
     if (filterTab === 'todos') return solicitacoes;
+    if (filterTab === 'manutencao') return []; // gerenciado pelo ManutencaoTab
     return solicitacoes.filter((s) => s.status_pagamento === filterTab);
   };
 
   const getTabCount = (tab: FilterTab) => {
     if (tab === 'todos') return solicitacoes.length;
     if (tab === 'a_vencer') return -1; // Contagem gerenciada pelo componente ParcelasAVencer
+    if (tab === 'manutencao') return manutencaoCount;
     return solicitacoes.filter((s) => s.status_pagamento === tab).length;
   };
 

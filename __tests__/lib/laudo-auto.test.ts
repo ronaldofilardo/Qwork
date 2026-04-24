@@ -57,12 +57,12 @@ jest.mock('@/lib/laudo-calculos', () => ({
   gerarObservacoesConclusao: jest.fn().mockReturnValue({
     observacoesLaudo: 'Observações',
     textoConclusao: 'Conclusão',
-    dataEmissao: 'São Paulo, 6 de abril de 2026',
+    dataEmissao: 'Curitiba, 6 de abril de 2026',
     assinatura: {
-      nome: 'Dr. Marcelo Oliveira',
+      nome: 'GILSON DANTAS DAMASCENO',
       titulo: 'Psicólogo',
-      registro: 'CRP 06/123456',
-      empresa: 'Coordenador Responsável Técnico – Qwork',
+      registro: 'CRP 08/4053',
+      empresa: 'Responsável Técnico',
     },
   }),
 }));

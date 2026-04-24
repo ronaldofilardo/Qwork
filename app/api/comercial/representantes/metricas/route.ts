@@ -30,6 +30,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       valor_pendente: string;
       aceite_contrato_em: string | null;
       vendedores_count: string;
+      modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+      percentual_comissao: string | null;
+      asaas_wallet_id: string | null;
     }>(
       `SELECT
          r.id,
@@ -38,6 +41,9 @@ export async function GET(request: Request): Promise<NextResponse> {
          r.status,
          r.codigo,
          r.aceite_disclaimer_nv_em                                  AS aceite_contrato_em,
+         r.modelo_comissionamento,
+         r.percentual_comissao,
+         r.asaas_wallet_id,
          COUNT(DISTINCT lr.id) FILTER (
            WHERE lr.status NOT IN ('expirado', 'convertido')
          )                                                          AS leads_ativos,
@@ -66,7 +72,7 @@ export async function GET(request: Request): Promise<NextResponse> {
        LEFT JOIN public.vinculos_comissao vc ON vc.representante_id = r.id
        LEFT JOIN public.comissoes_laudo cl ON cl.vinculo_id = vc.id
        WHERE r.status ${soDesativados ? "= 'desativado'" : "NOT IN ('desativado')"}
-       GROUP BY r.id, r.aceite_disclaimer_nv_em
+       GROUP BY r.id, r.aceite_disclaimer_nv_em, r.modelo_comissionamento, r.percentual_comissao, r.asaas_wallet_id
        ORDER BY leads_ativos DESC, r.nome`
     );
 
@@ -84,6 +90,12 @@ export async function GET(request: Request): Promise<NextResponse> {
         valor_pendente: parseFloat(r.valor_pendente ?? '0'),
         aceite_contrato_em: r.aceite_contrato_em ?? null,
         vendedores_count: parseInt(r.vendedores_count ?? '0', 10),
+        modelo_comissionamento: r.modelo_comissionamento ?? null,
+        percentual_comissao:
+          r.percentual_comissao != null
+            ? parseFloat(r.percentual_comissao)
+            : null,
+        asaas_wallet_id: r.asaas_wallet_id ?? null,
       })),
       total: rows.rows.length,
     });

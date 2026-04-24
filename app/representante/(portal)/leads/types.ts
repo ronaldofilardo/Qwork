@@ -31,7 +31,6 @@ export interface NovoLeadForm {
   contato_email: string;
   contato_telefone: string;
   valor_negociado: string;
-  percentual_comissao: string;
   tipo_cliente: TipoCliente;
   num_vidas_estimado: string;
 }
@@ -40,6 +39,5 @@ export interface ErrosCampos {
   cnpj: string;
   contato_email: string;
   contato_telefone: string;
-  percentual_comissao?: string;
   tipo_cliente?: string;
 }

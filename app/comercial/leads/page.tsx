@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
+  Trash2,
 } from 'lucide-react';
 import {
   CUSTO_POR_AVALIACAO,
@@ -26,9 +27,11 @@ interface LeadAprovacao {
   valor_negociado: number | null;
   percentual_comissao: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_vendedor: number | null;
+  percentual_comissao_comercial: number | null;
   vendedor_nome: string | null;
   num_vidas_estimado: number | null;
+  requer_aprovacao_comercial: boolean;
+  status: string;
   criado_em: string;
   representante_nome: string;
   representante_codigo: string;
@@ -39,40 +42,44 @@ export default function ComercialLeadsAprovacaoPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [modo, setModo] = useState<'aprovacao' | 'todos'>('aprovacao');
 
   // Modal de ação
   const [modal, setModal] = useState<{
     lead: LeadAprovacao;
-    acao: 'aprovar' | 'rejeitar';
+    acao: 'aprovar' | 'rejeitar' | 'remover';
   } | null>(null);
   const [obs, setObs] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [erroAcao, setErroAcao] = useState('');
   const [sucessoMsg, setSucessoMsg] = useState('');
 
-  const carregar = useCallback(async (p: number) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(p) });
-      const res = await fetch(`/api/comercial/leads?${params.toString()}`);
-      if (res.ok) {
-        const d = (await res.json()) as {
-          leads?: LeadAprovacao[];
-          total?: number;
-        };
-        setLeads(d.leads ?? []);
-        setTotal(d.total ?? 0);
+  const carregar = useCallback(
+    async (p: number, m: 'aprovacao' | 'todos') => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ page: String(p), modo: m });
+        const res = await fetch(`/api/comercial/leads?${params.toString()}`);
+        if (res.ok) {
+          const d = (await res.json()) as {
+            leads?: LeadAprovacao[];
+            total?: number;
+          };
+          setLeads(d.leads ?? []);
+          setTotal(d.total ?? 0);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   useEffect(() => {
-    void carregar(page);
-  }, [carregar, page]);
+    void carregar(page, modo);
+  }, [carregar, page, modo]);
 
   const executarAcao = async () => {
     if (!modal) return;
@@ -99,7 +106,7 @@ export default function ComercialLeadsAprovacaoPage() {
       setModal(null);
       setObs('');
       setTimeout(() => setSucessoMsg(''), 3000);
-      await carregar(page);
+      await carregar(page, modo);
     } catch {
       setErroAcao('Erro ao processar ação');
     } finally {
@@ -119,21 +126,51 @@ export default function ComercialLeadsAprovacaoPage() {
     const percRep = Number(
       lead.percentual_comissao_representante ?? lead.percentual_comissao ?? 0
     );
-    const percVend = Number(lead.percentual_comissao_vendedor ?? 0);
-    return calcularValoresComissao(valor, percRep, percVend, lead.tipo_cliente);
+    const percComercial = Number(lead.percentual_comissao_comercial ?? 0);
+    return calcularValoresComissao(
+      valor,
+      percRep,
+      percComercial,
+      lead.tipo_cliente
+    );
   };
 
   const totalPages = Math.ceil(total / 30);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">
-          Aprovação de Leads
-        </h2>
-        <p className="text-sm text-gray-500 mt-0.5">
-          {total} lead{total !== 1 ? 's' : ''} aguardando aprovação comercial
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {modo === 'aprovacao' ? 'Aprovação de Leads' : 'Todos os Leads'}
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {total} lead{total !== 1 ? 's' : ''}{' '}
+            {modo === 'aprovacao'
+              ? 'aguardando aprovação comercial'
+              : 'cadastrados'}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 text-sm">
+          <button
+            onClick={() => {
+              setModo('aprovacao');
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer ${modo === 'aprovacao' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Aguardando aprovação
+          </button>
+          <button
+            onClick={() => {
+              setModo('todos');
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer ${modo === 'todos' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Todos
+          </button>
+        </div>
       </div>
 
       {sucessoMsg && (
@@ -167,8 +204,9 @@ export default function ComercialLeadsAprovacaoPage() {
                     <th className="px-4 py-3 text-center font-medium">Tipo</th>
                     <th className="px-4 py-3 text-right font-medium">Valor</th>
                     <th className="px-4 py-3 text-center font-medium">Vidas</th>
+                    <th className="px-4 py-3 text-center font-medium">% Rep</th>
                     <th className="px-4 py-3 text-center font-medium">
-                      % Rep / % Vend
+                      % Comercial
                     </th>
                     <th className="px-4 py-3 text-right font-medium">
                       QWork recebe
@@ -188,9 +226,6 @@ export default function ComercialLeadsAprovacaoPage() {
                       lead.percentual_comissao_representante ??
                         lead.percentual_comissao ??
                         0
-                    );
-                    const percVend = Number(
-                      lead.percentual_comissao_vendedor ?? 0
                     );
                     return (
                       <tr key={lead.id} className="hover:bg-gray-50">
@@ -239,24 +274,22 @@ export default function ComercialLeadsAprovacaoPage() {
                         <td className="px-4 py-3 text-center">
                           <div className="text-xs space-y-0.5">
                             <div className="text-gray-700">
-                              Rep:{' '}
                               <span className="font-semibold">
                                 {percRep.toFixed(1)}%
                               </span>{' '}
                               ({fmtBRL(bd.valorRep)})
                             </div>
-                            {percVend > 0 && (
-                              <div className="text-purple-600">
-                                Vend:{' '}
-                                <span className="font-semibold">
-                                  {percVend.toFixed(1)}%
-                                </span>{' '}
-                                ({fmtBRL(bd.valorVendedor)})
-                              </div>
-                            )}
-                            <div className="text-gray-400">
-                              Total: {bd.percentualTotal.toFixed(1)}%
-                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="text-xs text-gray-700">
+                            <span className="font-semibold">
+                              {Number(
+                                lead.percentual_comissao_comercial ?? 0
+                              ).toFixed(1)}
+                              %
+                            </span>{' '}
+                            ({fmtBRL(bd.valorComercial)})
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -279,24 +312,41 @@ export default function ComercialLeadsAprovacaoPage() {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() =>
-                                setModal({ lead, acao: 'aprovar' })
-                              }
-                              className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors cursor-pointer"
-                              title="Aprovar"
-                            >
-                              <CheckCircle size={18} />
-                            </button>
-                            <button
-                              onClick={() =>
-                                setModal({ lead, acao: 'rejeitar' })
-                              }
-                              className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
-                              title="Rejeitar"
-                            >
-                              <XCircle size={18} />
-                            </button>
+                            {lead.requer_aprovacao_comercial &&
+                              lead.status === 'pendente' && (
+                                <button
+                                  onClick={() =>
+                                    setModal({ lead, acao: 'aprovar' })
+                                  }
+                                  className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors cursor-pointer"
+                                  title="Aprovar"
+                                >
+                                  <CheckCircle size={18} />
+                                </button>
+                              )}
+                            {lead.requer_aprovacao_comercial &&
+                              lead.status === 'pendente' && (
+                                <button
+                                  onClick={() =>
+                                    setModal({ lead, acao: 'rejeitar' })
+                                  }
+                                  className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors cursor-pointer"
+                                  title="Rejeitar"
+                                >
+                                  <XCircle size={18} />
+                                </button>
+                              )}
+                            {lead.status === 'pendente' && (
+                              <button
+                                onClick={() =>
+                                  setModal({ lead, acao: 'remover' })
+                                }
+                                className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer"
+                                title="Remover"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -338,7 +388,11 @@ export default function ComercialLeadsAprovacaoPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
             <div className="px-6 py-4 border-b">
               <h3 className="font-semibold text-gray-900">
-                {modal.acao === 'aprovar' ? 'Aprovar Lead' : 'Rejeitar Lead'}
+                {modal.acao === 'aprovar'
+                  ? 'Aprovar Lead'
+                  : modal.acao === 'remover'
+                    ? 'Remover Lead'
+                    : 'Rejeitar Lead'}
               </h3>
               <p className="text-xs text-gray-500 mt-1">
                 CNPJ: {modal.lead.cnpj} — {modal.lead.representante_nome}
@@ -354,8 +408,8 @@ export default function ComercialLeadsAprovacaoPage() {
                     modal.lead.percentual_comissao ??
                     0
                 );
-                const percVend = Number(
-                  modal.lead.percentual_comissao_vendedor ?? 0
+                const percComercial = Number(
+                  modal.lead.percentual_comissao_comercial ?? 0
                 );
                 return (
                   <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-1.5 text-xs">
@@ -373,13 +427,13 @@ export default function ComercialLeadsAprovacaoPage() {
                         {fmtBRL(bd.valorRep)}
                       </span>
                     </div>
-                    {percVend > 0 && (
+                    {percComercial > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-purple-600">
-                          Comissão vendedor ({percVend.toFixed(1)}%)
+                        <span className="text-gray-500">
+                          Comissão comercial ({percComercial.toFixed(1)}%)
                         </span>
-                        <span className="text-purple-600">
-                          {fmtBRL(bd.valorVendedor)}
+                        <span className="text-gray-700">
+                          {fmtBRL(bd.valorComercial)}
                         </span>
                       </div>
                     )}
@@ -473,7 +527,11 @@ export default function ComercialLeadsAprovacaoPage() {
                 } disabled:opacity-50`}
               >
                 {salvando && <Loader2 size={14} className="animate-spin" />}
-                {modal.acao === 'aprovar' ? 'Aprovar' : 'Rejeitar'}
+                {modal.acao === 'aprovar'
+                  ? 'Aprovar'
+                  : modal.acao === 'remover'
+                    ? 'Remover'
+                    : 'Rejeitar'}
               </button>
             </div>
           </div>

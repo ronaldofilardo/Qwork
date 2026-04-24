@@ -8,6 +8,7 @@ import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { default as PagamentosContent } from '@/components/admin/PagamentosContent';
 import { RepresentantesContent } from '@/components/suporte/RepresentantesContent';
 import { ComissoesIndividuaisContent } from '@/components/suporte/ComissoesIndividuaisContent';
+import CiclosComissaoContent from '@/components/suporte/CiclosComissaoContent';
 import { PreCadastroContent } from '@/components/suporte/PreCadastroContent';
 
 interface Session {
@@ -107,6 +108,9 @@ export default function SuportePage() {
       }
       if (activeSubSection === 'individuais') {
         return <ComissoesIndividuaisContent />;
+      }
+      if (activeSubSection === 'ciclos_comissao') {
+        return <CiclosComissaoContent />;
       }
     }
 

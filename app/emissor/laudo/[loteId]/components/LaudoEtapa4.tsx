@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import QworkLogo from '@/components/QworkLogo';
 import type { LaudoPadronizado } from '@/lib/laudo-tipos';
 
@@ -13,12 +12,13 @@ interface LaudoEtapa4Props {
   enviadoEm?: string | null;
   status?: string;
   isPrevia?: boolean;
+  loteNumero?: number | null;
   onDownloadLaudo: () => void;
 }
 
 function fmtDt(iso: string) {
   const d = new Date(iso);
-  return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  return `${d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`;
 }
 
 export default function LaudoEtapa4({
@@ -30,6 +30,7 @@ export default function LaudoEtapa4({
   enviadoEm,
   status,
   isPrevia,
+  loteNumero,
   onDownloadLaudo,
 }: LaudoEtapa4Props) {
   if (!etapa4) return null;
@@ -39,18 +40,22 @@ export default function LaudoEtapa4({
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        timeZone: 'America/Sao_Paulo',
       }) +
       ' ' +
-      new Date(emitidoEm).toLocaleTimeString('pt-BR') +
-      ' -0300'
+      new Date(emitidoEm).toLocaleTimeString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+      })
     : new Date().toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        timeZone: 'America/Sao_Paulo',
       }) +
       ' ' +
-      new Date().toLocaleTimeString('pt-BR') +
-      ' -0300';
+      new Date().toLocaleTimeString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+      });
 
   return (
     <>
@@ -83,30 +88,17 @@ export default function LaudoEtapa4({
                 <div className="text-lg font-bold text-black mb-6">
                   {etapa4.dataEmissao}
                 </div>
-                <div className="flex items-center justify-center gap-3 mb-5">
-                  <Image
-                    src="https://www.gov.br/++theme++padrao_govbr/img/govbr-logo-large.png"
-                    alt="gov.br"
-                    width={100}
-                    height={48}
-                    className="h-12 w-auto"
-                    unoptimized
-                  />
-                  <span className="text-gray-600 text-sm">
-                    Documento assinado digitalmente
-                  </span>
-                </div>
                 <div className="text-base font-bold uppercase text-black mb-2 tracking-wide">
                   {etapa4.assinatura.nome}
                 </div>
-                <div className="text-gray-600 text-sm mb-2">
+                <div className="text-gray-600 text-sm mb-1">
                   Data: {signDate}
                 </div>
-                <div className="text-gray-500 text-xs mb-5">
-                  Verifique em https://verificador.iti.br
+                <div className="text-gray-700 text-sm font-medium">
+                  {etapa4.assinatura.titulo} | {etapa4.assinatura.registro}
                 </div>
-                <div className="text-sm font-medium text-black mt-5">
-                  Coordenador Responsável Técnico – Qwork
+                <div className="text-sm font-medium text-black mt-2">
+                  {etapa4.assinatura.empresa}
                 </div>
               </div>
             </div>
@@ -142,6 +134,7 @@ export default function LaudoEtapa4({
               ⚠️ Pré-visualização - Laudo ainda não emitido
             </p>
           )}
+          {loteNumero != null && <p>📋 Lote nº {loteNumero}</p>}
           {criadoEm && <p>📅 Criado em {fmtDt(criadoEm)}</p>}
           {emitidoEm && <p>✅ Emitido automaticamente em {fmtDt(emitidoEm)}</p>}
           {enviadoEm && <p>📤 Enviado automaticamente em {fmtDt(enviadoEm)}</p>}

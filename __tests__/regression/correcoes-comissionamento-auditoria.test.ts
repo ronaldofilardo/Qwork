@@ -325,8 +325,9 @@ describe('9. Cobranças — arquivos removidos', () => {
 // 10. Ciclos — arquivos removidos do dashboard suporte
 // ─────────────────────────────────────────────────────────────────────────────
 describe('10. Ciclos — arquivos removidos do suporte', () => {
-  it('components/suporte/CiclosComissoesContent.tsx não deve existir', () => {
-    // O arquivo pode existir como componente standalone, mas o sidebar não deve usá-lo
+  it('components/suporte/CiclosComissoesContent.tsx não deve existir no sidebar', () => {
+    // Verifica que o ANTIGO CiclosComissoesContent foi removido do sidebar
+    // (o NOVO CiclosComissaoContent — sem 's' — é permitido como nova feature)
     const sidebarPath = path.join(
       ROOT,
       'components',
@@ -334,7 +335,7 @@ describe('10. Ciclos — arquivos removidos do suporte', () => {
       'SuporteSidebar.tsx'
     );
     const sidebarSrc = fs.readFileSync(sidebarPath, 'utf-8');
-    expect(sidebarSrc).not.toContain('ciclos');
+    expect(sidebarSrc).not.toContain('CiclosComissoesContent');
   });
 
   it('app/api/suporte/ciclos/ não deve existir', () => {
@@ -352,7 +353,7 @@ describe('10. Ciclos — arquivos removidos do suporte', () => {
     const src = fs.readFileSync(sidebarPath, 'utf-8');
     expect(src).not.toContain("'ciclos'");
     expect(src).not.toContain('CiclosComissoesContent');
-    expect(src).not.toContain('Ciclos');
+    // Nota: 'Ciclos NF/RPA' é permitido — é a nova feature de ciclos de comissionamento
   });
 
   it('suporte/page.tsx não deve importar CiclosComissoesContent', () => {

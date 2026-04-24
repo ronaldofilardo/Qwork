@@ -7,7 +7,6 @@ import { z } from 'zod';
 import { requireRole } from '@/lib/session';
 import {
   getCiclosByRepresentante,
-  getCiclosByVendedor,
   criarCiclosDoMes,
 } from '@/lib/db/comissionamento/ciclos';
 
@@ -15,10 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const session = await requireRole(
-      ['admin', 'representante', 'vendedor'],
-      false
-    );
+    const session = await requireRole(['admin', 'representante'], false);
     const { searchParams } = new URL(request.url);
 
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
@@ -34,7 +30,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Admin pode ver de qualquer rep
     const repIdParam = searchParams.get('representante_id');
-    const vendedorIdParam = searchParams.get('vendedor_id');
 
     if (session.perfil === 'admin') {
       if (!repIdParam) {
@@ -44,16 +39,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         );
       }
       const representanteId = parseInt(repIdParam);
-      if (vendedorIdParam) {
-        const vendedorId = parseInt(vendedorIdParam);
-        const result = await getCiclosByVendedor(vendedorId, {
-          status,
-          ano,
-          page,
-          limit,
-        });
-        return NextResponse.json(result);
-      }
       const result = await getCiclosByRepresentante(representanteId, {
         status,
         ano,
@@ -63,40 +48,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json(result);
     }
 
-    if (session.perfil === 'representante') {
-      const { query } = await import('@/lib/db');
-      const repResult = await query<{ id: number }>(
-        `SELECT id FROM representantes WHERE cpf = $1 LIMIT 1`,
-        [session.cpf]
-      );
-      if (repResult.rows.length === 0) {
-        return NextResponse.json(
-          { error: 'Representante não encontrado' },
-          { status: 404 }
-        );
-      }
-      const result = await getCiclosByRepresentante(repResult.rows[0].id, {
-        status,
-        ano,
-        page,
-        limit,
-      });
-      return NextResponse.json(result);
-    }
-
-    // vendedor
+    // representante
     const { query } = await import('@/lib/db');
-    const userResult = await query<{ id: number }>(
-      `SELECT id FROM usuarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
+    const repResult = await query<{ id: number }>(
+      `SELECT id FROM representantes WHERE cpf = $1 LIMIT 1`,
       [session.cpf]
     );
-    if (userResult.rows.length === 0) {
+    if (repResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Usuário não encontrado' },
+        { error: 'Representante não encontrado' },
         { status: 404 }
       );
     }
-    const result = await getCiclosByVendedor(userResult.rows[0].id, {
+    const result = await getCiclosByRepresentante(repResult.rows[0].id, {
       status,
       ano,
       page,

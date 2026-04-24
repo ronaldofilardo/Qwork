@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   Send,
+  Wrench,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { Solicitacao, ParcelaDetalhe } from './types';
@@ -596,6 +597,12 @@ export function SolicitacaoCard(props: SolicitacaoCardProps) {
               Lote #{solicitacao.lote_id}
             </h3>
             <StatusBadge status={solicitacao.status_pagamento} />
+            {solicitacao.tipo_cobranca === 'manutencao' && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-300">
+                <Wrench className="w-3 h-3" />
+                Taxa Manutenção
+              </span>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>

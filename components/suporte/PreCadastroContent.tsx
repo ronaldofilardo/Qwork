@@ -11,8 +11,10 @@ import {
   FileText,
   Clock,
   Filter,
+  Trash2,
 } from 'lucide-react';
 import type { PreCadastroItem } from '@/app/api/suporte/pre-cadastro/route';
+import { DeletePreCadastroModal } from './DeletePreCadastroModal';
 
 type TipoFiltro = 'todos' | 'clinica' | 'entidade';
 
@@ -63,13 +65,14 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 interface CopyButtonProps {
-  url: string;
+  url: string | null;
 }
 
 function CopyButton({ url }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
+    if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -88,6 +91,18 @@ function CopyButton({ url }: CopyButtonProps) {
       setTimeout(() => setCopied(false), 2500);
     }
   };
+
+  if (!url) {
+    return (
+      <span
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+        title="Contrato ainda não gerado"
+      >
+        <FileText size={14} />
+        Sem contrato
+      </span>
+    );
+  }
 
   return (
     <button
@@ -116,16 +131,30 @@ function CopyButton({ url }: CopyButtonProps) {
   );
 }
 
-function buildAceiteUrl(tomadorId: number, contratoId: number): string {
+function buildAceiteUrl(
+  tomadorId: number,
+  contratoId: number | null
+): string | null {
+  if (!contratoId) return null;
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return `${origin}/sucesso-cadastro?id=${tomadorId}&contrato_id=${contratoId}`;
 }
 
 interface PreCadastroRowProps {
   item: PreCadastroItem;
+  onDeleteClick: (
+    id: number,
+    tipo: 'entidade' | 'clinica',
+    nome: string
+  ) => void;
+  deleting: boolean;
 }
 
-function PreCadastroRow({ item }: PreCadastroRowProps) {
+function PreCadastroRow({
+  item,
+  onDeleteClick,
+  deleting,
+}: PreCadastroRowProps) {
   const url = buildAceiteUrl(item.id, item.contrato_id);
   const isClinique = item.tipo === 'clinica';
 
@@ -179,12 +208,36 @@ function PreCadastroRow({ item }: PreCadastroRowProps) {
         {formatarData(item.criado_em)}
       </td>
 
-      {/* Ação */}
+      {/* Link de Aceite */}
       <td className="px-4 py-3 text-right">
         <CopyButton url={url} />
       </td>
+
+      {/* Ações */}
+      <td className="px-4 py-3 text-right">
+        <button
+          onClick={() => onDeleteClick(item.id, item.tipo, item.nome)}
+          disabled={deleting}
+          title="Remover pré-cadastro"
+          aria-label="Remover pré-cadastro"
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer disabled:opacity-50 bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-400"
+        >
+          {deleting ? (
+            <RefreshCw size={14} className="animate-spin" />
+          ) : (
+            <Trash2 size={14} />
+          )}
+          Remover
+        </button>
+      </td>
     </tr>
   );
+}
+
+interface DeleteModalState {
+  id: number;
+  tipo: 'entidade' | 'clinica';
+  nome: string;
 }
 
 export function PreCadastroContent() {
@@ -192,6 +245,8 @@ export function PreCadastroContent() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState<TipoFiltro>('todos');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteModal, setDeleteModal] = useState<DeleteModalState | null>(null);
 
   const fetchPreCadastros = useCallback(async () => {
     setLoading(true);
@@ -214,6 +269,38 @@ export function PreCadastroContent() {
       setLoading(false);
     }
   }, [filtro]);
+
+  const handleDelete = useCallback(
+    async (id: number, tipo: 'entidade' | 'clinica') => {
+      setDeletingId(id);
+      setErro('');
+      try {
+        const res = await fetch(
+          `/api/suporte/pre-cadastro/${id}?tipo=${tipo}`,
+          { method: 'DELETE' }
+        );
+        if (!res.ok) {
+          const body = (await res.json()) as { error?: string };
+          throw new Error(body.error ?? 'Erro ao remover pré-cadastro');
+        }
+        setItems((prev) => prev.filter((item) => item.id !== id));
+        setDeleteModal(null);
+      } catch (err: unknown) {
+        setErro(err instanceof Error ? err.message : 'Erro ao remover');
+        setDeleteModal(null);
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    []
+  );
+
+  const handleDeleteClick = useCallback(
+    (id: number, tipo: 'entidade' | 'clinica', nome: string) => {
+      setDeleteModal({ id, tipo, nome });
+    },
+    []
+  );
 
   useEffect(() => {
     void fetchPreCadastros();
@@ -337,11 +424,19 @@ export function PreCadastroContent() {
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">
                       Link de Aceite
                     </th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">
+                      Ações
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((item) => (
-                    <PreCadastroRow key={item.id} item={item} />
+                    <PreCadastroRow
+                      key={item.id}
+                      item={item}
+                      onDeleteClick={handleDeleteClick}
+                      deleting={deletingId === item.id}
+                    />
                   ))}
                 </tbody>
               </table>
@@ -357,6 +452,16 @@ export function PreCadastroContent() {
             </p>
           )}
         </>
+      )}
+      {deleteModal && (
+        <DeletePreCadastroModal
+          isOpen
+          tomadorNome={deleteModal.nome}
+          tomadorTipo={deleteModal.tipo}
+          loading={deletingId === deleteModal.id}
+          onConfirm={() => void handleDelete(deleteModal.id, deleteModal.tipo)}
+          onCancel={() => setDeleteModal(null)}
+        />
       )}
     </div>
   );

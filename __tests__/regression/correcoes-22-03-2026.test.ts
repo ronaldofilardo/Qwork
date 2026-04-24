@@ -312,7 +312,7 @@ describe('6. GET /api/admin/auditorias/acesso-gestor — session_duration inline
   });
 
   it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin')");
+    expect(src).toContain("requireRole('admin'");
   });
 
   it('deve retornar acessos no JSON', () => {
@@ -360,7 +360,7 @@ describe('7. GET /api/admin/auditorias/acessos-rh — query direta sem VIEW', ()
   });
 
   it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin')");
+    expect(src).toContain("requireRole('admin'");
   });
 });
 
@@ -396,7 +396,7 @@ describe('8a. GET /api/admin/auditorias/acesso-suporte — nova rota', () => {
   });
 
   it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin')");
+    expect(src).toContain("requireRole('admin'");
   });
 
   it('deve retornar chave acessos no JSON', () => {
@@ -436,7 +436,7 @@ describe('8b. GET /api/admin/auditorias/acesso-comercial — nova rota', () => {
   });
 
   it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin')");
+    expect(src).toContain("requireRole('admin'");
   });
 });
 
@@ -478,7 +478,7 @@ describe('8c. GET /api/admin/auditorias/acesso-representante — nova rota', () 
   });
 
   it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin')");
+    expect(src).toContain("requireRole('admin'");
   });
 });
 
@@ -514,7 +514,7 @@ describe('8d. GET /api/admin/auditorias/acesso-vendedor — nova rota', () => {
   });
 
   it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin')");
+    expect(src).toContain("requireRole('admin'");
   });
 });
 

@@ -47,6 +47,7 @@ export interface Solicitacao {
   clinica_id?: number | null;
   lead_valor_negociado?: number | null;
   detalhes_parcelas?: ParcelaDetalhe[] | null;
+  tipo_cobranca?: 'laudo' | 'manutencao' | null;
 }
 
 export type FilterTab =
@@ -54,7 +55,8 @@ export type FilterTab =
   | 'aguardando_cobranca'
   | 'aguardando_pagamento'
   | 'pago'
-  | 'a_vencer';
+  | 'a_vencer'
+  | 'manutencao';
 
 export interface ModalLinkState {
   isOpen: boolean;

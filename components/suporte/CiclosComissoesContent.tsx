@@ -20,7 +20,6 @@ type StatusCiclo = 'aberto' | 'fechado' | 'nf_enviada' | 'nf_aprovada' | 'pago';
 
 interface CicloEnriquecido {
   id: number;
-  tipo_beneficiario: 'representante' | 'vendedor';
   mes_referencia: string;
   valor_total: number;
   qtd_comissoes: number;
@@ -690,9 +689,7 @@ export function CiclosComissoesContent() {
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-medium text-gray-600">
-                            {c.tipo_beneficiario === 'representante'
-                              ? 'Representante'
-                              : 'Vendedor'}
+                            Representante
                           </span>
                           {c.beneficiario_tipo_pessoa && (
                             <span

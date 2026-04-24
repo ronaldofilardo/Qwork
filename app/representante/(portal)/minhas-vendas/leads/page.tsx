@@ -13,7 +13,6 @@ interface LeadDireto {
   cnpj: string | null;
   razao_social: string | null;
   valor_negociado: string | null;
-  percentual_comissao: string | number | null;
   criado_em: string;
   data_conversao: string | null;
   tipo_cliente: string | null;
@@ -194,7 +193,6 @@ export default function MinhasVendasLeadsPage() {
                   <th className="px-4 py-3 text-left">CNPJ</th>
                   <th className="px-4 py-3 text-left">Tipo</th>
                   <th className="px-4 py-3 text-right">Valor</th>
-                  <th className="px-4 py-3 text-right">% Comissão</th>
                   <th className="px-4 py-3 text-left">Status</th>
                   <th className="px-4 py-3 text-left">Criado em</th>
                 </tr>
@@ -220,11 +218,6 @@ export default function MinhasVendasLeadsPage() {
                     </td>
                     <td className="px-4 py-3 text-right text-gray-700 font-medium">
                       {fmtBRL(l.valor_negociado)}
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-600">
-                      {l.percentual_comissao != null
-                        ? `${parseFloat(String(l.percentual_comissao)).toFixed(1)}%`
-                        : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span

@@ -90,8 +90,10 @@ export const GET = async (
   { params }: { params: { loteId: string } }
 ) => {
   // APENAS EMISSOR pode gerar laudos
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user: Awaited<ReturnType<typeof requireRole>>;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       {
         error: 'Acesso negado. Apenas emissores podem gerar laudos.',
@@ -127,7 +129,7 @@ export const GET = async (
     const laudoCheck = await query(
       `
       SELECT id, status, emissor_cpf FROM laudos
-      WHERE lote_id = $1 AND emissor_cpf = $2 AND status IN ('emitido','enviado')
+      WHERE lote_id = $1 AND emissor_cpf = $2 AND status IN ('pdf_gerado','aguardando_assinatura','assinado_processando','emitido','enviado')
     `,
       [loteId, user.cpf],
       user
@@ -137,7 +139,7 @@ export const GET = async (
       return NextResponse.json(
         {
           error:
-            'Laudo não encontrado ou não está emitido. Emita o laudo antes de gerar o PDF.',
+            'Laudo não encontrado ou não está pronto. Gere o laudo antes de baixar o PDF.',
           success: false,
         },
         { status: 400 }

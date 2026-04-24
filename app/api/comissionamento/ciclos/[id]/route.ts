@@ -21,7 +21,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
   try {
-    await requireRole(['admin', 'representante', 'vendedor'], false);
+    await requireRole(['admin', 'representante'], false);
     const { id } = await params;
     const cicloId = parseInt(id, 10);
     if (isNaN(cicloId))

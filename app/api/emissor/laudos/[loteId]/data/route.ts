@@ -26,6 +26,8 @@ export async function GET(
     }
 
     // Verificar se lote existe e buscar dados
+    // Emissores são usuários independentes — não estão vinculados a clinica_id.
+    // A autorização é feita via requireRole('emissor') acima.
     const loteResult = await query(
       `
       SELECT 
@@ -44,10 +46,10 @@ export async function GET(
         c.email as clinica_email
       FROM lotes_avaliacao l
       JOIN empresas_clientes e ON l.empresa_id = e.id
-      JOIN clinicas c ON l.clinica_id = c.id
-      WHERE l.id = $1 AND l.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $2)
+      LEFT JOIN clinicas c ON l.clinica_id = c.id
+      WHERE l.id = $1
     `,
-      [loteId, session.cpf],
+      [loteId],
       session
     );
 
@@ -69,11 +71,17 @@ export async function GET(
 
     if (
       laudoResult.rows.length === 0 ||
-      laudoResult.rows[0].status !== 'enviado'
+      ![
+        'emitido',
+        'enviado',
+        'aguardando_assinatura',
+        'assinado_processando',
+        'pdf_gerado',
+      ].includes(laudoResult.rows[0].status)
     ) {
       return NextResponse.json(
         {
-          error: 'Laudo não encontrado ou não foi enviado ainda',
+          error: 'Laudo não encontrado ou ainda não foi gerado',
         },
         { status: 404 }
       );

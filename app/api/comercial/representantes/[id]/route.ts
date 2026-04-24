@@ -25,7 +25,7 @@ export async function GET(
     const result = await query(
       `SELECT
          r.id, r.nome, r.email, r.codigo, r.status, r.tipo_pessoa,
-         r.telefone, r.cpf, r.cnpj,
+         r.telefone, r.cpf, r.cnpj, r.cpf_responsavel_pj,
          r.criado_em, r.aprovado_em,
          r.aceite_termos, r.aceite_termos_em,
          r.aceite_disclaimer_nv, r.aceite_disclaimer_nv_em,
@@ -35,7 +35,9 @@ export async function GET(
          r.dados_bancarios_solicitado_em,
          r.dados_bancarios_confirmado_em,
          r.percentual_comissao,
-         r.percentual_vendedor_direto,
+         r.percentual_comissao_comercial,
+         r.modelo_comissionamento,
+         r.asaas_wallet_id,
          COUNT(DISTINCT l.id)                                                        AS total_leads,
          COUNT(DISTINCT l.id) FILTER (WHERE l.status = 'pendente')                  AS leads_ativos,
          COUNT(DISTINCT l.id) FILTER (WHERE l.status = 'convertido')                AS leads_convertidos,
@@ -99,7 +101,12 @@ const PatchSchema = z.object({
     .optional(),
   motivo: z.string().min(5).max(500).optional(),
   percentual_comissao: z.number().min(0).max(100).optional().nullable(),
-  percentual_vendedor_direto: z.number().min(0).max(100).optional().nullable(),
+  percentual_comissao_comercial: z
+    .number()
+    .min(0)
+    .max(40)
+    .optional()
+    .nullable(),
   banco_codigo: z.string().max(10).optional().nullable(),
   agencia: z.string().max(20).optional().nullable(),
   conta: z.string().max(30).optional().nullable(),
@@ -110,6 +117,7 @@ const PatchSchema = z.object({
     .enum(['cpf', 'cnpj', 'email', 'telefone', 'aleatoria'])
     .optional()
     .nullable(),
+  asaas_wallet_id: z.string().max(200).optional().nullable(),
 });
 
 export async function PATCH(
@@ -248,8 +256,11 @@ export async function PATCH(
     if (data.status !== undefined) addField('status', data.status);
     if (data.percentual_comissao !== undefined)
       addField('percentual_comissao', data.percentual_comissao);
-    if (data.percentual_vendedor_direto !== undefined)
-      addField('percentual_vendedor_direto', data.percentual_vendedor_direto);
+    if (data.percentual_comissao_comercial !== undefined)
+      addField(
+        'percentual_comissao_comercial',
+        data.percentual_comissao_comercial
+      );
     if (data.banco_codigo !== undefined)
       addField('banco_codigo', data.banco_codigo);
     if (data.agencia !== undefined) addField('agencia', data.agencia);
@@ -259,6 +270,8 @@ export async function PATCH(
       addField('titular_conta', data.titular_conta);
     if (data.pix_chave !== undefined) addField('pix_chave', data.pix_chave);
     if (data.pix_tipo !== undefined) addField('pix_tipo', data.pix_tipo);
+    if (data.asaas_wallet_id !== undefined)
+      addField('asaas_wallet_id', data.asaas_wallet_id);
 
     if (fields.length === 0)
       return NextResponse.json(

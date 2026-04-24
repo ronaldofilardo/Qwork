@@ -29,11 +29,11 @@ export default function CadastrarRepresentanteModal({
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
-  const [tipoPessoa, setTipoPessoa] = useState<'pf' | 'pj'>('pf');
 
-  // Campos PJ
+  // Campos PJ (sempre)
   const [cnpj, setCnpj] = useState('');
   const [razaoSocial, setRazaoSocial] = useState('');
+  const [asaasWalletId, setAsaasWalletId] = useState('');
 
   // Arquivo
   const [docIdentificacao, setDocIdentificacao] = useState<File | null>(null);
@@ -78,7 +78,7 @@ export default function CadastrarRepresentanteModal({
       return;
     }
     if (cpfLimpo.length !== 11) {
-      setErro('Informe um CPF válido com 11 dígitos.');
+      setErro('Informe um CPF válido do responsável legal (11 dígitos).');
       return;
     }
     if (!email.trim()) {
@@ -89,21 +89,18 @@ export default function CadastrarRepresentanteModal({
       setErro('Documento de identificação é obrigatório.');
       return;
     }
-
-    if (tipoPessoa === 'pj') {
-      const cnpjLimpo = cnpj.replace(/\D/g, '');
-      if (cnpjLimpo.length !== 14) {
-        setErro('Informe um CNPJ válido com 14 dígitos.');
-        return;
-      }
-      if (!razaoSocial.trim() || razaoSocial.trim().length < 3) {
-        setErro('Razão social obrigatória (mín. 3 caracteres).');
-        return;
-      }
-      if (!cartaoCnpj) {
-        setErro('Cartão do CNPJ é obrigatório para Pessoa Jurídica.');
-        return;
-      }
+    const cnpjLimpo = cnpj.replace(/\D/g, '');
+    if (cnpjLimpo.length !== 14) {
+      setErro('Informe um CNPJ válido com 14 dígitos.');
+      return;
+    }
+    if (!razaoSocial.trim() || razaoSocial.trim().length < 3) {
+      setErro('Razão social obrigatória (mín. 3 caracteres).');
+      return;
+    }
+    if (!cartaoCnpj) {
+      setErro('Cartão do CNPJ é obrigatório.');
+      return;
     }
 
     setSaving(true);
@@ -112,16 +109,15 @@ export default function CadastrarRepresentanteModal({
       fd.append('nome', nome.trim());
       fd.append('cpf', cpfLimpo);
       fd.append('email', email.trim().toLowerCase());
-      fd.append('tipo_pessoa', tipoPessoa);
+      fd.append('tipo_pessoa', 'pj');
       fd.append('documento_identificacao', docIdentificacao);
       if (telefone.replace(/\D/g, ''))
         fd.append('telefone', telefone.replace(/\D/g, ''));
-
-      if (tipoPessoa === 'pj') {
-        fd.append('cnpj', cnpj.replace(/\D/g, ''));
-        fd.append('razao_social', razaoSocial.trim());
-        if (cartaoCnpj) fd.append('cartao_cnpj', cartaoCnpj);
-      }
+      fd.append('cnpj', cnpjLimpo);
+      fd.append('razao_social', razaoSocial.trim());
+      fd.append('cartao_cnpj', cartaoCnpj);
+      if (asaasWalletId.trim())
+        fd.append('asaas_wallet_id', asaasWalletId.trim());
 
       const res = await fetch('/api/comercial/representantes', {
         method: 'POST',
@@ -229,7 +225,63 @@ export default function CadastrarRepresentanteModal({
             </div>
 
             <div>
-              <label className={labelCls}>CPF *</label>
+              <label className={labelCls}>CNPJ *</label>
+              <input
+                className={inputCls}
+                value={cnpj}
+                onChange={(e) => setCnpj(formatarCNPJ(e.target.value))}
+                placeholder="00.000.000/0000-00"
+                maxLength={18}
+              />
+            </div>
+            <div>
+              <label className={labelCls}>Razão Social *</label>
+              <input
+                className={inputCls}
+                value={razaoSocial}
+                onChange={(e) => setRazaoSocial(e.target.value)}
+                placeholder="Razão social da empresa"
+              />
+            </div>
+
+            <div className="col-span-2">
+              <label className={labelCls}>
+                Cartão do CNPJ (PDF, JPG, PNG) *
+              </label>
+              <input
+                ref={refCartaoCnpj}
+                type="file"
+                accept={ACCEPT_DOCS}
+                onChange={(e) => setCartaoCnpj(e.target.files?.[0] ?? null)}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => refCartaoCnpj.current?.click()}
+                className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-green-400 hover:bg-green-50/30 transition-all"
+              >
+                <FileText
+                  size={16}
+                  className={cartaoCnpj ? 'text-green-600' : 'text-gray-400'}
+                />
+                <span className="text-sm text-gray-600 truncate flex-1 text-left">
+                  {cartaoCnpj
+                    ? cartaoCnpj.name
+                    : 'Selecionar cartão do CNPJ...'}
+                </span>
+                {cartaoCnpj && (
+                  <span className="text-[10px] font-bold text-green-600 bg-green-100 rounded-full px-2 py-0.5">
+                    OK
+                  </span>
+                )}
+              </button>
+              <p className="text-[11px] text-gray-400 mt-1">
+                Máx. 3MB. Formatos: PDF, JPG, PNG
+              </p>
+            </div>
+
+            <div>
+              <label className={labelCls}>CPF do Responsável Legal *</label>
               <input
                 className={inputCls}
                 value={cpf}
@@ -240,95 +292,6 @@ export default function CadastrarRepresentanteModal({
             </div>
 
             <div>
-              <label className={labelCls}>Tipo Pessoa *</label>
-              <div className="flex gap-3 mt-1">
-                {(
-                  [
-                    ['pf', 'Pessoa Física'],
-                    ['pj', 'Pessoa Jurídica'],
-                  ] as const
-                ).map(([tp, lbl]) => (
-                  <label
-                    key={tp}
-                    className="flex items-center gap-2 cursor-pointer select-none"
-                  >
-                    <input
-                      type="radio"
-                      name="tipo_pessoa"
-                      value={tp}
-                      checked={tipoPessoa === tp}
-                      onChange={() => setTipoPessoa(tp as 'pf' | 'pj')}
-                      className="accent-green-600"
-                    />
-                    <span className="text-sm text-gray-700">{lbl}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Campos PJ */}
-            {tipoPessoa === 'pj' && (
-              <>
-                <div>
-                  <label className={labelCls}>CNPJ *</label>
-                  <input
-                    className={inputCls}
-                    value={cnpj}
-                    onChange={(e) => setCnpj(formatarCNPJ(e.target.value))}
-                    placeholder="00.000.000/0000-00"
-                    maxLength={18}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Razão Social *</label>
-                  <input
-                    className={inputCls}
-                    value={razaoSocial}
-                    onChange={(e) => setRazaoSocial(e.target.value)}
-                    placeholder="Razão social da empresa"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className={labelCls}>
-                    Cartão do CNPJ (PDF, JPG, PNG) *
-                  </label>
-                  <input
-                    ref={refCartaoCnpj}
-                    type="file"
-                    accept={ACCEPT_DOCS}
-                    onChange={(e) => setCartaoCnpj(e.target.files?.[0] ?? null)}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => refCartaoCnpj.current?.click()}
-                    className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-green-400 hover:bg-green-50/30 transition-all"
-                  >
-                    <FileText
-                      size={16}
-                      className={
-                        cartaoCnpj ? 'text-green-600' : 'text-gray-400'
-                      }
-                    />
-                    <span className="text-sm text-gray-600 truncate flex-1 text-left">
-                      {cartaoCnpj
-                        ? cartaoCnpj.name
-                        : 'Selecionar cartão do CNPJ...'}
-                    </span>
-                    {cartaoCnpj && (
-                      <span className="text-[10px] font-bold text-green-600 bg-green-100 rounded-full px-2 py-0.5">
-                        OK
-                      </span>
-                    )}
-                  </button>
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    Máx. 3MB. Formatos: PDF, JPG, PNG
-                  </p>
-                </div>
-              </>
-            )}
-
-            <div className="col-span-2">
               <label className={labelCls}>Email *</label>
               <input
                 type="email"
@@ -350,7 +313,21 @@ export default function CadastrarRepresentanteModal({
               />
             </div>
 
-            {/* Upload de documento */}
+            <div className="col-span-2">
+              <label className={labelCls}>Wallet ID Asaas (opcional)</label>
+              <input
+                className={`${inputCls} font-mono`}
+                value={asaasWalletId}
+                onChange={(e) => setAsaasWalletId(e.target.value)}
+                placeholder="Ex: 7e6b5490-a88e-4c36-8f5e-..."
+              />
+              <p className="text-[11px] text-gray-400 mt-1">
+                Necessário para pagamento de comissão via split Asaas. Pode ser
+                definido depois.
+              </p>
+            </div>
+
+            {/* Upload de documento do responsável */}
             <div className="col-span-2 space-y-2 pt-2">
               <p className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-2">
                 <Upload size={14} className="text-green-600" /> Documento
@@ -358,7 +335,7 @@ export default function CadastrarRepresentanteModal({
               </p>
               <div>
                 <label className={labelCls}>
-                  Documento de Identificação (PDF, JPG, PNG) *
+                  Documento de Identificação do Responsável (PDF, JPG, PNG) *
                 </label>
                 <input
                   ref={refDocId}
@@ -415,10 +392,9 @@ export default function CadastrarRepresentanteModal({
               cpf.replace(/\D/g, '').length !== 11 ||
               !email.trim() ||
               !docIdentificacao ||
-              (tipoPessoa === 'pj' &&
-                (cnpj.replace(/\D/g, '').length !== 14 ||
-                  !razaoSocial.trim() ||
-                  !cartaoCnpj))
+              cnpj.replace(/\D/g, '').length !== 14 ||
+              !razaoSocial.trim() ||
+              !cartaoCnpj
             }
             className="flex items-center gap-2 px-5 py-2 text-sm font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors cursor-pointer"
           >

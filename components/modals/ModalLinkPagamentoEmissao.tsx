@@ -23,6 +23,8 @@ interface ModalLinkPagamentoEmissaoProps {
   numAvaliacoes: number;
   onDisponibilizarLink?: (loteId: number) => void;
   isDisponibilizando?: boolean;
+  /** Caminho base para o link de pagamento. Padrão: '/pagamento/emissao' */
+  linkPath?: string;
 }
 
 export default function ModalLinkPagamentoEmissao({
@@ -35,11 +37,12 @@ export default function ModalLinkPagamentoEmissao({
   numAvaliacoes,
   onDisponibilizarLink,
   isDisponibilizando = false,
+  linkPath = '/pagamento/emissao',
 }: ModalLinkPagamentoEmissaoProps) {
   const [copied, setCopied] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
 
-  const link = `${typeof window !== 'undefined' ? window.location.origin : ''}/pagamento/emissao/${token}`;
+  const link = `${typeof window !== 'undefined' ? window.location.origin : ''}${linkPath}/${token}`;
 
   const copyToClipboard = useCallback(async () => {
     try {

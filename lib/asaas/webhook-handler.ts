@@ -206,7 +206,7 @@ export async function activateSubscription(
 
       // 1. Buscar o pagamento usando asaas_payment_id
       let paymentResult = await client.query(
-        `SELECT id, entidade_id, clinica_id, valor, numero_parcelas
+        `SELECT id, entidade_id, clinica_id, empresa_id, valor, numero_parcelas, tipo_cobranca
        FROM pagamentos
        WHERE asaas_payment_id = $1`,
         [asaasPaymentId]
@@ -223,7 +223,7 @@ export async function activateSubscription(
             `[Asaas Webhook] 🔄 Lookup por asaas_payment_id falhou — tentando via externalReference (pagamento local ${localPagamentoId})`
           );
           paymentResult = await client.query(
-            `SELECT id, entidade_id, clinica_id, valor, numero_parcelas
+            `SELECT id, entidade_id, clinica_id, empresa_id, valor, numero_parcelas, tipo_cobranca
            FROM pagamentos
            WHERE id = $1`,
             [localPagamentoId]
@@ -242,8 +242,10 @@ export async function activateSubscription(
         id: pagamentoId,
         entidade_id,
         clinica_id,
+        empresa_id,
         valor,
         numero_parcelas,
+        tipo_cobranca,
       } = pagamento;
 
       // Número real de parcelas: salvo em numero_parcelas no momento da criação do pagamento.
@@ -300,6 +302,49 @@ export async function activateSubscription(
       console.log(
         `[Asaas Webhook] ✅ Parcela ${numeroParcela} marcada como paga em detalhes_parcelas (pagamento ${pagamentoId})`
       );
+
+      // 3. Se for cobrança de manutenção, registrar crédito e encerrar — sem liberar lotes
+      if (tipo_cobranca === 'manutencao') {
+        console.log(
+          `[Asaas Webhook] 🔧 Pagamento de manutenção confirmado (pagamento ${pagamentoId}). Registrando crédito.`
+        );
+
+        if (entidade_id) {
+          await client.query(
+            `INSERT INTO creditos_manutencao (entidade_id, pagamento_id, valor, criado_em)
+             VALUES ($1, $2, $3, NOW())`,
+            [entidade_id, pagamentoId, valor]
+          );
+          await client.query(
+            `UPDATE entidades SET credito_manutencao_pendente = COALESCE(credito_manutencao_pendente, 0) + $1 WHERE id = $2`,
+            [valor, entidade_id]
+          );
+          console.log(
+            `[Asaas Webhook] ✅ Crédito R$${valor} registrado para entidade ${entidade_id}`
+          );
+        } else if (clinica_id) {
+          await client.query(
+            `INSERT INTO creditos_manutencao (clinica_id, empresa_id, pagamento_id, valor, criado_em)
+             VALUES ($1, $2, $3, $4, NOW())`,
+            [clinica_id, empresa_id ?? null, pagamentoId, valor]
+          );
+          await client.query(
+            `UPDATE clinicas SET credito_manutencao_pendente = COALESCE(credito_manutencao_pendente, 0) + $1 WHERE id = $2`,
+            [valor, clinica_id]
+          );
+          console.log(
+            `[Asaas Webhook] ✅ Crédito R$${valor} registrado para clínica ${clinica_id}`
+          );
+        }
+
+        // Capturar dados mínimos para o log (sem lotes)
+        _entidadeId = entidade_id ?? null;
+        _clinicaId = clinica_id ?? null;
+        _valorLote = valor;
+        _numeroParcela = numeroParcela;
+        _totalParcelas = parcelasReais;
+        return; // Encerra a transação sem processar lotes
+      }
 
       // 3. Tentar extrair lote_id do externalReference
       const loteId = extractLoteIdFromExternalReference(
@@ -548,6 +593,22 @@ export async function handlePaymentWebhook(
         console.log('[Asaas Webhook] 🔄 Executando: activateSubscription...');
 
         await activateSubscription(payment.id, payment, event);
+
+        // Confirmar repasse_split pendente para este payment
+        try {
+          await dbQuery(
+            `UPDATE repasses_split
+             SET status = 'confirmado',
+                 data_confirmacao = NOW()
+             WHERE asaas_payment_id = $1 AND status = 'pendente'`,
+            [payment.id]
+          );
+        } catch (splitErr) {
+          console.error(
+            '[Asaas Webhook] Erro ao confirmar repasse_split:',
+            splitErr
+          );
+        }
 
         console.log(
           '[Asaas Webhook] ✅ PAYMENT_CONFIRMED processado com sucesso'

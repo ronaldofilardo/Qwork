@@ -16,13 +16,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const limit = 30;
     const offset = (page - 1) * limit;
     const repFilter = searchParams.get('representante_id');
+    const modo = searchParams.get('modo'); // 'aprovacao' (padrão) | 'todos'
 
-    const wheres = [
-      `lr.requer_aprovacao_comercial = true`,
-      `lr.status = 'pendente'`,
-    ];
+    const wheres: string[] = [];
     const params: unknown[] = [];
     let idx = 1;
+
+    // Por padrão exibe apenas leads que requerem aprovação
+    if (modo !== 'todos') {
+      wheres.push(`lr.requer_aprovacao_comercial = true`);
+      wheres.push(`lr.status = 'pendente'`);
+    }
 
     if (repFilter) {
       wheres.push(`lr.representante_id = $${idx++}`);
@@ -49,7 +53,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.valor_negociado,
          lr.percentual_comissao,
          lr.percentual_comissao_representante,
-         lr.percentual_comissao_vendedor,
+         lr.percentual_comissao_comercial,
          lr.num_vidas_estimado,
          lr.requer_aprovacao_comercial,
          lr.criado_em,

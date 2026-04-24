@@ -9,6 +9,9 @@
   "pnpm": {
     "overrides": {
       "puppeteer": "$puppeteer"
+    },
+    "patchedDependencies": {
+      "next@14.2.35": "patches/next@14.2.35.patch"
     }
   },
   "scripts": {
@@ -39,6 +42,7 @@
     "test": "dotenv -e .env.test --override -- jest",
     "test:ci": "dotenv -e .env.test --override -- jest --bail=50 --forceExit",
     "test:unit": "cross-env SKIP_GLOBAL_JEST_SETUP=1 dotenv -e .env.test --override -- jest __tests__/lib --runInBand",
+    "test:regression": "vitest run",
     "test:local": "dotenv -e .env.local -- pnpm test",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -173,6 +177,7 @@
     "tailwindcss": "^3.4.18",
     "testcontainers": "^9.1.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

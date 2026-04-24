@@ -14,8 +14,26 @@ export async function GET() {
     await requireRole('admin', false);
 
     const result = await query(`
-      SELECT * FROM vw_auditoria_avaliacoes
-      ORDER BY criado_em DESC
+      SELECT
+        a.id                    AS avaliacao_id,
+        a.funcionario_cpf       AS cpf,
+        (l.id)::text            AS lote,
+        l.liberado_em,
+        a.status                AS avaliacao_status,
+        a.concluida_em,
+        a.criado_em,
+        ec.nome                 AS empresa_nome,
+        CASE
+          WHEN l.entidade_id IS NOT NULL THEN ent.nome
+          ELSE NULL
+        END                     AS entidade_nome,
+        c.nome                  AS clinica_nome
+      FROM avaliacoes a
+      LEFT JOIN lotes_avaliacao l   ON l.id  = a.lote_id
+      LEFT JOIN empresas_clientes ec ON ec.id = l.empresa_id
+      LEFT JOIN clinicas c           ON c.id  = l.clinica_id
+      LEFT JOIN entidades ent        ON ent.id = l.entidade_id
+      ORDER BY a.criado_em DESC
       LIMIT 2000
     `);
 
