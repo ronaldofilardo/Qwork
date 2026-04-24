@@ -14,6 +14,7 @@ import {
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
   calcularComissaoCustoFixo,
+  valorMinimoCustoFixoTotal,
   type TipoCliente,
 } from '@/lib/leads-config';
 
@@ -241,7 +242,9 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
   // Valor mínimo obrigatório para liberar o botão
   const valorMinimoObrigatorio =
     modeloComissionamento === 'custo_fixo'
-      ? (custoFixoRep ?? custoMinimo)
+      ? custoFixoRep !== null
+        ? valorMinimoCustoFixoTotal(form.tipo_cliente, custoFixoRep)
+        : custoMinimo
       : custoMinimo;
 
   const valorAbaixoMinimo =
@@ -646,10 +649,8 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
                 className="text-red-500 shrink-0 mt-0.5"
               />
               <p className="text-red-700 text-xs">
-                Valor negociado inferior ao custo{' '}
-                {modeloComissionamento === 'custo_fixo' ? 'fixo' : 'mínimo'} (
-                {fmtBRL(valorMinimoObrigatorio)}). Ajuste o valor para
-                continuar.
+                Valor negociado inferior ao mínimo de{' '}
+                {fmtBRL(valorMinimoObrigatorio)}. Ajuste o valor para continuar.
               </p>
             </div>
           )}

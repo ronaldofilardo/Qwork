@@ -110,11 +110,12 @@ export function calcularValoresComissao(params: {
     const { valorRep, abaixoMinimo } = calcularComissaoCustoFixo(
       negociado,
       custoFixoRep,
-      percComercialVinculo
+      percComercialVinculo,
+      CUSTO_POR_AVALIACAO[tipoCliente]
     );
     if (abaixoMinimo) {
       return {
-        erro: `Valor negociado (R$ ${negociado.toFixed(2)}) é inferior ao custo fixo por avaliação (R$ ${custoFixoRep.toFixed(2)}).`,
+        erro: `Valor negociado (R$ ${negociado.toFixed(2)}) é inferior ao mínimo para ${tipoCliente} (R$ ${(custoFixoRep + CUSTO_POR_AVALIACAO[tipoCliente]).toFixed(2)}).`,
       };
     }
     const ratioRep = negociado > 0 ? valorRep / negociado : 0;

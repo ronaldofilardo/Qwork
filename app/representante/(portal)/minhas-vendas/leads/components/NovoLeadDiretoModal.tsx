@@ -14,6 +14,7 @@ import {
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
   calcularComissaoCustoFixo,
+  valorMinimoCustoFixoTotal,
   type TipoCliente,
 } from '@/lib/leads-config';
 
@@ -212,7 +213,8 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     modeloComissionamento === 'custo_fixo' &&
     custoFixoRep !== null &&
     valorNegociadoNum > 0 &&
-    valorNegociadoNum < custoFixoRep;
+    valorNegociadoNum <
+      valorMinimoCustoFixoTotal(form.tipo_cliente, custoFixoRep);
 
   const custoMinimo = CUSTO_POR_AVALIACAO[form.tipo_cliente];
 
@@ -225,7 +227,8 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     !erros.contato_telefone &&
     !erros.cnpj &&
     numVidasNum >= 1 &&
-    !erros.num_vidas_estimado;
+    !erros.num_vidas_estimado &&
+    !custoFixoInvalido;
 
   const salvar = useCallback(async () => {
     if (!form.contato_nome.trim()) {
@@ -593,8 +596,14 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
                       className="text-red-600 shrink-0 mt-0.5"
                     />
                     <p className="text-red-800 text-xs">
-                      Valor negociado inferior ao custo fixo (
-                      {fmtBRL(custoFixoRep)}). Ajuste o valor para continuar.
+                      Valor negociado inferior ao mínimo de{' '}
+                      {fmtBRL(
+                        valorMinimoCustoFixoTotal(
+                          form.tipo_cliente,
+                          custoFixoRep!
+                        )
+                      )}
+                      . Ajuste o valor para continuar.
                     </p>
                   </div>
                 )}
