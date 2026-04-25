@@ -35,6 +35,19 @@ describe('ModalConfirmacaoSolicitar', () => {
     gestorCelular: '(11) 99999-9999',
   };
 
+  const tomadorInfoFixture = {
+    nome: 'Clínica Teste Ltda',
+    cnpj: '12345678000190',
+    email: 'clinica@teste.com.br',
+    telefone: '(11) 3333-4444',
+    endereco: 'Rua das Flores, 100',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    responsavel_nome: 'Maria Gestora',
+    responsavel_cpf: '98765432100',
+    responsavel_email: 'maria@clinica.com.br',
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     // Limpar sessionStorage antes de cada teste
@@ -90,17 +103,80 @@ describe('ModalConfirmacaoSolicitar', () => {
     expect(screen.getByText(/Celular não cadastrado/)).toBeInTheDocument();
   });
 
-  it('deve exibir aviso especial quando ambos email e celular são null', () => {
+  it('deve exibir aviso especial quando ambos email e celular são null (contexto gestor)', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
         gestorEmail={null}
         gestorCelular={null}
+        contexto="gestor"
       />
     );
     expect(
-      screen.getByText(/Nenhum dado de contato foi encontrado/i)
+      screen.getByText(/Seus dados de contato não foram encontrados/i)
     ).toBeInTheDocument();
+  });
+
+  it('não deve exibir aviso quando gestor tem dados, mesmo sem tomador (contexto gestor)', () => {
+    render(
+      <ModalConfirmacaoSolicitar
+        {...defaultProps}
+        gestorEmail="gestor@example.com"
+        gestorCelular={null}
+        contexto="gestor"
+        tomadorInfo={null}
+      />
+    );
+    expect(
+      screen.queryByText(/Seus dados de contato não foram encontrados/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it('não deve exibir aviso quando RH tem dados do gestor, mesmo sem tomador', () => {
+    render(
+      <ModalConfirmacaoSolicitar
+        {...defaultProps}
+        gestorEmail="rh@example.com"
+        gestorCelular="(11) 99999-9999"
+        contexto="rh"
+        tomadorInfo={null}
+      />
+    );
+    expect(
+      screen.queryByText(/Seus dados de contato não foram encontrados/i)
+    ).not.toBeInTheDocument();
+  });
+
+  it('deve exibir aviso quando RH não tem dados de gestor E não tem tomador', () => {
+    render(
+      <ModalConfirmacaoSolicitar
+        {...defaultProps}
+        gestorEmail={null}
+        gestorCelular={null}
+        contexto="rh"
+        tomadorInfo={null}
+      />
+    );
+    expect(
+      screen.getByText(
+        /Seus dados de contato.*não foram encontrados no perfil RH/i
+      )
+    ).toBeInTheDocument();
+  });
+
+  it('não deve exibir aviso quando RH não tem dados de gestor MAS tem tomador', () => {
+    render(
+      <ModalConfirmacaoSolicitar
+        {...defaultProps}
+        gestorEmail={null}
+        gestorCelular={null}
+        contexto="rh"
+        tomadorInfo={tomadorInfoFixture}
+      />
+    );
+    expect(
+      screen.queryByText(/Seus dados de contato.*não foram encontrados/i)
+    ).not.toBeInTheDocument();
   });
 
   // ────────────────────────────────────────────────────────────────
@@ -109,7 +185,7 @@ describe('ModalConfirmacaoSolicitar', () => {
 
   it('deve exibir seção de cobrança no dashboard', () => {
     render(<ModalConfirmacaoSolicitar {...defaultProps} />);
-    expect(screen.getByText(/Como funciona a cobrança/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sobre a cobrança/i)).toBeInTheDocument();
   });
 
   it('deve mencionar Informações da Conta como destino de pagamentos', () => {
@@ -120,6 +196,13 @@ describe('ModalConfirmacaoSolicitar', () => {
   it('não deve exibir texto de proposta comercial (legácio)', () => {
     render(<ModalConfirmacaoSolicitar {...defaultProps} />);
     expect(screen.queryByText(/proposta comercial/i)).not.toBeInTheDocument();
+  });
+
+  it('não deve exibir frase "A plataforma entrará em contato" (legácio)', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} />);
+    expect(
+      screen.queryByText(/A plataforma entrar[aá] em contato/i)
+    ).not.toBeInTheDocument();
   });
 
   it('não deve exibir Prazo de Retorno (legácio)', () => {
@@ -204,19 +287,6 @@ describe('ModalConfirmacaoSolicitar', () => {
   // 6. Dados do Tomador (tomadorInfo)
   // ────────────────────────────────────────────────────────────────
 
-  const tomadorInfoFixture = {
-    nome: 'Clínica Teste Ltda',
-    cnpj: '12345678000190',
-    email: 'clinica@teste.com.br',
-    telefone: '(11) 3333-4444',
-    endereco: 'Rua das Flores, 100',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    responsavel_nome: 'Maria Gestora',
-    responsavel_cpf: '98765432100',
-    responsavel_email: 'maria@clinica.com.br',
-  };
-
   it('não deve renderizar card de tomador quando tomadorInfo não é passado', () => {
     render(<ModalConfirmacaoSolicitar {...defaultProps} />);
     expect(
@@ -228,6 +298,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -238,6 +309,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -248,6 +320,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -258,6 +331,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -269,6 +343,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -279,6 +354,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -289,6 +365,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -300,6 +377,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );
@@ -310,6 +388,7 @@ describe('ModalConfirmacaoSolicitar', () => {
     render(
       <ModalConfirmacaoSolicitar
         {...defaultProps}
+        contexto="rh"
         tomadorInfo={tomadorInfoFixture}
       />
     );

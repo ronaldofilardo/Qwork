@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss'
+import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       screens: {
-        'xxs': '320px',
-        'xs': '475px',
+        xxs: '320px',
+        xs: '475px',
       },
       colors: {
         primary: {
@@ -29,14 +29,39 @@ const config: Config = {
         warning: '#F59E0B',
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['var(--font-geist-mono)', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        sans: [
+          'var(--font-geist-sans)',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
+        mono: [
+          'var(--font-geist-mono)',
+          'ui-monospace',
+          'SFMono-Regular',
+          'Menlo',
+          'monospace',
+        ],
       },
       borderWidth: {
         '3': '3px',
       },
+      keyframes: {
+        progressIndeterminate: {
+          '0%': { transform: 'translateX(-100%) scaleX(0.5)' },
+          '50%': { transform: 'translateX(50%) scaleX(0.6)' },
+          '100%': { transform: 'translateX(200%) scaleX(0.5)' },
+        },
+      },
+      animation: {
+        progressIndeterminate:
+          'progressIndeterminate 1.4s ease-in-out infinite',
+      },
     },
   },
   plugins: [],
-}
-export default config
+};
+export default config;
