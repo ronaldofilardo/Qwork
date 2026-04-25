@@ -201,8 +201,6 @@ export async function POST(request: NextRequest) {
       tipoCliente === 'clinica'
         ? repResult.rows[0]?.valor_custo_fixo_clinica
         : repResult.rows[0]?.valor_custo_fixo_entidade;
-    const valorCustoFixoRep =
-      valorCustoFixoRaw != null ? Number(valorCustoFixoRaw) : 0;
 
     // ── Lógica de custo_fixo ──────────────────────────────────────────────
     let requerAprovacao = false;
