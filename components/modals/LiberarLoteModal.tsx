@@ -124,13 +124,7 @@ export function LiberarLoteModal({
     if (loadingState) return;
 
     if (isEntidade) {
-      // Montar params para entidade
-      const params: LiberarLoteEntidadeParams = {
-        tipo,
-      };
-
-      if (descricao.trim()) params.descricao = descricao.trim();
-      if (dataFiltro) params.dataFiltro = dataFiltro;
+      const params: LiberarLoteEntidadeParams = {};
 
       const response = await entidadeHook.liberarLote(params);
 
@@ -157,16 +151,7 @@ export function LiberarLoteModal({
 
     const params: LiberarLoteParams = {
       empresaId: finalEmpresaId,
-      tipo,
     };
-
-    if (descricao.trim()) {
-      params.descricao = descricao.trim();
-    }
-
-    if (dataFiltro) {
-      params.dataFiltro = dataFiltro;
-    }
 
     const response = await rhHook.liberarLote(params);
 

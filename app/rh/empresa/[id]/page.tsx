@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import toast from 'react-hot-toast';
 
 // Hooks personalizados
 import {
@@ -12,6 +13,8 @@ import {
   useLaudos,
   useDashboardData,
 } from '@/lib/hooks';
+import { useLiberarLote } from '@/lib/hooks/useLiberarLote';
+import { LiberandoCicloOverlay } from '@/components/LiberandoCicloOverlay';
 
 // Componentes principais
 import { EmpresaHeader, TabNavigation, LotesGrid } from '@/components/rh';
@@ -36,13 +39,6 @@ const FuncionariosSection = dynamic(
 const LaudosSection = dynamic(() => import('@/components/LaudosSection'), {
   ssr: false,
 });
-const LiberarLoteModal = dynamic(
-  () =>
-    import('@/components/modals/LiberarLoteModal').then((mod) => ({
-      default: mod.LiberarLoteModal,
-    })),
-  { ssr: false }
-);
 const PendenciasSection = dynamic(
   () => import('@/components/pendencias/PendenciasSection'),
   { ssr: false }
@@ -54,12 +50,7 @@ interface Session {
   perfil: 'funcionario' | 'rh' | 'admin';
 }
 
-type TabType =
-  | 'overview'
-  | 'lotes'
-  | 'laudos'
-  | 'funcionarios'
-  | 'pendencias';
+type TabType = 'overview' | 'lotes' | 'laudos' | 'funcionarios' | 'pendencias';
 
 interface Funcionario {
   cpf: string;
@@ -101,6 +92,11 @@ export default function EmpresaDashboardPage() {
   const { laudos, downloadingLaudo, handleDownloadLaudo, fetchLaudos } =
     useLaudos(empresaId);
   const { fetchDashboardData } = useDashboardData(empresaId);
+  const {
+    liberarLote,
+    loading: liberandoLote,
+    error: erroLiberacao,
+  } = useLiberarLote();
 
   // === ESTADOS DE UI ===
   const [showInserirModal, setShowInserirModal] = useState(false);
@@ -108,7 +104,7 @@ export default function EmpresaDashboardPage() {
   const [funcionarioParaEditar, setFuncionarioParaEditar] =
     useState<Funcionario | null>(null);
   const [cpfDetalhes, setCpfDetalhes] = useState<string | null>(null);
-  const [showLiberarModal, setShowLiberarModal] = useState(false);
+  const [aguardandoNovoLote, setAguardandoNovoLote] = useState(false);
 
   // === VERIFICAÇÃO DE SESSÃO ===
   useEffect(() => {
@@ -198,6 +194,30 @@ export default function EmpresaDashboardPage() {
     router.push('/login');
   }, [router]);
 
+  const handleIniciarCiclo = useCallback(async () => {
+    try {
+      setAguardandoNovoLote(true);
+      const result = await liberarLote({ empresaId: parseInt(empresaId) });
+
+      if (result && result.success && result.loteId) {
+        router.push(`/rh/empresa/${empresaId}/lote/${result.loteId}`);
+      } else if (result && !result.success) {
+        toast.error(result.message || 'Erro ao liberar lote', {
+          duration: 4000,
+          position: 'top-right',
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar ciclo:', error);
+      toast.error('Erro ao liberar lote', {
+        duration: 4000,
+        position: 'top-right',
+      });
+    } finally {
+      setAguardandoNovoLote(false);
+    }
+  }, [liberarLote, empresaId, router]);
+
   // === LOADING STATE ===
   if (loading || !session || !empresa) {
     return (
@@ -269,11 +289,22 @@ export default function EmpresaDashboardPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => setShowLiberarModal(true)}
-                  className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  onClick={handleIniciarCiclo}
+                  disabled={liberandoLote}
+                  className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  🚀 Iniciar Novo Ciclo
+                  {liberandoLote ? (
+                    <>
+                      <span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                      Liberando...
+                    </>
+                  ) : (
+                    '\u{1F680} Iniciar Novo Ciclo'
+                  )}
                 </button>
+                {erroLiberacao && (
+                  <p className="text-xs text-red-600 mt-1">{erroLiberacao}</p>
+                )}
               </div>
 
               <LotesGrid
@@ -312,8 +343,6 @@ export default function EmpresaDashboardPage() {
             <PendenciasSection empresaId={parseInt(empresaId)} />
           </div>
         )}
-
-
       </main>
 
       {/* Modais */}
@@ -344,30 +373,17 @@ export default function EmpresaDashboardPage() {
         />
       )}
 
-      {showLiberarModal && empresa && (
-        <LiberarLoteModal
-          isOpen={showLiberarModal}
-          onClose={() => setShowLiberarModal(false)}
-          empresaId={parseInt(empresaId)}
-          empresaNome={empresa.nome}
-          onSuccess={(loteId) => {
-            // Manter consistência com fluxo Entidade: recarregar antes de fechar para que a mensagem de sucesso seja vista
-            fetchLotes();
-            setShowLiberarModal(false);
-            // Quando loteId for -1 (indica sucesso sem um único lote), não navegar — apenas recarregar
-            if (typeof loteId === 'number' && loteId > 0) {
-              router.push(`/rh/empresa/${empresaId}/lote/${loteId}`);
-            }
-          }}
-        />
-      )}
-
       {cpfDetalhes && (
         <DetalhesFuncionario
           cpf={cpfDetalhes}
           onClose={() => setCpfDetalhes(null)}
         />
       )}
+
+      <LiberandoCicloOverlay
+        visible={liberandoLote || aguardandoNovoLote}
+        empresaNome={empresa?.nome}
+      />
     </div>
   );
 }
