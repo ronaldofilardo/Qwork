@@ -329,7 +329,6 @@ export async function POST(request: NextRequest) {
           const v = vinculoRes.rows[0] as {
             vinculo_id: number;
             representante_id: number;
-            percentual_comissao_comercial: number | null;
             asaas_wallet_id: string;
             modelo_comissionamento: 'percentual' | 'custo_fixo';
             percentual_comissao?: number | null;
