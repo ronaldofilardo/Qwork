@@ -2,6 +2,19 @@
 
 export type LotePageVariant = 'entidade' | 'rh';
 
+export interface TomadorInfo {
+  nome: string;
+  cnpj: string;
+  email: string;
+  telefone: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  responsavel_nome: string;
+  responsavel_cpf: string;
+  responsavel_email: string;
+}
+
 export interface Estatisticas {
   total: number;
   concluidas: number;
