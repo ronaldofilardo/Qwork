@@ -197,8 +197,6 @@ export async function POST(request: NextRequest) {
     const percComercial = Number(
       repResult.rows[0]?.percentual_comissao_comercial ?? 0
     );
-    const modeloComissionamento =
-      repResult.rows[0]?.modelo_comissionamento ?? null;
     const valorCustoFixoRaw =
       tipoCliente === 'clinica'
         ? repResult.rows[0]?.valor_custo_fixo_clinica
