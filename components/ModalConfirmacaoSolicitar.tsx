@@ -66,9 +66,12 @@ export function ModalConfirmacaoSolicitar({
   contexto = 'gestor',
   tomadorInfo,
 }: ModalConfirmacaoSolicitarProps) {
-  const temDadosContato = Boolean(gestorEmail || gestorCelular);
-  const labelPerfil =
-    contexto === 'rh' ? 'do seu perfil RH' : 'do gestor cadastrado';
+  const temDadosGestor = Boolean(gestorEmail || gestorCelular);
+  const temDadosTomador = Boolean(tomadorInfo);
+  // Aviso aparece se gestor está indisponível, EXCETO se for RH com dados da clínica
+  // (nesse caso, o usuário tem ao menos a informação do tomador)
+  const deveExibirAviso =
+    !temDadosGestor && (contexto !== 'rh' || !temDadosTomador);
   const labelTomador =
     contexto === 'rh'
       ? 'Dados da Clínica (Tomador)'
@@ -204,12 +207,7 @@ export function ModalConfirmacaoSolicitar({
 
           {/* Seção: Contato do Gestor / RH */}
           <div>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              A plataforma entrará em contato com você através dos dados{' '}
-              {labelPerfil}:
-            </p>
-
-            {temDadosContato ? (
+            {temDadosGestor ? (
               <div className="mt-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 space-y-2">
                 {gestorEmail ? (
                   <div className="flex items-center gap-2 text-sm text-blue-900">
@@ -245,16 +243,16 @@ export function ModalConfirmacaoSolicitar({
                   </div>
                 )}
               </div>
-            ) : (
+            ) : deveExibirAviso ? (
               <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
                 <p className="text-sm text-amber-800">
                   ⚠️{' '}
                   {contexto === 'rh'
-                    ? 'Seus dados de contato (email e celular) não foram encontrados no perfil RH. Verifique se estão preenchidos em “Informações da Conta”.'
+                    ? 'Seus dados de contato (email e celular) não foram encontrados no perfil RH. Verifique se estão preenchidos em "Informações da Conta".'
                     : 'Seus dados de contato não foram encontrados no cadastro. Para atualizações sobre este lote, entre em contato com a plataforma pelo email abaixo.'}
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
 
           {/* Seção: Sobre a cobrança */}

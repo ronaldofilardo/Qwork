@@ -121,25 +121,10 @@ export const POST = async (req: Request) => {
         );
       }
 
-      if (tipo && tipo !== 'completo') {
-        const nivelDesejado = tipo === 'operacional' ? 'operacional' : 'gestao';
-        const nivelFiltroResult = await queryAsGestorEntidade(
-          `SELECT cpf FROM funcionarios WHERE cpf = ANY($1::char(11)[]) AND nivel_cargo = $2`,
-          [
-            funcionariosElegiveis.map((f: any) => f.funcionario_cpf),
-            nivelDesejado,
-          ]
-        );
-        const cpfsComNivel = nivelFiltroResult.rows.map((r: any) => r.cpf);
-        funcionariosElegiveis = funcionariosElegiveis.filter((f: any) =>
-          cpfsComNivel.includes(f.funcionario_cpf)
-        );
-      }
-
       console.log(
         `[ENTIDADE-tomador] Após filtros: ${funcionariosElegiveis.length} funcionários`
       );
-      console.log(`[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}`);
+      console.log(`[DEBUG] DataFiltro: ${dataFiltro}`);
 
       if (funcionariosElegiveis.length > 0) {
         // Verificar se a entidade é isenta de pagamento

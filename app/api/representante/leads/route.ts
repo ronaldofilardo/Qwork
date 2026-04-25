@@ -197,10 +197,6 @@ export async function POST(request: NextRequest) {
     const percComercial = Number(
       repResult.rows[0]?.percentual_comissao_comercial ?? 0
     );
-    const valorCustoFixoRaw =
-      tipoCliente === 'clinica'
-        ? repResult.rows[0]?.valor_custo_fixo_clinica
-        : repResult.rows[0]?.valor_custo_fixo_entidade;
 
     // ── Lógica de custo_fixo ──────────────────────────────────────────────
     let requerAprovacao = false;

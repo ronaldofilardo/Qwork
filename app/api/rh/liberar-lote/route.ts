@@ -211,37 +211,13 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // Filtro por tipo de lote (operacional/gestão)
-    if (tipo && tipo !== 'completo') {
-      const nivelDesejado = tipo === 'operacional' ? 'operacional' : 'gestao';
-      const nivelFiltroResult = await queryAsGestorRH<{ cpf: string }>(
-        `
-        SELECT cpf FROM funcionarios
-        WHERE cpf = ANY($1::char(11)[]) AND nivel_cargo = $2
-      `,
-        [
-          funcionariosElegiveis.map(
-            (f: FuncionarioElegivel) => f.funcionario_cpf
-          ),
-          nivelDesejado,
-        ]
-      );
-
-      const cpfsComNivel = nivelFiltroResult.rows.map(
-        (r: { cpf: string }) => r.cpf
-      );
-      funcionariosElegiveis = funcionariosElegiveis.filter(
-        (f: FuncionarioElegivel) => cpfsComNivel.includes(f.funcionario_cpf)
-      );
-    }
-
     const funcionarios = funcionariosElegiveis;
 
     console.log(
       `[DEBUG] Funcionários após todos os filtros: ${funcionarios.length}`
     );
     console.log(
-      `[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}, LoteReferencia: ${loteReferenciaId}`
+      `[DEBUG] DataFiltro: ${dataFiltro}, LoteReferencia: ${loteReferenciaId}`
     );
 
     if (funcionarios.length === 0) {

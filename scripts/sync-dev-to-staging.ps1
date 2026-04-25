@@ -26,7 +26,8 @@
 param(
     [switch]$SkipBackup,    # Pula o backup schema-only do staging antes do overwrite
     [switch]$SkipCleanup,   # Mantém o arquivo de dump após a conclusão
-    [switch]$DryRun         # Apenas valida configuração, não executa nenhuma operação
+    [switch]$DryRun,        # Apenas valida configuração, não executa nenhuma operação
+    [switch]$Force          # Pula a confirmação interativa (uso programático)
 )
 
 Set-StrictMode -Version Latest
@@ -246,11 +247,14 @@ Write-Host "  ║  Destino: $stagingDisplay" -ForegroundColor Yellow
 Write-Host "  ║                                                              ║" -ForegroundColor Red
 Write-Host "  ╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Red
 Write-Host ""
-$confirm = Read-Host "  Digite 'SIM' para confirmar o overwrite do staging"
-
-if ($confirm -ne "SIM") {
-    Write-Warn "Operação cancelada. Dump salvo em: $dumpFile"
-    exit 0
+if (-not $Force) {
+    $confirm = Read-Host "  Digite 'SIM' para confirmar o overwrite do staging"
+    if ($confirm -ne "SIM") {
+        Write-Warn "Operacao cancelada. Dump salvo em: $dumpFile"
+        exit 0
+    }
+} else {
+    Write-Warn "Confirmacao automatica via -Force. Executando overwrite..."
 }
 
 # ============================================================
