@@ -200,84 +200,80 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
       );
     });
 
-    it('deve abrir modal ao clicar em Iniciar Ciclo', async () => {
+    it('deve chamar a API diretamente ao clicar em Iniciar Ciclo (sem modal)', async () => {
       const user = userEvent.setup();
       render(<EmpresaDashboardPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
+      const btn = await screen.findByRole('button', {
+        name: /iniciar novo ciclo/i,
       });
+      expect(btn).toBeInTheDocument();
 
-      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
+      await user.click(btn);
 
-      // Modal title is rendered without the rocket emoji
+      // Não deve abrir modal
       expect(
-        screen.getByText('Iniciar Ciclo de Coletas Avaliativas')
-      ).toBeInTheDocument();
-      // O modal atual usa sistema de elgibilidade automática, sem texto descritivo estático obrigatório
-      // apenas verificamos que o botão de submit está presente
-      expect(
-        screen.getByRole('button', { name: /Iniciar Ciclo/ })
-      ).toBeInTheDocument();
+        screen.queryByText('Iniciar Ciclo de Coletas Avaliativas')
+      ).toBeNull();
+
+      // API deve ter sido chamada diretamente
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          '/api/rh/liberar-lote',
+          expect.objectContaining({ method: 'POST' })
+        );
+      });
     });
 
-    it('deve permitir seleção de tipo de lote', async () => {
+    it('deve navegar para página do lote após sucesso', async () => {
       const user = userEvent.setup();
       render(<EmpresaDashboardPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
+      const btn = await screen.findByRole('button', {
+        name: /iniciar novo ciclo/i,
       });
+      await user.click(btn);
 
-      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
-
-      // O modal usa opções por radio — verificamos a presença da opção 'Completo'
-      expect(screen.getByText('Completo')).toBeInTheDocument();
-
-      // Encontrar o input radio 'operacional' e interagir
-      const operacionalInput = screen.getByDisplayValue('operacional');
-      expect(operacionalInput).toBeInTheDocument();
-
-      await user.click(screen.getByText('Operacional'));
-      expect(operacionalInput).toBeChecked();
+      await waitFor(() => {
+        expect(mockRouter.push).toHaveBeenCalledWith('/rh/empresa/1/lote/2');
+      });
     });
 
-    it('deve validar título obrigatório', async () => {
+    it('não deve navegar quando a API retorna sucesso sem lote', async () => {
       const user = userEvent.setup();
       render(<EmpresaDashboardPage />);
 
+      // Aguarda componente carregar antes de trocar o mock
+      const btn = await screen.findByRole('button', {
+        name: /iniciar novo ciclo/i,
+      });
+
+      // Agora sobrescreve o mock só para liberar-lote sem lote no retorno
+      mockFetch.mockImplementation(async (url: RequestInfo | URL) => {
+        const urlString =
+          typeof url === 'string' ? url : ((url as Request).url ?? String(url));
+        if (urlString === '/api/rh/liberar-lote') {
+          return {
+            ok: true,
+            json: async () => ({ success: true }),
+          } as Response;
+        }
+        return Promise.reject(new Error(`URL inesperada: ${urlString}`));
+      });
+
+      await user.click(btn);
+
       await waitFor(() => {
-        expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
+        expect(mockFetch).toHaveBeenCalledWith(
+          '/api/rh/liberar-lote',
+          expect.objectContaining({ method: 'POST' })
+        );
       });
 
-      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
-
-      const submitButton = screen.getByRole('button', {
-        name: /Iniciar Ciclo/,
-      });
-      // O botão de submissão atualmente não é desabilitado por ausência de título
-      expect(submitButton).not.toBeDisabled();
-    });
-
-    it('deve permitir preenchimento do formulário', async () => {
-      const user = userEvent.setup();
-      render(<EmpresaDashboardPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
-
-      // O campo de título foi removido do modal (sistema automático de elegibilidade)
-      // Apenas o campo de descrição (opcional) e tipo de lote existem
-      const descricaoTextarea = screen.getByPlaceholderText(
-        /Adicione informações adicionais/
+      // Não deve navegar
+      expect(mockRouter.push).not.toHaveBeenCalledWith(
+        expect.stringContaining('/lote/')
       );
-
-      await user.type(descricaoTextarea, 'Descrição de teste');
-
-      expect(descricaoTextarea).toHaveValue('Descrição de teste');
     });
   });
 
@@ -291,10 +287,6 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
       });
 
       await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
-
-      // O campo de título foi removido; o modal usa elegibilidade automática
-      // Apenas clicamos em Iniciar Ciclo diretamente
-      await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -319,10 +311,6 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
 
       await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
 
-      // O campo de título foi removido; submeter o formulário diretamente
-      await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
-
-      // Verifica que a API foi chamada
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
           '/api/rh/liberar-lote',
@@ -334,11 +322,9 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
           })
         );
       });
-
-      // Verifica que não houve erro
     });
 
-    it('fecha modal e navega para detalhes do lote após sucesso (fluxo RH)', async () => {
+    it('navega para detalhes do lote após sucesso (fluxo RH)', async () => {
       const user = userEvent.setup();
       render(<EmpresaDashboardPage />);
 
@@ -348,27 +334,17 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
 
       await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
 
-      // Submeter o formulário sem preencher campos adicionais
-      await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
-
       await waitFor(() => {
-        // API foi chamada e retornou sucesso com lote.id = 2 (mock)
         expect(mockFetch).toHaveBeenCalledWith(
           '/api/rh/liberar-lote',
           expect.objectContaining({ method: 'POST' })
         );
 
-        // Espera que a página navegue para a rota do lote
         expect(mockRouter.push).toHaveBeenCalledWith('/rh/empresa/1/lote/2');
-
-        // E que o modal não esteja mais visível
-        expect(
-          screen.queryByText('Iniciar Ciclo de Coletas Avaliativas')
-        ).toBeNull();
       });
     });
 
-    it('quando resposta RH não traz lote (loteId = -1), fecha modal sem navegar', async () => {
+    it('quando resposta RH não traz lote, não navega', async () => {
       const user = userEvent.setup();
       render(<EmpresaDashboardPage />);
 
@@ -376,9 +352,6 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
         expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
       });
 
-      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
-
-      // Preparar resposta da API sem lote
       mockFetch.mockImplementationOnce(async (url: string) => {
         if (url === '/api/rh/liberar-lote') {
           return {
@@ -389,7 +362,7 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
         return Promise.reject(new Error('URL inesperada'));
       });
 
-      await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
+      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
@@ -397,20 +370,136 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
           expect.objectContaining({ method: 'POST' })
         );
 
-        // Não deve navegar quando loteId === -1
         expect(mockRouter.push).not.toHaveBeenCalledWith(
           expect.stringContaining('/lote/')
         );
+      });
+    });
+  });
 
-        // Modal deve ter sido fechado
+  describe('Overlay de Loading ao Iniciar Ciclo', () => {
+    it('exibe overlay de loading enquanto API está em andamento', async () => {
+      let resolveLiberar!: (value: Response) => void;
+      const pendingPromise = new Promise<Response>((resolve) => {
+        resolveLiberar = resolve;
+      });
+
+      // Substitui APENAS a chamada ao liberar-lote por uma promise pendente
+      const originalImpl = mockFetch.getMockImplementation();
+      mockFetch.mockImplementation(
+        async (url: RequestInfo | URL, init?: RequestInit) => {
+          const urlString =
+            typeof url === 'string'
+              ? url
+              : ((url as Request).url ?? String(url));
+          if (urlString === '/api/rh/liberar-lote') {
+            return pendingPromise;
+          }
+          return originalImpl!(url, init);
+        }
+      );
+
+      const user = userEvent.setup();
+      render(<EmpresaDashboardPage />);
+
+      await waitFor(() => {
         expect(
-          screen.queryByText('Iniciar Ciclo de Coletas Avaliativas')
-        ).toBeNull();
+          screen.getByText('\u{1F680} Iniciar Novo Ciclo')
+        ).toBeInTheDocument();
+      });
 
-        // Deve ter recarregado lotes (fazer chamada ao endpoint de lotes)
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/rh/lotes?empresa_id=1')
-        );
+      // Clicar no botão inicia a operação
+      await user.click(screen.getByText('\u{1F680} Iniciar Novo Ciclo'));
+
+      // Overlay deve aparecer enquanto API ainda não respondeu
+      await waitFor(() => {
+        expect(
+          screen.getByTestId('liberando-ciclo-overlay')
+        ).toBeInTheDocument();
+      });
+
+      // Botão deve estar desabilitado
+      expect(
+        screen.getByRole('button', { name: /iniciar novo ciclo|liberando/i })
+      ).toBeDisabled();
+
+      // Resolver a API
+      resolveLiberar({
+        ok: true,
+        json: async () => ({ success: true, lote: { id: 99 } }),
+      } as Response);
+
+      // Overlay deve sumir após a API responder
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId('liberando-ciclo-overlay')
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it('oculta overlay mesmo quando API retorna erro', async () => {
+      mockFetch.mockImplementation(async (url: RequestInfo | URL) => {
+        const urlString =
+          typeof url === 'string' ? url : ((url as Request).url ?? String(url));
+        if (urlString === '/api/rh/liberar-lote') {
+          return {
+            ok: false,
+            json: async () => ({ error: 'Nenhum funcionário elegível' }),
+          } as Response;
+        }
+        // demais URLs usam o mock padrão do beforeEach
+        const defaults: Record<string, unknown> = {
+          '/api/auth/session': {
+            cpf: '11111111111',
+            nome: 'Gestor RH',
+            perfil: 'rh',
+          },
+          '/api/rh/empresas': [
+            {
+              id: 1,
+              nome: 'Indústria Metalúrgica São Paulo',
+              cnpj: '11222333000144',
+            },
+          ],
+          '/api/rh/dashboard?empresa_id=1': {
+            stats: {
+              total_avaliacoes: 8,
+              concluidas: 6,
+              funcionarios_avaliados: 5,
+            },
+            resultados: [],
+            distribuicao: [],
+          },
+          '/api/admin/funcionarios?empresa_id=1': { funcionarios: [] },
+          '/api/rh/lotes?empresa_id=1&limit=5': { lotes: [] },
+          '/api/rh/lotes?empresa_id=1': { lotes: [] },
+          '/api/rh/laudos': [],
+        };
+        if (urlString in defaults) {
+          return {
+            ok: true,
+            json: async () => defaults[urlString],
+          } as Response;
+        }
+        throw new Error(`URL não mapeada: ${urlString}`);
+      });
+
+      const user = userEvent.setup();
+      render(<EmpresaDashboardPage />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('\u{1F680} Iniciar Novo Ciclo')
+        ).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('\u{1F680} Iniciar Novo Ciclo'));
+
+      // Overlay deve sumir após erro
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId('liberando-ciclo-overlay')
+        ).not.toBeInTheDocument();
       });
     });
   });

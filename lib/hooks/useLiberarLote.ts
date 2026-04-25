@@ -25,28 +25,27 @@ export interface LoteResponse {
   error?: string;
   error_code?: string;
   hint?: string;
-  lote?: {
-    id: number;
-    // codigo: removido
-    numero_ordem: number;
-    tipo: string;
-    liberado_em: string;
-  };
+  loteId?: number;
+  numero_ordem?: number;
+  liberado_em?: string;
+  avaliacoes_criadas?: number;
+  total_funcionarios?: number;
   estatisticas?: {
     avaliacoesCreated: number;
     totalFuncionarios: number;
     empresa: string;
   };
   resumoInclusao?: ResumoInclusao;
+  resumo_inclusao?: ResumoInclusao;
   detalhes?: FuncionarioElegivel[];
 }
 
 export interface LiberarLoteParams {
   empresaId: number;
-  descricao?: string;
-  tipo?: 'completo' | 'operacional' | 'gestao';
-  dataFiltro?: string;
   loteReferenciaId?: number;
+  descricao?: string;
+  dataFiltro?: string;
+  tipo?: string;
 }
 
 export function useLiberarLote() {

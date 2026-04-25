@@ -12,6 +12,7 @@ import {
   Flag,
   CreditCard,
   FileText,
+  Edit2,
 } from 'lucide-react';
 import type {
   EmpresaOverview,
@@ -196,13 +197,23 @@ export default function EmpresasTable({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="qw-mobile-card-label">Empresa / CNPJ</div>
-                  <button
-                    type="button"
-                    onClick={() => onEditEmpresa(empresa.id)}
-                    className="qw-mobile-card-value font-semibold text-primary-700 hover:text-primary-900 hover:underline text-left cursor-pointer"
-                  >
-                    {empresa.nome}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/rh/empresa/${empresa.id}`)}
+                      className="qw-mobile-card-value font-semibold text-primary-700 hover:text-primary-900 hover:underline text-left cursor-pointer"
+                    >
+                      {empresa.nome}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onEditEmpresa(empresa.id)}
+                      title="Editar dados da empresa"
+                      className="text-gray-400 hover:text-primary-600 transition-colors flex-shrink-0"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                  </div>
                   <p className="text-sm text-gray-500 break-all">
                     {empresa.cnpj}
                   </p>
@@ -365,7 +376,6 @@ export default function EmpresasTable({
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Laudos (geral)
               </th>
-              <th className="w-10 px-4 py-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -401,13 +411,25 @@ export default function EmpresasTable({
                   {/* Empresa */}
                   <td className="px-4 py-3">
                     <div>
-                      <button
-                        type="button"
-                        onClick={() => onEditEmpresa(empresa.id)}
-                        className="font-medium text-primary-600 hover:text-primary-800 hover:underline text-sm text-left"
-                      >
-                        {empresa.nome}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            router.push(`/rh/empresa/${empresa.id}`)
+                          }
+                          className="font-medium text-primary-600 hover:text-primary-800 hover:underline text-sm text-left"
+                        >
+                          {empresa.nome}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onEditEmpresa(empresa.id)}
+                          title="Editar dados da empresa"
+                          className="text-gray-400 hover:text-primary-600 transition-colors flex-shrink-0"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                      </div>
                       <p className="text-xs text-gray-400">{empresa.cnpj}</p>
                     </div>
                   </td>
@@ -509,18 +531,6 @@ export default function EmpresasTable({
                           <span className="text-gray-400">—</span>
                         )}
                     </div>
-                  </td>
-
-                  {/* Ação */}
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/rh/empresa/${empresa.id}`)}
-                      title="Ver detalhes da empresa"
-                      className="text-gray-400 hover:text-primary-600 transition-colors"
-                    >
-                      <ArrowRight size={16} />
-                    </button>
                   </td>
                 </tr>
               );
