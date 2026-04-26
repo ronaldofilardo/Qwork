@@ -6,7 +6,7 @@ param(
     [int]$MaxWaitMinutes = 5
 )
 
-$prodUrl = "https://qwork-psi.vercel.app"
+$prodUrl = "https://sistema.qwork.app.br"
 $maxAttempts = $MaxWaitMinutes * 4  # 4 tentativas por minuto
 $attempt = 0
 

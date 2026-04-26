@@ -21,7 +21,7 @@ $ERROR = "Red"
 $INFO = "Cyan"
 
 # URL de produção esperada
-$PROD_URL = "https://qwork-psi.vercel.app"
+$PROD_URL = "https://sistema.qwork.app.br"
 
 # Contador de problemas
 $issues = 0
