@@ -44,7 +44,7 @@
  * 9. Hash desacoplado de arquivo_remoto_url (5 arquivos corrigidos)
  */
 
-import { describe, it, expect, beforeAll } from 'vitest';
+// Jest fornece describe, it, expect, beforeAll como globals — não precisa de import
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -165,8 +165,10 @@ describe('2. POST /api/emissor/laudos/[loteId] — imutabilidade e resposta', ()
     expect(src).toContain('pdf_gerado');
   });
 
-  it('GET deve selecionar pdf_gerado_em no SELECT', () => {
-    expect(src).toContain('pdf_gerado_em');
+  it('GET deve retornar laudo_status (pdf_gerado_em movido para lib/laudo-auto)', () => {
+    // pdf_gerado_em não é mais selecionado diretamente no GET da route
+    // O status é derivado via laudo_status
+    expect(src).toContain('laudo_status');
   });
 });
 
@@ -419,7 +421,7 @@ describe('8. Migration 1139 — pdf_gerado_em e status enum', () => {
     ROOT,
     'database',
     'migrations',
-    '1139_laudo_pdf_gerado_status.sql'
+    '1139b_laudo_pdf_gerado_status.sql'
   );
   let src: string;
 
@@ -531,7 +533,7 @@ describe('11. Migration 1143 — zapsign_sign_url e status assinado_processando'
     ROOT,
     'database',
     'migrations',
-    '1143_add_zapsign_sign_url.sql'
+    '1143a_add_zapsign_sign_url.sql'
   );
   let src: string;
 

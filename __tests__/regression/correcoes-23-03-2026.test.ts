@@ -266,9 +266,11 @@ describe('6. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery'
     expect(src).toContain('c.representante_id = $1');
   });
 
-  it('deve incluir statusValidos com pendente_nf para Aguardando NF', () => {
-    expect(src).toContain('pendente_nf');
-    expect(src).toContain('nf_em_analise');
+  it('deve incluir statusValidos com retida e paga (pendente_consolidacao removido)', () => {
+    expect(src).toContain("'retida'");
+    expect(src).toContain("'paga'");
+    expect(src).not.toContain('pendente_nf');
+    expect(src).not.toContain('nf_em_analise');
   });
 });
 
@@ -379,21 +381,13 @@ describe('9. PATCH /api/suporte/representantes/[id] — novo modelo comissioname
     expect(src).not.toContain('percentual_vendedor_direto');
   });
 
-  it('deve ter modelo_comissionamento no PatchSchema', () => {
-    expect(src).toContain('modelo_comissionamento');
+  it('NÃO deve ter modelo_comissionamento no PatchSchema (campo somente-leitura para suporte)', () => {
+    // Dados bancários, comissão e wallet são SOMENTE LEITURA para suporte
+    expect(src).not.toContain('modelo_comissionamento');
   });
 
-  it('deve ter asaas_wallet_id no PatchSchema', () => {
-    expect(src).toContain('asaas_wallet_id');
-  });
-
-  it('deve incluir aprovacao_comercial no enum de status', () => {
-    expect(src).toContain("'aprovacao_comercial'");
-  });
-
-  it('deve retornar modelo_comissionamento e asaas_wallet_id no RETURNING', () => {
-    expect(src).toContain('modelo_comissionamento');
-    expect(src).toContain('asaas_wallet_id');
+  it('NÃO deve ter asaas_wallet_id no PatchSchema (campo somente-leitura para suporte)', () => {
+    expect(src).not.toContain('asaas_wallet_id');
   });
 });
 
@@ -577,8 +571,9 @@ describe('13. Comissões Minhas Vendas — reutiliza componentes de comissoes', 
     expect(src).toContain('/api/representante/minhas-vendas/comissoes');
   });
 
-  it('deve ter filtro por pendente_nf (Aguardando NF)', () => {
-    expect(src).toContain('pendente_nf');
+  it('deve ter filtro por status retida/paga (pendente_consolidacao removido)', () => {
+    expect(src).toContain("'retida'");
+    expect(src).not.toContain('pendente_nf');
   });
 });
 

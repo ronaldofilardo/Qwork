@@ -22,12 +22,10 @@ jest.mock('@/lib/session-representante', () => ({
   }),
 }));
 jest.mock('@/lib/vendedores/gerar-convite', () => ({
-  gerarTokenConviteVendedor: jest
-    .fn()
-    .mockResolvedValue({
-      link: 'http://localhost/convite-v/abc',
-      expira_em: '2026-12-31',
-    }),
+  gerarTokenConviteVendedor: jest.fn().mockResolvedValue({
+    link: 'http://localhost/convite-v/abc',
+    expira_em: '2026-12-31',
+  }),
   logEmailConviteVendedor: jest.fn(),
 }));
 jest.mock('@/lib/storage/representante-storage', () => ({
@@ -65,7 +63,8 @@ describe('POST /api/representante/equipe/cadastrar — código sequencial', () =
     jest.clearAllMocks();
   });
 
-  it('usa nextval(seq_vendedor_codigo) para gerar código do vendedor', async () => {
+  // OBSOLETO: seq_vendedor_codigo foi removida na migration 1227
+  it.skip('usa nextval(seq_vendedor_codigo) para gerar código do vendedor', async () => {
     mockQuery
       .mockResolvedValueOnce({
         rows: [{ tipo_pessoa: 'pf', cpf: '99988877766', cnpj: null }],

@@ -20,6 +20,7 @@ jest.mock('pg', () => ({
     query: mockQuery,
     end: jest.fn(),
   })),
+  types: { setTypeParser: jest.fn() },
 }));
 
 jest.mock('bcryptjs', () => ({

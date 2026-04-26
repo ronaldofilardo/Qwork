@@ -89,8 +89,8 @@ export default function ModalLiberarCiclosConfirmacao({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div className="flex items-center gap-3">
-            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-orange-100 flex items-center justify-center">
-              <Zap size={18} className="text-orange-600" />
+            <div className="flex-shrink-0 w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
+              <Zap size={18} className="text-amber-600" />
             </div>
             <h2 className="text-base font-semibold text-gray-900">
               {stage === 'result'

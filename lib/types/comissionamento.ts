@@ -12,9 +12,8 @@
  * Ciclo de vida do representante.
  *
  * ativo           → cadastro feito, pode indicar, mas comissões ficam retidas
- * apto_pendente   → NF/RPA entregue, aguardando validação do admin
- * apto            → validado: comissões em status "pendente_nf" fluem normalmente
- * apto_bloqueado  → PJ cadastrada com CPF de PF existente, aguarda resolução
+ * apto_pendente   → documentação entregue, aguardando validação do admin
+ * apto            → validado: comissões ficam retidas até admin liberar
  * suspenso        → investigação administrativa (comissões congeladas)
  * desativado      → encerramento permanente
  * rejeitado       → cadastro recusado na triagem inicial
@@ -23,7 +22,6 @@ export type StatusRepresentante =
   | 'ativo'
   | 'apto_pendente'
   | 'apto'
-  | 'apto_bloqueado'
   | 'suspenso'
   | 'desativado'
   | 'rejeitado'
@@ -31,8 +29,8 @@ export type StatusRepresentante =
   | 'expirado'
   | 'aprovacao_comercial';
 
-/** Pessoa Física ou Jurídica */
-export type TipoPessoaRepresentante = 'pf' | 'pj';
+/** Tipo de pessoa — somente PJ desde migration 1209 */
+export type TipoPessoaRepresentante = 'pj';
 
 /**
  * Ciclo de vida de um lead (CNPJ indicado pelo representante).
@@ -62,20 +60,14 @@ export type StatusVinculo = 'ativo' | 'inativo' | 'suspenso' | 'encerrado';
 /**
  * Máquina de estados das comissões (por laudo emitido+pago).
  *
- * retida                     → rep não é "apto" ainda; guardada até aprovação
- * pendente_nf                → rep é apto; aguardando envio da NF/RPA pelo rep
- * nf_em_analise              → NF/RPA enviada; aguardando validação do admin
- * congelada_rep_suspenso     → rep suspenso; aguarda resolução
+ * retida                     → aguardando liberação manual pelo admin
  * congelada_aguardando_admin → pendência administrativa genérica
- * liberada                   → NF/RPA validada; pronta para pagamento
+ * liberada                   → pronta para pagamento
  * paga                       → pagamento confirmado pelo admin
  * cancelada                  → cancelada (vínculo encerrado ou admin cancelou)
  */
 export type StatusComissao =
   | 'retida'
-  | 'pendente_nf'
-  | 'nf_em_analise'
-  | 'congelada_rep_suspenso'
   | 'congelada_aguardando_admin'
   | 'liberada'
   | 'paga'
@@ -87,7 +79,6 @@ export type StatusComissao =
 export type MotivoCongelamento =
   | 'vinculo_encerrado'
   | 'rep_suspenso'
-  | 'nf_rpa_rejeitada'
   | 'aguardando_revisao';
 
 /** Tipo de ator que dispara uma transição de auditoria */
@@ -111,12 +102,10 @@ export interface Representante {
   nome: string;
   email: string;
   telefone: string;
-  // PF: CPF obrigatório; PJ: CNPJ + cpf_responsavel_pj obrigatórios
+  // PJ: CNPJ + cpf_responsavel_pj obrigatórios
   cpf?: string | null;
   cnpj?: string | null;
   cpf_responsavel_pj?: string | null;
-  // Código público único de rastreamento (ex: K7X2Q9P3)
-  codigo: string;
   // Dados bancários
   banco_codigo?: string | null;
   agencia?: string | null;
@@ -200,6 +189,8 @@ export interface VinculoComissao {
   data_expiracao: string;
   // Status
   status: StatusVinculo;
+  // Comissão comercial
+  percentual_comissao_comercial?: number | null;
   // Controle de inatividade
   ultimo_laudo_em?: string | null;
   // Auditoria
@@ -224,6 +215,8 @@ export interface ComissaoLaudo {
   valor_laudo: number;
   percentual_comissao: number; // % individual do representante (copiado no momento da geração)
   valor_comissao: number; // valor_laudo × percentual_comissao / 100
+  percentual_comissao_comercial?: number | null;
+  valor_comissao_comercial?: number | null;
   // Status
   status: StatusComissao;
   motivo_congelamento?: MotivoCongelamento | null;
@@ -235,13 +228,6 @@ export interface ComissaoLaudo {
   data_aprovacao?: string | null;
   data_liberacao?: string | null;
   data_pagamento?: string | null;
-  // NF/RPA
-  nf_rpa_enviada_em?: string | null;
-  nf_rpa_aprovada_em?: string | null;
-  nf_rpa_rejeitada_em?: string | null;
-  nf_rpa_motivo_rejeicao?: string | null;
-  nf_path?: string | null; // caminho relativo do arquivo NF/RPA no storage
-  nf_nome_arquivo?: string | null; // nome original do arquivo enviado
   comprovante_pagamento_path?: string | null;
   // Auditoria
   criado_em: string;
@@ -268,14 +254,12 @@ export interface ComissionamentoAuditoria {
 // DTOs de entrada (API requests)
 // ---------------------------------------------------------------------------
 
-/** Body para auto-cadastro do representante */
+/** Body para auto-cadastro do representante (somente PJ) */
 export interface CriarRepresentanteDTO {
   nome: string;
   email: string;
   tipo_pessoa: TipoPessoaRepresentante;
   telefone: string;
-  // PF
-  cpf?: string;
   // PJ
   cnpj?: string;
   cpf_responsavel_pj?: string;
@@ -325,19 +309,12 @@ export interface GerarComissaoDTO {
   clinica_id?: number | null;
 }
 
-/** Body para admin aprovar/rejeitar NF */
-export interface AcaoNfDTO {
-  acao: 'aprovar' | 'rejeitar';
-  motivo?: string;
-}
-
 // ---------------------------------------------------------------------------
 // DTOs de resposta (API responses)
 // ---------------------------------------------------------------------------
 
 export interface LeadComRepresentante extends LeadRepresentante {
   representante_nome: string;
-  representante_codigo: string;
 }
 
 export interface VinculoComDetalhes extends VinculoComissao {
@@ -351,9 +328,9 @@ export interface VinculoComDetalhes extends VinculoComissao {
 
 export interface ComissaoComDetalhes extends ComissaoLaudo {
   representante_nome: string;
-  representante_codigo: string;
   representante_email: string;
   representante_tipo_pessoa: TipoPessoaRepresentante;
+  representante_percentual_comissao_comercial?: number | null;
   entidade_nome: string;
   numero_laudo?: string | null;
 }
@@ -391,86 +368,13 @@ export const COMISSIONAMENTO_CONSTANTS = {
   VINCULO_DURACAO_MESES: 12,
   /** Dias sem laudo para marcar vínculo como inativo */
   VINCULO_INATIVO_DIAS: 90,
-  /** Dia do mês de corte para NF/RPA (até 18h) */
-  DIA_CORTE_NF: 5,
-  /** Hora limite para envio de NF no dia de corte */
-  HORA_CORTE_NF: 18,
   /** Dia do mês de pagamento (dia 15) */
   DIA_PAGAMENTO: 15,
-  /** Tamanho máximo do arquivo NF/RPA em bytes (2 MB) */
-  NF_MAX_SIZE_BYTES: 2 * 1024 * 1024,
-  /** Tipos MIME aceitos para upload de NF/RPA */
-  NF_TIPOS_ACEITOS: [
-    'image/jpeg',
-    'image/png',
-    'image/webp',
-    'application/pdf',
-  ] as readonly string[],
-  /** Extensões aceitas para NF/RPA */
-  NF_EXTENSOES_ACEITAS: [
-    '.jpg',
-    '.jpeg',
-    '.png',
-    '.webp',
-    '.pdf',
-  ] as readonly string[],
 } as const;
 
 // ---------------------------------------------------------------------------
-// Novo modelo de comissionamento (migration 600)
+// Modelo de comissionamento
 // ---------------------------------------------------------------------------
 
 /** Modelo de comissionamento do representante */
 export type ModeloComissionamento = 'percentual' | 'custo_fixo';
-
-/** Status do ciclo mensal de comissão */
-export type StatusCicloComissao =
-  | 'aberto'
-  | 'aguardando_nf_rpa'
-  | 'nf_rpa_enviada'
-  | 'validado'
-  | 'vencido';
-
-/** Status do repasse (split Asaas) */
-export type StatusRepasseSplit = 'pendente' | 'confirmado' | 'estornado';
-
-/**
- * Ciclo mensal de comissão — espelha public.ciclos_comissao_mensal
- */
-export interface CicloComissaoMensal {
-  id: number;
-  representante_id: number;
-  /** Formato: YYYY-MM (ex: "2025-07") */
-  mes_ano: string;
-  valor_total_recebido: number;
-  status: StatusCicloComissao;
-  nf_rpa_path?: string | null;
-  nf_rpa_nome_arquivo?: string | null;
-  data_envio_nf_rpa?: string | null;
-  data_validacao_suporte?: string | null;
-  validado_por_cpf?: string | null;
-  data_bloqueio?: string | null;
-  criado_em: string;
-  atualizado_em: string;
-}
-
-/**
- * Repasse split Asaas — espelha public.repasses_split
- */
-export interface RepasseSplit {
-  id: number;
-  representante_id: number;
-  ciclo_id: number;
-  vinculo_id?: number | null;
-  laudo_id?: number | null;
-  asaas_payment_id?: string | null;
-  valor_total_laudo: number;
-  valor_qwork: number;
-  valor_representante: number;
-  modelo_utilizado: ModeloComissionamento;
-  percentual_aplicado?: number | null;
-  status: StatusRepasseSplit;
-  data_criacao: string;
-  data_confirmacao?: string | null;
-  data_estorno?: string | null;
-}

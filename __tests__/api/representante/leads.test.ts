@@ -181,6 +181,7 @@ describe('POST /api/representante/leads', () => {
       makePostReq({
         cnpj: '12345678000190',
         valor_negociado: 1000,
+        num_vidas_estimado: 50,
         percentual_comissao: 0,
         contato_email: 'nao-e-email',
       })
@@ -194,6 +195,7 @@ describe('POST /api/representante/leads', () => {
       makePostReq({
         cnpj: '12345678000190',
         valor_negociado: 1000,
+        num_vidas_estimado: 50,
         percentual_comissao: 0,
         contato_telefone: '123',
       })
@@ -203,6 +205,19 @@ describe('POST /api/representante/leads', () => {
   });
 
   it('deve retornar 409 quando rep já possui lead pendente para o CNPJ', async () => {
+    // mock rep percentuals query (before lead check)
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
     mockQuery.mockResolvedValueOnce({
       rows: [{ id: 5, representante_id: 1, status: 'pendente' }],
       rowCount: 1,
@@ -212,6 +227,7 @@ describe('POST /api/representante/leads', () => {
       makePostReq({
         cnpj: '12345678000190',
         valor_negociado: 1000,
+        num_vidas_estimado: 50,
         percentual_comissao: 0,
       })
     );
@@ -220,6 +236,19 @@ describe('POST /api/representante/leads', () => {
   });
 
   it('deve retornar 409 quando outro rep já registrou lead para o CNPJ', async () => {
+    // mock rep percentuals query (before lead check)
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
     mockQuery.mockResolvedValueOnce({
       rows: [{ id: 5, representante_id: 999, status: 'pendente' }],
       rowCount: 1,
@@ -229,6 +258,7 @@ describe('POST /api/representante/leads', () => {
       makePostReq({
         cnpj: '12345678000190',
         valor_negociado: 1000,
+        num_vidas_estimado: 50,
         percentual_comissao: 0,
       })
     );
@@ -237,6 +267,19 @@ describe('POST /api/representante/leads', () => {
   });
 
   it('deve retornar 409 quando CNPJ já é entidade existente', async () => {
+    // mock rep percentuals query
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
     // lead check — nenhum pendente
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // entidade check — existe
@@ -249,6 +292,7 @@ describe('POST /api/representante/leads', () => {
       makePostReq({
         cnpj: '12345678000190',
         valor_negociado: 1000,
+        num_vidas_estimado: 50,
         percentual_comissao: 0,
       })
     );
@@ -257,6 +301,19 @@ describe('POST /api/representante/leads', () => {
   });
 
   it('deve retornar 409 quando CNPJ já é clínica existente', async () => {
+    // mock rep percentuals query
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
     // lead check — nenhum pendente
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // entidade check — nenhuma
@@ -271,6 +328,7 @@ describe('POST /api/representante/leads', () => {
       makePostReq({
         cnpj: '09110380000191',
         valor_negociado: 1000,
+        num_vidas_estimado: 50,
         percentual_comissao: 0,
       })
     );
@@ -279,6 +337,19 @@ describe('POST /api/representante/leads', () => {
   });
 
   it('deve criar lead e retornar 201', async () => {
+    // mock rep percentuals query
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '5',
+          percentual_comissao_comercial: '3',
+          modelo_comissionamento: 'percentual',
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
     // lead check
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // entidade check
@@ -302,11 +373,112 @@ describe('POST /api/representante/leads', () => {
         contato_nome: 'João',
         contato_email: 'joao@test.dev',
         valor_negociado: 1000,
+        num_vidas_estimado: 50,
         percentual_comissao: 5,
       })
     );
     expect(res.status).toBe(201);
     const data = await res.json();
     expect(data.lead.cnpj).toBe('12345678000190');
+  });
+
+  it('deve retornar 403 quando modelo_comissionamento é null (COMISSIONAMENTO_NAO_DEFINIDO)', async () => {
+    // mock rep percentuals query — modelo null
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: null,
+          percentual_comissao_comercial: null,
+          modelo_comissionamento: null,
+          valor_custo_fixo_entidade: null,
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
+
+    const res = await POST(
+      makePostReq({
+        cnpj: '12345678000190',
+        contato_nome: 'Empresa Sem Comissão',
+        valor_negociado: 1000,
+        num_vidas_estimado: 50,
+      })
+    );
+
+    expect(res.status).toBe(403);
+    const d = await res.json();
+    expect(d.code).toBe('COMISSIONAMENTO_NAO_DEFINIDO');
+  });
+
+  it('deve retornar 400 quando modelo custo_fixo e valor abaixo do mínimo (custoFixo+CUSTO_POR_AVALIACAO)', async () => {
+    // Rep#42 bug: custoFixo=12 (entidade), negociado=15 → margem=3 < CUSTO_POR_AVALIACAO[entidade]=12 → 400
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '0',
+          percentual_comissao_comercial: '20',
+          modelo_comissionamento: 'custo_fixo',
+          valor_custo_fixo_entidade: '12.00',
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
+    // NOTE: route returns 400 after repResult, before querying existente
+
+    const res = await POST(
+      makePostReq({
+        cnpj: '12345678000190',
+        contato_nome: 'Empresa Teste',
+        tipo_cliente: 'entidade',
+        valor_negociado: 15,
+        num_vidas_estimado: 10,
+      })
+    );
+
+    expect(res.status).toBe(400);
+    const d = await res.json();
+    expect(d.error).toMatch(/m[ií]nimo/i);
+    expect(d.error).toMatch(/24/); // R$12 + R$12 = R$24
+  });
+
+  it('deve aceitar lead custo_fixo entidade com valor igual ao mínimo (R$24)', async () => {
+    // custoFixo=12, CUSTO_POR_AVALIACAO[entidade]=12 → mínimo=24
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          percentual_comissao: '0',
+          percentual_comissao_comercial: '20',
+          modelo_comissionamento: 'custo_fixo',
+          valor_custo_fixo_entidade: '12.00',
+          valor_custo_fixo_clinica: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
+    // sem lead existente
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // sem entidade existente
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // sem clinica existente
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // INSERT retorna o lead
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 999, cnpj: '12345678000190', status: 'pendente' }],
+      rowCount: 1,
+    } as any);
+
+    const res = await POST(
+      makePostReq({
+        cnpj: '12345678000190',
+        contato_nome: 'Empresa Limite',
+        tipo_cliente: 'entidade',
+        valor_negociado: 24,
+        num_vidas_estimado: 10,
+      })
+    );
+
+    expect(res.status).toBe(201);
   });
 });

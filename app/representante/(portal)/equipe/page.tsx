@@ -4,8 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import {
   Users2,
   UserPlus,
-  Copy,
-  Check,
   ChevronRight,
   TrendingUp,
   X,
@@ -32,7 +30,6 @@ interface Vendedor {
   vendedor_nome: string;
   vendedor_email: string;
   vendedor_cpf: string;
-  codigo_vendedor: string | null;
   aceite_termos: boolean | null;
   leads_ativos: number;
   vinculado_em: string;
@@ -48,15 +45,11 @@ interface ReenvioEstado {
 
 function VendedorCard({
   v,
-  copiado,
-  onCopiar,
   onClick,
   reenvioEstado,
   onReenviar,
 }: {
   v: Vendedor;
-  copiado: boolean;
-  onCopiar: () => void;
   onClick: () => void;
   reenvioEstado?: ReenvioEstado;
   onReenviar?: () => void;
@@ -94,30 +87,10 @@ function VendedorCard({
       </div>
 
       <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between gap-3">
-        {/* Codigo vendedor */}
-        {v.codigo_vendedor ? (
-          <div className="flex items-center gap-1.5">
-            <code className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
-              {v.codigo_vendedor}
-            </code>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onCopiar();
-              }}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              title="Copiar codigo"
-            >
-              {copiado ? (
-                <Check size={13} className="text-green-600" />
-              ) : (
-                <Copy size={13} />
-              )}
-            </button>
-          </div>
-        ) : (
-          <span className="text-xs text-gray-400">Sem codigo</span>
-        )}
+        {/* Vendedor ID */}
+        <code className="font-mono text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-700">
+          #{v.vendedor_id}
+        </code>
         {/* Leads */}
         <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold">
           <TrendingUp size={12} />
@@ -167,7 +140,6 @@ interface VendedorCompleto {
   vendedor_nome: string;
   vendedor_email: string;
   vendedor_cpf: string;
-  codigo_vendedor: string | null;
   sexo: string | null;
   endereco: string | null;
   cidade: string | null;
@@ -177,7 +149,7 @@ interface VendedorCompleto {
   cnpj: string | null;
   razao_social: string | null;
   doc_cad_path: string | null;
-  doc_nf_rpa_path: string | null;
+  doc_nf_path: string | null;
 }
 
 function EditarVendedorDrawer({
@@ -332,7 +304,7 @@ function EditarVendedorDrawer({
   const isOpen = vendedor !== null;
 
   const handleDocUpload = async (
-    tipo: 'cad' | 'nf_rpa',
+    tipo: 'cad' | 'nf',
     file: File
   ): Promise<void> => {
     if (!vendedor) return;
@@ -429,9 +401,9 @@ function EditarVendedorDrawer({
                   </span>
                 </p>
                 <p>
-                  Codigo:{' '}
+                  ID Vendedor:{' '}
                   <span className="font-mono">
-                    {vendedor?.codigo_vendedor ?? '-'}
+                    #{vendedor?.vendedor_id ?? '-'}
                   </span>
                 </p>
                 <p className="mt-1 text-blue-500">
@@ -602,7 +574,7 @@ function EditarVendedorDrawer({
                   {/* Doc NF/RPA */}
                   <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg px-4 py-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      {dadosCompletos.doc_nf_rpa_path ? (
+                      {dadosCompletos.doc_nf_path ? (
                         <CheckCircle2
                           size={16}
                           className="text-green-600 shrink-0"
@@ -612,19 +584,17 @@ function EditarVendedorDrawer({
                       )}
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-gray-700">
-                          Doc. NF / RPA
+                          Doc. NF
                         </p>
                         <p className="text-[11px] text-gray-400 truncate">
-                          {dadosCompletos.doc_nf_rpa_path
-                            ? 'Enviado'
-                            : 'Pendente'}
+                          {dadosCompletos.doc_nf_path ? 'Enviado' : 'Pendente'}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      {dadosCompletos.doc_nf_rpa_path && (
+                      {dadosCompletos.doc_nf_path && (
                         <a
-                          href={`/api/representante/equipe/vendedores/${vendedor?.vendedor_id}/documentos/visualizar?tipo=nf_rpa`}
+                          href={`/api/representante/equipe/vendedores/${vendedor?.vendedor_id}/documentos/visualizar?tipo=nf`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
@@ -640,25 +610,23 @@ function EditarVendedorDrawer({
                           disabled={uploadingDoc !== null}
                           onChange={(e) => {
                             const f = e.target.files?.[0];
-                            if (f) void handleDocUpload('nf_rpa', f);
+                            if (f) void handleDocUpload('nf', f);
                             e.target.value = '';
                           }}
                         />
                         <span
                           className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-                            uploadingDoc === 'nf_rpa'
+                            uploadingDoc === 'nf'
                               ? 'bg-gray-100 text-gray-400 border-gray-200'
                               : 'border-blue-200 text-blue-600 hover:bg-blue-50'
                           }`}
                         >
-                          {uploadingDoc === 'nf_rpa' ? (
+                          {uploadingDoc === 'nf' ? (
                             <Loader2 size={12} className="animate-spin" />
                           ) : (
                             <Upload size={12} />
                           )}
-                          {dadosCompletos.doc_nf_rpa_path
-                            ? 'Reenviar'
-                            : 'Enviar'}
+                          {dadosCompletos.doc_nf_path ? 'Reenviar' : 'Enviar'}
                         </span>
                       </label>
                     </div>
@@ -962,7 +930,6 @@ export default function EquipePage() {
     nome: string;
     conviteUrl?: string;
   } | null>(null);
-  const [codigoCopiadoId, setCodigoCopiadoId] = useState<number | null>(null);
   const [editarVendedor, setEditarVendedor] = useState<Vendedor | null>(null);
   const [reativarVendedor, setReativarVendedor] = useState<Vendedor | null>(
     null
@@ -987,7 +954,7 @@ export default function EquipePage() {
       setReenvioState((prev) => ({ ...prev, [perfilId]: { loading: false } }));
       if (!res.ok || !data.convite_url) return;
       setCodigoGerado({
-        codigo: v.codigo_vendedor ?? '',
+        codigo: String(v.vendedor_id),
         nome: v.vendedor_nome,
         conviteUrl: data.convite_url,
       });
@@ -1036,16 +1003,6 @@ export default function EquipePage() {
     setShowModal(false);
     setCodigoGerado({ codigo, nome: nomeVendedor, conviteUrl });
     void carregar();
-  };
-
-  const handleCopiarCodigo = async (codigo: string, vendedorId: number) => {
-    try {
-      await navigator.clipboard.writeText(codigo);
-      setCodigoCopiadoId(vendedorId);
-      setTimeout(() => setCodigoCopiadoId(null), 2000);
-    } catch {
-      // clipboard indisponivel
-    }
   };
 
   const limit = 20;
@@ -1135,12 +1092,6 @@ export default function EquipePage() {
                 <VendedorCard
                   key={v.vinculo_id}
                   v={v}
-                  copiado={codigoCopiadoId === v.vendedor_id}
-                  onCopiar={() =>
-                    v.codigo_vendedor
-                      ? handleCopiarCodigo(v.codigo_vendedor, v.vendedor_id)
-                      : undefined
-                  }
                   onClick={() => setEditarVendedor(v)}
                   reenvioEstado={
                     v.vendedor_perfil_id != null

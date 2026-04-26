@@ -2,10 +2,12 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export async function GET() {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
 
     // Buscar todas as avaliações do usuário (excluindo inativadas) com contagem de respostas
     // SEGREGAÇÃO: incluir empresa_nome/entidade_nome para o dashboard separar por empresa
@@ -41,6 +43,9 @@ export async function GET() {
       avaliacoes: avaliacoesResult.rows,
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao buscar avaliações:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar avaliações' },

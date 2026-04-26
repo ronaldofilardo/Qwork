@@ -10,6 +10,10 @@ jest.mock('@/lib/db', () => ({
   query: jest.fn(),
 }))
 
+jest.mock('@/lib/db-security', () => ({
+  queryWithContext: jest.fn(),
+}))
+
 jest.mock('@/lib/session', () => ({
   requireAuth: jest.fn(),
 }))
@@ -23,30 +27,37 @@ jest.mock('@/lib/questoes', () => ({
   ],
 }))
 
-import { query } from '@/lib/db'
+jest.mock('@/lib/calculate', () => ({
+  calcularResultados: jest.fn(() => [{ score: 60 }]),
+  categorizarScore: jest.fn(() => 'medio'),
+}))
+
+import { queryWithContext } from '@/lib/db-security'
 import { requireAuth } from '@/lib/session'
 
-const mockQuery = query as jest.MockedFunction<typeof query>
+const mockQueryWithContext = queryWithContext as jest.MockedFunction<typeof queryWithContext>
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>
+
+const mockRequest = { url: 'http://localhost/api/avaliacao/resultados' } as Request
 
 describe('/api/avaliacao/resultados', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it('deve retornar resultados da avaliação concluída', async () => {
-    // Simula respostas para todos os grupos
+  it('deve retornar resultados da avaliação conclueída', async () => {
     const respostas = [
       { grupo: 1, item: 'Q1', valor: 75.5 },
       { grupo: 2, item: 'Q2', valor: 85.2 },
       { grupo: 9, item: 'Q59', valor: 33.3 },
       { grupo: 10, item: 'Q65', valor: 33.3 },
-    ];
-    mockRequireAuth.mockResolvedValue({ cpf: '12345678901', nome: 'Test User', perfil: 'funcionario' })
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 }) // Busca avaliação
-    mockQuery.mockResolvedValueOnce({ rows: respostas, rowCount: 4 }) // Busca respostas
+    ]
+    mockRequireAuth.mockResolvedValue({ cpf: '12345678901', nome: 'Test User', perfil: 'funcionario' } as any)
+    // 1st call: find avaliacao; 2nd call: get respostas
+    mockQueryWithContext
+      .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: respostas, rowCount: 4 } as any)
 
-    const mockRequest = { url: 'http://localhost/api/avaliacao/resultados' } as Request
     const response = await GET(mockRequest)
     const data = await response.json()
 
@@ -59,10 +70,9 @@ describe('/api/avaliacao/resultados', () => {
   })
 
   it('deve retornar erro 404 quando não há avaliação', async () => {
-    mockRequireAuth.mockResolvedValue({ cpf: '12345678901', nome: 'Test User', perfil: 'funcionario' })
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 0 }) // Nenhuma avaliação encontrada
+    mockRequireAuth.mockResolvedValue({ cpf: '12345678901', nome: 'Test User', perfil: 'funcionario' } as any)
+    mockQueryWithContext.mockResolvedValue({ rows: [], rowCount: 0 } as any)
 
-    const mockRequest = { url: 'http://localhost/api/avaliacao/resultados' } as Request
     const response = await GET(mockRequest)
     const data = await response.json()
 
@@ -73,7 +83,6 @@ describe('/api/avaliacao/resultados', () => {
   it('deve retornar erro 500 quando falha na autenticação', async () => {
     mockRequireAuth.mockRejectedValue(new Error('Não autorizado'))
 
-    const mockRequest = { url: 'http://localhost/api/avaliacao/resultados' } as Request
     const response = await GET(mockRequest)
     const data = await response.json()
 
@@ -82,10 +91,9 @@ describe('/api/avaliacao/resultados', () => {
   })
 
   it('deve retornar erro 500 quando falha na consulta ao banco', async () => {
-    mockRequireAuth.mockResolvedValue({ cpf: '12345678901', nome: 'Test User', perfil: 'funcionario' })
-    mockQuery.mockRejectedValue(new Error('Erro de banco'))
+    mockRequireAuth.mockResolvedValue({ cpf: '12345678901', nome: 'Test User', perfil: 'funcionario' } as any)
+    mockQueryWithContext.mockRejectedValue(new Error('Erro de banco'))
 
-    const mockRequest = { url: 'http://localhost/api/avaliacao/resultados' } as Request
     const response = await GET(mockRequest)
     const data = await response.json()
 
@@ -93,3 +101,4 @@ describe('/api/avaliacao/resultados', () => {
     expect(data).toEqual({ error: 'Erro ao buscar resultados' })
   })
 })
+

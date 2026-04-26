@@ -31,11 +31,11 @@ const mockAuditoria = registrarAuditoria as jest.MockedFunction<
 // Helper session
 const repSession = {
   representante_id: 1,
-  nome: 'Carlos Rep',
+  nome: 'Carlos Rep LTDA',
   email: 'carlos@test.dev',
   codigo: 'AB12-CD34',
   status: 'apto',
-  tipo_pessoa: 'pf' as const,
+  tipo_pessoa: 'pj' as const,
   criado_em_ms: Date.now(),
 };
 
@@ -59,18 +59,25 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
     const { POST: cadastroPost } =
       await import('@/app/api/representante/cadastro/route');
 
+    // checkCpfUnicoSistema: 5 queries em Promise.all
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // rep cpf_responsavel_pj
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // lead cpf_responsavel
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // usuario
     // Email não existe
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // gestor_comercial
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // INSERT RETURNING
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
-          codigo: 'AB12-CD34',
-          nome: 'Carlos Rep',
+          nome: 'Carlos Rep LTDA',
           email: 'carlos@test.dev',
           status: 'ativo',
-          tipo_pessoa: 'pf',
+          tipo_pessoa: 'pj',
           criado_em: '2026-01-01',
         },
       ],
@@ -81,10 +88,11 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
       new NextRequest('http://localhost/api/representante/cadastro', {
         method: 'POST',
         body: JSON.stringify({
-          nome: 'Carlos Rep',
+          nome: 'Carlos Rep LTDA',
           email: 'carlos@test.dev',
-          tipo_pessoa: 'pf',
-          cpf: '12345678901',
+          tipo_pessoa: 'pj',
+          cnpj: '12345678000190',
+          cpf_responsavel_pj: '12345678909',
           aceite_termos: true,
           aceite_disclaimer_nv: true,
         }),
@@ -94,7 +102,7 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
     expect(cadastroRes.status).toBe(201);
     const cadastroData = await cadastroRes.json();
     expect(cadastroData.success).toBe(true);
-    expect(cadastroData.representante.codigo).toBe('AB12-CD34');
+    expect(cadastroData.representante.id).toBe(1);
 
     // 2. GET /me (sessão via bps-session gerenciada pelo mock de requireRepresentante)
     const { GET: meGet } = await import('@/app/api/representante/me/route');
@@ -103,11 +111,10 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
       rows: [
         {
           id: 1,
-          nome: 'Carlos Rep',
+          nome: 'Carlos Rep LTDA',
           email: 'carlos@test.dev',
-          codigo: 'AB12-CD34',
           status: 'ativo',
-          tipo_pessoa: 'pf',
+          tipo_pessoa: 'pj',
           telefone: null,
           aceite_termos: true,
           aceite_disclaimer_nv: true,
@@ -274,7 +281,6 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
           representante_id: 1,
           representante_nome: 'Rep',
           valor_comissao: '500',
-          nf_rpa_enviada_em: '2026-01-10',
         },
       ],
       rowCount: 1,

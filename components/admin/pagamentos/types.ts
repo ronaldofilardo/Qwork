@@ -18,11 +18,13 @@ export interface Solicitacao {
   pagamento_metodo: string | null;
   pagamento_parcelas: number | null;
   pago_em: string | null;
+  isento_pagamento?: boolean;
   empresa_nome: string;
   nome_tomador: string;
   solicitante_nome: string;
   solicitante_cpf: string;
   num_avaliacoes_concluidas: number;
+  num_avaliacoes_cobradas?: number | null;
   valor_total_calculado: number | null;
   lote_criado_em: string;
   lote_liberado_em: string;
@@ -31,9 +33,9 @@ export interface Solicitacao {
   vinculo_id: number | null;
   representante_id: number | null;
   representante_nome: string | null;
-  representante_codigo: string | null;
   representante_tipo_pessoa: string | null;
   representante_percentual_comissao: number | null;
+  representante_percentual_comissao_comercial: number | null;
   comissao_gerada: boolean;
   /** Quantas comissões já foram geradas para este lote (inclui provisionadas futuras). */
   comissoes_geradas_count: number;
@@ -46,8 +48,22 @@ export interface Solicitacao {
   entidade_id?: number | null;
   clinica_id?: number | null;
   lead_valor_negociado?: number | null;
+  modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+  valor_custo_fixo_snapshot?: number | null;
+  valor_negociado_vinculo?: number | null;
   detalhes_parcelas?: ParcelaDetalhe[] | null;
   tipo_cobranca?: 'laudo' | 'manutencao' | null;
+  // Comissionamento enriquecido — cadeia: vínculo > lead snapshot > global do representante
+  vinculo_percentual_rep?: number | null;
+  vinculo_percentual_comercial?: number | null;
+  lead_modelo_comissionamento?: string | null;
+  lead_percentual_rep?: number | null;
+  lead_percentual_comercial?: number | null;
+  lead_valor_custo_fixo_snapshot?: number | null;
+  rep_modelo_comissionamento?: string | null;
+  rep_percentual_comissao_comercial?: number | null;
+  rep_valor_custo_fixo_entidade?: number | null;
+  rep_valor_custo_fixo_clinica?: number | null;
 }
 
 export type FilterTab =

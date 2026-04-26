@@ -90,6 +90,23 @@ describe('GET /api/admin/comissoes', () => {
     expect(mockQuery.mock.calls[1][1]).toContain('2026-03-01');
   });
 
+  it('deve aplicar os filtros também no resumo', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ total_comissoes: '0' }],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq('?mes=2026-03&status=retida'));
+
+    expect(String(mockQuery.mock.calls[0][0])).toContain(
+      'WHERE c.status::text = $1 AND c.mes_emissao = $2::date'
+    );
+    expect(mockQuery.mock.calls[0][1]).toEqual(['retida', '2026-03-01']);
+  });
+
   it('deve filtrar por rep_id', async () => {
     mockQuery
       .mockResolvedValueOnce({
@@ -168,5 +185,74 @@ describe('GET /api/admin/comissoes', () => {
     // WHERE não deve conter o valor inválido
     const whereParams = mockQuery.mock.calls[1][1] as unknown[];
     expect(whereParams).not.toContain('invalido');
+  });
+
+  it('deve incluir JOIN vinculos_comissao e campos representante_percentual na query de listagem', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ total_comissoes: '0' }],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq());
+
+    // Terceira chamada (index 2) = query principal de listagem
+    const listSQL = String(mockQuery.mock.calls[2][0]);
+    expect(listSQL).toContain('LEFT JOIN vinculos_comissao');
+    expect(listSQL).toContain('representante_percentual');
+    expect(listSQL).toContain('vinculo_percentual_comercial');
+  });
+
+  it('deve incluir valor_parcela calculado (valor_laudo / total_parcelas) na query de listagem', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ total_comissoes: '0' }],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq());
+
+    // Terceira chamada (index 2) = query principal de listagem
+    const listSQL = String(mockQuery.mock.calls[2][0]);
+    expect(listSQL).toContain('(c.valor_laudo / c.total_parcelas)');
+    expect(listSQL).toContain('AS valor_parcela');
+  });
+
+  it('deve retornar valor_parcela nas comissões', async () => {
+    const resumo = {
+      total_comissoes: '1',
+      aprovadas: '1',
+      liberadas: '0',
+      pagas: '0',
+      congeladas: '0',
+      valor_a_pagar: '100.00',
+      valor_pago_total: '0',
+    };
+    const comissao = {
+      id: 10,
+      status: 'aprovada',
+      valor_laudo: '300.00',
+      valor_parcela: '100.00',
+      total_parcelas: 3,
+      parcela_numero: 1,
+      valor_comissao: '30.00',
+      representante_nome: 'Rep Teste',
+    };
+
+    mockQuery
+      .mockResolvedValueOnce({ rows: [resumo], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [comissao], rowCount: 1 } as any);
+
+    const res = await GET(makeReq());
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.comissoes).toHaveLength(1);
+    expect(data.comissoes[0].valor_laudo).toBe('300.00');
+    expect(data.comissoes[0].valor_parcela).toBe('100.00');
   });
 });

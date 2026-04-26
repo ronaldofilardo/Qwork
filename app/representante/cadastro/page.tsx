@@ -27,7 +27,7 @@ export default function CadastroRepresentante() {
   });
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
-  const [codigoGerado, setCodigoGerado] = useState('');
+  const [idGerado, setIdGerado] = useState<number | null>(null);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -81,14 +81,14 @@ export default function CadastroRepresentante() {
         return;
       }
 
-      setCodigoGerado(data.representante?.codigo ?? data.codigo ?? '');
+      setIdGerado(data.representante?.id ?? null);
     } finally {
       setSalvando(false);
     }
   };
 
   // Tela de sucesso
-  if (codigoGerado) {
+  if (idGerado) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center space-y-6">
@@ -97,16 +97,15 @@ export default function CadastroRepresentante() {
             Cadastro realizado!
           </h1>
           <p className="text-gray-600">
-            Seu código exclusivo de representante é:
+            Seu número de identificação de representante é:
           </p>
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl py-4 px-6">
             <span className="text-3xl font-mono font-bold tracking-widest text-blue-700">
-              {codigoGerado}
+              #{idGerado}
             </span>
           </div>
           <p className="text-sm text-gray-500">
-            Guarde este código! Ele será usado para login e para seus clientes
-            indicarem você durante o cadastro.
+            Guarde este número! Ele identifica você na plataforma.
           </p>
           <div className="space-y-3">
             <p className="text-sm text-yellow-700 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
@@ -160,7 +159,6 @@ export default function CadastroRepresentante() {
             </label>
             <div className="flex gap-3">
               {[
-                { value: 'pf' as TipoPessoa, label: 'Pessoa Física (RPA)' },
                 { value: 'pj' as TipoPessoa, label: 'Pessoa Jurídica (NF)' },
               ].map((opt) => (
                 <button

@@ -22,6 +22,7 @@ import {
   limparNumeros,
 } from '@/app/api/public/representantes/cadastro/helpers';
 import { uploadDocumentoRepresentante } from '@/lib/storage/representante-storage';
+import { checkEmailDuplicate, checkCnpjDuplicate } from '@/lib/validators/representante';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,39 +99,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
 
-    // Verificar duplicata de email em representantes e em leads ativos
-    const [emailRepResult, emailLeadResult] = await Promise.all([
-      query<{ id: number }>(
-        `SELECT id FROM public.representantes WHERE email = $1 LIMIT 1`,
-        [email]
-      ),
-      query<{ id: string }>(
-        `SELECT id FROM public.representantes_cadastro_leads WHERE email = $1 AND status NOT IN ('rejeitado','convertido') LIMIT 1`,
-        [email]
-      ),
-    ]);
-    if (emailRepResult.rows.length > 0 || emailLeadResult.rows.length > 0) {
+    // Verificar duplicata de email (centralizado)
+    const emailDup = await checkEmailDuplicate(email);
+    if (emailDup.isDuplicate) {
       return NextResponse.json(
-        { error: 'Já existe um representante cadastrado com este email.' },
+        { error: emailDup.message },
         { status: 409 }
       );
     }
 
-    // Verificar duplicata de CNPJ
+    // Verificar duplicata de CNPJ (centralizado)
     if (cnpjRaw) {
-      const [cnpjRepResult, cnpjLeadResult] = await Promise.all([
-        query<{ id: number }>(
-          `SELECT id FROM public.representantes WHERE cnpj = $1 LIMIT 1`,
-          [cnpjRaw]
-        ),
-        query<{ id: string }>(
-          `SELECT id FROM public.representantes_cadastro_leads WHERE cnpj = $1 AND status NOT IN ('rejeitado','convertido') LIMIT 1`,
-          [cnpjRaw]
-        ),
-      ]);
-      if (cnpjRepResult.rows.length > 0 || cnpjLeadResult.rows.length > 0) {
+      const cnpjDup = await checkCnpjDuplicate(cnpjRaw);
+      if (cnpjDup.isDuplicate) {
         return NextResponse.json(
-          { error: 'Já existe um representante cadastrado com este CNPJ.' },
+          { error: cnpjDup.message },
           { status: 409 }
         );
       }

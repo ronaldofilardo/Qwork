@@ -159,176 +159,24 @@ O sistema cria automaticamente um registro em `contratos`:
 
 ---
 
-## 2. Fluxo Plano Personalizado
-
-### Etapas do Fluxo
-
-```mermaid
-graph TD
-    A[Cadastro Inicial] --> B[Admin Define Valores]
-    B --> C[Geração de Link de Pagamento]
-    C --> D[tomador Aceita Proposta]
-    D --> E[Aceite do Contrato]
-    E --> F[Pagamento PIX]
-    F --> G[Confirmação Automática]
-    G --> H[Liberação de Login]
-```
-
-### 2.1 Cadastro Inicial
-
-**Endpoint:** `POST /api/cadastro/tomador`
-
-**Diferenças do plano fixo:**
-
-- `plano_id`: ID do plano tipo "personalizado"
-- `numero_funcionarios_estimado`: Opcional (pode ser informado depois pelo admin)
-
-**Resultado:**
-
-```json
-{
-  "success": true,
-  "id": 123,
-  "requires_payment": false,
-  "message": "Cadastro realizado com sucesso! Aguarde análise do administrador."
-}
-```
-
-**Status inicial:** `pendente`
-
-**Registros criados:**
-
-- `tomadores` (status: "pendente")
-- `contratacao_personalizada` (status: "aguardando_valor_admin")
-
-**Arquivo:** [app/api/cadastro/tomador/route.ts](../../app/api/cadastro/tomador/route.ts#L560-L575)
-
-### 2.2 Admin Define Valores
-
-**Endpoint:** `POST /api/admin/novos-cadastros`
-
-**Ação:** `aprovar_personalizado`
-
-**Payload:**
-
-```json
-{
-  "acao": "aprovar_personalizado",
-  "tomador_id": 123,
-  "numero_funcionarios": 100,
-  "valor_por_funcionario": 18.5
-}
-```
-
-**Validações:**
-
-- tomador existe
-- Plano é tipo "personalizado"
-- Valores são positivos
-
-**Ações:**
-
-1. Calcula `valor_total_estimado` = valor_por_funcionario × numero_funcionarios
-2. Atualiza `contratacao_personalizada`:
-   - `valor_por_funcionario`
-   - `numero_funcionarios_estimado`
-   - `valor_total_estimado`
-   - `status` = "valor_definido"
-3. Gera token único (48h de validade)
-4. Cria link: `/pagamento/personalizado/{token}`
-5. Envia email para tomador com link
-
-**Arquivo:** [app/api/admin/novos-cadastros/handlers.ts](../../app/api/admin/novos-cadastros/handlers.ts#L189-L340)
-
-### 2.3 tomador Acessa Link de Pagamento
-
-**Endpoint:** `GET /api/proposta/[token]`
-
-**Validações:**
-
-- Token válido
-- Token não expirado (< 48h)
-- Status = "valor_definido"
-
-**Exibe:**
-
-- Dados do tomador
-- Plano contratado
-- Número de funcionários
-- Valor por funcionário
-- Valor total
-- Botão "Aceitar Proposta"
-
-**Arquivo:** [app/api/proposta/[token]/route.ts](../../app/api/proposta/[token]/route.ts)
-
-### 2.4 Aceite da Proposta
-
-**Endpoint:** `POST /api/proposta/aceitar`
-
-**Payload:**
-
-```json
-{
-  "contratacao_id": 456
-}
-```
-
-**Ações:**
-
-1. Valida status = "valor_definido"
-2. Cria contrato em `contratos`:
-   - `tomador_id`
-   - `plano_id`
-   - `numero_funcionarios`
-   - `valor_total`
-   - `status`: "aguardando_aceite"
-   - `conteudo`: Contrato padrão personalizado
-3. Atualiza `contratacao_personalizada.status` = "aguardando_aceite_contrato"
-4. Redireciona para página de contrato
-
-**Arquivo:** [app/api/proposta/aceitar/route.ts](../../app/api/proposta/aceitar/route.ts)
-
-### 2.5 Aceite do Contrato
-
-**Endpoint:** `POST /api/contratos/aceitar`
-
-Mesmo fluxo do plano fixo (ver seção 1.3).
-
-### 2.6 Pagamento e Confirmação
-
-Mesmo fluxo do plano fixo (ver seções 1.4 e 1.5).
-
-### 2.7 Liberação de Login
-
-Mesmo fluxo do plano fixo (ver seção 1.6).
-
----
-
 ## 3. Arquivos e Módulos Principais
 
 ### 3.1 APIs de Cadastro
 
 | Arquivo                                     | Responsabilidade                                       | Atualizado     |
 | ------------------------------------------- | ------------------------------------------------------ | -------------- |
-| `app/api/cadastro/tomador/route.ts`         | Cadastro inicial (fixo e personalizado)                | ✅ 18/jan/2026 |
-| `app/api/admin/novos-cadastros/route.ts`    | Gestão de cadastros pendentes                          | ✅ 18/jan/2026 |
-| `app/api/admin/novos-cadastros/handlers.ts` | Lógica de negócio (aprovar, rejeitar, definir valores) | ✅ 18/jan/2026 |
+| `app/api/cadastro/tomador/route.ts`         | Cadastro inicial                                       | ✅ 18/jan/2026 |
+| `app/api/admin/novos-cadastros/route.ts`    | Gestão de cadastros                                    | ✅ 18/jan/2026 |
+| `app/api/admin/novos-cadastros/handlers.ts` | Lógica de negócio (aprovar, rejeitar)                  | ✅ 18/jan/2026 |
 | `app/api/admin/novos-cadastros/schemas.ts`  | Validação com Zod                                      | ✅ 18/jan/2026 |
 
-### 3.2 APIs de Proposta (Personalizado)
-
-| Arquivo                             | Responsabilidade                         | Atualizado     |
-| ----------------------------------- | ---------------------------------------- | -------------- |
-| `app/api/proposta/[token]/route.ts` | Exibição de proposta por token           | ✅ 18/jan/2026 |
-| `app/api/proposta/aceitar/route.ts` | Aceite de proposta e criação de contrato | ✅ 18/jan/2026 |
-
-### 3.3 APIs de Contrato
+### 3.2 APIs de Contrato
 
 | Arquivo                              | Responsabilidade   | Atualizado   |
 | ------------------------------------ | ------------------ | ------------ |
 | `app/api/contratos/aceitar/route.ts` | Aceite de contrato | 🔄 A revisar |
 
-### 3.4 Bibliotecas Core
+### 3.3 Bibliotecas Core
 
 | Arquivo                     | Responsabilidade                                | Atualizado     |
 | --------------------------- | ----------------------------------------------- | -------------- |
@@ -337,7 +185,7 @@ Mesmo fluxo do plano fixo (ver seção 1.6).
 | `lib/cadastrotomador.ts`    | Utilitários de cadastro (formatação, validação) | ✅             |
 | `lib/cadastroApi.ts`        | Cliente API para cadastro                       | ✅             |
 
-### 3.5 Arquivos Obsoletos
+### 3.4 Arquivos Obsoletos
 
 | Arquivo                                      | Status          | Marcado em  |
 | -------------------------------------------- | --------------- | ----------- |
@@ -503,7 +351,3 @@ Formato JSON para facilitar análise:
 **Dúvidas:** Consulte a equipe de desenvolvimento  
 **Bugs:** Abra uma issue no repositório  
 **Documentação:** Este arquivo + comentários no código
-
----
-
-**Fim da documentação**

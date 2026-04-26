@@ -3,7 +3,7 @@
  * Upload de documento para vendedor existente (multipart/form-data).
  *
  * Body (FormData):
- *   - tipo: 'cad' | 'nf_rpa'
+ *   - tipo: 'cad' | 'nf'
  *   - arquivo: File (PDF, JPG, PNG — máx 3MB)
  *
  * Segurança: representante autenticado + vendedor vinculado via hierarquia_comercial
@@ -46,9 +46,9 @@ export async function POST(
     }
 
     const tipo = (formData.get('tipo') as string | null)?.trim();
-    if (!tipo || !['cad', 'nf_rpa'].includes(tipo))
+    if (!tipo || !['cad', 'nf'].includes(tipo))
       return NextResponse.json(
-        { error: 'tipo deve ser "cad" ou "nf_rpa"' },
+        { error: 'tipo deve ser "cad" ou "nf"' },
         { status: 400 }
       );
 
@@ -122,15 +122,15 @@ export async function POST(
       subpasta = 'CAD';
       docTipo = vnd.tipo_pessoa === 'pf' ? 'cpf' : 'cnpj';
     } else {
-      // nf_rpa
-      subpasta = vnd.tipo_pessoa === 'pj' ? 'NF' : 'RPA';
-      docTipo = vnd.tipo_pessoa === 'pj' ? 'nf' : 'rpa';
+      // nf
+      subpasta = 'NF';
+      docTipo = 'nf';
     }
 
     // Upload
     const result = await uploadDocumentoVendedor({
       buffer: valArquivo.buffer!,
-      tipo: docTipo as 'cpf' | 'cnpj' | 'cpf_responsavel' | 'nf' | 'rpa',
+      tipo: docTipo as 'cpf' | 'cnpj' | 'cpf_responsavel' | 'nf',
       repIdentificador,
       repTipoPessoa,
       vendedorIdentificador,
@@ -141,7 +141,7 @@ export async function POST(
     const docPath = result.arquivo_remoto?.key ?? result.path;
 
     // Atualizar campo no perfil
-    const coluna = tipo === 'cad' ? 'doc_cad_path' : 'doc_nf_rpa_path';
+    const coluna = tipo === 'cad' ? 'doc_cad_path' : 'doc_nf_path';
     await query(
       `UPDATE public.vendedores_perfil SET ${coluna} = $1, atualizado_em = CURRENT_TIMESTAMP WHERE usuario_id = $2`,
       [docPath, vendedorId],

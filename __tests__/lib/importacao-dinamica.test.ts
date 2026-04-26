@@ -64,9 +64,9 @@ describe('getCamposQWork', () => {
     expect(obrigatorios).not.toContain('nome_empresa');
   });
 
-  it('NÃO inclui cpf como obrigatório no mapeamento (validado na etapa de dados)', () => {
+  it('inclui cpf como obrigatório no mapeamento', () => {
     const obrigatorios = getCamposObrigatorios();
-    expect(obrigatorios).not.toContain('cpf');
+    expect(obrigatorios).toContain('cpf');
   });
 });
 
@@ -142,6 +142,8 @@ describe('verificarCamposObrigatorios', () => {
       { campoQWork: 'nome' },
       { campoQWork: 'data_nascimento' },
       { campoQWork: 'funcao' },
+      { campoQWork: 'cpf' },
+      { campoQWork: 'cpf' },
     ];
     const faltando = verificarCamposObrigatorios(mapeados);
     expect(faltando).toHaveLength(0);
@@ -160,7 +162,9 @@ describe('verificarCamposObrigatorios', () => {
       { campoQWork: 'cnpj_empresa' },
       { campoQWork: 'nome' },
       { campoQWork: 'data_nascimento' },
+      { campoQWork: 'cpf' },
       { campoQWork: 'funcao' },
+      { campoQWork: 'cpf' },
       { campoQWork: 'nome_empresa' }, // extra — não obrigatório
     ];
     const faltando = verificarCamposObrigatorios(mapeados);
@@ -191,7 +195,9 @@ describe('validarDadosImportacao', () => {
     const row: MappedRow = { ...validRow };
     delete (row as Record<string, string>).nome_empresa;
     const result = validarDadosImportacao([row]);
-    expect(result.erros.filter((e) => e.campo === 'nome_empresa')).toHaveLength(0);
+    expect(result.erros.filter((e) => e.campo === 'nome_empresa')).toHaveLength(
+      0
+    );
   });
 
   it('gera erro para CPF vazio', () => {
@@ -249,9 +255,17 @@ describe('validarDadosImportacao', () => {
     // Simula o que o parser faz: CPF '2998224725' (10 dígitos) → '02998224725' (11 dígitos)
     // Para o teste de validador, usamos um CPF válido com a flag __cpf_corrigido setada
     // 529.982.247-25 = '52998224725' é um CPF válido conhecido
-    const row: MappedRow = { ...validRow, cpf: '52998224725', __cpf_corrigido: '1' };
+    const row: MappedRow = {
+      ...validRow,
+      cpf: '52998224725',
+      __cpf_corrigido: '1',
+    };
     const result = validarDadosImportacao([row]);
-    expect(result.avisos.some((a) => a.campo === 'cpf' && a.mensagem.includes('10 dígitos'))).toBe(true);
+    expect(
+      result.avisos.some(
+        (a) => a.campo === 'cpf' && a.mensagem.includes('10 dígitos')
+      )
+    ).toBe(true);
     // Não deve gerar erro — o CPF foi corrigido
     expect(result.erros.filter((e) => e.campo === 'cpf')).toHaveLength(0);
   });
@@ -265,9 +279,27 @@ describe('validarDadosImportacao', () => {
 
   it('conta empresas únicas por CNPJ', () => {
     const rows: MappedRow[] = [
-      { cpf: '529.982.247-25', nome: 'A', cnpj_empresa: '11222333000181', data_nascimento: '1990-01-01', funcao: 'Analista' },
-      { cpf: '861.424.960-60', nome: 'B', cnpj_empresa: '11444777000161', data_nascimento: '1985-03-10', funcao: 'Gerente' },
-      { cpf: '085.178.940-09', nome: 'C', cnpj_empresa: '11222333000181', data_nascimento: '1992-07-22', funcao: 'Analista' },
+      {
+        cpf: '529.982.247-25',
+        nome: 'A',
+        cnpj_empresa: '11222333000181',
+        data_nascimento: '1990-01-01',
+        funcao: 'Analista',
+      },
+      {
+        cpf: '861.424.960-60',
+        nome: 'B',
+        cnpj_empresa: '11444777000161',
+        data_nascimento: '1985-03-10',
+        funcao: 'Gerente',
+      },
+      {
+        cpf: '085.178.940-09',
+        nome: 'C',
+        cnpj_empresa: '11222333000181',
+        data_nascimento: '1992-07-22',
+        funcao: 'Analista',
+      },
     ];
     const result = validarDadosImportacao(rows);
     expect(result.resumo.empresasUnicas).toBe(2);

@@ -16,7 +16,6 @@ export interface RepresentanteSession {
   representante_id: number;
   nome: string;
   email: string;
-  codigo: string;
   cpf?: string; // disponível quando logado via bps-session
   status: string;
   tipo_pessoa: 'pf' | 'pj';
@@ -45,7 +44,6 @@ export function getSessaoRepresentante(): RepresentanteSession | null {
             representante_id: sess.representante_id,
             nome: sess.nome || '',
             email: '', // não disponível em bps-session — preenchido em requireRepresentanteComDB
-            codigo: sess.codigo || '',
             cpf: sess.cpf || undefined,
             status: '', // será validado no DB quando necessário
             tipo_pessoa: sess.tipo_pessoa || 'pf',
@@ -135,7 +133,7 @@ export async function requireRepresentanteComDB(): Promise<RepresentanteSession>
   };
 
   const result = await query(
-    `SELECT id, nome, email, codigo, status, tipo_pessoa FROM representantes WHERE id = $1 LIMIT 1`,
+    `SELECT id, nome, email, status, tipo_pessoa FROM representantes WHERE id = $1 LIMIT 1`,
     [sess.representante_id],
     rlsSession
   );
@@ -154,7 +152,6 @@ export async function requireRepresentanteComDB(): Promise<RepresentanteSession>
     ...sess,
     nome: rep.nome,
     email: rep.email,
-    codigo: rep.codigo,
     status: rep.status,
     tipo_pessoa: rep.tipo_pessoa,
   };

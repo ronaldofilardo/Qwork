@@ -13,7 +13,6 @@ export default function TrocarSenhaRepresentantePage() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
-  const [codigoGerado, setCodigoGerado] = useState<string | null>(null);
 
   const validarSenha = (s: string): string | null => {
     if (s.length < 8) return 'Mínimo 8 caracteres';
@@ -54,7 +53,6 @@ export default function TrocarSenhaRepresentantePage() {
         return;
       }
       setSucesso(true);
-      if (data.codigo) setCodigoGerado(data.codigo);
       // window.location.href força reload completo: o layout reinicia carregarSessao()
       // com a sessão fresca (precisa_trocar_senha=false) evitando loop do gate
       setTimeout(() => {
@@ -68,20 +66,20 @@ export default function TrocarSenhaRepresentantePage() {
   };
 
   const inputCls =
-    'w-full border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-400 transition-all';
+    'w-full border border-gray-200 rounded-xl px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all';
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-6 text-white">
+        <div className="bg-gradient-to-r from-primary to-primary-hover px-8 py-6 text-white">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
               <Lock size={18} className="text-white" />
             </div>
             <h1 className="text-xl font-bold">Criar Nova Senha</h1>
           </div>
-          <p className="text-orange-100 text-sm">
+          <p className="text-white/80 text-sm">
             Por segurança, crie uma nova senha para sua conta antes de
             continuar.
           </p>
@@ -96,20 +94,6 @@ export default function TrocarSenhaRepresentantePage() {
               <p className="text-sm font-semibold text-gray-900">
                 Senha alterada com sucesso!
               </p>
-              {codigoGerado && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                  <p className="text-xs text-blue-600 font-medium mb-1 uppercase tracking-wide">
-                    Seu código de representante
-                  </p>
-                  <p className="text-2xl font-mono font-bold text-blue-800 tracking-widest">
-                    {codigoGerado}
-                  </p>
-                  <p className="text-xs text-blue-500 mt-2">
-                    Guarde este código! Ele é usado para identificação na
-                    plataforma e por seus clientes.
-                  </p>
-                </div>
-              )}
               <p className="text-xs text-gray-500 mt-3">
                 Redirecionando para o dashboard…
               </p>
@@ -207,7 +191,7 @@ export default function TrocarSenhaRepresentantePage() {
               <button
                 type="submit"
                 disabled={salvando || !senhaAtual || !novaSenha || !confirmacao}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-orange-500 text-white text-sm font-semibold rounded-xl hover:bg-orange-600 disabled:opacity-50 transition-colors cursor-pointer focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-primary text-white text-sm font-semibold rounded-xl hover:bg-primary-hover disabled:opacity-50 transition-colors cursor-pointer focus:ring-2 focus:ring-accent focus:outline-none"
               >
                 {salvando && <Loader2 size={15} className="animate-spin" />}
                 {salvando ? 'Salvando...' : 'Salvar Nova Senha'}

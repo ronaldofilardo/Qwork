@@ -621,9 +621,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (err.message === 'Sem permissão') {
         return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
       }
-      if (err.message === 'MFA_REQUIRED') {
-        return NextResponse.json({ error: 'MFA_REQUIRED' }, { status: 403 });
-      }
       const statusErr = (err as Error & { status?: number }).status;
       if (statusErr === 404) {
         return NextResponse.json({ error: err.message }, { status: 404 });

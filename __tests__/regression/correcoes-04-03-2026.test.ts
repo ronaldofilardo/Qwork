@@ -198,9 +198,6 @@ describe('5. lib/session-representante.ts — campo cpf no bps-session', () => {
   it('extrai sess.cpf do cookie', () => {
     expect(src).toMatch(/cpf\s*:\s*sess\.cpf/);
   });
-  it('extrai sess.codigo com fallback', () => {
-    expect(src).toMatch(/codigo\s*:\s*sess\.codigo\s*\|\|/);
-  });
   it('extrai sess.tipo_pessoa com fallback pf', () => {
     expect(src).toMatch(
       /tipo_pessoa\s*:\s*sess\.tipo_pessoa\s*\|\|\s*['"]pf['"]/
@@ -208,114 +205,8 @@ describe('5. lib/session-representante.ts — campo cpf no bps-session', () => {
   });
 });
 
-describe('6. lib/db/comissionamento/nf-rpa.ts — registrarNfRep com cpf', () => {
-  const src = fs.readFileSync(
-    path.join(ROOT, 'lib', 'db', 'comissionamento', 'nf-rpa.ts'),
-    'utf-8'
-  );
-
-  it('importa type Session de lib/session', () => {
-    expect(src).toMatch(
-      /import\s+type\s+\{[^}]*Session[^}]*\}\s+from\s+['"]\.\.\/\.\.\/session['"]/
-    );
-  });
-  it('registrarNfRep tem param cpf?: string', () => {
-    const fn = src.indexOf('export async function registrarNfRep');
-    expect(fn).toBeGreaterThan(0);
-    expect(src.substring(fn, fn + 350)).toMatch(/cpf\s*\?\s*:\s*string/);
-  });
-  it('constroi querySession quando cpf disponivel', () => {
-    expect(src).toMatch(/querySession/);
-  });
-  it('passa querySession no query() do UPDATE nf', () => {
-    // Extrai o corpo da funcao registrarNfRep para verificar que querySession vai para o query()
-    const fnStart = src.indexOf('export async function registrarNfRep');
-    expect(fnStart).toBeGreaterThan(0);
-    // Pega ate a proxima funcao exportada para garantir que o corpo completo esta incluido
-    const fnEnd = src.indexOf('\nexport async function', fnStart + 1);
-    const fnBody = src.substring(
-      fnStart,
-      fnEnd > fnStart ? fnEnd : fnStart + 5000
-    );
-    // Verifica que querySession existe no body
-    expect(fnBody).toMatch(/querySession/);
-    // Verifica que SET nf_path esta no UPDATE
-    expect(fnBody).toMatch(/SET nf_path = \$3/);
-    // Verifica que querySession e passado como 3o argumento para query()
-    expect(fnBody).toMatch(/querySession[\s\S]{0,10}\)/);
-  });
-  it('route NF passa sess.cpf para registrarNfRep', () => {
-    const r = fs.readFileSync(
-      path.join(
-        ROOT,
-        'app',
-        'api',
-        'representante',
-        'comissoes',
-        '[id]',
-        'nf',
-        'route.ts'
-      ),
-      'utf-8'
-    );
-    expect(r).toMatch(/registrarNfRep\s*\([\s\S]{0,300}sess\.cpf/);
-  });
-});
-
-describe('7. Feature: botao Ver NF no painel admin', () => {
-  describe('ComissoesContent (embed)', () => {
-    const src = fs.readFileSync(
-      path.join(ROOT, 'components', 'admin', 'ComissoesContent.tsx'),
-      'utf-8'
-    );
-    it('interface tem nf_path, nf_nome_arquivo, nf_rpa_enviada_em, nf_rpa_aprovada_em', () => {
-      expect(src).toMatch(/nf_path\s*:\s*string\s*\|\s*null/);
-      expect(src).toMatch(/nf_nome_arquivo\s*:\s*string\s*\|\s*null/);
-      expect(src).toMatch(/nf_rpa_enviada_em\s*:\s*string\s*\|\s*null/);
-      expect(src).toMatch(/nf_rpa_aprovada_em\s*:\s*string\s*\|\s*null/);
-    });
-    it('tem coluna NF/RPA no cabecalho', () => {
-      expect(src).toMatch(/NF\/RPA/);
-    });
-    it('link aponta para /api/admin/comissoes/{id}/nf', () => {
-      expect(src).toMatch(/\/api\/admin\/comissoes\/\$\{c\.id\}\/nf/);
-    });
-    it('link abre em _blank', () => {
-      expect(src).toMatch(/_blank/);
-    });
-    it('condicional em nf_rpa_enviada_em', () => {
-      expect(src).toMatch(/c\.nf_rpa_enviada_em/);
-    });
-    it('condicional em nf_rpa_aprovada_em', () => {
-      expect(src).toMatch(/c\.nf_rpa_aprovada_em/);
-    });
-  });
-
-  describe('admin/comissoes/components/ComissoesTab.tsx', () => {
-    const src = fs.readFileSync(
-      path.join(
-        ROOT,
-        'app',
-        'admin',
-        'comissoes',
-        'components',
-        'ComissoesTab.tsx'
-      ),
-      'utf-8'
-    );
-    it('tem "Ver NF"', () => {
-      expect(src).toMatch(/Ver NF/);
-    });
-    it('link aponta para /api/admin/comissoes/{id}/nf', () => {
-      expect(src).toMatch(/\/api\/admin\/comissoes\/\$\{c\.id\}\/nf/);
-    });
-    it('exibe somente quando enviada e nao aprovada', () => {
-      expect(src).toMatch(
-        /c\.nf_rpa_enviada_em[\s\S]{0,50}!c\.nf_rpa_aprovada_em/
-      );
-    });
-  });
-});
+// [Seção 6 REMOVIDA] — nf-rpa.ts deletado na migration 1212
+// [Seção 7 REMOVIDA] — ComissoesContent/ComissoesTab refatorados para novo sistema
 
 describe('8. Consistencia geral', () => {
   it.each([

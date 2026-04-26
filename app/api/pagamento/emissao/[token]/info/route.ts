@@ -19,13 +19,13 @@ export async function GET(
         la.clinica_id,
         la.valor_por_funcionario,
         la.link_pagamento_enviado_em,
-        COUNT(a.id) AS num_avaliacoes,
-        (la.valor_por_funcionario * COUNT(a.id)) AS valor_total,
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status != 'rascunho')::int AS num_avaliacoes,
+        (COALESCE(la.valor_por_funcionario, 0) * COUNT(DISTINCT a.id) FILTER (WHERE a.status != 'rascunho')::numeric) AS valor_total,
         COALESCE(c.nome, e.nome) AS tomador_nome,
         COALESCE(c.cnpj, e.cnpj) AS tomador_cnpj,
         e.nome AS empresa_nome
        FROM lotes_avaliacao la
-       LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
+       LEFT JOIN avaliacoes a ON a.lote_id = la.id
        LEFT JOIN clinicas c ON c.id = la.clinica_id
        LEFT JOIN entidades e ON e.id = la.entidade_id
        WHERE la.link_pagamento_token = $1

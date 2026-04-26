@@ -2,7 +2,6 @@
 
 import type { Comissao } from '../types';
 import { STATUS_BADGE, fmt } from '../types';
-import NfStatusCell from './NfStatusCell';
 
 interface ComissoesTableProps {
   comissoes: Comissao[];
@@ -10,7 +9,6 @@ interface ComissoesTableProps {
   page: number;
   setPage: (fn: (p: number) => number) => void;
   loading: boolean;
-  setUploadModal: (c: Comissao | null) => void;
 }
 
 export default function ComissoesTable({
@@ -19,7 +17,6 @@ export default function ComissoesTable({
   page,
   setPage,
   loading,
-  setUploadModal,
 }: ComissoesTableProps) {
   if (loading) {
     return (
@@ -49,14 +46,15 @@ export default function ComissoesTable({
           <thead className="bg-gray-50 text-gray-500 uppercase text-xs">
             <tr>
               <th className="px-4 py-3 text-left">Cliente</th>
-              <th className="px-4 py-3 text-left">Laudo</th>
+              <th className="px-4 py-3 text-left">Lote ID</th>
               <th className="px-4 py-3 text-left">Mês Emissão</th>
               <th className="px-4 py-3 text-center">Parcela</th>
               <th className="px-4 py-3 text-right">Valor Laudo</th>
+              <th className="px-4 py-3 text-right">Valor Parcela</th>
               <th className="px-4 py-3 text-right">Comissão</th>
+              <th className="px-4 py-3 text-center">%</th>
               <th className="px-4 py-3 text-left">Status</th>
               <th className="px-4 py-3 text-left">Previsão</th>
-              <th className="px-4 py-3 text-center">NF/RPA</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -66,7 +64,7 @@ export default function ComissoesTable({
                   {c.entidade_nome}
                 </td>
                 <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                  {c.numero_laudo ?? '—'}
+                  {c.lote_pagamento_id ? `#${c.lote_pagamento_id}` : '—'}
                 </td>
                 <td className="px-4 py-3 text-gray-500">
                   {c.mes_emissao
@@ -84,8 +82,22 @@ export default function ComissoesTable({
                 <td className="px-4 py-3 text-right text-gray-700">
                   {fmt(c.valor_laudo)}
                 </td>
+                <td className="px-4 py-3 text-right text-gray-700">
+                  {fmt(c.valor_parcela)}
+                </td>
                 <td className="px-4 py-3 text-right font-semibold text-green-700">
                   {fmt(c.valor_comissao)}
+                </td>
+                <td className="px-4 py-3 text-center text-xs text-gray-600">
+                  {parseFloat(c.percentual_comissao || '0') > 0 ? (
+                    `${parseFloat(c.percentual_comissao)}%`
+                  ) : Number(c.valor_comissao ?? 0) > 0 ? (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700">
+                      Fixo
+                    </span>
+                  ) : (
+                    '—'
+                  )}
                 </td>
                 <td className="px-4 py-3">
                   <div>
@@ -147,12 +159,6 @@ export default function ComissoesTable({
                         year: 'numeric',
                       })
                     : '—'}
-                </td>
-                <td className="px-4 py-3 text-center">
-                  <NfStatusCell
-                    comissao={c}
-                    onUpload={() => setUploadModal(c)}
-                  />
                 </td>
               </tr>
             ))}

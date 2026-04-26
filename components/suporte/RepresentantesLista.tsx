@@ -14,6 +14,7 @@ import {
   Check,
   Loader2,
   AlertCircle,
+  KeyRound,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -109,9 +110,11 @@ function fmtCNPJ(v: string | null) {
 function RepresentanteCard({
   rep,
   onClick,
+  abrirReset,
 }: {
   rep: Representante;
   onClick: () => void;
+  abrirReset: (rep: Representante) => void;
 }) {
   const st = STATUS_LABEL[rep.status] ?? {
     label: rep.status,
@@ -125,9 +128,17 @@ function RepresentanteCard({
     .toUpperCase();
 
   return (
-    <button
+    <div
       onClick={onClick}
-      className="w-full text-left bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:shadow-md transition-all duration-150 p-5 group"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className="w-full text-left bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:shadow-md transition-all duration-150 p-5 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/30"
     >
       <div className="flex items-start gap-4">
         <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-base flex-shrink-0 group-hover:bg-green-200 transition-colors">
@@ -152,11 +163,9 @@ function RepresentanteCard({
             >
               {st.label}
             </span>
-            {rep.codigo && (
-              <span className="text-[10px] font-mono text-gray-400">
-                {rep.codigo}
-              </span>
-            )}
+            <span className="text-[10px] font-mono font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+              #{rep.id}
+            </span>
           </div>
         </div>
       </div>
@@ -184,7 +193,20 @@ function RepresentanteCard({
           )}
         </div>
       </div>
-    </button>
+
+      <div className="mt-3 pt-3 border-t border-gray-100 flex justify-end">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            abrirReset(rep);
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition-all duration-150 cursor-pointer"
+        >
+          <KeyRound size={12} />
+          Resetar senha
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -443,7 +465,6 @@ function RepresentanteDrawer({
               <div className="bg-gray-50 rounded-lg divide-y text-sm">
                 {(
                   [
-                    ['Codigo', rep.codigo ?? '-'],
                     [
                       'Documento',
                       rep.tipo_pessoa === 'pj'
@@ -596,11 +617,6 @@ function RepresentanteDrawer({
                           {fmtCPF(v.cpf)}
                         </p>
                       </div>
-                      {v.codigo && (
-                        <span className="text-xs font-mono bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full flex-shrink-0">
-                          {v.codigo}
-                        </span>
-                      )}
                     </div>
 
                     <div className="px-4 py-2 border-t">
@@ -780,6 +796,12 @@ export function RepresentantesLista() {
   const [buscaInput, setBuscaInput] = useState('');
   const [drawerRep, setDrawerRep] = useState<Representante | null>(null);
   const [grupo, setGrupo] = useState<'ativos' | 'inativos'>('ativos');
+  const [resetandoRep, setResetandoRep] = useState<Representante | null>(null);
+  const [cpfReset, setCpfReset] = useState('');
+  const [confirmCpf, setConfirmCpf] = useState('');
+  const [submittingReset, setSubmittingReset] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -815,6 +837,60 @@ export function RepresentantesLista() {
   const handleBuscaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setBusca(buscaInput);
+  };
+
+  const abrirResetSenha = (rep: Representante) => {
+    setResetandoRep(rep);
+    setCpfReset(rep.cpf ?? '');
+    setConfirmCpf('');
+    setResetError(null);
+    setResetSuccess(null);
+  };
+
+  const confirmarResetSenha = async () => {
+    if (!resetandoRep) return;
+
+    const cpfLimpo = cpfReset.replace(/\D/g, '');
+    const confirmLimpo = confirmCpf.replace(/\D/g, '');
+
+    if (cpfLimpo.length !== 11) {
+      setResetError('Digite um CPF válido com 11 dígitos.');
+      return;
+    }
+
+    if (cpfLimpo !== confirmLimpo) {
+      setResetError('O CPF digitado para confirmação não confere.');
+      return;
+    }
+
+    setSubmittingReset(true);
+    setResetError(null);
+    try {
+      const res = await fetch('/api/suporte/representantes/reset-senha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cpf: cpfLimpo }),
+      });
+
+      const d = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+      };
+
+      if (!res.ok) {
+        throw new Error(d.error ?? 'Erro ao resetar senha');
+      }
+
+      setResetSuccess(
+        d.message ??
+          'Senha resetada. No próximo login, o representante deverá criar uma nova senha.'
+      );
+      setConfirmCpf('');
+    } catch (e: unknown) {
+      setResetError(e instanceof Error ? e.message : 'Erro desconhecido');
+    } finally {
+      setSubmittingReset(false);
+    }
   };
 
   const STATUS_OPTIONS_ATIVOS = STATUS_OPTIONS.filter(
@@ -908,6 +984,7 @@ export function RepresentantesLista() {
               key={rep.id}
               rep={rep}
               onClick={() => setDrawerRep(rep)}
+              abrirReset={abrirResetSenha}
             />
           ))}
         </div>
@@ -921,6 +998,97 @@ export function RepresentantesLista() {
           setDrawerRep(null);
         }}
       />
+
+      {resetandoRep && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">
+                  Resetar senha do representante
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  {resetandoRep.nome}
+                </p>
+              </div>
+              <button
+                onClick={() => setResetandoRep(null)}
+                className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Fechar modal"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
+                Confirme o CPF do representante para resetar a senha. No próximo
+                login, ele precisará cadastrar uma nova senha.
+              </div>
+
+              {resetError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-700">
+                  {resetError}
+                </div>
+              )}
+
+              {resetSuccess && (
+                <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700">
+                  {resetSuccess}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  CPF do representante
+                </label>
+                <input
+                  type="text"
+                  value={cpfReset}
+                  onChange={(e) => setCpfReset(e.target.value)}
+                  placeholder="Digite o CPF"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Confirmar CPF
+                </label>
+                <input
+                  type="text"
+                  value={confirmCpf}
+                  onChange={(e) => setConfirmCpf(e.target.value)}
+                  placeholder="Digite novamente para confirmar"
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                />
+              </div>
+            </div>
+
+            <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+              <button
+                onClick={() => setResetandoRep(null)}
+                disabled={submittingReset}
+                className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => void confirmarResetSenha()}
+                disabled={submittingReset}
+                className="flex-1 px-4 py-2 text-sm bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {submittingReset ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <KeyRound size={14} />
+                )}
+                {submittingReset ? 'Resetando...' : 'Confirmar reset'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,14 +10,19 @@
  *      logger.error('[MODULE] erro', e);  // sempre visível
  */
 
-const isDev = process.env.NODE_ENV !== 'production';
+const isTest = process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID;
+const verboseLogsEnabled = process.env.DEBUG_LOGS === 'true' || isTest;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type LogArgs = any[];
 
 export const logger = {
-  log: isDev ? (...args: LogArgs) => console.log(...args) : () => undefined,
+  log: verboseLogsEnabled
+    ? (...args: LogArgs) => console.log(...args)
+    : () => undefined,
   warn: (...args: LogArgs) => console.warn(...args),
   error: (...args: LogArgs) => console.error(...args),
-  info: isDev ? (...args: LogArgs) => console.info(...args) : () => undefined,
+  info: verboseLogsEnabled
+    ? (...args: LogArgs) => console.info(...args)
+    : () => undefined,
 };

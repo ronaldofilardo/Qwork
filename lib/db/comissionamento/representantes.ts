@@ -16,17 +16,6 @@ export async function getRepresentanteByEmail(email: string) {
   return result.rows[0] ?? null;
 }
 
-/** Busca representante por email + codigo (autenticação) */
-export async function autenticarRepresentante(email: string, codigo: string) {
-  const result = await query(
-    `SELECT * FROM representantes
-     WHERE email = $1 AND codigo = $2 AND status NOT IN ('desativado','rejeitado')
-     LIMIT 1`,
-    [email, codigo]
-  );
-  return result.rows[0] ?? null;
-}
-
 /** Busca representante por id */
 export async function getRepresentanteById(id: number) {
   const result = await query(

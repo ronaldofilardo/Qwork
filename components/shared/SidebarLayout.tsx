@@ -44,7 +44,7 @@ export default function SidebarLayout({
 
   return (
     <div
-      className={`h-screen bg-white border-r border-gray-200 flex flex-col transition-all ${isCollapsed ? 'w-16' : 'w-64'}`}
+      className={`qw-sidebar h-screen bg-white border-r border-gray-200 flex flex-col transition-all ${isCollapsed ? 'w-16' : 'w-64'}`}
     >
       {/* Header */}
       <div className="p-4 border-b border-gray-200">

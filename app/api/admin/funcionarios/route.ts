@@ -5,14 +5,11 @@ import { requireRole } from '@/lib/session';
 import { buildSetLocalQueries } from '@/lib/db-safe';
 
 /**
- * ⚠️ AVISO: Este arquivo está na pasta ERRADA!
- * Caminho atual: /api/admin/funcionarios
- * Caminho correto: /api/rh/funcionarios
+ * GET/PUT /api/admin/funcionarios
  *
- * Este endpoint requer perfil 'rh', não 'admin'.
- * Admin NÃO deve ter acesso a funcionários de empresas.
- *
- * TODO: Mover para app/api/rh/funcionarios/route.ts
+ * Endpoint de funcionários para perfil 'rh'.
+ * Nota: caminho /api/admin é rota legada mantida por compatibilidade com o front-end.
+ * Autorização real: requireRole('rh') — admin NÃO tem acesso a funcionários de empresas.
  */
 
 export const dynamic = 'force-dynamic';

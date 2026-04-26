@@ -8,7 +8,6 @@
  *  - INNER JOIN em getEntidadeDeFuncionario
  *  - COUNT DISTINCT em contarFuncionariosAtivos
  *  - Filtros dinâmicos em getFuncionariosDeEntidade
- *  - Aliases gettomadorsByTipo, gettomadorsPendentes
  */
 
 // Testes de lógica pura para validar padrões de acesso sem DB real
@@ -163,27 +162,4 @@ describe('db.ts — Padrões de Acesso a Dados', () => {
     });
   });
 
-  // ==========================================================================
-  // Aliases Pattern
-  // ==========================================================================
-  describe('Aliases — retrocompatibilidade', () => {
-    it('gettomadorsByTipo deve ser alias de getEntidadesByTipo', () => {
-      // Validação que o alias existe no código
-      // Não podemos importar diretamente pois db.ts requer pg real
-      // Mas podemos verificar a lógica
-      const getEntidadesByTipo = jest.fn();
-      const gettomadorsByTipo = getEntidadesByTipo;
-
-      gettomadorsByTipo('empresa' as any);
-      expect(getEntidadesByTipo).toHaveBeenCalledWith('empresa');
-    });
-
-    it('gettomadorsPendentes deve ser alias de getEntidadesPendentes', () => {
-      const getEntidadesPendentes = jest.fn();
-      const gettomadorsPendentes = getEntidadesPendentes;
-
-      gettomadorsPendentes();
-      expect(getEntidadesPendentes).toHaveBeenCalled();
-    });
-  });
 });

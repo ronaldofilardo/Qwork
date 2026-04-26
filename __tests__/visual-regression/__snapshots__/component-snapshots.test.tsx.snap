@@ -79,89 +79,89 @@ exports[`Regressão Visual - Componentes Críticos FormGroup Component deve mant
           class="mb-6"
         >
           <label
-            class="block text-[1.2rem] sm:text-[1.5rem] font-semibold text-center text-gray-800 required"
+            class="block text-[1.2rem] sm:text-[1.5rem] font-semibold text-center text-gray-800"
             for="item-1"
           >
             Pergunta 1
           </label>
         </div>
         <div
-          class="sm:hidden mb-4 -mx-2 px-2"
+          class="sm:hidden mb-4 -mx-1 px-1"
         >
           <div
-            class="grid grid-cols-5 gap-2"
+            class="grid grid-cols-5 gap-1.5"
           >
             <button
               aria-pressed="false"
-              class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+              class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
               title="Nunca"
               type="button"
             >
               <div
-                class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+                class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
               />
               <span
-                class="text-[10px] sm:text-sm text-center text-gray-600"
+                class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
               >
                 Nunca
               </span>
             </button>
             <button
               aria-pressed="false"
-              class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+              class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
               title="Raramente"
               type="button"
             >
               <div
-                class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+                class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
               />
               <span
-                class="text-[10px] sm:text-sm text-center text-gray-600"
+                class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
               >
                 Raramente
               </span>
             </button>
             <button
               aria-pressed="false"
-              class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+              class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
               title="Às vezes"
               type="button"
             >
               <div
-                class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+                class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
               />
               <span
-                class="text-[10px] sm:text-sm text-center text-gray-600"
+                class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
               >
                 Às vezes
               </span>
             </button>
             <button
               aria-pressed="false"
-              class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+              class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
               title="Muitas vezes"
               type="button"
             >
               <div
-                class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+                class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
               />
               <span
-                class="text-[10px] sm:text-sm text-center text-gray-600"
+                class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
               >
                 Muitas vezes
               </span>
             </button>
             <button
               aria-pressed="false"
-              class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+              class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
               title="Sempre"
               type="button"
             >
               <div
-                class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+                class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
               />
               <span
-                class="text-[10px] sm:text-sm text-center text-gray-600"
+                class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
               >
                 Sempre
               </span>
@@ -653,89 +653,89 @@ exports[`Regressão Visual - Componentes Críticos RadioScale Component deve man
     class="mb-6"
   >
     <label
-      class="block text-[1.2rem] sm:text-[1.5rem] font-semibold text-center text-gray-800 required"
+      class="block text-[1.2rem] sm:text-[1.5rem] font-semibold text-center text-gray-800"
       for="test-1"
     >
       Pergunta de teste
     </label>
   </div>
   <div
-    class="sm:hidden mb-4 -mx-2 px-2"
+    class="sm:hidden mb-4 -mx-1 px-1"
   >
     <div
-      class="grid grid-cols-5 gap-2"
+      class="grid grid-cols-5 gap-1.5"
     >
       <button
         aria-pressed="false"
-        class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+        class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
         title="Nunca"
         type="button"
       >
         <div
-          class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
         />
         <span
-          class="text-[10px] sm:text-sm text-center text-gray-600"
+          class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
         >
           Nunca
         </span>
       </button>
       <button
         aria-pressed="false"
-        class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+        class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
         title="Raramente"
         type="button"
       >
         <div
-          class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
         />
         <span
-          class="text-[10px] sm:text-sm text-center text-gray-600"
+          class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
         >
           Raramente
         </span>
       </button>
       <button
         aria-pressed="false"
-        class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+        class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
         title="Às vezes"
         type="button"
       >
         <div
-          class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
         />
         <span
-          class="text-[10px] sm:text-sm text-center text-gray-600"
+          class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
         >
           Às vezes
         </span>
       </button>
       <button
         aria-pressed="false"
-        class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+        class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
         title="Muitas vezes"
         type="button"
       >
         <div
-          class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
         />
         <span
-          class="text-[10px] sm:text-sm text-center text-gray-600"
+          class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
         >
           Muitas vezes
         </span>
       </button>
       <button
         aria-pressed="false"
-        class="flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
+        class="flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] border-gray-300 bg-white hover:border-primary hover:bg-gray-50"
         title="Sempre"
         type="button"
       >
         <div
-          class="w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 border-gray-400 bg-white"
+          class="w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 border-gray-400 bg-white"
         />
         <span
-          class="text-[10px] sm:text-sm text-center text-gray-600"
+          class="text-[12px] leading-tight text-center hyphens-auto text-gray-600"
         >
           Sempre
         </span>

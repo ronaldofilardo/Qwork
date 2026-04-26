@@ -15,7 +15,6 @@ export interface RepresentanteSession {
   id: number;
   nome: string;
   email: string;
-  codigo: string;
   status: string;
   tipo_pessoa: string;
   cpf?: string | null;
@@ -38,6 +37,12 @@ export interface RepresentanteSession {
   dados_bancarios_solicitado_em?: string | null;
   dados_bancarios_confirmado_em?: string | null;
   precisa_trocar_senha?: boolean;
+  // Comissionamento
+  modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+  percentual_comissao?: number | null;
+  percentual_comissao_comercial?: number | null;
+  valor_custo_fixo_clinica?: number | null;
+  valor_custo_fixo_entidade?: number | null;
 }
 
 interface RepContextValue {
@@ -144,8 +149,8 @@ export function RepresentanteProvider({
 
         {/* Conteúdo principal */}
         <div className="flex-1 overflow-y-auto">
-          <main className="max-w-6xl mx-auto px-4 py-6">
-            {showBoasVindas && session?.codigo && (
+          <main className="qw-content-area max-w-6xl mx-auto px-4 py-6">
+            {showBoasVindas && session?.id && (
               <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">&#127881;</span>
@@ -154,9 +159,9 @@ export function RepresentanteProvider({
                       Bem-vindo(a) à QWORK!
                     </p>
                     <p className="text-xs text-blue-700 mt-0.5">
-                      Seu código:{' '}
+                      Seu id:{' '}
                       <span className="font-mono font-bold text-blue-900">
-                        {session.codigo}
+                        #{session.id}
                       </span>{' '}
                       &mdash; Guarde-o, ele identifica você na plataforma.
                     </p>

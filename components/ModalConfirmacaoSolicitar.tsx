@@ -9,13 +9,15 @@
  * - Só é exibido uma vez por lote por sessão (sessionStorage)
  * - Não impacta o fluxo de solicitação (puramente informativo)
  * - Exibe contato do gestor cadastrado (email e celular)
- * - Informa prazo de 24 horas úteis em horário comercial
+ * - Exibe dados da clínica/entidade (tomadorInfo)
+ * - Informa que o link de cobrança fica em "Informações da Conta"
  * - Email fixo da plataforma: contato@qwork.app.br
  */
 
 'use client';
 
 import { useEffect } from 'react';
+import type { TomadorInfo } from '@/lib/lote/types';
 
 const PLATAFORMA_EMAIL = 'contato@qwork.app.br';
 const SESSION_KEY_PREFIX = 'modal_solicitar_emissao_';
@@ -44,19 +46,6 @@ export function marcarExibidaParaLote(loteId: number): void {
   }
 }
 
-interface TomadorInfo {
-  nome: string;
-  cnpj: string;
-  email: string;
-  telefone: string;
-  endereco: string;
-  cidade: string;
-  estado: string;
-  responsavel_nome: string;
-  responsavel_cpf: string;
-  responsavel_email: string;
-}
-
 interface ModalConfirmacaoSolicitarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -77,9 +66,16 @@ export function ModalConfirmacaoSolicitar({
   contexto = 'gestor',
   tomadorInfo,
 }: ModalConfirmacaoSolicitarProps) {
-  const temDadosContato = Boolean(gestorEmail || gestorCelular);
-  const labelPerfil =
-    contexto === 'rh' ? 'do seu perfil RH' : 'do gestor cadastrado';
+  const temDadosGestor = Boolean(gestorEmail || gestorCelular);
+  const temDadosTomador = Boolean(tomadorInfo);
+  // Aviso aparece se gestor está indisponível, EXCETO se for RH com dados da clínica
+  // (nesse caso, o usuário tem ao menos a informação do tomador)
+  const deveExibirAviso =
+    !temDadosGestor && (contexto !== 'rh' || !temDadosTomador);
+  const labelTomador =
+    contexto === 'rh'
+      ? 'Dados da Clínica (Tomador)'
+      : 'Dados da Entidade (Tomador)';
 
   // Marcar como exibida quando abrir
   useEffect(() => {
@@ -117,31 +113,31 @@ export function ModalConfirmacaoSolicitar({
       />
 
       {/* Painel */}
-      <div className="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="relative z-10 w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Cabeçalho verde */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 px-5 py-4 text-white flex-shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-3xl" aria-hidden="true">
+            <span className="text-2xl" aria-hidden="true">
               ✅
             </span>
             <div>
-              <h2 id="modal-titulo" className="text-xl font-bold leading-tight">
+              <h2 id="modal-titulo" className="text-lg font-bold leading-tight">
                 Solicitação Recebida com Sucesso!
               </h2>
-              <p className="text-sm text-green-100 mt-0.5">
+              <p className="text-xs text-green-100 mt-0.5">
                 Lote #{loteId} · Emissão em análise
               </p>
             </div>
           </div>
         </div>
 
-        {/* Corpo */}
-        <div className="px-6 py-5 space-y-5">
+        {/* Corpo — rolável em telas pequenas */}
+        <div className="px-5 py-4 space-y-4 overflow-y-auto flex-1">
           {/* Seção: Dados do Tomador (Clínica) */}
           {tomadorInfo && (
             <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 space-y-2">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Dados da Clínica (Tomador)
+                {labelTomador}
               </p>
               <div>
                 <span className="text-sm font-semibold text-gray-900">
@@ -211,12 +207,7 @@ export function ModalConfirmacaoSolicitar({
 
           {/* Seção: Contato do Gestor / RH */}
           <div>
-            <p className="text-sm text-gray-700 leading-relaxed">
-              A plataforma entrará em contato com você através dos dados{' '}
-              {labelPerfil}:
-            </p>
-
-            {temDadosContato ? (
+            {temDadosGestor ? (
               <div className="mt-3 rounded-xl bg-blue-50 border border-blue-200 px-4 py-3 space-y-2">
                 {gestorEmail ? (
                   <div className="flex items-center gap-2 text-sm text-blue-900">
@@ -252,31 +243,33 @@ export function ModalConfirmacaoSolicitar({
                   </div>
                 )}
               </div>
-            ) : (
+            ) : deveExibirAviso ? (
               <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
                 <p className="text-sm text-amber-800">
-                  ⚠️ Nenhum dado de contato foi encontrado{' '}
+                  ⚠️{' '}
                   {contexto === 'rh'
-                    ? 'no cadastro do perfil RH. Verifique se seu email e celular estão preenchidos em "Informações da Conta".'
-                    : 'no cadastro. Para receber a proposta comercial, entre em contato diretamente com a plataforma pelo email abaixo.'}
+                    ? 'Seus dados de contato (email e celular) não foram encontrados no perfil RH. Verifique se estão preenchidos em "Informações da Conta".'
+                    : 'Seus dados de contato não foram encontrados no cadastro. Para atualizações sobre este lote, entre em contato com a plataforma pelo email abaixo.'}
                 </p>
               </div>
-            )}
+            ) : null}
           </div>
 
-          {/* Seção: Prazo */}
+          {/* Seção: Sobre a cobrança */}
           <div className="rounded-xl bg-indigo-50 border border-indigo-200 px-4 py-3">
             <div className="flex items-start gap-2">
               <span className="text-base mt-0.5" aria-hidden="true">
-                ⏱️
+                💳
               </span>
               <div>
                 <p className="text-sm font-semibold text-indigo-900">
-                  Prazo de Retorno
+                  Sobre a cobrança
                 </p>
                 <p className="text-sm text-indigo-800 mt-0.5">
-                  Você receberá uma proposta comercial com valores em até{' '}
-                  <strong>24 horas úteis</strong>, durante o horário comercial.
+                  O valor por avaliação foi definido pelo representante ou
+                  vendedor responsável no momento do cadastro. O link de
+                  cobrança ficará disponível em{' '}
+                  <strong>Informações da Conta</strong> do seu painel.
                 </p>
               </div>
             </div>
@@ -310,10 +303,10 @@ export function ModalConfirmacaoSolicitar({
         </div>
 
         {/* Rodapé */}
-        <div className="px-6 pb-6">
+        <div className="px-5 pb-5 pt-2 flex-shrink-0">
           <button
             onClick={onClose}
-            className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold text-base hover:from-green-700 hover:to-emerald-700 active:scale-[0.98] transition-all duration-150 shadow-md"
+            className="w-full px-6 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl font-semibold text-sm hover:from-green-700 hover:to-emerald-700 active:scale-[0.98] transition-all duration-150 shadow-md"
             autoFocus
           >
             Entendi, Fechar

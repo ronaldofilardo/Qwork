@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   BookmarkPlus,
   Bookmark,
@@ -17,45 +17,30 @@ export interface ImportTemplate {
   nivelCargoMap?: Record<string, string>;
 }
 
-const STORAGE_KEY = 'qwork-importacao-templates';
+/** Chave legada do localStorage — mantida apenas para limpeza preventiva (remoção no mount) */
+const LEGACY_STORAGE_KEY = 'qwork-importacao-templates';
 
-export function loadTemplates(): ImportTemplate[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]');
-  } catch {
-    return [];
-  }
-}
-
-export function saveTemplate(template: ImportTemplate): void {
-  const all = loadTemplates().filter((t) => t.id !== template.id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([template, ...all]));
-}
-
-export function deleteTemplate(id: string): void {
-  const all = loadTemplates().filter((t) => t.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
-}
-
-/** Mescla novas classificações de cargo em um template já existente */
+/**
+ * Mescla novas classificações de nivel_cargo em um template existente.
+ * Operação de fire-and-forget: falhas são silenciosas (não são críticas para o fluxo).
+ */
 export function updateTemplateNivelCargo(
+  apiBase: string,
   id: string,
   additionalMap: Record<string, string>
 ): void {
-  const all = loadTemplates().map((t) =>
-    t.id === id
-      ? {
-          ...t,
-          nivelCargoMap: { ...(t.nivelCargoMap ?? {}), ...additionalMap },
-        }
-      : t
-  );
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+  fetch(`${apiBase}/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nivelCargoMap: additionalMap }),
+  }).catch(() => {
+    // Fire-and-forget: enriquecimento de template não bloqueia importação
+  });
 }
 
 // -------- Componente para salvar template após confirmar mapeamento --------
 interface SaveTemplateFormProps {
+  apiBase: string;
   mapeamentos: Array<{ nomeOriginal: string; campoQWork: string }>;
   nivelCargoMap?: Record<string, string>;
   onSaved: (id: string) => void;
@@ -63,26 +48,35 @@ interface SaveTemplateFormProps {
 }
 
 export function SaveTemplateForm({
+  apiBase,
   mapeamentos,
   nivelCargoMap,
   onSaved,
   onSkip,
 }: SaveTemplateFormProps) {
   const [nome, setNome] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     const trimmed = nome.trim();
-    if (!trimmed) return;
-    const id = Date.now().toString();
-    saveTemplate({
-      id,
-      nome: trimmed,
-      criadoEm: new Date().toLocaleDateString('pt-BR'),
-      mapeamentos,
-      nivelCargoMap,
-    });
-    onSaved(id);
-  }, [nome, mapeamentos, nivelCargoMap, onSaved]);
+    if (!trimmed || saving) return;
+    setSaving(true);
+    try {
+      const res = await fetch(apiBase, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: trimmed, mapeamentos, nivelCargoMap }),
+      });
+      if (!res.ok) {
+        setSaving(false);
+        return;
+      }
+      const json = (await res.json()) as { template: ImportTemplate };
+      onSaved(json.template.id);
+    } catch {
+      setSaving(false);
+    }
+  }, [nome, mapeamentos, nivelCargoMap, onSaved, apiBase, saving]);
 
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-3">
@@ -95,17 +89,19 @@ export function SaveTemplateForm({
           type="text"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void handleSave();
+          }}
           placeholder="Nome do template..."
           maxLength={60}
           className="flex-1 text-sm border border-amber-300 rounded px-2 py-1 focus:ring-2 focus:ring-amber-400 outline-none bg-white"
         />
         <button
-          onClick={handleSave}
-          disabled={!nome.trim()}
+          onClick={() => void handleSave()}
+          disabled={!nome.trim() || saving}
           className="px-3 py-1 text-sm font-medium text-white bg-amber-600 rounded hover:bg-amber-700 disabled:opacity-50"
         >
-          Salvar
+          {saving ? 'Salvando...' : 'Salvar'}
         </button>
         <button
           onClick={onSkip}
@@ -120,21 +116,56 @@ export function SaveTemplateForm({
 
 // -------- Componente para listar e aplicar templates --------
 interface TemplatePickerProps {
+  apiBase: string;
   onApply: (template: ImportTemplate) => void;
 }
 
-export function TemplatePicker({ onApply }: TemplatePickerProps) {
-  // Carrega diretamente no inicializador — client-only, sem flash de null
-  const [templates, setTemplates] = useState<ImportTemplate[]>(() =>
-    loadTemplates()
-  );
+export function TemplatePicker({ apiBase, onApply }: TemplatePickerProps) {
+  const [templates, setTemplates] = useState<ImportTemplate[]>([]);
   const [open, setOpen] = useState(false);
 
-  const handleDelete = useCallback((id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    deleteTemplate(id);
-    setTemplates(loadTemplates());
-  }, []);
+  // Carrega templates APENAS da API (localStorage é global e não-isolado por tenant)
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchTemplates = async () => {
+      try {
+        // SECURITY FIX: Remover localStorage legados para evitar contaminação entre usuários
+        // localStorage é GLOBAL do navegador, NÃO isolado por usuário/entidade/sessão.
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(LEGACY_STORAGE_KEY);
+        }
+
+        // Carregar templates APENAS da API (origem confiável, segregada por session/tenant)
+        const res = await fetch(apiBase);
+        if (!res.ok || cancelled) return;
+        const json = (await res.json()) as { templates: ImportTemplate[] };
+        if (!cancelled) setTemplates(json.templates ?? []);
+      } catch {
+        // Falha silenciosa — templates simplesmente não aparecem
+      }
+    };
+
+    void fetchTemplates();
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBase]);
+
+  const handleDelete = useCallback(
+    async (id: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      try {
+        const res = await fetch(`${apiBase}/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          setTemplates((prev) => prev.filter((t) => t.id !== id));
+        }
+      } catch {
+        // Falha silenciosa
+      }
+    },
+    [apiBase]
+  );
 
   const hasTemplates = templates.length > 0;
 

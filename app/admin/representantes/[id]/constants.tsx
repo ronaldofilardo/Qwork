@@ -23,7 +23,7 @@ export const STATUS_BADGE_VINCULO: Record<string, string> = {
 
 export const TIPO_CONVERSAO_LABEL: Record<string, string> = {
   link_representante: 'Link',
-  codigo_representante: 'Código',
+  representante_id: 'ID',
   verificacao_cnpj: 'CNPJ automático',
 };
 

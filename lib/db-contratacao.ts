@@ -1,45 +1,10 @@
 import { query, Session } from './db';
 import type {
-  Contrato,
   Pagamento,
   EntidadeExtendida,
   IniciarPagamentoDTO,
   StatusPagamento,
 } from './types/contratacao';
-
-// ==========================================
-// FUNÇÕES PARA CONTRATOS (mantidas para consulta de histórico)
-// ==========================================
-
-/**
- * Buscar contrato por ID
- */
-export async function getContratoById(
-  id: number,
-  session?: Session
-): Promise<Contrato | null> {
-  const result = await query<Contrato>(
-    'SELECT * FROM contratos WHERE id = $1',
-    [id],
-    session
-  );
-  return result.rows[0] || null;
-}
-
-/**
- * Buscar contratos de uma entidade
- */
-export async function getContratosByEntidade(
-  entidadeId: number,
-  session?: Session
-): Promise<Contrato[]> {
-  const result = await query<Contrato>(
-    'SELECT * FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC',
-    [entidadeId],
-    session
-  );
-  return result.rows;
-}
 
 // ==========================================
 // FUNÇÕES PARA PAGAMENTOS
@@ -459,13 +424,6 @@ export async function confirmarPagamentoAsaas(
   return result.rows[0];
 }
 
-// === RETROCOMPATIBILIDADE - DEPRECATED ===
-/** @deprecated Use getContratosByEntidade instead */
-export function getContratosBytomador(
-  ...args: Parameters<typeof getContratosByEntidade>
-) {
-  return getContratosByEntidade(...args);
-}
 /** @deprecated Use getPagamentosByEntidade instead */
 export const getPagamentosBytomador = getPagamentosByEntidade;
 /** @deprecated Use entidadePodeLogar instead */

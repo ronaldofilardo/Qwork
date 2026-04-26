@@ -3,7 +3,7 @@
  * Testes: Legacy profile validations
  */
 
-import type { TypeValidators, PERFIS_VALIDOS } from '@/lib/types/enums';
+import { TypeValidators, PERFIS_VALIDOS } from '@/lib/types/enums';
 
 describe('Legacy profile validations', () => {
   it('should not consider "master" or "super" as valid profiles', () => {

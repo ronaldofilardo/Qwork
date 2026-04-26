@@ -211,37 +211,13 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // Filtro por tipo de lote (operacional/gestão)
-    if (tipo && tipo !== 'completo') {
-      const nivelDesejado = tipo === 'operacional' ? 'operacional' : 'gestao';
-      const nivelFiltroResult = await queryAsGestorRH<{ cpf: string }>(
-        `
-        SELECT cpf FROM funcionarios
-        WHERE cpf = ANY($1::char(11)[]) AND nivel_cargo = $2
-      `,
-        [
-          funcionariosElegiveis.map(
-            (f: FuncionarioElegivel) => f.funcionario_cpf
-          ),
-          nivelDesejado,
-        ]
-      );
-
-      const cpfsComNivel = nivelFiltroResult.rows.map(
-        (r: { cpf: string }) => r.cpf
-      );
-      funcionariosElegiveis = funcionariosElegiveis.filter(
-        (f: FuncionarioElegivel) => cpfsComNivel.includes(f.funcionario_cpf)
-      );
-    }
-
     const funcionarios = funcionariosElegiveis;
 
     console.log(
       `[DEBUG] Funcionários após todos os filtros: ${funcionarios.length}`
     );
     console.log(
-      `[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}, LoteReferencia: ${loteReferenciaId}`
+      `[DEBUG] DataFiltro: ${dataFiltro}, LoteReferencia: ${loteReferenciaId}`
     );
 
     if (funcionarios.length === 0) {
@@ -258,6 +234,13 @@ export const POST = async (req: Request) => {
     // ✅ CORREÇÃO: Usar transação explícita para garantir contexto de auditoria
     // withTransactionAsGestor mantém app.current_user_cpf durante toda a transação
     // Isso evita erro "SECURITY: app.current_user_cpf not set" após falhas parciais
+
+    // Verificar se a clínica é isenta de pagamento
+    const isentoRes = await query(
+      `SELECT isento_pagamento FROM clinicas WHERE id = $1`,
+      [empresaCheck.rows[0].clinica_id]
+    );
+    const isento = isentoRes.rows[0]?.isento_pagamento === true;
 
     const resultado = await withTransactionAsGestor(async (client) => {
       // ✅ CPF de quem liberou o lote — sempre registrado para cadeia de custódia
@@ -285,6 +268,22 @@ export const POST = async (req: Request) => {
       );
 
       const lote = loteResult.rows[0];
+
+      // Se isento, marcar lote como pago imediatamente.
+      // A constraint pagamento_completo_check exige método, parcelas e pago_em
+      // sempre que status_pagamento = 'pago'.
+      if (isento) {
+        await client.query(
+          `UPDATE lotes_avaliacao
+              SET status_pagamento = 'pago',
+                  pagamento_metodo = 'isento',
+                  pagamento_parcelas = 1,
+                  pago_em = NOW(),
+                  atualizado_em = NOW()
+            WHERE id = $1`,
+          [lote.id]
+        );
+      }
 
       // IMPORTANTE: Reservar ID do laudo igual ao ID do lote
       // Isso garante que laudo.id === lote.id sempre

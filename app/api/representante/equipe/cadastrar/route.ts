@@ -10,10 +10,10 @@
  *   1. Autentica representante
  *   2. Valida campos + arquivos
  *   3. Insere usuário com tipo_usuario='vendedor'
- *   4. Gera código único VND-XXXXX e insere em `vendedores_perfil`
+ *   4. Insere perfil em `vendedores_perfil` (id do usuario é o identificador público)
  *   5. Upload de documentos para storage (local DEV / Backblaze PROD)
  *   6. Insere vínculo em `hierarquia_comercial`
- *   7. Retorna { vendedor_id, codigo, vinculo_id, convite_url }
+ *   7. Retorna { vendedor_id, vinculo_id, convite_url }
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -217,22 +217,13 @@ export async function POST(request: NextRequest) {
     );
     const vendedorId = userResult.rows[0].id;
 
-    // Gerar código sequencial via sequência do banco
-    const codigoResult = await query<{ codigo: string }>(
-      `SELECT nextval('public.seq_vendedor_codigo')::text AS codigo`,
-      [],
-      rlsSess
-    );
-    const codigo = codigoResult.rows[0].codigo;
-
-    // Inserir perfil do vendedor (com novos campos PJ)
+    // Inserir perfil do vendedor (id do usuario é o identificador público)
     await query(
       `INSERT INTO public.vendedores_perfil
-         (usuario_id, codigo, sexo, endereco, cidade, estado, cep, tipo_pessoa, cnpj, cpf_responsavel_pj, razao_social)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+         (usuario_id, sexo, endereco, cidade, estado, cep, tipo_pessoa, cnpj, cpf_responsavel_pj, razao_social)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
       [
         vendedorId,
-        codigo,
         sexo ?? null,
         endereco ?? null,
         cidade ?? null,
@@ -323,7 +314,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         vendedor_id: vendedorId,
-        codigo,
         vinculo_id: vinculoId,
         convite_url: convite.link,
       },

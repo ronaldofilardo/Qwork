@@ -45,7 +45,7 @@ export async function congelarComissoesRepSuspenso(representanteId: number) {
   return query(
     `UPDATE comissoes_laudo
      SET status = 'congelada_rep_suspenso', motivo_congelamento = 'rep_suspenso', atualizado_em = NOW()
-     WHERE representante_id = $1 AND status::text IN ('retida', 'pendente_nf', 'nf_em_analise', 'liberada')
+     WHERE representante_id = $1 AND status::text IN ('retida', 'liberada')
      RETURNING id`,
     [representanteId]
   );
@@ -75,11 +75,17 @@ export async function restaurarVinculosRep(representanteId: number) {
  *  Só libera parcelas cuja parcela_confirmada_em IS NOT NULL (parcela efetivamente paga).
  *  Comissões provisionadas de parcelas futuras (parcela_confirmada_em IS NULL) aguardam
  *  o webhook da respectiva parcela para serem ativadas automaticamente.
+ *  L10 fix: transição retida → paga diretamente (split já foi executado pelo Asaas).
  */
 export async function liberarComissoesRetidas(representanteId: number) {
   return query(
     `UPDATE comissoes_laudo
-     SET status = 'pendente_nf', data_aprovacao = NOW(), atualizado_em = NOW()
+     SET status = 'paga',
+         data_pagamento = NOW(),
+         asaas_split_executado = TRUE,
+         asaas_split_confirmado_em = COALESCE(asaas_split_confirmado_em, NOW()),
+         data_aprovacao = NOW(),
+         atualizado_em = NOW()
      WHERE representante_id = $1
        AND status = 'retida'
        AND parcela_confirmada_em IS NOT NULL
@@ -103,7 +109,7 @@ export async function encerrarTudoRep(representanteId: number) {
   await query(
     `UPDATE comissoes_laudo
      SET status = 'cancelada', atualizado_em = NOW()
-     WHERE representante_id = $1 AND status::text IN ('retida','pendente_nf','nf_em_analise','liberada','congelada_rep_suspenso','congelada_aguardando_admin')`,
+     WHERE representante_id = $1 AND status::text IN ('retida','liberada','congelada_rep_suspenso','congelada_aguardando_admin')`,
     [representanteId]
   );
 }

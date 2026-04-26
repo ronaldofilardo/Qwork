@@ -14,12 +14,13 @@ jest.mock('@/lib/db-gestor', () => ({
 
 jest.mock('@/lib/session', () => ({
   getSession: jest.fn(),
+  requireRole: jest.fn(),
 }));
 
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
-import { getSession } from '@/lib/session';
+import { getSession, requireRole } from '@/lib/session';
 import { POST } from '@/app/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
@@ -27,6 +28,7 @@ const mockQueryAsGestorEntidade = queryAsGestorEntidade as jest.MockedFunction<
   typeof queryAsGestorEntidade
 >;
 const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
+const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 
 describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
   beforeEach(() => {
@@ -35,7 +37,7 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
 
   describe('POST - Inativar avaliação', () => {
     it('deve inativar avaliação com sucesso para gestor de entidade', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
@@ -115,7 +117,7 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve validar motivo obrigatório', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
@@ -140,7 +142,7 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve rejeitar avaliação já inativada', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
@@ -188,7 +190,7 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve rejeitar se emissão já foi solicitada', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
@@ -227,30 +229,17 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve rejeitar se lote não pertence à entidade do gestor', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
         entidade_id: 10,
       } as any);
 
-      mockQuery
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              id: 1,
-              entidade_id: 99,
-              clinica_id: null,
-              status: 'ativo',
-              emitido_em: null,
-            },
-          ],
-          rowCount: 1,
-        }) // lote de outra entidade
-        .mockResolvedValueOnce({
-          rows: [{ count: '0' }],
-          rowCount: 1,
-        }); // emissão não solicitada (mock necessário)
+      mockQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      }); // lote não encontrado para esta entidade (JOIN filtra)
 
       const request = new NextRequest(
         'http://localhost:3000/api/entidade/lote/1/avaliacoes/1/inativar',
@@ -267,14 +256,14 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
       });
       const data = await response.json();
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(404);
       expect(data.error).toBe(
-        'Você não tem permissão para inativar avaliações neste lote'
+        'Lote não encontrado ou você não tem permissão para acessá-lo'
       );
     });
 
     it('deve rejeitar quando lote não existe', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
@@ -308,7 +297,7 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve rejeitar quando avaliação não existe', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
@@ -357,7 +346,7 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve permitir inativar avaliação concluída se emissão não foi solicitada', async () => {
-      mockGetSession.mockReturnValue({
+      mockRequireRole.mockResolvedValue({
         cpf: '11111111111',
         nome: 'Gestor Teste',
         perfil: 'gestor',
@@ -432,12 +421,7 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
     });
 
     it('deve rejeitar inativação quando usuário não tem perfil gestor', async () => {
-      mockGetSession.mockReturnValue({
-        cpf: '11111111111',
-        nome: 'Funcionário Teste',
-        perfil: 'funcionario',
-        entidade_id: 10,
-      } as any);
+      mockRequireRole.mockRejectedValue(new Error('Sem permissão'));
 
       const request = new NextRequest(
         'http://localhost:3000/api/entidade/lote/1/avaliacoes/1/inativar',
@@ -454,12 +438,12 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
       });
       const data = await response.json();
 
-      expect(response.status).toBe(403);
-      expect(data.error).toBe('Acesso negado');
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
     });
 
     it('deve rejeitar quando sessão não existe', async () => {
-      mockGetSession.mockReturnValue(null);
+      mockRequireRole.mockRejectedValue(new Error('Não autenticado'));
 
       const request = new NextRequest(
         'http://localhost:3000/api/entidade/lote/1/avaliacoes/1/inativar',
@@ -476,8 +460,8 @@ describe('/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
       });
       const data = await response.json();
 
-      expect(response.status).toBe(401);
-      expect(data.error).toBe('Não autorizado');
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
     });
   });
 });

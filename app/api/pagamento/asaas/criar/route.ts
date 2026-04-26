@@ -1,35 +1,64 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { query } from '@/lib/db';
 import { asaasClient } from '@/lib/asaas/client';
 import { mapMetodoPagamentoToAsaasBillingType } from '@/lib/asaas/mappers';
 import { calcularSplit, montarSplitAsaas } from '@/lib/asaas/subconta';
 
+export const dynamic = 'force-dynamic';
+
+const CriarPagamentoSchema = z.object({
+  tomador_id: z.number().int().positive().optional(),
+  entidade_id: z.number().int().positive().optional(), // backward compat
+  contrato_id: z.number().int().positive().nullable().optional(),
+  valor_total: z.number().positive(),
+  metodo: z.enum(['PIX', 'BOLETO', 'CREDIT_CARD']).default('PIX'),
+  lote_id: z.number().int().positive().nullable().optional(),
+  parcelas: z.number().int().min(1).max(12).default(1),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let rawBody: unknown;
+    try {
+      rawBody = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Corpo da requisição inválido (JSON esperado)' },
+        { status: 400 }
+      );
+    }
+
+    const parsed = CriarPagamentoSchema.safeParse(rawBody);
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: 'Dados inválidos',
+          details: parsed.error.flatten().fieldErrors,
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       tomador_id,
-      entidade_id, // backward compat
+      entidade_id,
       contrato_id,
       valor_total,
-      metodo = 'PIX', // PIX, BOLETO, CREDIT_CARD
-      lote_id, // ID do lote de emissão (opcional)
-      parcelas = 1, // Número de parcelas (1-12, apenas BOLETO e CREDIT_CARD)
-    } = body;
+      metodo,
+      lote_id,
+      parcelas,
+    } = parsed.data;
 
     const numeroParcelas = Math.max(1, Math.min(12, Number(parcelas) || 1));
 
-    const finalTomadorId = tomador_id || entidade_id;
+    const finalTomadorId = tomador_id ?? entidade_id;
 
     if (!finalTomadorId) {
       return NextResponse.json(
         { error: 'ID do tomador é obrigatório' },
         { status: 400 }
       );
-    }
-
-    if (!valor_total || valor_total <= 0) {
-      return NextResponse.json({ error: 'Valor inválido' }, { status: 400 });
     }
 
     // Buscar dados do tomador
@@ -64,6 +93,18 @@ export async function POST(request: NextRequest) {
         { error: 'Dados incompletos do tomador (CNPJ ou email ausente)' },
         { status: 400 }
       );
+    }
+
+    // Verificar isenção de pagamento
+    const isentoRes = await query(
+      `SELECT isento_pagamento FROM ${tomador.tipo === 'clinica' ? 'clinicas' : 'entidades'} WHERE id = $1`,
+      [finalTomadorId]
+    );
+    if (isentoRes.rows[0]?.isento_pagamento === true) {
+      return NextResponse.json({
+        isento: true,
+        message: 'Tomador isento de pagamento',
+      });
     }
 
     // Converter método de pagamento
@@ -263,10 +304,15 @@ export async function POST(request: NextRequest) {
         const vinculoRes = await query(
           `SELECT vc.id AS vinculo_id,
                   vc.representante_id,
+                  vc.percentual_comissao_comercial,
                   r.asaas_wallet_id,
                   r.modelo_comissionamento,
                   r.percentual_comissao,
-                  r.status AS rep_status
+                  vc.percentual_comissao_representante,
+                  vc.percentual_comissao_comercial,
+                  r.status AS rep_status,
+                  r.valor_custo_fixo_clinica,
+                  r.valor_custo_fixo_entidade
            FROM vinculos_comissao vc
            JOIN representantes r ON r.id = vc.representante_id
            WHERE (vc.entidade_id = $1 OR vc.clinica_id = $1)
@@ -286,71 +332,74 @@ export async function POST(request: NextRequest) {
             asaas_wallet_id: string;
             modelo_comissionamento: 'percentual' | 'custo_fixo';
             percentual_comissao?: number | null;
+            percentual_comissao_representante?: number | null;
+            percentual_comissao_comercial?: number | null;
+            valor_custo_fixo_entidade?: number | null;
+            valor_custo_fixo_clinica?: number | null;
             rep_status: string;
           };
 
           const tipoProduto =
             tomador.tipo === 'clinica' ? 'clinica' : 'entidade';
+
+          // Usar percentual negociado no vínculo; fallback para global do representante
+          const percRepFinal =
+            v.percentual_comissao_representante ??
+            v.percentual_comissao ??
+            undefined;
+          const percComercialFinal =
+            v.percentual_comissao_comercial ?? undefined;
+          const valorCustoFixoRep =
+            tipoProduto === 'clinica'
+              ? (v.valor_custo_fixo_clinica ?? undefined)
+              : (v.valor_custo_fixo_entidade ?? undefined);
+
+          // L3 fix: split deve ser calculado sobre o valor POR PARCELA, não o total.
+          // O Asaas aplica fixedValue a cada parcela individualmente, portanto se
+          // usar valorTotal o rep receria N × valorCorreto.
           const splitResult = calcularSplit(
             v.modelo_comissionamento,
-            Number(valor_total),
+            valorParcela,
             tipoProduto,
-            v.percentual_comissao ?? undefined
+            percRepFinal !== undefined ? Number(percRepFinal) : undefined,
+            percComercialFinal !== undefined
+              ? Number(percComercialFinal)
+              : undefined,
+            valorCustoFixoRep !== undefined
+              ? Number(valorCustoFixoRep)
+              : undefined,
+            { metodoPagamento: metodo }
           );
 
           if (splitResult.viavel) {
-            const splits = montarSplitAsaas(v.asaas_wallet_id, splitResult);
+            // Buscar walletId do comercial (gestor_comercial) do DB
+            const comercialRes = await query(
+              `SELECT u.asaas_wallet_id
+               FROM usuarios u
+               WHERE u.perfil = 'gestor_comercial'
+                 AND u.asaas_wallet_id IS NOT NULL
+                 AND u.ativo = true
+               LIMIT 1`
+            );
+            const comercialWalletId =
+              comercialRes.rows[0]?.asaas_wallet_id ?? null;
+            const splits = montarSplitAsaas(
+              v.asaas_wallet_id,
+              splitResult,
+              comercialWalletId
+            );
             if (splits) {
               await asaasClient.adicionarSplitAoPayment(payment.id, splits);
+              console.log('[ASAAS] ✅ Split configurado:', {
+                parcela: valorParcela,
+                rep: splitResult.valorRepresentante,
+                comercial: splitResult.valorComercial,
+                qwork: splitResult.valorQWork,
+                total_splits: splits.length,
+              });
             }
-
-            // Registrar repasse_split
-            const mesAnoAtual = new Date().toISOString().slice(0, 7); // YYYY-MM
-
-            // Garantir ciclo mensal existe
-            await query(
-              `INSERT INTO ciclos_comissao_mensal (representante_id, mes_ano, valor_total_recebido, status)
-               VALUES ($1, $2, 0, 'aberto')
-               ON CONFLICT (representante_id, mes_ano) DO NOTHING`,
-              [v.representante_id, mesAnoAtual]
-            );
-
-            const cicloRes = await query(
-              `SELECT id FROM ciclos_comissao_mensal
-               WHERE representante_id = $1 AND mes_ano = $2 LIMIT 1`,
-              [v.representante_id, mesAnoAtual]
-            );
-            const cicloId = cicloRes.rows[0]?.id as number | undefined;
-
-            if (cicloId) {
-              await query(
-                `INSERT INTO repasses_split
-                   (representante_id, ciclo_id, vinculo_id, asaas_payment_id,
-                    valor_total_laudo, valor_qwork, valor_representante,
-                    modelo_utilizado, percentual_aplicado, status)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pendente')`,
-                [
-                  v.representante_id,
-                  cicloId,
-                  v.vinculo_id,
-                  payment.id,
-                  Number(valor_total),
-                  splitResult.valorQWork,
-                  splitResult.valorRepresentante,
-                  v.modelo_comissionamento,
-                  splitResult.percentualAplicado ?? null,
-                ]
-              );
-
-              // Acumular no ciclo
-              await query(
-                `UPDATE ciclos_comissao_mensal
-                 SET valor_total_recebido = valor_total_recebido + $1,
-                     atualizado_em = NOW()
-                 WHERE id = $2`,
-                [splitResult.valorRepresentante, cicloId]
-              );
-            }
+            // Comissão será criada automaticamente pelo webhook (criarComissaoAutomatica)
+            // quando o pagamento for confirmado no Asaas
           }
         }
       } catch (splitErr) {

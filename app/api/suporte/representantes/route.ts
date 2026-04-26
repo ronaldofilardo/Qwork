@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     if (busca) {
       params.push(`%${busca}%`);
       conditions.push(
-        `(r.nome ILIKE $${params.length} OR r.email ILIKE $${params.length} OR r.codigo ILIKE $${params.length})`
+        `(r.nome ILIKE $${params.length} OR r.email ILIKE $${params.length})`
       );
     }
 
@@ -57,7 +57,6 @@ export async function GET(request: NextRequest) {
       id: number;
       nome: string;
       email: string | null;
-      codigo: string | null;
       status: string;
       tipo_pessoa: string | null;
       cpf: string | null;
@@ -72,7 +71,6 @@ export async function GET(request: NextRequest) {
          r.id,
          r.nome,
          r.email,
-         r.codigo,
          r.status,
          r.tipo_pessoa,
          r.cpf,
@@ -102,7 +100,6 @@ export async function GET(request: NextRequest) {
         nome: string;
         email: string | null;
         cpf: string | null;
-        codigo: string | null;
         vinculo_id: number;
         vinculado_em: string;
       }>
@@ -115,7 +112,6 @@ export async function GET(request: NextRequest) {
         nome: string;
         email: string | null;
         cpf: string | null;
-        codigo: string | null;
         vinculo_id: number;
         vinculado_em: string;
       }>(
@@ -125,12 +121,10 @@ export async function GET(request: NextRequest) {
            u.nome,
            u.email,
            u.cpf,
-           vp.codigo,
            hc.id AS vinculo_id,
            hc.criado_em AS vinculado_em
          FROM hierarquia_comercial hc
          JOIN usuarios u ON u.id = hc.vendedor_id
-         LEFT JOIN vendedores_perfil vp ON vp.usuario_id = u.id
          WHERE hc.representante_id = ANY($1::int[])
            AND hc.ativo = true
          ORDER BY u.nome ASC`,
@@ -145,7 +139,6 @@ export async function GET(request: NextRequest) {
           nome: v.nome,
           email: v.email,
           cpf: v.cpf,
-          codigo: v.codigo,
           vinculo_id: v.vinculo_id,
           vinculado_em: v.vinculado_em,
         });

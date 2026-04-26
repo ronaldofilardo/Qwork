@@ -59,7 +59,7 @@ export async function POST(
       telefone?: string | null;
       cpf?: string | null;
       cnpj?: string | null;
-      tipo_pessoa: 'pf' | 'pj';
+      tipo_pessoa: 'pj';
       status: string;
       modelo_comissionamento?: string | null;
       asaas_wallet_id?: string | null;
@@ -96,8 +96,8 @@ export async function POST(
 
     if (!walletId) {
       try {
-        const cpfCnpj = rep.tipo_pessoa === 'pf' ? rep.cpf : rep.cnpj;
-        if (!cpfCnpj) throw new Error('CPF/CNPJ não preenchido');
+        const cpfCnpj = rep.cnpj;
+        if (!cpfCnpj) throw new Error('CNPJ não preenchido');
 
         const dados = {
           nome: rep.nome,

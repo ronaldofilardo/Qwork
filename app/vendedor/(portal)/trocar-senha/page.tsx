@@ -13,7 +13,6 @@ export default function TrocarSenhaVendedorPage() {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
-  const [codigoGerado, setCodigoGerado] = useState<string | null>(null);
 
   const validarSenha = (s: string): string | null => {
     if (s.length < 8) return 'Mínimo 8 caracteres';
@@ -54,7 +53,6 @@ export default function TrocarSenhaVendedorPage() {
         return;
       }
       setSucesso(true);
-      if (data.codigo) setCodigoGerado(data.codigo);
       // window.location.href força reload completo: o layout reinicia carregarSessao()
       // com a sessão fresca (primeira_senha_alterada=TRUE) evitando loop do gate
       setTimeout(() => {
@@ -95,20 +93,6 @@ export default function TrocarSenhaVendedorPage() {
               <p className="text-sm font-semibold text-gray-900">
                 Senha alterada com sucesso!
               </p>
-              {codigoGerado && (
-                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl">
-                  <p className="text-xs text-green-600 font-medium mb-1 uppercase tracking-wide">
-                    Seu código de vendedor
-                  </p>
-                  <p className="text-2xl font-mono font-bold text-green-800 tracking-widest">
-                    {codigoGerado}
-                  </p>
-                  <p className="text-xs text-green-500 mt-2">
-                    Guarde este código! Ele é usado para identificação na
-                    plataforma.
-                  </p>
-                </div>
-              )}
               <p className="text-xs text-gray-500 mt-3">
                 Redirecionando para o dashboard…
               </p>

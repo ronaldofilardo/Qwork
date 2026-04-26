@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Send,
   Wrench,
+  Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { Solicitacao, ParcelaDetalhe } from './types';
@@ -33,8 +34,8 @@ interface SolicitacaoCardProps {
   onVerLink: (solicitacao: Solicitacao) => void;
   onVerificarPagamento: (loteId: number) => void;
   onDisponibilizarLink: (loteId: number) => void;
+  onDeletarLink: (loteId: number) => void;
   onVincularRepresentante: (loteId: number) => void;
-  onGerarComissao: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
   formatDate: (dateString: string | null) => string;
 }
@@ -60,8 +61,16 @@ const STATUS_BADGES: Record<
   },
 };
 
-function StatusBadge({ status }: { status: string }) {
-  const badge = STATUS_BADGES[status] || STATUS_BADGES['aguardando_cobranca'];
+function StatusBadge({
+  status,
+  isento = false,
+}: {
+  status: string;
+  isento?: boolean;
+}) {
+  const resolvedStatus = isento ? 'pago' : status;
+  const badge =
+    STATUS_BADGES[resolvedStatus] || STATUS_BADGES['aguardando_cobranca'];
   const Icon = badge.icon;
   return (
     <span
@@ -82,14 +91,34 @@ function PaymentInfo({
   formatCurrency: (v: number | null) => string;
   formatDate: (d: string | null) => string;
 }) {
+  // Oculta para aguardando_cobranca sem valor definido — evita mostrar R$ 0,00 confuso
+  const hasValor =
+    (solicitacao.valor_negociado_vinculo ??
+      solicitacao.valor_por_funcionario ??
+      0) > 0;
+  if (solicitacao.status_pagamento === 'aguardando_cobranca' && !hasValor) {
+    return null;
+  }
+
   return (
     <div className="bg-gray-50 rounded-lg p-4 mb-4">
       <div className="grid grid-cols-3 gap-4">
         <div>
           <p className="text-xs text-gray-600 mb-1">Valor por Funcionário</p>
           <p className="text-lg font-bold text-gray-900">
-            {formatCurrency(solicitacao.valor_por_funcionario)}
+            {formatCurrency(
+              solicitacao.valor_negociado_vinculo ??
+                solicitacao.valor_por_funcionario
+            )}
           </p>
+          {solicitacao.valor_negociado_vinculo &&
+            solicitacao.valor_negociado_vinculo !==
+              solicitacao.valor_por_funcionario && (
+              <p className="text-xs text-gray-500 mt-1">
+                (Negociado:{' '}
+                {formatCurrency(solicitacao.valor_negociado_vinculo)})
+              </p>
+            )}
         </div>
         <div>
           <p className="text-xs text-gray-600 mb-1">Valor Total</p>
@@ -216,6 +245,7 @@ function StatusActions({
   onVerLink,
   onVerificarPagamento,
   onDisponibilizarLink,
+  onDeletarLink,
 }: Omit<
   SolicitacaoCardProps,
   | 'formatCurrency'
@@ -223,68 +253,190 @@ function StatusActions({
   | 'codigoRepInput'
   | 'setCodigoRepInput'
   | 'onVincularRepresentante'
-  | 'onGerarComissao'
 >) {
   const loteId = solicitacao.lote_id;
   const isProcessando = processando === loteId;
+
+  if (solicitacao.isento_pagamento) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-green-700">
+          <CheckCircle className="w-5 h-5" />
+          <span className="font-medium">
+            Tomador isento — nenhuma cobrança é necessária
+          </span>
+        </div>
+        <p className="text-sm text-gray-600">
+          O lote permanece liberado para emissão sem geração de link de
+          pagamento.
+        </p>
+      </div>
+    );
+  }
 
   if (solicitacao.status_pagamento === 'aguardando_cobranca') {
     const temSugestao =
       solicitacao.lead_valor_negociado != null &&
       solicitacao.lead_valor_negociado > 0;
+    const modelo = solicitacao.modelo_comissionamento;
+    const isCustoFixo = modelo === 'custo_fixo';
+    const temRep = !!solicitacao.representante_id;
+
+    // Calcula preview do total com base no input atual
+    const rawNum = (valorInput[loteId] || '').replace(/\D/g, '');
+    const valorDigitado = rawNum ? Number(rawNum) / 100 : 0;
+    const numAvaliacoes = Number(
+      solicitacao.num_avaliacoes_cobradas ??
+        solicitacao.num_avaliacoes_concluidas ??
+        0
+    );
+    const totalPreview = valorDigitado * numAvaliacoes;
+
+    const modeloBadge = modelo ? (
+      <span
+        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+          isCustoFixo
+            ? 'bg-orange-100 text-orange-700 border border-orange-200'
+            : 'bg-blue-100 text-blue-700 border border-blue-200'
+        }`}
+      >
+        {isCustoFixo
+          ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` · R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
+          : [
+              solicitacao.representante_percentual_comissao != null
+                ? `Rep ${solicitacao.representante_percentual_comissao}%`
+                : null,
+              solicitacao.representante_percentual_comissao_comercial != null
+                ? `Com. ${solicitacao.representante_percentual_comissao_comercial}%`
+                : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+      </span>
+    ) : null;
+
     return (
-      <div className="space-y-2">
-        {temSugestao && (
-          <p className="text-xs text-emerald-600">
-            Valor negociado pelo representante:{' '}
-            <strong>
-              R${' '}
-              {Number(solicitacao.lead_valor_negociado).toLocaleString(
-                'pt-BR',
-                { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-              )}
-            </strong>
-          </p>
-        )}
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            placeholder="R$ 0,00"
-            value={valorInput[loteId] || ''}
-            onChange={(e) => {
-              const value = e.target.value.replace(/\D/g, '');
-              const formatted = (Number(value) / 100).toLocaleString('pt-BR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              });
-              setValorInput((prev) => ({
-                ...prev,
-                [loteId]: `R$ ${formatted}`,
-              }));
-            }}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isProcessando}
-          />
-          <button
-            onClick={() => onDefinirValor(loteId)}
-            disabled={isProcessando || !valorInput[loteId]}
-            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-          >
-            <DollarSign className="w-4 h-4" />
-            Definir Valor
-          </button>
-          {solicitacao.valor_por_funcionario &&
-            solicitacao.valor_por_funcionario > 0 && (
-              <button
-                onClick={() => onGerarLink(loteId)}
-                disabled={isProcessando}
-                className="px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              >
-                <Link2 className="w-4 h-4" />
-                Gerar Link
-              </button>
-            )}
+      <div className="mt-1 rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-4">
+        {/* Título da seção */}
+        <div className="flex items-center gap-2">
+          <DollarSign className="w-4 h-4 text-amber-600" />
+          <span className="text-sm font-semibold text-amber-800">
+            Definir Valor de Cobrança
+          </span>
         </div>
+
+        {/* Info rep + modelo + negociado — linha compacta */}
+        {(temRep || temSugestao || modelo) && (
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-white rounded-lg px-3 py-2.5 border border-amber-100">
+            {temRep && (
+              <span className="flex items-center gap-1.5 text-sm">
+                <UserCheck className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+                <span className="font-medium text-gray-800">
+                  {solicitacao.representante_nome}
+                </span>
+                <span className="text-gray-400 text-xs">
+                  · #{solicitacao.representante_id}
+                  {solicitacao.representante_tipo_pessoa && (
+                    <>
+                      {' '}
+                      ({solicitacao.representante_tipo_pessoa.toUpperCase()})
+                    </>
+                  )}
+                </span>
+              </span>
+            )}
+            {modeloBadge}
+            {temSugestao && (
+              <span className="text-sm text-emerald-700 font-medium">
+                Negociado:{' '}
+                <strong>
+                  R${' '}
+                  {Number(solicitacao.lead_valor_negociado).toLocaleString(
+                    'pt-BR',
+                    { minimumFractionDigits: 2 }
+                  )}
+                </strong>
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Input de valor + botão */}
+        <div className="flex items-end gap-3">
+          <div className="flex-1 min-w-0">
+            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+              Valor por avaliação
+            </label>
+            <input
+              type="text"
+              placeholder="R$ 0,00"
+              value={valorInput[loteId] || ''}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '');
+                const formatted = (Number(value) / 100).toLocaleString(
+                  'pt-BR',
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                );
+                setValorInput((prev) => ({
+                  ...prev,
+                  [loteId]: `R$ ${formatted}`,
+                }));
+              }}
+              className="w-full px-4 py-2.5 border border-amber-300 rounded-lg bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent text-gray-900 font-medium"
+              disabled={isProcessando}
+            />
+            {temSugestao && (
+              <p className="mt-1 text-xs text-gray-500">
+                Sugestão do lead: R${' '}
+                {Number(solicitacao.lead_valor_negociado).toLocaleString(
+                  'pt-BR',
+                  { minimumFractionDigits: 2 }
+                )}
+              </p>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={() => onDefinirValor(loteId)}
+              disabled={isProcessando || !valorInput[loteId]}
+              className="px-5 py-2.5 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+            >
+              <DollarSign className="w-4 h-4" />
+              {isProcessando ? 'Salvando...' : 'Definir Valor'}
+            </button>
+            {solicitacao.valor_por_funcionario != null &&
+              solicitacao.valor_por_funcionario > 0 && (
+                <button
+                  onClick={() => onGerarLink(loteId)}
+                  disabled={isProcessando}
+                  className="px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 whitespace-nowrap"
+                >
+                  <Link2 className="w-4 h-4" />
+                  Gerar Link
+                </button>
+              )}
+          </div>
+        </div>
+
+        {/* Preview do total */}
+        {valorDigitado > 0 && numAvaliacoes > 0 && (
+          <div className="flex items-center gap-2 text-sm bg-white rounded-lg px-3 py-2 border border-amber-200">
+            <span className="text-gray-500">
+              {numAvaliacoes} {numAvaliacoes === 1 ? 'avaliação' : 'avaliações'}{' '}
+              &times; R${' '}
+              {valorDigitado.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+            <span className="text-gray-400">=</span>
+            <span className="font-bold text-gray-900">
+              R${' '}
+              {totalPreview.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+              })}
+            </span>
+          </div>
+        )}
       </div>
     );
   }
@@ -326,7 +478,7 @@ function StatusActions({
             )}
           </p>
         )}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => onVerLink(solicitacao)}
             className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
@@ -343,6 +495,14 @@ function StatusActions({
               className={`w-4 h-4 ${isProcessando ? 'animate-spin' : ''}`}
             />
             {isProcessando ? 'Verificando...' : 'Verificar Pagamento'}
+          </button>
+          <button
+            onClick={() => onDeletarLink(loteId)}
+            disabled={isProcessando}
+            className="px-6 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Deletar Link
           </button>
         </div>
       </div>
@@ -408,7 +568,6 @@ function ComissaoSection({
   codigoRepInput,
   setCodigoRepInput,
   onVincularRepresentante,
-  onGerarComissao,
   formatCurrency,
 }: {
   solicitacao: Solicitacao;
@@ -418,7 +577,6 @@ function ComissaoSection({
     React.SetStateAction<Record<number, string>>
   >;
   onVincularRepresentante: (loteId: number) => void;
-  onGerarComissao: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
 }) {
   const loteId = solicitacao.lote_id;
@@ -448,13 +606,55 @@ function ComissaoSection({
                 {solicitacao.representante_nome}
               </p>
               <p className="text-xs text-gray-500">
-                Código: {solicitacao.representante_codigo}
+                ID: #{solicitacao.representante_id}
                 {solicitacao.representante_tipo_pessoa && (
                   <span className="ml-2 uppercase">
                     ({solicitacao.representante_tipo_pessoa})
                   </span>
                 )}
               </p>
+              {(() => {
+                const modelo = solicitacao.modelo_comissionamento;
+                if (!modelo) return null;
+                const isCF = modelo === 'custo_fixo';
+                const percRep = solicitacao.representante_percentual_comissao;
+                const percCom =
+                  solicitacao.representante_percentual_comissao_comercial;
+                return (
+                  <span
+                    className={`mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                      isCF
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}
+                  >
+                    {isCF
+                      ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` · R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
+                      : [
+                          percRep != null ? `Rep ${percRep}%` : '% Percentual',
+                          percCom != null ? `Com. ${percCom}%` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')}
+                  </span>
+                );
+              })()}
+              {solicitacao.lead_valor_negociado != null &&
+                solicitacao.lead_valor_negociado > 0 && (
+                  <p className="text-xs text-emerald-600 mt-0.5">
+                    Negociado:{' '}
+                    <strong>
+                      R${' '}
+                      {Number(solicitacao.lead_valor_negociado).toLocaleString(
+                        'pt-BR',
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
+                    </strong>
+                  </p>
+                )}
             </div>
             {isPago &&
               (() => {
@@ -491,23 +691,12 @@ function ComissaoSection({
                   );
                 }
 
-                // Fallback: lote antigo sem provisionamento automático — botão visível
+                // Lote sem provisionamento automático — aguardando webhook
                 return (
-                  <div className="flex flex-col items-end gap-1">
-                    {geradas > 0 && (
-                      <span className="text-xs text-purple-600">
-                        {geradas}/{totalParcelas} com comissão
-                      </span>
-                    )}
-                    <button
-                      onClick={() => onGerarComissao(loteId)}
-                      disabled={isProcessando}
-                      className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                    >
-                      <Coins className="w-4 h-4" />
-                      {isProcessando ? 'Gerando...' : 'Gerar Comissão'}
-                    </button>
-                  </div>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                    <Clock className="w-3.5 h-3.5" />
+                    Aguardando confirmação via gateway
+                  </span>
                 );
               })()}
           </div>
@@ -524,7 +713,44 @@ function ComissaoSection({
                     {formatCurrency(solicitacao.valor_total_calculado)}
                   </p>
                 </div>
-                {solicitacao.representante_percentual_comissao != null ? (
+                {solicitacao.modelo_comissionamento === 'custo_fixo' ? (
+                  <div>
+                    <p className="text-gray-500">Comissão (custo fixo)</p>
+                    {(() => {
+                      const negociado =
+                        solicitacao.valor_negociado_vinculo ??
+                        solicitacao.lead_valor_negociado;
+                      const custo = solicitacao.valor_custo_fixo_snapshot;
+                      if (negociado != null && custo != null) {
+                        const totalParcelas =
+                          solicitacao.pagamento_parcelas ?? 1;
+                        const valorTotal = Number(
+                          solicitacao.valor_total_calculado
+                        );
+                        const ratio =
+                          negociado > 0 ? (negociado - custo) / negociado : 0;
+                        const valorComissao =
+                          Math.round(ratio * valorTotal * 100) / 100;
+                        return (
+                          <div>
+                            <p className="font-bold text-purple-600">
+                              {formatCurrency(valorComissao)}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              R$ {negociado.toFixed(2)} − R$ {custo.toFixed(2)}
+                              /avaliação × {totalParcelas}p
+                            </p>
+                          </div>
+                        );
+                      }
+                      return (
+                        <p className="font-medium text-orange-600">
+                          ⚠️ Valor negociado não definido
+                        </p>
+                      );
+                    })()}
+                  </div>
+                ) : solicitacao.representante_percentual_comissao != null ? (
                   <div>
                     <p className="text-gray-500">
                       Comissão ({solicitacao.representante_percentual_comissao}
@@ -585,18 +811,40 @@ function ComissaoSection({
   );
 }
 
+const STATUS_BORDER: Record<string, string> = {
+  aguardando_cobranca: 'border-l-4 border-l-amber-400',
+  aguardando_pagamento: 'border-l-4 border-l-blue-400',
+  pago: 'border-l-4 border-l-green-400',
+};
+
 export function SolicitacaoCard(props: SolicitacaoCardProps) {
   const { solicitacao, formatCurrency, formatDate } = props;
+  const isAguardandoCobranca =
+    solicitacao.status_pagamento === 'aguardando_cobranca';
+  const borderClass =
+    STATUS_BORDER[solicitacao.status_pagamento] ??
+    'border-l-4 border-l-gray-300';
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+    <div
+      className={`bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow ${borderClass}`}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-lg font-semibold text-gray-900">
               Lote #{solicitacao.lote_id}
             </h3>
-            <StatusBadge status={solicitacao.status_pagamento} />
+            <StatusBadge
+              status={solicitacao.status_pagamento}
+              isento={solicitacao.isento_pagamento}
+            />
+            {solicitacao.isento_pagamento && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-300">
+                <CheckCircle className="w-3 h-3" />
+                Isento
+              </span>
+            )}
             {solicitacao.tipo_cobranca === 'manutencao' && (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-300">
                 <Wrench className="w-3 h-3" />
@@ -621,7 +869,8 @@ export function SolicitacaoCard(props: SolicitacaoCardProps) {
               <Users className="w-4 h-4 text-gray-500" />
               <span className="text-gray-600">Avaliações:</span>
               <span className="font-medium text-gray-900">
-                {solicitacao.num_avaliacoes_concluidas}
+                {solicitacao.num_avaliacoes_cobradas ??
+                  solicitacao.num_avaliacoes_concluidas}
               </span>
             </div>
             <div>
@@ -642,15 +891,17 @@ export function SolicitacaoCard(props: SolicitacaoCardProps) {
 
       <StatusActions {...props} />
 
-      <ComissaoSection
-        solicitacao={solicitacao}
-        processando={props.processando}
-        codigoRepInput={props.codigoRepInput}
-        setCodigoRepInput={props.setCodigoRepInput}
-        onVincularRepresentante={props.onVincularRepresentante}
-        onGerarComissao={props.onGerarComissao}
-        formatCurrency={formatCurrency}
-      />
+      {/* ComissaoSection: omitida para aguardando_cobranca (info inline no StatusActions) */}
+      {!isAguardandoCobranca && (
+        <ComissaoSection
+          solicitacao={solicitacao}
+          processando={props.processando}
+          codigoRepInput={props.codigoRepInput}
+          setCodigoRepInput={props.setCodigoRepInput}
+          onVincularRepresentante={props.onVincularRepresentante}
+          formatCurrency={formatCurrency}
+        />
+      )}
     </div>
   );
 }

@@ -2,7 +2,7 @@
 // Utilitários para converter dados entre o sistema QWork e API Asaas
 
 import type { AsaasBillingType, AsaasPaymentStatus } from './types';
-import type { MetodoPagamento, StatusPagamento } from '@/lib/types/contratacao';
+import type { MetodoPagamento, StatusPagamento } from '@/lib/types/pagamento';
 
 /**
  * Mapear método de pagamento do QWork para billingType do Asaas

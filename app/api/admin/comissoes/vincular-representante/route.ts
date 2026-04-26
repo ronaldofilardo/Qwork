@@ -1,12 +1,12 @@
 /**
  * POST /api/admin/comissoes/vincular-representante
- * Admin vincula um representante (por código) a uma entidade.
+ * Admin vincula um representante (por id numérico) a uma entidade.
  * Usado quando o card de pagamento não tem representante associado.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { requireRole } from '@/lib/session';
 import {
-  vincularRepresentantePorCodigo,
+  vincularRepresentantePorId,
   autoConvertirLeadPorCnpj,
 } from '@/lib/db/comissionamento';
 import { query } from '@/lib/db';
@@ -15,20 +15,25 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    await requireRole('comercial', false);
+    await requireRole(['admin', 'suporte', 'comercial'], false);
     const body = await request.json();
 
-    const { codigo, entidade_id, clinica_id, valor_negociado, cnpj } = body;
+    const { representante_id, entidade_id, clinica_id, valor_negociado, cnpj } =
+      body;
 
-    if (!codigo?.trim() || (!entidade_id && !clinica_id)) {
+    const repIdNum = Number(representante_id);
+    if (!Number.isFinite(repIdNum) || (!entidade_id && !clinica_id)) {
       return NextResponse.json(
-        { error: 'Campos obrigatórios: codigo e (entidade_id ou clinica_id)' },
+        {
+          error:
+            'Campos obrigatórios: representante_id (número) e (entidade_id ou clinica_id)',
+        },
         { status: 400 }
       );
     }
 
-    const result = await vincularRepresentantePorCodigo(
-      codigo,
+    const result = await vincularRepresentantePorId(
+      repIdNum,
       entidade_id,
       clinica_id
     );
@@ -36,8 +41,7 @@ export async function POST(request: NextRequest) {
     if (!result) {
       return NextResponse.json(
         {
-          error:
-            'Representante não encontrado ou inativo para o código informado.',
+          error: 'Representante não encontrado ou inativo para o id informado.',
         },
         { status: 404 }
       );

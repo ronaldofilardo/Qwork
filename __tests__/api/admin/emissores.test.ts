@@ -39,7 +39,8 @@ interface MockEmissor {
   nome: string;
   email: string;
   ativo: boolean;
-  perfil: 'emissor' | 'suporte' | 'comercial';
+  perfil: 'emissor' | 'suporte' | 'comercial' | 'admin';
+  asaas_wallet_id?: string | null;
   criado_em: string;
   atualizado_em: string;
   total_laudos_emitidos?: number;
@@ -119,9 +120,9 @@ describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial
       expect(perfis).toContain('suporte');
       expect(perfis).toContain('comercial');
 
-      // Assert: Query deve filtrar os 3 tipos de usuario
+      // Assert: Query deve filtrar os 4 tipos de usuario (incluindo admin)
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining("'emissor', 'suporte', 'comercial'"),
+        expect.stringContaining("'emissor', 'suporte', 'comercial', 'admin'"),
         [],
         expect.objectContaining({ perfil: 'admin' })
       );
@@ -248,7 +249,11 @@ describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial
 
       // Assert: Verificar log de auditoria
       expect(mockLogAudit).toHaveBeenCalledWith(
-        expect.objectContaining({ resource: 'usuarios', action: 'INSERT', resourceId: '12345678909' }),
+        expect.objectContaining({
+          resource: 'usuarios',
+          action: 'INSERT',
+          resourceId: '12345678909',
+        }),
         expect.objectContaining({ cpf: 'admin123' })
       );
     });
@@ -332,7 +337,11 @@ describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial
 
       // Assert: Verificar log de auditoria
       expect(mockLogAudit).toHaveBeenCalledWith(
-        expect.objectContaining({ resource: 'usuarios', action: 'UPDATE', resourceId: '12345678909' }),
+        expect.objectContaining({
+          resource: 'usuarios',
+          action: 'UPDATE',
+          resourceId: '12345678909',
+        }),
         expect.objectContaining({ cpf: 'admin123' })
       );
     });

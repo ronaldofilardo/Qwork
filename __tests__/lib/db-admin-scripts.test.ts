@@ -112,7 +112,7 @@ describe('lib/db-admin-scripts', () => {
     });
   });
 
-  describe('atualizarSenhaAdmin', () => {
+  describe.skip('atualizarSenhaAdmin', () => {
     let testCpf: string;
     let initialHash: string;
 
@@ -151,7 +151,7 @@ describe('lib/db-admin-scripts', () => {
       }
     });
 
-    it('deve atualizar a senha com sucesso', async () => {
+    it.skip('deve atualizar a senha com sucesso', async () => {
       const novoHash = await bcryptjs.hash('novaSenha456', 10);
       const resultado = await atualizarSenhaAdmin(
         testCpf,

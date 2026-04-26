@@ -30,9 +30,9 @@ export default function PagamentosContent() {
     handleGerarLink,
     handleVerLink,
     handleVerificarPagamento,
+    handleDeletarLink,
     handleDisponibilizarLink,
     handleVincularRepresentante,
-    handleGerarComissao,
     getSolicitacoesFiltradas,
     getTabCount,
   } = usePagamentosAdmin();
@@ -95,8 +95,8 @@ export default function PagamentosContent() {
           onVerLink={handleVerLink}
           onVerificarPagamento={handleVerificarPagamento}
           onDisponibilizarLink={handleDisponibilizarLink}
+          onDeletarLink={handleDeletarLink}
           onVincularRepresentante={handleVincularRepresentante}
-          onGerarComissao={handleGerarComissao}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
         />
@@ -128,8 +128,8 @@ export default function PagamentosContent() {
               onVerLink={handleVerLink}
               onVerificarPagamento={handleVerificarPagamento}
               onDisponibilizarLink={handleDisponibilizarLink}
+              onDeletarLink={handleDeletarLink}
               onVincularRepresentante={handleVincularRepresentante}
-              onGerarComissao={handleGerarComissao}
               formatCurrency={formatCurrency}
               formatDate={formatDate}
             />

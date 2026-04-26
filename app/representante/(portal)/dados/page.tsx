@@ -19,6 +19,7 @@ interface DadosRep {
   status: string;
   criado_em: string;
   // Bancários
+  asaas_wallet_id: string | null;
   banco_codigo: string | null;
   agencia: string | null;
   conta: string | null;
@@ -41,13 +42,13 @@ type CampoEditavel =
   | 'tipo_conta'
   | 'titular_conta'
   | 'pix_chave'
-  | 'pix_tipo';
+  | 'pix_tipo'
+  | 'asaas_wallet_id';
 
 const STATUS_BADGE: Record<string, string> = {
   ativo: 'bg-blue-100 text-blue-700',
   apto: 'bg-green-100 text-green-700',
   apto_pendente: 'bg-yellow-100 text-yellow-700',
-  apto_bloqueado: 'bg-orange-100 text-orange-700',
   suspenso: 'bg-red-100 text-red-700',
   desativado: 'bg-gray-100 text-gray-600',
 };
@@ -404,18 +405,34 @@ export default function DadosRepresentante() {
             <span className="text-sm text-gray-900">{dados.cpf ?? '—'}</span>
           </div>
         ) : (
-          <div className="flex items-center justify-between py-3 border-b">
-            <span className="text-sm text-gray-500 flex items-center gap-1">
-              CNPJ
-              <span
-                title="Não pode ser alterado"
-                className="text-gray-400 cursor-help"
-              >
-                🔒
+          <>
+            <div className="flex items-center justify-between py-3 border-b">
+              <span className="text-sm text-gray-500 flex items-center gap-1">
+                CNPJ
+                <span
+                  title="Não pode ser alterado"
+                  className="text-gray-400 cursor-help"
+                >
+                  🔒
+                </span>
               </span>
-            </span>
-            <span className="text-sm text-gray-900">{dados.cnpj ?? '—'}</span>
-          </div>
+              <span className="text-sm text-gray-900">{dados.cnpj ?? '—'}</span>
+            </div>
+            {dados.cpf && (
+              <div className="flex items-center justify-between py-3 border-b">
+                <span className="text-sm text-gray-500 flex items-center gap-1">
+                  CPF
+                  <span
+                    title="CPF vinculado ao CNPJ"
+                    className="text-gray-400 cursor-help"
+                  >
+                    🔒
+                  </span>
+                </span>
+                <span className="text-sm text-gray-900">{dados.cpf}</span>
+              </div>
+            )}
+          </>
         )}
 
         {/* Tipo Pessoa: read-only */}
@@ -645,6 +662,28 @@ export default function DadosRepresentante() {
               <option value="telefone">Telefone</option>
               <option value="aleatoria">Chave Aleatória</option>
             </select>
+          )}
+        </CampoInline>
+
+        <CampoInline
+          label="Wallet ID Asaas"
+          campo="asaas_wallet_id"
+          valor={dados.asaas_wallet_id}
+          campoEditando={campoEditando}
+          onEditar={handleEditar}
+          onCancelar={handleCancelar}
+          onSalvar={handleSalvar}
+          salvando={salvando}
+        >
+          {(v, onChange) => (
+            <input
+              type="text"
+              value={v}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder="Informe seu wallet ID do Asaas"
+              className="w-full border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
           )}
         </CampoInline>
 

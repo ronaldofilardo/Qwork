@@ -18,6 +18,7 @@ import {
   foiExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
 import ModalSetorRelatorioPDF from '@/components/ModalSetorRelatorioPDF';
+import FiltroColunaLocal from './FiltroColunaLocal';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -629,115 +630,6 @@ export default function DetalhesLotePage() {
     ].sort() as string[];
   }, [funcionarios]);
 
-  // Componente de filtro por coluna
-  const FiltroColuna = ({
-    coluna,
-    titulo,
-  }: {
-    coluna: keyof typeof filtrosColuna;
-    titulo: string;
-  }) => {
-    const valores = getValoresUnicos(coluna);
-    const hasFiltros = filtrosColuna[coluna].length > 0;
-    const isGrupoColumn = coluna.startsWith('g');
-
-    return (
-      <div className="relative inline-block">
-        <button
-          className={`text-xs px-1 py-0.5 rounded ${
-            hasFiltros
-              ? 'bg-blue-600 text-white font-bold'
-              : 'text-gray-600 hover:bg-gray-200'
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            const dropdown = document.getElementById(`dropdown-${coluna}`);
-            if (dropdown) {
-              dropdown.classList.toggle('hidden');
-            }
-          }}
-          title={
-            isGrupoColumn
-              ? hasFiltros
-                ? `${filtrosColuna[coluna].length} filtro(s) ativo(s)`
-                : 'Filtrar'
-              : ''
-          }
-        >
-          {isGrupoColumn ? (
-            hasFiltros ? (
-              <span className="font-bold">{filtrosColuna[coluna].length}</span>
-            ) : (
-              <span>▼</span>
-            )
-          ) : (
-            <>
-              <span>🔽</span>
-              {titulo && <span>{titulo}</span>}
-              {hasFiltros && (
-                <span
-                  className={`${
-                    titulo ? 'ml-1' : ''
-                  } bg-blue-600 text-white rounded-full px-1 text-xs`}
-                >
-                  {filtrosColuna[coluna].length}
-                </span>
-              )}
-            </>
-          )}
-        </button>
-
-        <div
-          id={`dropdown-${coluna}`}
-          className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-10 hidden max-h-60 overflow-y-auto"
-        >
-          <div className="p-2">
-            {hasFiltros && (
-              <div className="flex items-center justify-end mb-2 pb-2 border-b">
-                <button
-                  onClick={() => {
-                    setFiltrosColuna((prev) => ({ ...prev, [coluna]: [] }));
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  ✕ Limpar
-                </button>
-              </div>
-            )}
-            {valores.length === 0 ? (
-              <div className="text-sm text-gray-500 py-2">
-                Nenhum valor disponível
-              </div>
-            ) : (
-              valores.map((valor) => {
-                const isChecked = filtrosColuna[coluna].includes(valor);
-                return (
-                  <label
-                    key={valor}
-                    className="flex items-center gap-2 py-1 hover:bg-gray-50 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleFiltroColuna(coluna, valor)}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span
-                      className="text-sm text-gray-700 truncate"
-                      title={valor}
-                    >
-                      {valor || '(vazio)'}
-                    </span>
-                  </label>
-                );
-              })
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const abrirModalInativar = (
     avaliacaoId: number,
     nome: string,
@@ -1017,7 +909,7 @@ export default function DetalhesLotePage() {
 
           <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
             <div className="flex items-center justify-between mb-2">
-              <Clock className="text-orange-500" size={32} />
+              <Clock className="text-amber-500" size={32} />
               <span className="text-3xl font-bold text-gray-900">
                 {estatisticas.funcionarios_pendentes}
               </span>
@@ -1328,25 +1220,53 @@ export default function DetalhesLotePage() {
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Nome</span>
-                      <FiltroColuna coluna="nome" titulo="Nome" />
+                      <FiltroColunaLocal
+                        coluna="nome"
+                        titulo="Nome"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>CPF</span>
-                      <FiltroColuna coluna="cpf" titulo="CPF" />
+                      <FiltroColunaLocal
+                        coluna="cpf"
+                        titulo="CPF"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Nível</span>
-                      <FiltroColuna coluna="nivel_cargo" titulo="Nível" />
+                      <FiltroColunaLocal
+                        coluna="nivel_cargo"
+                        titulo="Nível"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Status</span>
-                      <FiltroColuna coluna="status" titulo="Status" />
+                      <FiltroColunaLocal
+                        coluna="status"
+                        titulo="Status"
+                        filtrosColuna={filtrosColuna}
+                        setFiltrosColuna={setFiltrosColuna}
+                        getValoresUnicos={getValoresUnicos}
+                        toggleFiltroColuna={toggleFiltroColuna}
+                      />
                     </div>
                   </th>
                   <th className="px-2 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-28">

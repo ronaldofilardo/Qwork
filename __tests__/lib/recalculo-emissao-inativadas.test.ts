@@ -13,6 +13,14 @@ import type { QueryResult } from 'pg';
 
 jest.mock('@/lib/db');
 
+jest.mock('@/lib/db-security', () => ({
+  transactionWithContext: (cb: any) => {
+    const { query } = require('@/lib/db');
+    return cb(query);
+  },
+  queryWithContext: jest.fn(),
+}));
+
 const mockQuery = jest.mocked(query, true);
 
 describe('Recalculo de status (sem emissão automática)', () => {
@@ -27,7 +35,13 @@ describe('Recalculo de status (sem emissão automática)', () => {
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // 2) stats: total=5, ativas=3, concluidas=3, iniciadas=0 -> concluido
+    // 2) pg_advisory_xact_lock (inside transactionWithContext callback)
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
+    } as unknown as QueryResult<unknown>);
+
+    // 3) stats: total=5, ativas=3, concluidas=3, inativadas=2, liberadas=5 -> concluido
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -36,21 +50,28 @@ describe('Recalculo de status (sem emissão automática)', () => {
           concluidas: '3',
           inativadas: '2',
           iniciadas: '0',
+          liberadas: '5',
         },
       ],
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // 3) SELECT status FROM lotes_avaliacao
+    // 4) SELECT status FROM lotes_avaliacao
     mockQuery.mockResolvedValueOnce({
       rows: [{ status: 'ativo' }],
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // 4) UPDATE lotes_avaliacao (status)
+    // 5) UPDATE lotes_avaliacao (status)
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
+    } as unknown as QueryResult<unknown>);
+
+    // 6) SELECT loteInfo for notification (returns empty - no INSERT)
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
     } as unknown as QueryResult<unknown>);
 
     await recalcularStatusLote(1001);
@@ -69,7 +90,13 @@ describe('Recalculo de status (sem emissão automática)', () => {
   });
 
   it('recalcularStatusLotePorId deve marcar concluído quando (concluidas + inativadas) = total', async () => {
-    // stats for loteId 77: total 4, ativas 2, concluidas 2, iniciadas 0 -> concluido
+    // 1) pg_advisory_xact_lock
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
+    } as unknown as QueryResult<unknown>);
+
+    // 2) stats for loteId 77: total 4, concluidas 2, inativadas 2, liberadas 4 -> concluido
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -78,21 +105,28 @@ describe('Recalculo de status (sem emissão automática)', () => {
           concluidas: '2',
           inativadas: '2',
           iniciadas: '0',
+          liberadas: '4',
         },
       ],
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // SELECT status FROM lotes_avaliacao
+    // 3) SELECT status FROM lotes_avaliacao
     mockQuery.mockResolvedValueOnce({
       rows: [{ status: 'ativo' }],
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // UPDATE lotes_avaliacao
+    // 4) UPDATE lotes_avaliacao
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,
+    } as unknown as QueryResult<unknown>);
+
+    // 5) SELECT loteInfo for notification (returns empty - no INSERT)
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
     } as unknown as QueryResult<unknown>);
 
     const res = await recalcularStatusLotePorId(77);
@@ -102,6 +136,13 @@ describe('Recalculo de status (sem emissão automática)', () => {
   });
 
   it('deve cancelar lote se todas avaliações forem inativadas (ativas = 0)', async () => {
+    // 1) pg_advisory_xact_lock
+    mockQuery.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
+    } as unknown as QueryResult<unknown>);
+
+    // 2) stats: total=3, all inativadas -> cancelado
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -110,18 +151,19 @@ describe('Recalculo de status (sem emissão automática)', () => {
           concluidas: '0',
           inativadas: '3',
           iniciadas: '0',
+          liberadas: '3',
         },
       ],
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // SELECT status
+    // 3) SELECT status
     mockQuery.mockResolvedValueOnce({
       rows: [{ status: 'ativo' }],
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // UPDATE to cancel
+    // 4) UPDATE to cancel
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 1,

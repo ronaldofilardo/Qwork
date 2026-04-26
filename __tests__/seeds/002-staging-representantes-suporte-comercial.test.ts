@@ -54,16 +54,16 @@ describe('1. Existência e transação', () => {
 // 2. Fase 1 — Disable/Enable trigger
 // ---------------------------------------------------------------------------
 
-describe('2. Disable/Enable trigger trg_representante_codigo', () => {
-  it('desabilita trigger antes dos INSERTs', () => {
+describe('2. Disable/Enable trigger trg_representante_codigo (OBSOLETO — removido na migration 1227)', () => {
+  it.skip('desabilita trigger antes dos INSERTs', () => {
     expect(src).toMatch(/DISABLE TRIGGER trg_representante_codigo/i);
   });
 
-  it('reabilita trigger após INSERTs', () => {
+  it.skip('reabilita trigger após INSERTs', () => {
     expect(src).toMatch(/ENABLE TRIGGER trg_representante_codigo/i);
   });
 
-  it('DISABLE aparece antes do ENABLE', () => {
+  it.skip('DISABLE aparece antes do ENABLE', () => {
     const disablePos = src.search(/DISABLE TRIGGER trg_representante_codigo/i);
     const enablePos = src.search(/ENABLE TRIGGER trg_representante_codigo/i);
     expect(disablePos).toBeGreaterThan(-1);
@@ -75,13 +75,13 @@ describe('2. Disable/Enable trigger trg_representante_codigo', () => {
 // 3. Fase 2 — Renumeração Ronaldo '1' → '3'
 // ---------------------------------------------------------------------------
 
-describe('3. Renumeração representante Ronaldo (88593998070)', () => {
-  it('atualiza cpf 88593998070 de código "1" para "3"', () => {
+describe('3. Renumeração representante Ronaldo (88593998070) (OBSOLETO — campo codigo removido)', () => {
+  it.skip('atualiza cpf 88593998070 de código "1" para "3"', () => {
     expect(src).toMatch(/UPDATE.*representantes.*SET.*codigo\s*=\s*'3'/is);
     expect(src).toMatch(/cpf\s*=\s*'88593998070'/);
   });
 
-  it('guard: só atualiza se código atual é "1"', () => {
+  it.skip('guard: só atualiza se código atual é "1"', () => {
     expect(src).toMatch(
       /codigo\s*=\s*'1'.*88593998070|88593998070.*codigo\s*=\s*'1'/is
     );
@@ -92,12 +92,12 @@ describe('3. Renumeração representante Ronaldo (88593998070)', () => {
 // 4. Fase 3 e 4 — INSERT representantes Suporte e Comercial
 // ---------------------------------------------------------------------------
 
-describe('4. INSERT representante Suporte (11111111111, código=1)', () => {
+describe('4. INSERT representante Suporte (11111111111) (OBSOLETO — campo codigo removido)', () => {
   it('insere CPF 11111111111', () => {
     expect(src).toMatch(/'11111111111'/);
   });
 
-  it('define codigo = "1"', () => {
+  it.skip('define codigo = "1"', () => {
     // Verifica que o bloco do suporte atribui código '1'
     const suporteBlock = src.substring(
       src.indexOf('11111111111'),
@@ -117,12 +117,12 @@ describe('4. INSERT representante Suporte (11111111111, código=1)', () => {
   });
 });
 
-describe('5. INSERT representante Comercial (22222222222, código=2)', () => {
+describe('5. INSERT representante Comercial (22222222222) (OBSOLETO — campo codigo removido)', () => {
   it('insere CPF 22222222222', () => {
     expect(src).toMatch(/'22222222222'/);
   });
 
-  it('define codigo = "2"', () => {
+  it.skip('define codigo = "2"', () => {
     const comercialBlock = src.substring(src.indexOf('22222222222'));
     expect(comercialBlock).toMatch(/'2'/);
   });
@@ -142,14 +142,14 @@ describe('5. INSERT representante Comercial (22222222222, código=2)', () => {
 // 5. Fase 6 — Ajuste da sequence
 // ---------------------------------------------------------------------------
 
-describe('6. Ajuste de seq_representante_codigo', () => {
-  it('chama setval com valor 3', () => {
+describe('6. Ajuste de seq_representante_codigo (OBSOLETO — removido na migration 1227)', () => {
+  it.skip('chama setval com valor 3', () => {
     expect(src).toMatch(
       /setval\s*\(\s*'(public\.)?seq_representante_codigo'\s*,\s*3\s*\)/i
     );
   });
 
-  it('contém guard que só ajusta se current < 3', () => {
+  it.skip('contém guard que só ajusta se current < 3', () => {
     expect(src).toMatch(/v_current\s*<\s*3/);
   });
 });

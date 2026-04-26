@@ -2,6 +2,19 @@
 
 export type LotePageVariant = 'entidade' | 'rh';
 
+export interface TomadorInfo {
+  nome: string;
+  cnpj: string;
+  email: string;
+  telefone: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  responsavel_nome: string;
+  responsavel_cpf: string;
+  responsavel_email: string;
+}
+
 export interface Estatisticas {
   total: number;
   concluidas: number;
@@ -53,6 +66,16 @@ export interface FiltrosColuna {
   cpf: string[];
   nivel_cargo: string[];
   status: string[];
+  g1: string[];
+  g2: string[];
+  g3: string[];
+  g4: string[];
+  g5: string[];
+  g6: string[];
+  g7: string[];
+  g8: string[];
+  g9: string[];
+  g10: string[];
 }
 
 export const FILTROS_COLUNA_VAZIO: FiltrosColuna = {
@@ -60,6 +83,16 @@ export const FILTROS_COLUNA_VAZIO: FiltrosColuna = {
   cpf: [],
   nivel_cargo: [],
   status: [],
+  g1: [],
+  g2: [],
+  g3: [],
+  g4: [],
+  g5: [],
+  g6: [],
+  g7: [],
+  g8: [],
+  g9: [],
+  g10: [],
 };
 
 export interface ModalInativarState {

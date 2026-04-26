@@ -2,7 +2,6 @@ export interface RepProfile {
   id: number;
   nome: string;
   email: string;
-  codigo: string;
   status: string;
   tipo_pessoa: string;
   cpf: string | null;

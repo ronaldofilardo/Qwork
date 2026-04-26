@@ -15,7 +15,10 @@ import { useLaudo } from '@/app/emissor/laudo/[loteId]/useLaudo';
 import toast from 'react-hot-toast';
 import type { LaudoPadronizado } from '@/lib/laudo-tipos';
 
-jest.mock('next/navigation');
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(),
+  useParams: jest.fn(),
+}));
 jest.mock('react-hot-toast');
 
 const mockUseRouter = useRouter as jest.MockedFunction<typeof useRouter>;
@@ -24,6 +27,20 @@ const mockToast = toast as jest.Mocked<typeof toast>;
 
 // Mock global fetch
 global.fetch = jest.fn();
+
+// Setup URL mocks for jsdom (createObjectURL/revokeObjectURL not available by default)
+beforeAll(() => {
+  Object.defineProperty(URL, 'createObjectURL', {
+    value: jest.fn(),
+    writable: true,
+    configurable: true,
+  });
+  Object.defineProperty(URL, 'revokeObjectURL', {
+    value: jest.fn(),
+    writable: true,
+    configurable: true,
+  });
+});
 
 describe('useLaudo', () => {
   const mockRouter = {
@@ -57,6 +74,7 @@ describe('useLaudo', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockReset();
     mockUseRouter.mockReturnValue(mockRouter as any);
     mockUseParams.mockReturnValue({ loteId: '1' } as any);
     mockToast.error = jest.fn();
@@ -126,7 +144,9 @@ describe('useLaudo', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockToast.error).toHaveBeenCalledWith('Erro ao conectar com o servidor');
+    expect(mockToast.error).toHaveBeenCalledWith(
+      'Erro ao conectar com o servidor'
+    );
     expect(mockRouter.push).toHaveBeenCalledWith('/emissor');
   });
 
@@ -244,7 +264,9 @@ describe('useLaudo', () => {
 
     // Mock do document operations
     const mockLink = document.createElement('a');
-    const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink);
+    const createElementSpy = jest
+      .spyOn(document, 'createElement')
+      .mockReturnValue(mockLink);
     const appendChildSpy = jest.spyOn(document.body, 'appendChild');
     const removeChildSpy = jest.spyOn(document.body, 'removeChild');
 

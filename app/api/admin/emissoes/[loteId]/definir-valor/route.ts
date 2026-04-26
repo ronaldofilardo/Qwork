@@ -25,7 +25,12 @@ export async function POST(
     }
 
     const loteCheck = await query(
-      `SELECT id, status, status_pagamento FROM lotes_avaliacao WHERE id = $1`,
+      `SELECT la.id, la.status, la.status_pagamento,
+              COALESCE(e.isento_pagamento, c.isento_pagamento, false) AS isento_pagamento
+       FROM lotes_avaliacao la
+       LEFT JOIN entidades e ON e.id = la.entidade_id
+       LEFT JOIN clinicas c ON c.id = la.clinica_id
+       WHERE la.id = $1`,
       [loteId]
     );
 
@@ -46,6 +51,16 @@ export async function POST(
     if (lote.status !== 'concluido') {
       return NextResponse.json(
         { error: 'Lote deve estar concluído' },
+        { status: 400 }
+      );
+    }
+
+    if (lote.isento_pagamento === true) {
+      return NextResponse.json(
+        {
+          error:
+            'Tomador isento de pagamento — não é necessário definir valor de cobrança.',
+        },
         { status: 400 }
       );
     }

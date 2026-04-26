@@ -13,15 +13,15 @@ export type TipoDocumentoRepresentante =
   | 'cpf' // PF: documento de CPF
   | 'cnpj' // PJ: cartão CNPJ
   | 'cpf_responsavel' // PJ: CPF do responsável
-  | 'rpa'; // Representante: NF/RPA de comissão
+  | 'nf' // Representante: NF de comissão
+  | 'comprovante'; // Comprovante de pagamento
 
 /** Tipos de documento aceitos para vendedores */
 export type TipoDocumentoVendedor =
   | 'cpf' // PF: documento de CPF
   | 'cnpj' // PJ: cartão CNPJ
   | 'cpf_responsavel' // PJ: CPF do responsável
-  | 'nf' // PJ: nota fiscal
-  | 'rpa'; // PF: recibo de pagamento autônomo
+  | 'nf'; // PJ: nota fiscal
 
 export interface RepresentanteDocumentoResult {
   /** Path local (DEV) ou URL remota (PROD) */
@@ -109,7 +109,7 @@ export function validarMagicBytes(
 /**
  * Salvar documento localmente (DEV)
  *
- * Path: storage/representantes/{PF|PJ}/{identificador}/{CAD|RPA|COMP}/{tipo}_{timestamp}.{ext}
+ * Path: storage/representantes/{PF|PJ}/{identificador}/{CAD|COMP}/{tipo}_{timestamp}.{ext}
  */
 async function uploadLocal(
   buffer: Buffer,
@@ -117,7 +117,7 @@ async function uploadLocal(
   identificador: string,
   contentType: string,
   tipoPessoa: 'pf' | 'pj' = 'pf',
-  subpasta: 'CAD' | 'RPA' | 'COMP' = 'CAD'
+  subpasta: 'CAD' | 'COMP' = 'CAD'
 ): Promise<RepresentanteDocumentoResult> {
   const fs = await import('fs/promises');
   const path = await import('path');
@@ -150,7 +150,7 @@ async function uploadLocal(
 /**
  * Upload para Backblaze (PROD)
  *
- * Path no bucket rep-qwork: {PF|PJ}/{identificador}/{CAD|RPA|COMP}/{tipo}_{timestamp}-{random}.{ext}
+ * Path no bucket rep-qwork: {PF|PJ}/{identificador}/{CAD|COMP}/{tipo}_{timestamp}-{random}.{ext}
  */
 async function uploadRemoto(
   buffer: Buffer,
@@ -158,7 +158,7 @@ async function uploadRemoto(
   identificador: string,
   contentType: string,
   tipoPessoa: 'pf' | 'pj' = 'pf',
-  subpasta: 'CAD' | 'RPA' | 'COMP' = 'CAD'
+  subpasta: 'CAD' | 'COMP' = 'CAD'
 ): Promise<RepresentanteDocumentoResult> {
   try {
     const ext = extensaoFromMime(contentType);
@@ -220,15 +220,15 @@ async function uploadRemoto(
 /**
  * Upload de documento de representante (híbrido DEV/PROD)
  *
- * DEV: storage/representantes/{PF|PJ}/{identificador}/{CAD|RPA|COMP}/{tipo}_{timestamp}.{ext}
- * PROD: Backblaze rep-qwork/{PF|PJ}/{identificador}/{CAD|RPA|COMP}/{tipo}_{timestamp}-{random}.{ext}
+ * DEV: storage/representantes/{PF|PJ}/{identificador}/{CAD|COMP}/{tipo}_{timestamp}.{ext}
+ * PROD: Backblaze rep-qwork/{PF|PJ}/{identificador}/{CAD|COMP}/{tipo}_{timestamp}-{random}.{ext}
  *
  * @param buffer - Buffer do arquivo
- * @param tipo - Tipo de documento (cpf, cnpj, cpf_responsavel, rpa)
+ * @param tipo - Tipo de documento (cpf, cnpj, cpf_responsavel, nf)
  * @param identificador - CPF (PF) ou CNPJ (PJ) sem formatação
  * @param contentType - MIME type do arquivo
  * @param tipoPessoa - 'pf' ou 'pj' (default: 'pf') — define subdiretório/prefixo
- * @param subpasta - 'CAD', 'RPA' ou 'COMP' (default: 'CAD') — define subpasta do tipo de documento
+ * @param subpasta - 'CAD' ou 'COMP' (default: 'CAD') — define subpasta do tipo de documento
  * @returns RepresentanteDocumentoResult com path local ou info remota
  */
 export async function uploadDocumentoRepresentante(
@@ -237,7 +237,7 @@ export async function uploadDocumentoRepresentante(
   identificador: string,
   contentType: string,
   tipoPessoa: 'pf' | 'pj' = 'pf',
-  subpasta: 'CAD' | 'RPA' | 'COMP' = 'CAD'
+  subpasta: 'CAD' | 'COMP' = 'CAD'
 ): Promise<RepresentanteDocumentoResult> {
   const isServerless =
     process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
@@ -268,7 +268,7 @@ export async function uploadDocumentoRepresentante(
 // ---------------------------------------------------------------------------
 
 /** Subpastas válidas p/ vendedores */
-export type SubpastaVendedor = 'CAD' | 'NF' | 'RPA' | 'COMP';
+export type SubpastaVendedor = 'CAD' | 'NF' | 'COMP';
 
 export interface VendedorDocumentoParams {
   buffer: Buffer;
@@ -287,7 +287,7 @@ export interface VendedorDocumentoParams {
 /**
  * Salvar doc de vendedor localmente (DEV)
  *
- * Path: storage/representantes/{PF|PJ}/{repId}/vendedores/{vendId}/{CAD|NF|RPA|COMP}/{tipo}_{ts}.{ext}
+ * Path: storage/representantes/{PF|PJ}/{repId}/vendedores/{vendId}/{CAD|NF|COMP}/{tipo}_{ts}.{ext}
  */
 async function uploadLocalVendedor(
   params: VendedorDocumentoParams
@@ -326,7 +326,7 @@ async function uploadLocalVendedor(
 /**
  * Upload doc de vendedor para Backblaze (PROD)
  *
- * Key: {PF|PJ}/{repId}/vendedores/{vendId}/{cad|nf|rpa|comp}/{tipo}_{ts}-{rnd}.{ext}
+ * Key: {PF|PJ}/{repId}/vendedores/{vendId}/{cad|nf|comp}/{tipo}_{ts}-{rnd}.{ext}
  */
 async function uploadRemotoVendedor(
   params: VendedorDocumentoParams
@@ -381,8 +381,8 @@ async function uploadRemotoVendedor(
 /**
  * Upload de documento de vendedor (híbrido DEV/PROD)
  *
- * LOCAL: storage/representantes/{PF|PJ}/{repId}/vendedores/{vendId}/{CAD|NF|RPA|COMP}/{tipo}_{ts}.{ext}
- * PROD:  Backblaze rep-qwork/{PF|PJ}/{repId}/vendedores/{vendId}/{cad|nf|rpa|comp}/{tipo}_{ts}-{rnd}.{ext}
+ * LOCAL: storage/representantes/{PF|PJ}/{repId}/vendedores/{vendId}/{CAD|NF|COMP}/{tipo}_{ts}.{ext}
+ * PROD:  Backblaze rep-qwork/{PF|PJ}/{repId}/vendedores/{vendId}/{cad|nf|comp}/{tipo}_{ts}-{rnd}.{ext}
  */
 export async function uploadDocumentoVendedor(
   params: VendedorDocumentoParams

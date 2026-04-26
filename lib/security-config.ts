@@ -1,5 +1,5 @@
-import { securityValidationMiddleware } from '@/lib/security-middleware'
-import { runSecurityIntegrityCheck } from '../scripts/security-integrity-check.mjs'
+import { securityValidationMiddleware } from '@/lib/security-middleware';
+import { runSecurityIntegrityCheck } from '../scripts/security-integrity-check.mjs';
 
 /**
  * CONFIGURAÇÃO DE VALIDAÇÕES DE SEGURANÇA ADICIONAIS
@@ -20,25 +20,21 @@ export const SECURITY_CONFIG = {
   // Validações automáticas em operações críticas
   validations: {
     // Executar ao fazer login
-    onLogin: [
-      'validateSessionIntegrity',
-      'validateResourceAccess',
-      'detectAccessAnomalies'
-    ],
+    onLogin: ['validateSessionIntegrity', 'validateResourceAccess'],
 
     // Executar antes de operações de escrita
     onWriteOperations: [
       'validateUserPermissions',
       'validateDataConsistency',
-      'checkBusinessRules'
+      'checkBusinessRules',
     ],
 
     // Executar em operações sensíveis
     onSensitiveOperations: [
       'validateClinicaAssociation',
       'validateEmpresaAccess',
-      'auditCriticalChanges'
-    ]
+      'auditCriticalChanges',
+    ],
   },
 
   // Verificações periódicas (recomendado: executar diariamente)
@@ -46,8 +42,8 @@ export const SECURITY_CONFIG = {
     securityIntegrityCheck: {
       function: runSecurityIntegrityCheck,
       schedule: '0 2 * * *', // Todos os dias às 2:00 AM
-      enabled: true
-    }
+      enabled: true,
+    },
   },
 
   // Configurações de resposta a incidentes
@@ -57,14 +53,14 @@ export const SECURITY_CONFIG = {
       low: ['log'],
       medium: ['log', 'alert'],
       high: ['log', 'alert', 'notify_admin'],
-      critical: ['log', 'alert', 'notify_admin', 'block_access']
+      critical: ['log', 'alert', 'notify_admin', 'block_access'],
     },
 
     // Destinatários de alertas
     notifications: {
       adminEmails: ['admin@qwork.com.br'],
-      securityTeam: ['security@qwork.com.br']
-    }
+      securityTeam: ['security@qwork.com.br'],
+    },
   },
 
   // Configurações de auditoria
@@ -75,7 +71,7 @@ export const SECURITY_CONFIG = {
       'empresas_clientes',
       'clinicas',
       'lotes_avaliacao',
-      'avaliacoes'
+      'avaliacoes',
     ],
 
     // Eventos que devem ser auditados
@@ -85,13 +81,13 @@ export const SECURITY_CONFIG = {
       'PERMISSION_CHANGE',
       'CLINICA_ASSOCIATION_CHANGE',
       'DATA_ACCESS_VIOLATION',
-      'SECURITY_INCIDENT'
+      'SECURITY_INCIDENT',
     ],
 
     // Retenção de logs (dias)
-    retentionDays: 365
-  }
-}
+    retentionDays: 365,
+  },
+};
 
 /**
  * FUNÇÕES DE VALIDAÇÃO RÁPIDA
@@ -101,15 +97,18 @@ export const SECURITY_CONFIG = {
 /**
  * Validação rápida de sessão (para uso em APIs)
  */
-export async function quickSessionValidation(session: unknown): Promise<boolean> {
-  if (!(session as any)?.cpf) return false
+export async function quickSessionValidation(
+  session: unknown
+): Promise<boolean> {
+  if (!(session as any)?.cpf) return false;
 
   try {
-    const { validateSessionIntegrity } = await import('@/lib/security-validation')
-    const result = await validateSessionIntegrity(session as any)
-    return result.isValid
+    const { validateSessionIntegrity } =
+      await import('@/lib/security-validation');
+    const result = await validateSessionIntegrity(session as any);
+    return result.isValid;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -122,11 +121,16 @@ export async function validateResourceAccess(
   resourceId: number
 ): Promise<boolean> {
   try {
-    const { validateResourceAccess: validateResourceAccessFn } = await import('@/lib/security-validation')
-    const result = await validateResourceAccessFn(session as any, resourceType, resourceId)
-    return result.hasAccess
+    const { validateResourceAccess: validateResourceAccessFn } =
+      await import('@/lib/security-validation');
+    const result = await validateResourceAccessFn(
+      session as any,
+      resourceType,
+      resourceId
+    );
+    return result.hasAccess;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -134,5 +138,5 @@ export async function validateResourceAccess(
  * Wrapper para verificação de integridade (para uso programático)
  */
 export async function checkSystemIntegrity(): Promise<unknown> {
-  return await runSecurityIntegrityCheck()
+  return await runSecurityIntegrityCheck();
 }

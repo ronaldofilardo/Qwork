@@ -8,7 +8,6 @@ interface Lead {
   representante_id: number;
   representante_nome: string;
   representante_email: string;
-  representante_codigo: string;
   cnpj: string;
   razao_social: string | null;
   contato_nome: string | null;
@@ -243,7 +242,7 @@ export default function AdminLeadsRepresentantes() {
                           {lead.representante_nome}
                         </p>
                         <p className="text-xs text-gray-400 font-mono">
-                          {lead.representante_codigo}
+                          #{lead.representante_id}
                         </p>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-gray-700">

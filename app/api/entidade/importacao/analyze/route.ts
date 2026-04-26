@@ -18,15 +18,15 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     await requireEntity();
 
-    const contentType = request.headers.get('content-type') ?? '';
-    if (!contentType.includes('multipart/form-data')) {
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+    } catch {
       return NextResponse.json(
         { error: 'Content-Type deve ser multipart/form-data' },
         { status: 400 }
       );
     }
-
-    const formData = await request.formData();
     const file = formData.get('file');
 
     if (!(file instanceof File) || file.size === 0) {

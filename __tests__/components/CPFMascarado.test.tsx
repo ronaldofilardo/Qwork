@@ -39,7 +39,7 @@ describe('CPFMascarado Component - LGPD', () => {
       render(<CPFMascarado cpf="12345678909" revelarCompleto={true} />);
 
       expect(screen.getByTitle('Revelar CPF completo')).toBeInTheDocument();
-      expect(screen.getByText('👁️ Ver')).toBeInTheDocument();
+      expect(screen.getByText('Ver')).toBeInTheDocument();
     });
 
     it('deve alternar entre mascarado e completo ao clicar', () => {
@@ -49,14 +49,14 @@ describe('CPFMascarado Component - LGPD', () => {
       expect(screen.getByText('***.***.*89-09')).toBeInTheDocument();
 
       // Clicar para revelar
-      fireEvent.click(screen.getByText('👁️ Ver'));
+      fireEvent.click(screen.getByTitle('Revelar CPF completo'));
 
       expect(screen.getByText('123.456.789-09')).toBeInTheDocument();
       expect(screen.getByTitle('Ocultar CPF')).toBeInTheDocument();
-      expect(screen.getByText('🔒 Ocultar')).toBeInTheDocument();
+      expect(screen.getByText('Ocultar')).toBeInTheDocument();
 
       // Clicar para ocultar novamente
-      fireEvent.click(screen.getByText('🔒 Ocultar'));
+      fireEvent.click(screen.getByTitle('Ocultar CPF'));
 
       expect(screen.getByText('***.***.*89-09')).toBeInTheDocument();
     });
@@ -73,8 +73,8 @@ describe('CPFMascarado Component - LGPD', () => {
     it('deve mostrar aviso quando não há base legal', () => {
       render(<ConsentimentoBadge />);
 
-      expect(screen.getByText('⚠️ Sem base legal')).toBeInTheDocument();
-      expect(screen.getByText('⚠️ Sem base legal')).toHaveClass(
+      expect(screen.getByText('Sem base legal')).toBeInTheDocument();
+      expect(screen.getByText('Sem base legal').closest('span')).toHaveClass(
         'bg-yellow-100',
         'text-yellow-800'
       );
@@ -82,20 +82,20 @@ describe('CPFMascarado Component - LGPD', () => {
 
     it('deve mostrar badge correto para cada base legal', () => {
       const bases = [
-        { base: 'contrato', text: '📄 Contrato', color: 'bg-blue-100' },
+        { base: 'contrato', text: 'Contrato', color: 'bg-blue-100' },
         {
           base: 'obrigacao_legal',
-          text: '⚖️ Obrigação Legal',
+          text: 'Obrigação Legal',
           color: 'bg-green-100',
         },
         {
           base: 'consentimento',
-          text: '✅ Consentimento',
+          text: 'Consentimento',
           color: 'bg-purple-100',
         },
         {
           base: 'interesse_legitimo',
-          text: '🏢 Interesse Legítimo',
+          text: 'Interesse Legítimo',
           color: 'bg-gray-100',
         },
       ];
@@ -118,7 +118,7 @@ describe('CPFMascarado Component - LGPD', () => {
         />
       );
 
-      const badge = screen.getByText('✅ Consentimento');
+      const badge = screen.getByText('Consentimento').closest('span');
       expect(badge).toHaveAttribute('title', 'Registrado em: 15/01/2024');
     });
   });

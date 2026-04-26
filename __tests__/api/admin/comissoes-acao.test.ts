@@ -79,40 +79,33 @@ describe('PATCH /api/admin/comissoes/[id]', () => {
 
   it('deve retornar 404 quando comissão não existe', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-    const res = await PATCH(makeReq({ acao: 'liberar' }), {
+    const res = await PATCH(makeReq({ acao: 'cancelar' }), {
       params: { id: '999' },
     } as any);
     expect(res.status).toBe(404);
   });
 
-  // --- Ação: liberar ---
-  it('deve liberar comissão aprovada', async () => {
-    mockComissao('aprovada');
-    // UPDATE RETURNING
+  // --- Ação: congelar ---
+  it('deve congelar comissão retida com motivo', async () => {
+    mockComissao('retida');
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, status: 'liberada' }],
+      rows: [{ id: 1, status: 'congelada_aguardando_admin' }],
       rowCount: 1,
     } as any);
 
-    const res = await PATCH(makeReq({ acao: 'liberar' }), {
-      params: { id: '1' },
-    } as any);
-    expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data.acao).toBe('liberar');
-    expect(mockAuditoria).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status_anterior: 'aprovada',
-        status_novo: 'liberada',
-      })
+    const res = await PATCH(
+      makeReq({ acao: 'congelar', motivo: 'Verificação pendente' }),
+      { params: { id: '1' } } as any
     );
+    expect(res.status).toBe(200);
   });
 
-  it('deve retornar 422 ao tentar liberar comissão paga', async () => {
+  it('deve retornar 422 ao tentar congelar comissão paga', async () => {
     mockComissao('paga');
-    const res = await PATCH(makeReq({ acao: 'liberar' }), {
-      params: { id: '1' },
-    } as any);
+    const res = await PATCH(
+      makeReq({ acao: 'congelar', motivo: 'Verificação' }),
+      { params: { id: '1' } } as any
+    );
     expect(res.status).toBe(422);
   });
 
@@ -142,23 +135,8 @@ describe('PATCH /api/admin/comissoes/[id]', () => {
     expect(res.status).toBe(422);
   });
 
-  // --- Ação: congelar ---
-  it('deve congelar comissão aprovada com motivo', async () => {
-    mockComissao('aprovada');
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, status: 'congelada_aguardando_admin' }],
-      rowCount: 1,
-    } as any);
-
-    const res = await PATCH(
-      makeReq({ acao: 'congelar', motivo: 'Verificação pendente' }),
-      { params: { id: '1' } } as any
-    );
-    expect(res.status).toBe(200);
-  });
-
   it('deve retornar 400 ao congelar sem motivo', async () => {
-    mockComissao('aprovada');
+    mockComissao('retida');
     const res = await PATCH(makeReq({ acao: 'congelar' }), {
       params: { id: '1' },
     } as any);
@@ -167,8 +145,8 @@ describe('PATCH /api/admin/comissoes/[id]', () => {
   });
 
   // --- Ação: cancelar ---
-  it('deve cancelar comissão aprovada', async () => {
-    mockComissao('aprovada');
+  it('deve cancelar comissão retida', async () => {
+    mockComissao('retida');
     mockQuery.mockResolvedValueOnce({
       rows: [{ id: 1, status: 'cancelada' }],
       rowCount: 1,

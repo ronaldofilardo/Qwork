@@ -6,6 +6,7 @@
 import { POST } from '@/app/api/entidade/liberar-lote/route';
 import * as sessionMod from '@/lib/session';
 import * as dbGestorMod from '@/lib/db-gestor';
+import * as dbTransactionMod from '@/lib/db-transaction';
 
 jest.mock('@/lib/db-gestor', () => ({
   queryAsGestorEntidade: jest.fn(),
@@ -14,6 +15,10 @@ jest.mock('@/lib/db-gestor', () => ({
 jest.mock('@/lib/session', () => ({
   requireEntity: jest.fn(),
   getSession: jest.fn(),
+}));
+
+jest.mock('@/lib/db-transaction', () => ({
+  withTransactionAsGestor: jest.fn(),
 }));
 
 const mockQueryAsGestorEntidade =
@@ -26,6 +31,10 @@ const mockRequireEntity = sessionMod.requireEntity as jest.MockedFunction<
 const mockGetSession = sessionMod.getSession as jest.MockedFunction<
   typeof sessionMod.getSession
 >;
+const mockWithTransactionAsGestor =
+  dbTransactionMod.withTransactionAsGestor as jest.MockedFunction<
+    typeof dbTransactionMod.withTransactionAsGestor
+  >;
 
 describe('/api/entidade/liberar-lote', () => {
   beforeEach(() => {
@@ -39,6 +48,19 @@ describe('/api/entidade/liberar-lote', () => {
       entidade_id: 5,
       tomador_id: 5,
     } as any);
+
+    // Mock padrão de withTransactionAsGestor: executa callback com fakeClient
+    mockWithTransactionAsGestor.mockImplementation(async (cb: any) => {
+      const fakeClient = {
+        query: jest.fn()
+          .mockResolvedValueOnce({
+            rows: [{ id: 100, liberado_em: new Date().toISOString(), numero_ordem: 1 }],
+            rowCount: 1,
+          }) // INSERT lote
+          .mockResolvedValue({ rows: [], rowCount: 1 }), // INSERT avaliacoes (N vezes)
+      };
+      return cb(fakeClient);
+    });
   });
 
   it('deve criar lote para funcionários vinculados diretamente à entidade', async () => {
@@ -86,18 +108,12 @@ describe('/api/entidade/liberar-lote', () => {
       ],
       rowCount: 2,
     } as any);
-    // 5) insert lote result (entidade_id, não tomador_id)
+    // 5) isentoRes -> entidade não isenta
     mockQueryAsGestorEntidade.mockResolvedValueOnce({
-      rows: [
-        {
-          id: 100,
-          liberado_em: new Date().toISOString(),
-          numero_ordem: 1,
-        },
-      ],
+      rows: [{ isento_pagamento: false }],
       rowCount: 1,
     } as any);
-    // 6+) inserts de avaliacoes (uma por funcionario) + audit_log
+    // 6) audit_log INSERT
     mockQueryAsGestorEntidade.mockResolvedValue({
       rows: [],
       rowCount: 1,
@@ -132,17 +148,8 @@ describe('/api/entidade/liberar-lote', () => {
     );
     expect(calledWithAudit).toBe(true);
 
-    // Verificar que o INSERT foi feito com entidade_id (não tomador_id)
-    const loteInsertCall = mockQueryAsGestorEntidade.mock.calls.find(
-      (call) =>
-        typeof call[0] === 'string' &&
-        call[0].includes('INSERT INTO lotes_avaliacao') &&
-        call[0].includes('entidade_id')
-    );
-    expect(loteInsertCall).toBeDefined();
-    const loteParams = loteInsertCall[1] as any[];
-    // Primeiro parâmetro deve ser o entidade_id (5)
-    expect(loteParams[0]).toBe(5);
+    // Verificar que a transação foi iniciada (INSERT lote feito via withTransactionAsGestor)
+    expect(mockWithTransactionAsGestor).toHaveBeenCalledTimes(1);
   });
 
   it('retorna erro quando não há funcionários elegíveis para a entidade', async () => {

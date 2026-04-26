@@ -72,7 +72,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Validação de formato — CNPJ ignorado para fluxo de Entidade
-    const validacao = validarDadosImportacao(parsed.data, { ignorarCnpj: true });
+    const validacao = validarDadosImportacao(parsed.data, {
+      ignorarCnpj: true,
+    });
 
     // Consultar banco para duplicidades
     const cpfs = parsed.data
@@ -88,6 +90,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const existingFuncaoMap = new Map<string, string | null>();
     const existingNivelCargoMap = new Map<string, string | null>();
     const existingNomeMap = new Map<string, string>();
+    const cpfsVinculadosNaEntidade = new Set<string>();
 
     if (cpfsUnicos.length > 0) {
       // Buscar funcionários existentes (inclui funcao, nivel_cargo e nome para detectar mudanças)
@@ -122,6 +125,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         for (const vinculo of vinculosResult.rows) {
           const cpfTrim = (vinculo.cpf as string).trim();
+          cpfsVinculadosNaEntidade.add(cpfTrim);
           for (let i = 0; i < parsed.data.length; i++) {
             const row = parsed.data[i];
             if (limparCPF(row.cpf ?? '') === cpfTrim) {
@@ -217,7 +221,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (
         !novaFuncao ||
         novaFuncao === 'Não informado' ||
-        !existingFuncaoMap.has(cpf)
+        !cpfsVinculadosNaEntidade.has(cpf)
       )
         continue;
       const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
@@ -271,7 +275,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       for (const row of linhasValidasParaFuncoes) {
         const cpf = limparCPF(row.cpf ?? '');
         const funcao = (row.funcao ?? '').trim();
-        if (!funcao || !existingFuncaoMap.has(cpf)) continue;
+        if (!funcao || !cpfsVinculadosNaEntidade.has(cpf)) continue;
         const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
         if (funcaoAtual !== funcao) continue;
 
@@ -326,6 +330,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       novosCpfs: Set<string>;
       existentesCpfs: Set<string>;
       niveisSet: Set<NivelCargoValue>;
+      semNivelNaPlanilha: Set<string>;
+      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string }>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -339,12 +345,33 @@ export async function POST(request: Request): Promise<NextResponse> {
           novosCpfs: new Set(),
           existentesCpfs: new Set(),
           niveisSet: new Set(),
+          semNivelNaPlanilha: new Set(),
+          semNivelNaPlanilhaDetalhes: [],
         });
       }
       const info = funcaoInfoMap.get(funcaoRow)!;
       info.cpfs.add(cpfRow);
 
-      if (existingFuncaoMap.has(cpfRow)) {
+      if (temNivelCargoDirecto) {
+        const nivelPlanilhaRaw = ((row.nivel_cargo as string | undefined) ?? '')
+          .trim()
+          .toLowerCase();
+        if (
+          nivelPlanilhaRaw !== 'gestao' &&
+          nivelPlanilhaRaw !== 'operacional'
+        ) {
+          if (!info.semNivelNaPlanilha.has(cpfRow)) {
+            const nomeFunc = (row.nome as string | undefined)?.trim() || '';
+            info.semNivelNaPlanilhaDetalhes.push({
+              nome: nomeFunc,
+              empresa: '',
+            });
+          }
+          info.semNivelNaPlanilha.add(cpfRow);
+        }
+      }
+
+      if (cpfsVinculadosNaEntidade.has(cpfRow)) {
         info.existentesCpfs.add(cpfRow);
         const nivelRaw = existingNivelCargoMap.get(cpfRow) ?? null;
         const nivelNorm: NivelCargoValue =
@@ -366,12 +393,16 @@ export async function POST(request: Request): Promise<NextResponse> {
         isMudancaNivel: funcoesComMudancaNivel.has(funcao),
         temNivelNuloExistente:
           info.niveisSet.has(null) && info.existentesCpfs.size > 0,
+        qtdSemNivelNaPlanilha: info.semNivelNaPlanilha.size,
+        funcionariosSemNivel: info.semNivelNaPlanilhaDetalhes,
         funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
         funcionariosComMudancaNivel: mudancaNivelDetalhesMap.get(funcao) ?? [],
       }))
       .sort((a, b) => {
         if (a.isMudancaRole !== b.isMudancaRole)
           return a.isMudancaRole ? -1 : 1;
+        if (a.qtdSemNivelNaPlanilha > 0 !== b.qtdSemNivelNaPlanilha > 0)
+          return a.qtdSemNivelNaPlanilha > 0 ? -1 : 1;
         const aRequerAtencao = a.qtdNovos > 0 || a.temNivelNuloExistente;
         const bRequerAtencao = b.qtdNovos > 0 || b.temNivelNuloExistente;
         if (aRequerAtencao !== bRequerAtencao) return aRequerAtencao ? -1 : 1;

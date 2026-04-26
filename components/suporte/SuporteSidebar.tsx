@@ -8,13 +8,25 @@ import {
   ChevronRight,
   Users,
   FileText,
+  BarChart2,
+  ClipboardList,
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type SuporteSection = 'tomadores' | 'financeiro' | 'representantes';
-export type TomadoresSubSection = 'clinicas' | 'entidades' | 'pre-cadastro';
+export type SuporteSection =
+  | 'tomadores'
+  | 'financeiro'
+  | 'representantes'
+  | 'leads'
+  | 'avaliacoes';
+export type TomadoresSubSection =
+  | 'clinicas'
+  | 'entidades'
+  | 'pre-cadastro'
+  | 'contratos';
 export type FinanceiroSubSection = 'pagamentos' | 'comissoes' | 'individuais';
 export type RepresentantesSubSection = 'lista' | 'aprovacao';
+export type LeadsSubSection = 'comissoes';
 
 interface SuporteSidebarProps {
   activeSection: SuporteSection;
@@ -179,6 +191,14 @@ export default function SuporteSidebar({
             onClick={() => onSectionChange('tomadores', 'pre-cadastro')}
             icon={FileText}
           />
+          <SubMenuItem
+            label="Contratos"
+            isActive={
+              activeSection === 'tomadores' && activeSubSection === 'contratos'
+            }
+            onClick={() => onSectionChange('tomadores', 'contratos')}
+            icon={FileText}
+          />
         </div>
       )}
 
@@ -213,14 +233,6 @@ export default function SuporteSidebar({
               activeSubSection === 'individuais'
             }
             onClick={() => onSectionChange('financeiro', 'individuais')}
-          />
-          <SubMenuItem
-            label="Ciclos NF/RPA"
-            isActive={
-              activeSection === 'financeiro' &&
-              activeSubSection === 'ciclos_comissao'
-            }
-            onClick={() => onSectionChange('financeiro', 'ciclos_comissao')}
           />
         </div>
       )}
@@ -258,6 +270,39 @@ export default function SuporteSidebar({
           />
         </div>
       )}
+
+      {/* Leads */}
+      <MenuItem
+        icon={BarChart2}
+        label="Leads"
+        isActive={activeSection === 'leads'}
+        onClick={() => {
+          toggleSection('leads');
+          onSectionChange('leads', 'comissoes');
+        }}
+        hasSubMenu
+        isExpanded={isExpanded('leads')}
+      />
+
+      {isExpanded('leads') && (
+        <div className="border-l-2 border-gray-200 ml-4">
+          <SubMenuItem
+            label="Lead/Comissões"
+            isActive={
+              activeSection === 'leads' && activeSubSection === 'comissoes'
+            }
+            onClick={() => onSectionChange('leads', 'comissoes')}
+          />
+        </div>
+      )}
+
+      {/* Avaliações */}
+      <MenuItem
+        icon={ClipboardList}
+        label="Avaliações"
+        isActive={activeSection === 'avaliacoes'}
+        onClick={() => onSectionChange('avaliacoes')}
+      />
     </SidebarLayout>
   );
 }

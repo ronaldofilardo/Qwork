@@ -78,7 +78,6 @@ export default function ImportacaoFlowGuide({
 
       <div className="flex flex-wrap items-start gap-1.5 mb-2">
         {importacaoSteps.map((step, index) => {
-          const _isLast = index === importacaoSteps.length - 1;
           return (
             <div key={index} className="flex items-start gap-2">
               {/* Main step button with tooltip */}
@@ -157,14 +156,28 @@ export default function ImportacaoFlowGuide({
           </span>
           <div className="h-px flex-1 bg-blue-200" />
         </div>
-        <ul className="space-y-0.5 text-xs text-blue-700">
+        <ul className="space-y-1 text-xs text-blue-700">
           {isClinica && (
-            <li>
-              <strong>Empresa:</strong> CNPJ{' '}
-              <span className="text-blue-500">[coluna classificadora]</span> e
-              nome em todas as linhas.
-            </li>
+            <>
+              <li>
+                <strong>CNPJ:</strong> responsável por segregar cada empresa e
+                seus respectivos funcionários{' '}
+                <span className="text-blue-500">
+                  (coluna classificadora de cada linha)
+                </span>
+              </li>
+              <li>
+                <strong>Nome da Empresa:</strong> para que a empresa, e também o
+                laudo, possa ser nominal{' '}
+                <span className="text-blue-500">
+                  (deve estar presente em todas as linhas)
+                </span>
+              </li>
+            </>
           )}
+          <li>
+            <strong>Nome do funcionário:</strong> não insira números
+          </li>
           <li>
             <strong>Data de Nascimento:</strong> dd/mm/aaaa{' '}
             <span className="text-blue-500">
@@ -175,6 +188,10 @@ export default function ImportacaoFlowGuide({
           <li>
             <strong>CPF:</strong> deve conter apenas 11 dígitos{' '}
             <span className="text-blue-500">(sem pontos ou hífen)</span>
+          </li>
+          <li>
+            <strong>Data de demissão/desligamento:</strong> ao identificar essa
+            coluna o sistema inativa automaticamente um funcionário
           </li>
           <li>
             <strong>Função:</strong> importante para determinar a versão do

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,14 +120,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const { cpf, nome, email, senha, representante_id } = parsed.data;
 
-    // Verificar CPF em uso
-    const existing = await query(
-      `SELECT id FROM usuarios WHERE cpf = $1 LIMIT 1`,
-      [cpf]
-    );
-    if (existing.rows.length > 0) {
+    // Verificar CPF em uso (cross-perfil: representantes, vendedores, gestores, rh)
+    const cpfCheck = await checkCpfUnicoSistema(cpf);
+    if (!cpfCheck.disponivel) {
       return NextResponse.json(
-        { error: 'CPF já cadastrado no sistema' },
+        { error: cpfCheck.message ?? 'CPF já cadastrado no sistema' },
         { status: 409 }
       );
     }

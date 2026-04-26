@@ -19,6 +19,13 @@ import {
 } from 'lucide-react';
 import EditRepresentanteModal from './EditRepresentanteModal';
 import AprovarComissaoModal from './AprovarComissaoModal';
+import KPICard from './KPICard';
+import { ContratosTable } from '@/components/shared/ContratosTable';
+import { fmtBRL, fmtDoc, fmtCpf, fmtCnpj } from './format-utils';
+
+// Preço base QWork por laudo (por tipo de tomador)
+const PRECO_BASE_CLINICA = 5;
+const PRECO_BASE_ENTIDADE = 12;
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   apto: { label: 'Ativo', cls: 'bg-green-100 text-green-700' },
@@ -58,45 +65,6 @@ const STATUS_COMISSAO_CLS: Record<string, string> = {
   em_pagamento: 'bg-purple-100 text-purple-700',
 };
 
-const KPICard = ({
-  label,
-  value,
-  sub,
-  highlight,
-  onClick,
-}: {
-  label: string;
-  value: string | number;
-  sub?: string;
-  highlight?: boolean;
-  onClick?: () => void;
-}) => (
-  <div
-    onClick={onClick}
-    className={`bg-white rounded-3xl p-6 border shadow-sm transition-all hover:border-green-200 hover:shadow-lg hover:shadow-green-900/[0.03] flex flex-col justify-center h-40${
-      onClick ? ' cursor-pointer active:scale-[0.98]' : ''
-    }`}
-  >
-    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-      {label}
-    </span>
-    <div className="flex items-baseline gap-2">
-      <span
-        className={`text-4xl font-black tracking-tighter ${
-          highlight ? 'text-green-600' : 'text-gray-900'
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-    {sub && (
-      <p className="text-xs font-medium text-gray-400 mt-2 uppercase tracking-wide">
-        {sub}
-      </p>
-    )}
-  </div>
-);
-
 interface RepMetrica {
   id: number;
   nome: string;
@@ -116,7 +84,6 @@ interface VendedorEquipe {
   nome: string;
   email: string | null;
   cpf: string | null;
-  codigo_vendedor: string | null;
   leads_ativos: number;
   vinculos_ativos: number;
 }
@@ -184,6 +151,8 @@ export default function ComercialRepresentanteDetalhePage() {
     percentual_comissao?: number | null;
     percentual_comissao_comercial?: number | null;
     modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+    valor_custo_fixo_entidade?: number | null;
+    valor_custo_fixo_clinica?: number | null;
     asaas_wallet_id?: string | null;
     banco_codigo?: string | null;
     agencia?: string | null;
@@ -445,31 +414,6 @@ export default function ComercialRepresentanteDetalhePage() {
     label: rep.status,
     cls: 'bg-gray-100 text-gray-500',
   };
-  const fmtBRL = (v: number) =>
-    (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  const fmtDoc = (v: string | undefined) => {
-    if (!v) return null;
-    const d = v.replace(/\D/g, '');
-    if (d.length === 14)
-      return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-    if (d.length === 11)
-      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    return v;
-  };
-  const fmtCpf = (v: string | null) => {
-    if (!v) return '—';
-    const d = v.replace(/\D/g, '');
-    if (d.length === 11)
-      return d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    return v;
-  };
-  const fmtCnpj = (v: string | null) => {
-    if (!v) return '—';
-    const d = v.replace(/\D/g, '');
-    if (d.length === 14)
-      return d.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
-    return v;
-  };
   const n = (v: number | undefined) => (v ?? 0).toLocaleString('pt-BR');
 
   return (
@@ -498,11 +442,9 @@ export default function ComercialRepresentanteDetalhePage() {
               <h1 className="text-3xl font-black text-gray-900 tracking-tight">
                 {rep.nome}
               </h1>
-              {rep.codigo && (
-                <span className="px-2 py-0.5 bg-green-100 text-green-700 text-[11px] font-bold rounded-full uppercase tracking-widest">
-                  {rep.codigo}
-                </span>
-              )}
+              <span className="px-3 py-0.5 bg-purple-100 text-purple-700 text-[11px] font-bold rounded-full uppercase tracking-widest">
+                #{rep.id}
+              </span>
             </div>
             {repFull && (repFull.cnpj || repFull.cpf) && (
               <div className="mt-1 space-y-1">
@@ -529,17 +471,24 @@ export default function ComercialRepresentanteDetalhePage() {
               <Pencil size={15} />
               Editar Dados
             </button>
-            {(rep.status === 'apto' || rep.status === 'apto_pendente') && (
-              <button
-                onClick={() => setShowComissao(true)}
-                disabled={!repFull}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-colors"
-              >
-                <BadgeCheck size={15} />
-                {repFull?.modelo_comissionamento
-                  ? 'Alterar Comissão'
-                  : 'Definir Comissão'}
-              </button>
+            {!['rejeitado', 'desativado', 'suspenso'].includes(rep.status) && (
+              <>
+                {repFull?.modelo_comissionamento ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl">
+                    <BadgeCheck size={13} />
+                    Comissão: {repFull.modelo_comissionamento}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setShowComissao(true)}
+                    disabled={!repFull}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-colors"
+                  >
+                    <BadgeCheck size={15} />
+                    Definir Comissão
+                  </button>
+                )}
+              </>
             )}
             {rep.status !== 'desativado' && (
               <button
@@ -586,11 +535,6 @@ export default function ComercialRepresentanteDetalhePage() {
                 </div>
                 <div className="bg-gray-50 border rounded-xl px-4 py-3 text-sm text-gray-700 font-medium">
                   {rep.nome}
-                  {rep.codigo && (
-                    <span className="ml-2 text-xs text-gray-400 font-mono">
-                      #{rep.codigo}
-                    </span>
-                  )}
                 </div>
                 <textarea
                   value={motivoInativarRep}
@@ -713,9 +657,10 @@ export default function ComercialRepresentanteDetalhePage() {
             </div>
 
             {repFull.modelo_comissionamento ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-xl p-4 border">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Modelo */}
+                <div className="bg-gray-50 rounded-xl p-3 border">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
                     Modelo
                   </p>
                   <div className="flex items-center gap-2">
@@ -731,18 +676,130 @@ export default function ComercialRepresentanteDetalhePage() {
                     </p>
                   </div>
                 </div>
-                {repFull.modelo_comissionamento === 'percentual' &&
-                  repFull.percentual_comissao != null && (
-                    <div className="bg-gray-50 rounded-xl p-4 border">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
-                        Percentual
+
+                {/* Se PERCENTUAL: mostrar percentuais do representante e comercial */}
+                {repFull.modelo_comissionamento === 'percentual' && (
+                  <>
+                    {repFull.percentual_comissao != null && (
+                      <div className="bg-green-50 rounded-xl p-3 border border-green-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                          Comissão Representante
+                        </p>
+                        <p className="font-black text-green-700 text-lg">
+                          {repFull.percentual_comissao}
+                          <span className="text-sm font-bold ml-0.5">%</span>
+                        </p>
+                      </div>
+                    )}
+                    {repFull.percentual_comissao_comercial != null && (
+                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                          Comissão Comercial
+                        </p>
+                        <p className="font-black text-purple-700 text-lg">
+                          {repFull.percentual_comissao_comercial}
+                          <span className="text-sm font-bold ml-0.5">%</span>
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Se CUSTO FIXO: Comissão Comercial ao lado do Modelo, depois Clínica | Entidade */}
+                {repFull.modelo_comissionamento === 'custo_fixo' && (
+                  <>
+                    {repFull.percentual_comissao_comercial != null && (
+                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                          Comissão Comercial
+                        </p>
+                        <p className="font-black text-purple-700 text-lg">
+                          {Number(
+                            repFull.percentual_comissao_comercial
+                          ).toFixed(2)}
+                          <span className="text-sm font-bold ml-0.5">%</span>
+                        </p>
+                      </div>
+                    )}
+                    {repFull.valor_custo_fixo_clinica != null && (
+                      <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                          Custo Fixo — Clínica
+                        </p>
+                        <p className="font-black text-blue-700 text-lg">
+                          {fmtBRL(Number(repFull.valor_custo_fixo_clinica))}
+                        </p>
+                      </div>
+                    )}
+                    {repFull.valor_custo_fixo_entidade != null && (
+                      <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                          Custo Fixo — Entidade
+                        </p>
+                        <p className="font-black text-blue-700 text-lg">
+                          {fmtBRL(Number(repFull.valor_custo_fixo_entidade))}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Valor mínimo de venda — só custo_fixo */}
+                {repFull.modelo_comissionamento === 'custo_fixo' &&
+                  (repFull.valor_custo_fixo_clinica != null ||
+                    repFull.valor_custo_fixo_entidade != null) && (
+                    <div className="sm:col-span-2 bg-gray-900 rounded-xl p-4 border border-gray-800">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                        Valor mínimo de venda (por avaliação)
                       </p>
-                      <p className="font-black text-gray-900 text-xl">
-                        {repFull.percentual_comissao}
-                        <span className="text-sm font-bold ml-0.5">%</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {repFull.valor_custo_fixo_clinica != null && (
+                          <div className="bg-gray-800 rounded-lg px-4 py-3">
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                              Clínica
+                            </p>
+                            <p className="text-xs text-gray-400 mb-0.5">
+                              {fmtBRL(PRECO_BASE_CLINICA)}
+                              {' + '}
+                              {fmtBRL(Number(repFull.valor_custo_fixo_clinica))}
+                              {' ='}
+                            </p>
+                            <p className="text-lg font-black text-white">
+                              {fmtBRL(
+                                PRECO_BASE_CLINICA +
+                                  Number(repFull.valor_custo_fixo_clinica)
+                              )}
+                            </p>
+                          </div>
+                        )}
+                        {repFull.valor_custo_fixo_entidade != null && (
+                          <div className="bg-gray-800 rounded-lg px-4 py-3">
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">
+                              Entidade
+                            </p>
+                            <p className="text-xs text-gray-400 mb-0.5">
+                              {fmtBRL(PRECO_BASE_ENTIDADE)}
+                              {' + '}
+                              {fmtBRL(
+                                Number(repFull.valor_custo_fixo_entidade)
+                              )}
+                              {' ='}
+                            </p>
+                            <p className="text-lg font-black text-white">
+                              {fmtBRL(
+                                PRECO_BASE_ENTIDADE +
+                                  Number(repFull.valor_custo_fixo_entidade)
+                              )}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <p className="mt-2 text-[10px] text-gray-500">
+                        Base QWork + custo fixo do representante
                       </p>
                     </div>
                   )}
+
                 {repFull.asaas_wallet_id && (
                   <div className="bg-gray-50 rounded-xl p-4 border sm:col-span-2">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
@@ -827,11 +884,9 @@ export default function ComercialRepresentanteDetalhePage() {
                       </p>
                     </div>
                   </div>
-                  {v.codigo_vendedor && (
-                    <code className="block text-[10px] font-mono bg-white border px-2 py-1 rounded text-gray-600">
-                      {v.codigo_vendedor}
-                    </code>
-                  )}
+                  <code className="block text-[10px] font-mono bg-white border px-2 py-1 rounded text-gray-600">
+                    #{v.vendedor_id}
+                  </code>
                   <div className="flex items-center justify-between text-xs text-gray-500 pt-1 border-t">
                     <span className="flex items-center gap-1">
                       <TrendingUp size={11} /> {v.leads_ativos} leads
@@ -845,6 +900,20 @@ export default function ComercialRepresentanteDetalhePage() {
               ))}
             </div>
           )}
+        </div>
+        {/* ── Contratos ────────────────────────────────────────────────── */}
+        <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+          <div className="px-8 py-5 border-b flex items-center gap-3">
+            <Building2 size={20} className="text-green-600" />
+            <h2 className="text-base font-bold text-gray-900">Contratos</h2>
+          </div>
+          <div className="p-4">
+            <ContratosTable
+              endpoint={`/api/comercial/contratos?representante_id=${id}`}
+              comercial
+              allowExpandClinicaEmpresas
+            />
+          </div>
         </div>
       </div>
 
@@ -886,11 +955,9 @@ export default function ComercialRepresentanteDetalhePage() {
                       <p className="font-bold text-gray-900 text-lg">
                         {vendedorPainel.nome}
                       </p>
-                      {vendedorPainel.codigo_vendedor && (
-                        <code className="text-[11px] font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">
-                          {vendedorPainel.codigo_vendedor}
-                        </code>
-                      )}
+                      <code className="text-[11px] font-mono bg-gray-100 px-2 py-0.5 rounded text-gray-600">
+                        #{vendedorPainel.vendedor_id}
+                      </code>
                     </div>
                   </div>
                   <div className="divide-y border rounded-xl overflow-hidden">
@@ -1173,7 +1240,12 @@ export default function ComercialRepresentanteDetalhePage() {
           repNome={repFull.nome}
           modeloAtual={repFull.modelo_comissionamento ?? null}
           percentualAtual={repFull.percentual_comissao ?? null}
+          percentualComercialAtual={
+            repFull.percentual_comissao_comercial ?? null
+          }
           walletIdAtual={repFull.asaas_wallet_id ?? null}
+          valorCFEntidadeAtual={repFull.valor_custo_fixo_entidade ?? null}
+          valorCFClinicaAtual={repFull.valor_custo_fixo_clinica ?? null}
           onClose={() => setShowComissao(false)}
           onSuccess={() => {
             setShowComissao(false);

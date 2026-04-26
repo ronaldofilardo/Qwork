@@ -199,7 +199,7 @@ vercel deploy --prod
 ```
 ✓ Production: https://sistema.qwork.app.br [<8digits>]
 ✓ Inspect Source: https://vercel.com/.../<deploy-id>/source
-Preview: https://qwork-psi.vercel.app
+Preview: https://sistema.qwork.app.br
 
 Deployment Complete! Aliased to sistema.qwork.app.br
 ```
@@ -220,7 +220,7 @@ Target: sistema.qwork.app.br (production)
 ## Fase 5: Promoção Manual para Production (Se Necessário)
 
 ### 5.1 Cenário: Deploy Criada em Preview (Não Production)
-**Situação**: Se deploy foi criada como Preview (URL qwork-psi.vercel.app), precisa promover.
+**Situação**: Se deploy foi criada como Preview (URL sistema.qwork.app.br), precisa promover.
 
 **Solução**:
 1. Ir para **Deployments** → Localizar deploy ID de 4.3
@@ -243,7 +243,7 @@ Caminho: **Settings** → **Domains**
 ```
 sistema.qwork.app.br → Production (main deployment)
 staging.qwork.app.br → Preview (automated previews)
-qwork-psi.vercel.app → Default preview URL
+sistema.qwork.app.br → Default preview URL
 ```
 
 ---
@@ -517,8 +517,8 @@ Staging Domain: staging.qwork.app.br
 
 ### Custom Domains
 ```
-Production: sistema.qwork.app.br → qwork-psi.vercel.app (CNAME)
-Staging: staging.qwork.app.br → qwork-psi.vercel.app (CNAME, auto-preview)
+Production: sistema.qwork.app.br (domínio principal)
+Staging: staging.qwork.app.br (auto-preview)
 ```
 
 ---

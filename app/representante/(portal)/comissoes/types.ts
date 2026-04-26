@@ -1,7 +1,12 @@
+import { COMISSAO_STATUS_BADGE } from '@/lib/status-labels';
+
 export interface Comissao {
   id: number;
   entidade_nome: string;
+  laudo_id: number | null;
+  lote_pagamento_id: number | null;
   valor_laudo: string;
+  valor_parcela: string;
   valor_comissao: string;
   percentual_comissao: string;
   status: string;
@@ -11,15 +16,11 @@ export interface Comissao {
   data_pagamento: string | null;
   numero_laudo: string | null;
   motivo_congelamento: string | null;
-  nf_rpa_enviada_em: string | null;
-  nf_nome_arquivo: string | null;
-  nf_rpa_aprovada_em: string | null;
-  nf_rpa_rejeitada_em: string | null;
-  nf_rpa_motivo_rejeicao: string | null;
   comprovante_pagamento_path: string | null;
   parcela_numero: number | null;
   total_parcelas: number | null;
   parcela_confirmada_em: string | null;
+  percentual_comissao_comercial?: string | null;
 }
 
 export interface Resumo {
@@ -32,34 +33,8 @@ export interface Resumo {
   valor_pago_total: string;
 }
 
-export const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
-  retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
-  pendente_nf: { label: 'Aguardando NF', cor: 'bg-blue-100 text-blue-700' },
-  nf_em_analise: {
-    label: 'NF em Análise',
-    cor: 'bg-indigo-100 text-indigo-700',
-  },
-  congelada_rep_suspenso: {
-    label: 'Congelada',
-    cor: 'bg-orange-100 text-orange-700',
-  },
-  congelada_aguardando_admin: {
-    label: 'Aguardando Admin',
-    cor: 'bg-yellow-100 text-yellow-700',
-  },
-  liberada: { label: 'Liberada', cor: 'bg-purple-100 text-purple-700' },
-  paga: { label: 'Paga', cor: 'bg-green-100 text-green-700' },
-  cancelada: { label: 'Cancelada', cor: 'bg-red-100 text-red-600' },
-};
+export const STATUS_BADGE = COMISSAO_STATUS_BADGE;
 
-export const NF_MAX_SIZE = 2 * 1024 * 1024; // 2MB
-export const NF_TIPOS = [
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-  'image/webp',
-];
-
-export function fmt(v: string | number) {
-  return `R$ ${parseFloat(String(v) || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+export function fmt(v: string | number | null | undefined) {
+  return `R$ ${parseFloat(String(v ?? '0') || '0').toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 }

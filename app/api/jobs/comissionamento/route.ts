@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     );
     resultados.vinculos_encerrados = r3.rows.length;
 
-    // Congelar comissões pendente_nf/nf_em_analise de vínculos encerrados
+    // Congelar comissões retidas de vínculos encerrados
     if (r3.rows.length > 0) {
       const vinculoIds = r3.rows.map((r: { id: number }) => r.id);
       const r3b = await query(
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
          SET status = 'congelada_aguardando_admin',
              motivo_congelamento = 'vinculo_encerrado'
          WHERE vinculo_id = ANY($1::int[])
-           AND status IN ('pendente_nf', 'nf_em_analise', 'retida')
+           AND status = 'retida'
          RETURNING id`,
         [vinculoIds]
       );

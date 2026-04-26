@@ -27,12 +27,10 @@ export async function GET(): Promise<NextResponse> {
       `SELECT
          hc.id              AS vinculo_id,
          hc.ativo,
-         hc.percentual_override,
          hc.criado_em       AS vinculado_em,
          r.id               AS representante_id,
          r.nome             AS representante_nome,
          r.email            AS representante_email,
-         r.codigo           AS representante_codigo,
          r.status           AS representante_status,
          COUNT(DISTINCT lr.id) FILTER (
            WHERE lr.status NOT IN ('expirado','convertido')

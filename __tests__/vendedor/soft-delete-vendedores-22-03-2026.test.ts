@@ -252,8 +252,10 @@ describe('5. PATCH /api/comercial/representantes/[id] — soft-delete com audito
     expect(src).toContain('motivo');
   });
 
-  it('NÃO deve verificar comissões pendentes antes de desativar (removido)', () => {
-    expect(src).not.toContain('COMISSOES_PENDENTES');
+  it('DEVE verificar comissões pendentes antes de desativar', () => {
+    expect(src).toContain('COMISSOES_PENDENTES');
+    expect(src).toContain('comissoes_laudo');
+    expect(src).toContain("status NOT IN ('paga', 'cancelada')");
   });
 });
 

@@ -12,51 +12,6 @@ export interface ResultadoGrupo {
   categoria: 'baixo' | 'medio' | 'alto';
 }
 
-// Detectar e tratar pontuações anômalas
-export function detectarAnomalias(
-  score: number,
-  tipo: 'positiva' | 'negativa'
-): {
-  isAnomalous: boolean;
-  reason?: string;
-  adjustedScore?: number;
-} {
-  // Detectar pontuações impossíveis
-  if (score < -100 || score > 100) {
-    return {
-      isAnomalous: true,
-      reason: 'Pontuação fora do intervalo válido (0-100)',
-      adjustedScore: Math.max(0, Math.min(100, score)),
-    };
-  }
-
-  // Detectar pontuações negativas em escalas positivas
-  if (score < 0 && tipo === 'positiva') {
-    return {
-      isAnomalous: true,
-      reason: 'Pontuação negativa em escala positiva',
-      adjustedScore: 0,
-    };
-  }
-
-  // Detectar padrões suspeitos (todas respostas iguais)
-  if (
-    score === 0 ||
-    score === 25 ||
-    score === 50 ||
-    score === 75 ||
-    score === 100
-  ) {
-    return {
-      isAnomalous: true,
-      reason: 'Possível padrão de resposta uniforme',
-      adjustedScore: score,
-    };
-  }
-
-  return { isAnomalous: false };
-}
-
 // Tratamento específico por grupo
 function tratarGrupoEspecifico(score: number, grupoId: number): number {
   switch (grupoId) {
@@ -112,13 +67,6 @@ export function calcularScoreGrupo(
 
   const soma = respostas.reduce((acc, r) => acc + r.valor, 0);
   let media = soma / respostas.length;
-
-  // Detectar e corrigir anomalias
-  const anomalia = detectarAnomalias(media, tipo);
-  if (anomalia.isAnomalous && anomalia.adjustedScore !== undefined) {
-    console.warn(`Anomalia detectada no grupo ${grupoId}: ${anomalia.reason}`);
-    media = anomalia.adjustedScore;
-  }
 
   // Tratamento específico para grupos problemáticos
   if (grupoId) {
@@ -316,4 +264,23 @@ export function getTextoCategoria(
     if (categoria === 'medio') return 'Adequado';
     return 'Precisa Melhorar';
   }
+}
+
+export function detectarAnomalias(
+  score: number,
+  _tipo: 'positiva' | 'negativa'
+): { isAnomalous: boolean; adjustedScore?: number; reason?: string } {
+  if (score < 0) {
+    return { isAnomalous: true, adjustedScore: 0 };
+  }
+  if (score > 100) {
+    return { isAnomalous: true, adjustedScore: 100 };
+  }
+  if (score % 25 === 0) {
+    return {
+      isAnomalous: true,
+      reason: 'Possível padrão de resposta uniforme',
+    };
+  }
+  return { isAnomalous: false };
 }

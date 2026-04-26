@@ -299,7 +299,7 @@ export function useCadastroTomador({
       );
 
       if (codigoRepresentante.trim()) {
-        formData.append('codigo_representante', codigoRepresentante.trim());
+        formData.append('representante_id', codigoRepresentante.trim());
       }
 
       Object.entries(dadosResponsavel).forEach(([key, value]) =>

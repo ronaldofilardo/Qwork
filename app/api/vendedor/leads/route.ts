@@ -15,7 +15,12 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import { calcularRequerAprovacao } from '@/lib/leads-config';
+import {
+  calcularRequerAprovacao,
+  calcularComissaoCustoFixo,
+  valorMinimoCustoFixoTotal,
+  CUSTO_POR_AVALIACAO,
+} from '@/lib/leads-config';
 import { NotificationService } from '@/lib/notification-service';
 
 export const dynamic = 'force-dynamic';
@@ -72,8 +77,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.criado_em,
          lr.data_conversao,
          r.id    AS representante_id,
-         r.nome  AS representante_nome,
-         r.codigo AS representante_codigo
+         r.nome  AS representante_nome
        FROM public.leads_representante lr
        JOIN public.representantes r ON r.id = lr.representante_id
        ${where}
@@ -82,7 +86,25 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       params
     );
 
-    return NextResponse.json({ leads: rows.rows, total, page, limit });
+    // Retorna também o modelo de comissionamento do representante para o frontend
+    const repInfo = await query<{ modelo_comissionamento: string | null }>(
+      `SELECT r.modelo_comissionamento
+         FROM public.hierarquia_comercial hc
+         JOIN public.representantes r ON r.id = hc.representante_id
+        WHERE hc.vendedor_id = $1 AND hc.ativo = true
+        LIMIT 1`,
+      [vendedorId]
+    );
+    const modeloComissionamento =
+      repInfo.rows[0]?.modelo_comissionamento ?? null;
+
+    return NextResponse.json({
+      leads: rows.rows,
+      total,
+      page,
+      limit,
+      modeloComissionamento,
+    });
   } catch (err: unknown) {
     if (
       err instanceof Error &&
@@ -105,7 +127,9 @@ const novoLeadSchema = z.object({
   contato_email: z.string().email().optional().nullable(),
   contato_telefone: z.string().optional().nullable(),
   cnpj: z.string().min(1, 'CNPJ é obrigatório'),
-  valor_negociado: z.number().positive().optional().nullable(),
+  valor_negociado: z
+    .number()
+    .positive('Valor negociado é obrigatório e deve ser maior que zero'),
   observacoes: z.string().max(1000).optional().nullable(),
   tipo_cliente: z.enum(['entidade', 'clinica']).optional().default('entidade'),
   num_vidas_estimado: z.number().int().positive().optional().nullable(),
@@ -146,6 +170,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
     const representanteId = hierResult.rows[0].representante_id;
+    // Guard: a FK hierarquia_comercial.representante_id é ON DELETE SET NULL,
+    // então o vínculo pode existir como ativo=true mas apontar para NULL.
+    if (!representanteId) {
+      return NextResponse.json(
+        {
+          error:
+            'Vínculo com representante inválido. Contate o suporte para regularizar.',
+        },
+        { status: 400 }
+      );
+    }
 
     // Valida body
     const body = await request.json();
@@ -225,6 +260,74 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       data.tipo_cliente
     );
 
+    // Buscar percentuais do representante para calcular requer_aprovacao_suporte
+    const repPercentuais = await query<{
+      percentual_comissao: string | null;
+      percentual_comissao_comercial: string | null;
+      modelo_comissionamento: string | null;
+      valor_custo_fixo_entidade: string | null;
+      valor_custo_fixo_clinica: string | null;
+    }>(
+      `SELECT percentual_comissao, percentual_comissao_comercial, modelo_comissionamento,
+              valor_custo_fixo_entidade, valor_custo_fixo_clinica
+       FROM representantes WHERE id = $1`,
+      [representanteId]
+    );
+    const percRep = Number(repPercentuais.rows[0]?.percentual_comissao ?? 0);
+    const percCom = Number(
+      repPercentuais.rows[0]?.percentual_comissao_comercial ?? 0
+    );
+    const modeloCom = repPercentuais.rows[0]?.modelo_comissionamento ?? null;
+
+    // Bloquear criação de lead se representante não tem modelo de comissionamento definido
+    if (!modeloCom) {
+      return NextResponse.json(
+        {
+          error:
+            'Cadastro de leads indisponível. O representante vinculado ainda não teve o modelo de comissionamento definido.',
+          code: 'COMISSIONAMENTO_NAO_DEFINIDO',
+        },
+        { status: 403 }
+      );
+    }
+
+    const valorNeg = data.valor_negociado ?? 0;
+
+    // ── Lógica de custo_fixo: validar mínimo antes de criar lead ─────────────────────────
+    let valorCustoFixoSnapshot: number | null = null;
+    if (modeloCom === 'custo_fixo' && valorNeg > 0) {
+      const custoFixoRaw =
+        data.tipo_cliente === 'entidade'
+          ? repPercentuais.rows[0]?.valor_custo_fixo_entidade
+          : repPercentuais.rows[0]?.valor_custo_fixo_clinica;
+      const valorCustoFixo =
+        custoFixoRaw != null
+          ? Number(custoFixoRaw)
+          : CUSTO_POR_AVALIACAO[data.tipo_cliente];
+      const calc = calcularComissaoCustoFixo(
+        valorNeg,
+        valorCustoFixo,
+        percCom,
+        CUSTO_POR_AVALIACAO[data.tipo_cliente]
+      );
+      if (calc.abaixoMinimo) {
+        return NextResponse.json(
+          {
+            error: `Valor negociado inferior ao mínimo para ${data.tipo_cliente}. Valor mínimo: R$ ${valorMinimoCustoFixoTotal(data.tipo_cliente, valorCustoFixo).toFixed(2)}.`,
+          },
+          { status: 400 }
+        );
+      }
+      valorCustoFixoSnapshot = valorCustoFixo;
+    }
+
+    const valorQWork =
+      modeloCom !== 'custo_fixo' && valorNeg > 0
+        ? valorNeg * (1 - (percRep + percCom) / 100)
+        : valorNeg;
+    const requerAprovacaoSuporteCalc =
+      requerAprovacao && valorQWork < CUSTO_POR_AVALIACAO[data.tipo_cliente];
+
     const numVidas =
       data.num_vidas_estimado && data.num_vidas_estimado > 0
         ? data.num_vidas_estimado
@@ -235,8 +338,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
          (representante_id, vendedor_id, contato_nome, contato_email,
           contato_telefone, cnpj, valor_negociado,
           observacoes, tipo_cliente, requer_aprovacao_comercial,
-          num_vidas_estimado, status, criado_em)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pendente',NOW())
+          requer_aprovacao_suporte, percentual_comissao_comercial,
+          num_vidas_estimado, valor_custo_fixo_snapshot, status, criado_em)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pendente',NOW())
        RETURNING id`,
       [
         representanteId,
@@ -249,7 +353,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         data.observacoes ?? null,
         data.tipo_cliente,
         requerAprovacao,
+        requerAprovacaoSuporteCalc,
+        percCom,
         numVidas,
+        valorCustoFixoSnapshot,
       ]
     );
 

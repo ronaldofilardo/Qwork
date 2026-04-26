@@ -6,6 +6,7 @@ import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,7 @@ export async function PATCH(
     await requireRole(['suporte', 'admin'], false);
 
     const body = await request.json();
-    const { ativa, trocar_gestor } = body;
+    const { ativa, trocar_gestor, isento_pagamento } = body;
     const clinicaId = parseInt(params.id);
 
     if (isNaN(clinicaId)) {
@@ -44,11 +45,26 @@ export async function PATCH(
       );
     }
 
-    if (typeof ativa !== 'boolean') {
+    if (typeof ativa !== 'boolean' && typeof isento_pagamento !== 'boolean') {
       return NextResponse.json(
-        { error: 'Status ativa deve ser boolean' },
+        { error: 'Status ativa ou isento_pagamento deve ser boolean' },
         { status: 400 }
       );
+    }
+
+    // Fluxo de isenção isolado (sem alterar ativa)
+    if (typeof isento_pagamento === 'boolean' && typeof ativa === 'undefined') {
+      const result = await query(
+        `UPDATE clinicas SET isento_pagamento = $1, atualizado_em = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id`,
+        [isento_pagamento, clinicaId]
+      );
+      if (result.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Clínica não encontrada' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ success: true, isento_pagamento });
     }
 
     // Se está reativando E trocando gestor
@@ -96,6 +112,21 @@ export async function PATCH(
       }
 
       const senhaHash = await bcrypt.hash(senhaInicial, 12);
+
+      // Verificar unicidade do CPF no sistema (ignora o gestor atual desta clínica se já existir)
+      const usuarioAtualResult = await query(
+        `SELECT id FROM usuarios WHERE cpf = $1 AND clinica_id = $2 AND tipo_usuario = 'rh'`,
+        [cpfLimpo, clinicaId]
+      );
+      const cpfCheck = await checkCpfUnicoSistema(cpfLimpo, {
+        ignorarUsuarioId: usuarioAtualResult.rows[0]?.id,
+      });
+      if (!cpfCheck.disponivel) {
+        return NextResponse.json(
+          { error: cpfCheck.message ?? 'CPF já cadastrado no sistema' },
+          { status: 409 }
+        );
+      }
 
       // 1. Atualizar dados do responsável na clínica
       await query(
@@ -192,13 +223,19 @@ export async function PATCH(
       });
     }
 
-    // Fluxo padrão: apenas toggle ativa
+    // Fluxo padrão: toggle ativa
+    const isentoSet =
+      typeof isento_pagamento === 'boolean' ? ', isento_pagamento = $3' : '';
+    const args: (boolean | number)[] =
+      typeof isento_pagamento === 'boolean'
+        ? [ativa, clinicaId, isento_pagamento]
+        : [ativa, clinicaId];
     const result = await query(
       `UPDATE clinicas 
-       SET ativa = $1, atualizado_em = CURRENT_TIMESTAMP 
+       SET ativa = $1, atualizado_em = CURRENT_TIMESTAMP${isentoSet} 
        WHERE id = $2 
        RETURNING id, nome, cnpj, email, telefone, endereco, ativa, criado_em`,
-      [ativa, clinicaId]
+      args
     );
 
     if (result.rows.length === 0) {
@@ -207,6 +244,13 @@ export async function PATCH(
         { status: 404 }
       );
     }
+
+    // Sincronizar usuarios.ativo com o novo estado da clínica
+    await query(
+      `UPDATE usuarios SET ativo = $1, atualizado_em = CURRENT_TIMESTAMP
+       WHERE clinica_id = $2 AND tipo_usuario = 'rh'`,
+      [ativa, clinicaId]
+    );
 
     return NextResponse.json(result.rows[0]);
   } catch (error) {

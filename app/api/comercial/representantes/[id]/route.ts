@@ -16,7 +16,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole(['comercial', 'admin'], false);
+    const session = await requireRole(['comercial', 'admin'], false);
 
     const id = parseInt(params.id, 10);
     if (isNaN(id))
@@ -24,7 +24,7 @@ export async function GET(
 
     const result = await query(
       `SELECT
-         r.id, r.nome, r.email, r.codigo, r.status, r.tipo_pessoa,
+         r.id, r.nome, r.email, r.status, r.tipo_pessoa,
          r.telefone, r.cpf, r.cnpj, r.cpf_responsavel_pj,
          r.criado_em, r.aprovado_em,
          r.aceite_termos, r.aceite_termos_em,
@@ -37,6 +37,8 @@ export async function GET(
          r.percentual_comissao,
          r.percentual_comissao_comercial,
          r.modelo_comissionamento,
+         r.valor_custo_fixo_entidade,
+         r.valor_custo_fixo_clinica,
          r.asaas_wallet_id,
          COUNT(DISTINCT l.id)                                                        AS total_leads,
          COUNT(DISTINCT l.id) FILTER (WHERE l.status = 'pendente')                  AS leads_ativos,
@@ -52,8 +54,9 @@ export async function GET(
        LEFT JOIN vinculos_comissao   v ON v.representante_id = r.id
        LEFT JOIN comissoes_laudo     c ON c.representante_id = r.id
        WHERE r.id = $1
+         AND ($2::varchar IS NULL OR r.gestor_comercial_cpf = $2)
        GROUP BY r.id`,
-      [id]
+      [id, session.perfil === 'comercial' ? session.cpf : null]
     );
 
     if (result.rows.length === 0)
@@ -118,6 +121,12 @@ const PatchSchema = z.object({
     .optional()
     .nullable(),
   asaas_wallet_id: z.string().max(200).optional().nullable(),
+  modelo_comissionamento: z
+    .enum(['percentual', 'custo_fixo'])
+    .optional()
+    .nullable(),
+  valor_custo_fixo_entidade: z.number().positive().optional().nullable(),
+  valor_custo_fixo_clinica: z.number().positive().optional().nullable(),
 });
 
 export async function PATCH(
@@ -150,10 +159,12 @@ export async function PATCH(
         );
       }
 
-      // Verificar representante atual
+      // Verificar representante atual (com ownership check)
       const repCheck = await query<{ status: string; nome: string }>(
-        `SELECT status, nome FROM representantes WHERE id = $1 LIMIT 1`,
-        [id]
+        `SELECT status, nome FROM representantes
+         WHERE id = $1 AND ($2::varchar IS NULL OR gestor_comercial_cpf = $2)
+         LIMIT 1`,
+        [id, session.perfil === 'comercial' ? session.cpf : null]
       );
       if (repCheck.rows.length === 0) {
         return NextResponse.json(
@@ -272,6 +283,12 @@ export async function PATCH(
     if (data.pix_tipo !== undefined) addField('pix_tipo', data.pix_tipo);
     if (data.asaas_wallet_id !== undefined)
       addField('asaas_wallet_id', data.asaas_wallet_id);
+    if (data.modelo_comissionamento !== undefined)
+      addField('modelo_comissionamento', data.modelo_comissionamento);
+    if (data.valor_custo_fixo_entidade !== undefined)
+      addField('valor_custo_fixo_entidade', data.valor_custo_fixo_entidade);
+    if (data.valor_custo_fixo_clinica !== undefined)
+      addField('valor_custo_fixo_clinica', data.valor_custo_fixo_clinica);
 
     if (fields.length === 0)
       return NextResponse.json(
@@ -281,9 +298,11 @@ export async function PATCH(
 
     fields.push(`atualizado_em = NOW()`);
     values.push(id);
+    // Ownership: comercial só pode atualizar representantes atribuídos a ele
+    values.push(session.perfil === 'comercial' ? session.cpf : null);
 
     await query(
-      `UPDATE representantes SET ${fields.join(', ')} WHERE id = $${idx}`,
+      `UPDATE representantes SET ${fields.join(', ')} WHERE id = $${idx} AND ($${idx + 1}::varchar IS NULL OR gestor_comercial_cpf = $${idx + 1})`,
       values
     );
 

@@ -339,11 +339,11 @@ describe('6. Formatação de dados — ImportacaoFlowGuide e FlowStepsExplainer 
 
     it('deve condicionar exibição de CNPJ com isClinica para clínica apenas', () => {
       expect(src).toMatch(/\{isClinica\s*&&\s*\(/);
-      expect(src).toContain('<strong>Empresa:</strong>');
+      expect(src).toContain('<strong>Nome da Empresa:</strong>');
     });
   });
 
-  describe('FlowStepsExplainer — Seção Formatação para clínicas', () => {
+  describe('FlowStepsExplainer — blocos condicionais isClinica', () => {
     const filePath = path.join(ROOT, 'components', 'FlowStepsExplainer.tsx');
     let src: string;
 
@@ -351,74 +351,24 @@ describe('6. Formatação de dados — ImportacaoFlowGuide e FlowStepsExplainer 
       src = fs.readFileSync(filePath, 'utf-8');
     });
 
-    it('deve ter seção de formatação para isClinica=true', () => {
-      // Procura pela seção dentro do bloco {isClinica && (
+    it('deve ter bloco {isClinica && ( com aviso de cobrança por lote', () => {
       const clinicaBlockIdx = src.indexOf('{isClinica && (');
-      const formatacaoIdx = src.indexOf(
-        'Formatação dos dados',
-        clinicaBlockIdx
-      );
-      expect(formatacaoIdx).toBeGreaterThan(clinicaBlockIdx);
+      expect(clinicaBlockIdx).toBeGreaterThan(-1);
+      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 2000);
+      expect(ctx).toContain('cobrado por lote');
     });
 
-    it('deve conter Data de Nascimento com dd/mm/aaaa em clínica', () => {
-      const clinicaBlockIdx = src.indexOf('{isClinica && (');
-      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 3000);
-      expect(ctx).toContain('Data de Nascimento');
-      expect(ctx).toContain('dd/mm/aaaa');
-    });
-
-    it('deve conter CPF com 11 dígitos em clínica', () => {
-      const clinicaBlockIdx = src.indexOf('{isClinica && (');
-      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 3000);
-      expect(ctx).toContain('deve conter apenas 11 dígitos');
-    });
-
-    it('deve conter Função com referência a "4. Níveis" em clínica', () => {
-      const clinicaBlockIdx = src.indexOf('{isClinica && (');
-      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 3000);
-      expect(ctx).toContain('Função');
-      expect(ctx).toContain('4. Níveis');
-    });
-  });
-
-  describe('FlowStepsExplainer — Seção Formatação para entidades', () => {
-    const filePath = path.join(ROOT, 'components', 'FlowStepsExplainer.tsx');
-    let src: string;
-
-    beforeAll(() => {
-      src = fs.readFileSync(filePath, 'utf-8');
-    });
-
-    it('deve ter seção de formatação para isClinica=false', () => {
-      // Procura pela seção dentro do bloco {!isClinica && (
+    it('deve ter bloco {!isClinica && ( com aviso de cobrança', () => {
       const entidadeBlockIdx = src.indexOf('{!isClinica && (');
       expect(entidadeBlockIdx).toBeGreaterThan(-1);
-      const formatacaoIdx = src.indexOf(
-        'Formatação dos dados',
-        entidadeBlockIdx
-      );
-      expect(formatacaoIdx).toBeGreaterThan(entidadeBlockIdx);
+      const ctx = src.substring(entidadeBlockIdx, entidadeBlockIdx + 1000);
+      expect(ctx).toContain('cobrado por lote');
     });
 
-    it('deve conter Data de Nascimento com dd/mm/aaaa em entidade', () => {
-      const entidadeBlockIdx = src.indexOf('{!isClinica && (');
-      const ctx = src.substring(entidadeBlockIdx, entidadeBlockIdx + 3000);
-      expect(ctx).toContain('Data de Nascimento');
-      expect(ctx).toContain('dd/mm/aaaa');
-    });
-
-    it('deve conter CPF com 11 dígitos em entidade', () => {
-      const entidadeBlockIdx = src.indexOf('{!isClinica && (');
-      const ctx = src.substring(entidadeBlockIdx, entidadeBlockIdx + 3000);
-      expect(ctx).toContain('deve conter apenas 11 dígitos');
-    });
-
-    it('deve conter Função com referência a "3. Avaliações" em entidade', () => {
-      const entidadeBlockIdx = src.indexOf('{!isClinica && (');
-      const ctx = src.substring(entidadeBlockIdx, entidadeBlockIdx + 3000);
-      expect(ctx).toContain('Função');
-      expect(ctx).toContain('3. Avaliações');
+    it('bloco clínica deve conter Liberação em massa de Ciclos', () => {
+      const clinicaBlockIdx = src.indexOf('{isClinica && (');
+      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 2000);
+      expect(ctx).toContain('Liberação em massa de Ciclos');
     });
   });
 

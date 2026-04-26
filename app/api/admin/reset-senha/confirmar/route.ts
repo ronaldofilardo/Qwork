@@ -86,11 +86,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       cpf: string;
       nome: string;
       tipo_usuario: string;
+      entidade_id: number | null;
+      clinica_id: number | null;
       reset_token_expira_em: string | null;
       reset_tentativas_falhas: number;
       reset_usado_em: string | null;
     }>(
-      `SELECT cpf, nome, tipo_usuario,
+      `SELECT cpf, nome, tipo_usuario, entidade_id, clinica_id,
               reset_token_expira_em, reset_tentativas_falhas, reset_usado_em
        FROM usuarios
        WHERE reset_token = $1
@@ -123,6 +125,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
          WHERE cpf = $2`,
         [senhaHash, u.cpf]
       );
+
+      // ── Sincronizar senha na tabela de autenticação dedicada ─────────────
+      // Gestores e RH autenticam via tabelas separadas (entidades_senhas /
+      // clinicas_senhas). A senha precisa ser gravada lá também, caso contrário
+      // o login falha porque a rota de login ignora usuarios.senha_hash para
+      // esses perfis.
+      if (u.tipo_usuario === 'gestor' && u.entidade_id) {
+        await query(
+          `INSERT INTO entidades_senhas (entidade_id, cpf, senha_hash, primeira_senha_alterada)
+           VALUES ($1, $2, $3, TRUE)
+           ON CONFLICT (cpf, entidade_id)
+           DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
+          [u.entidade_id, u.cpf, senhaHash]
+        );
+      } else if (u.tipo_usuario === 'rh' && u.clinica_id) {
+        await query(
+          `INSERT INTO clinicas_senhas (clinica_id, cpf, senha_hash, primeira_senha_alterada)
+           VALUES ($1, $2, $3, TRUE)
+           ON CONFLICT (cpf, clinica_id)
+           DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
+          [u.clinica_id, u.cpf, senhaHash]
+        );
+      }
 
       return NextResponse.json({ success: true });
     }
@@ -199,5 +224,3 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 }
-
-

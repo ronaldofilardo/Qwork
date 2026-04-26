@@ -9,17 +9,30 @@
 const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
 
 /**
- * Parseia o valor para um objeto Date sem modificar o horário.
- * @param value Data ou string ISO para converter
- * @returns Objeto Date correspondente
+ * Parseia a data tratando strings sem indicador de fuso como UTC.
+ * Isso corrige o comportamento do driver `pg` que retorna `timestamp without time zone`
+ * sem sufixo 'Z', fazendo o JavaScript interpretar como hora local.
+ */
+export function parsearComoUTC(value: Date | string | null | undefined): Date {
+  if (!value) return new Date();
+  if (value instanceof Date) return value;
+  const str = String(value).trim();
+  if (!str) return new Date();
+  // Already has timezone info — parse as-is
+  if (/Z$/i.test(str) || /[+-]\d{2}:?\d{2}$/.test(str)) {
+    return new Date(str);
+  }
+  // Naive string: normalize space separator and append 'Z' to treat as UTC
+  return new Date(str.replace(' ', 'T') + 'Z');
+}
+
+/**
+ * @deprecated Use parsearComoUTC instead.
  */
 export function corrigirTimezone(
   value: Date | string | null | undefined
 ): Date {
-  if (!value) {
-    return new Date();
-  }
-  return value instanceof Date ? value : new Date(value);
+  return parsearComoUTC(value);
 }
 
 /**
@@ -30,8 +43,7 @@ export function corrigirTimezone(
 export function formatarDataCorrigida(
   value: Date | string | null | undefined
 ): string {
-  const data =
-    value instanceof Date ? value : value ? new Date(value) : new Date();
+  const data = parsearComoUTC(value);
 
   return data.toLocaleString('pt-BR', {
     timeZone: BRAZIL_TIMEZONE,
@@ -52,8 +64,7 @@ export function formatarDataCorrigida(
 export function formatarDataApenasData(
   value: Date | string | null | undefined
 ): string {
-  const data =
-    value instanceof Date ? value : value ? new Date(value) : new Date();
+  const data = parsearComoUTC(value);
 
   return data.toLocaleDateString('pt-BR', {
     timeZone: BRAZIL_TIMEZONE,
@@ -69,8 +80,7 @@ export function formatarDataApenasData(
  * @returns String formatada "HH:mm:ss"
  */
 export function formatarHora(value: Date | string | null | undefined): string {
-  const data =
-    value instanceof Date ? value : value ? new Date(value) : new Date();
+  const data = parsearComoUTC(value);
 
   return data.toLocaleTimeString('pt-BR', {
     timeZone: BRAZIL_TIMEZONE,

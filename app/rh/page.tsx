@@ -51,6 +51,9 @@ export default function RhPage() {
   const [selecionadas, setSelecionadas] = useState<Set<number>>(new Set());
   const [isModalNovaEmpresa, setIsModalNovaEmpresa] = useState(false);
   const [isModalLiberar, setIsModalLiberar] = useState(false);
+  const [empresaParaEditar, setEmpresaParaEditar] = useState<number | null>(
+    null
+  );
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -108,7 +111,13 @@ export default function RhPage() {
 
   const handleEmpresaCreated = (_novaEmpresa: EmpresaCreated) => {
     setIsModalNovaEmpresa(false);
+    setEmpresaParaEditar(null);
     loadData();
+  };
+
+  const handleEditEmpresa = (id: number) => {
+    setEmpresaParaEditar(id);
+    setIsModalNovaEmpresa(true);
   };
 
   const empresasSelecionadas = empresas.filter((e) => selecionadas.has(e.id));
@@ -128,7 +137,7 @@ export default function RhPage() {
     <div className="bg-gray-50 min-h-full">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-5">
+        <div className="px-4 py-5">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
@@ -166,7 +175,7 @@ export default function RhPage() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-5">
+      <div className="px-4 py-6 space-y-5">
         {/* Fluxo explicativo com tooltips */}
         <FlowStepsExplainer isClinica={true} />
 
@@ -216,6 +225,7 @@ export default function RhPage() {
           selecionadas={selecionadas}
           onToggle={handleToggle}
           onToggleAll={handleToggleAll}
+          onEditEmpresa={handleEditEmpresa}
         />
       </div>
 
@@ -226,11 +236,15 @@ export default function RhPage() {
         onDesmarcarTodas={() => setSelecionadas(new Set())}
       />
 
-      {/* Modal Nova Empresa */}
+      {/* Modal Nova Empresa / Editar Empresa */}
       <EmpresaFormModal
         isOpen={isModalNovaEmpresa}
-        onClose={() => setIsModalNovaEmpresa(false)}
+        onClose={() => {
+          setIsModalNovaEmpresa(false);
+          setEmpresaParaEditar(null);
+        }}
         onSuccess={handleEmpresaCreated}
+        empresaId={empresaParaEditar ?? undefined}
       />
 
       {/* Modal Liberar Ciclos */}

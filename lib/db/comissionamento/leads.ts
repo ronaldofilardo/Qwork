@@ -10,7 +10,6 @@ export interface LeadResolucao {
   lead_id: number;
   representante_id: number;
   representante_nome: string;
-  representante_codigo: string;
   tipo_vinculo: 'codigo_representante' | 'verificacao_cnpj';
 }
 
@@ -110,36 +109,34 @@ export async function gerarTokenLead(leadId: number) {
 
 /**
  * Tenta encontrar um lead ativo que corresponda ao CNPJ cadastrado.
- * Prioridade 1: código manual do representante + CNPJ
+ * Prioridade 1: id numérico do representante + CNPJ
  * Prioridade 2: CNPJ na lista de leads ativos de qualquer representante
  *
  * Nunca lança exceção — retorna null se não encontrar.
  */
 export async function resolverLeadPorCadastro(
   cnpj: string,
-  codigoRepresentante?: string
+  representanteId?: number
 ): Promise<LeadResolucao | null> {
   try {
     const cnpjLimpo = cnpj.replace(/\D/g, '');
     if (!/^\d{14}$/.test(cnpjLimpo)) return null;
 
-    // Prioridade 1: código manual + CNPJ
-    if (codigoRepresentante?.trim()) {
-      const codigoNorm = codigoRepresentante.trim().toUpperCase();
+    // Prioridade 1: id do representante + CNPJ
+    if (representanteId && Number.isFinite(representanteId)) {
       const codigoResult = await query(
         `SELECT
            l.id            AS lead_id,
            l.representante_id,
-           r.nome          AS representante_nome,
-           r.codigo        AS representante_codigo
+           r.nome          AS representante_nome
          FROM leads_representante l
          JOIN representantes r ON r.id = l.representante_id
-         WHERE r.codigo = $1
+         WHERE r.id = $1
            AND l.cnpj   = $2
            AND l.status = 'pendente'
            AND l.data_expiracao > NOW()
          LIMIT 1`,
-        [codigoNorm, cnpjLimpo]
+        [representanteId, cnpjLimpo]
       );
 
       if (codigoResult.rows.length > 0) {
@@ -148,7 +145,6 @@ export async function resolverLeadPorCadastro(
           lead_id: row.lead_id,
           representante_id: row.representante_id,
           representante_nome: row.representante_nome,
-          representante_codigo: row.representante_codigo,
           tipo_vinculo: 'codigo_representante',
         };
       }
@@ -159,8 +155,7 @@ export async function resolverLeadPorCadastro(
       `SELECT
          l.id            AS lead_id,
          l.representante_id,
-         r.nome          AS representante_nome,
-         r.codigo        AS representante_codigo
+         r.nome          AS representante_nome
        FROM leads_representante l
        JOIN representantes r ON r.id = l.representante_id
        WHERE l.cnpj = $1
@@ -177,7 +172,6 @@ export async function resolverLeadPorCadastro(
         lead_id: row.lead_id,
         representante_id: row.representante_id,
         representante_nome: row.representante_nome,
-        representante_codigo: row.representante_codigo,
         tipo_vinculo: 'verificacao_cnpj',
       };
     }
@@ -283,11 +277,12 @@ export async function autoConvertirLeadPorCnpj(
       valor_negociado: number | null;
       percentual_comissao_representante: number | null;
       percentual_comissao: number | null;
+      percentual_comissao_comercial: number;
       num_vidas_estimado: number | null;
     }>(
       `SELECT id, representante_id, valor_negociado,
               percentual_comissao_representante, percentual_comissao,
-              num_vidas_estimado
+              percentual_comissao_comercial, num_vidas_estimado
        FROM leads_representante
        WHERE cnpj = $1
          AND status = 'pendente'
@@ -318,14 +313,16 @@ export async function autoConvertirLeadPorCnpj(
           lead.percentual_comissao ??
           0;
         const numVidas = lead.num_vidas_estimado ?? null;
+        const percComercial = lead.percentual_comissao_comercial ?? 0;
+        const valorNegociado = lead.valor_negociado ?? null;
         const insertFields = entidadeId
-          ? 'representante_id, entidade_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado'
-          : 'representante_id, clinica_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado';
+          ? 'representante_id, entidade_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado, percentual_comissao_comercial, valor_negociado'
+          : 'representante_id, clinica_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado, percentual_comissao_comercial, valor_negociado';
         const targetId = entidadeId ?? clinicaId;
 
         const vinculoResult = await query<{ id: number }>(
           `INSERT INTO vinculos_comissao (${insertFields})
-           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7)
+           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7, $8, $9)
            RETURNING id`,
           [
             lead.representante_id,
@@ -335,6 +332,8 @@ export async function autoConvertirLeadPorCnpj(
             dataExpiracao,
             percRep,
             numVidas,
+            percComercial,
+            valorNegociado,
           ]
         );
 

@@ -896,7 +896,7 @@ export default function DetalhesLotePage() {
           </p>
           <button
             onClick={() => router.push(`/rh/empresa/${empresaId}`)}
-            className="bg-primary hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
+            className="bg-primary hover:bg-primary-hover text-white px-6 py-2 rounded-lg transition-colors"
           >
             ← Voltar para Dashboard
           </button>

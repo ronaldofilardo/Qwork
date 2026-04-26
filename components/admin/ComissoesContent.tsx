@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 interface Comissao {
   id: number;
   representante_nome: string;
-  representante_codigo: string;
+  representante_id: number;
   representante_email: string;
   representante_tipo_pessoa: string;
   entidade_nome: string;
@@ -13,6 +13,7 @@ interface Comissao {
   lote_pagamento_metodo: string | null;
   lote_pagamento_parcelas: number | null;
   valor_laudo: string;
+  valor_parcela: string;
   valor_comissao: string;
   percentual_comissao: string;
   parcela_numero: number;
@@ -25,10 +26,6 @@ interface Comissao {
   data_aprovacao: string | null;
   data_liberacao: string | null;
   data_pagamento: string | null;
-  nf_path: string | null;
-  nf_nome_arquivo: string | null;
-  nf_rpa_enviada_em: string | null;
-  nf_rpa_aprovada_em: string | null;
   comprovante_pagamento_path: string | null;
 }
 
@@ -42,21 +39,20 @@ const COMPROVANTE_MIMES = [
 
 interface Resumo {
   total_comissoes: string;
-  pendentes_nf: string;
-  em_analise: string;
+  pendentes_consolidacao: string;
   liberadas: string;
   pagas: string;
   congeladas: string;
   valor_a_pagar: string;
   valor_pago_total: string;
+  valor_liberado: string;
 }
 
 const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
   retida: { label: 'Retida', cor: 'bg-gray-100 text-gray-600' },
-  pendente_nf: { label: 'Aguardando NF', cor: 'bg-blue-100 text-blue-700' },
-  nf_em_analise: {
-    label: 'NF em Análise',
-    cor: 'bg-indigo-100 text-indigo-700',
+  pendente_consolidacao: {
+    label: 'No Ciclo',
+    cor: 'bg-blue-100 text-blue-700',
   },
   congelada_rep_suspenso: {
     label: 'Congelada (Suspensão)',
@@ -72,8 +68,6 @@ const STATUS_BADGE: Record<string, { label: string; cor: string }> = {
 };
 
 const ACOES_POR_STATUS: Record<string, string[]> = {
-  pendente_nf: ['congelar', 'cancelar'],
-  nf_em_analise: ['liberar', 'congelar', 'cancelar'],
   liberada: ['pagar', 'congelar', 'cancelar'],
   congelada_aguardando_admin: ['descongelar', 'cancelar'],
   congelada_rep_suspenso: ['descongelar', 'cancelar'],
@@ -81,7 +75,6 @@ const ACOES_POR_STATUS: Record<string, string[]> = {
 };
 
 const ACAO_LABEL: Record<string, string> = {
-  liberar: '✅ Liberar (aprovar NF)',
   pagar: '💰 Marcar como Paga',
   congelar: '❄ Congelar',
   cancelar: '❌ Cancelar',
@@ -378,16 +371,16 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
               cor: 'text-green-700',
             },
             {
-              label: 'Aguardando NF',
-              value: resumo.pendentes_nf,
-              icon: '📄',
+              label: 'No Ciclo',
+              value: resumo.pendentes_consolidacao,
+              icon: '📦',
               cor: 'text-blue-700',
             },
             {
-              label: 'NF em Análise',
-              value: resumo.em_analise,
-              icon: '🔍',
-              cor: 'text-indigo-700',
+              label: 'Congeladas',
+              value: resumo.congeladas,
+              icon: '❄',
+              cor: 'text-gray-600',
             },
           ].map((c) => (
             <div key={c.label} className="bg-white rounded-xl border p-4">
@@ -442,11 +435,11 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                 <th className="px-3 py-3 text-left">Cliente</th>
                 <th className="px-3 py-3 text-left">Lote</th>
                 <th className="px-3 py-3 text-right">Valor Total</th>
+                <th className="px-3 py-3 text-right">Valor Parcela</th>
                 <th className="px-3 py-3 text-right">Comissão</th>
                 <th className="px-3 py-3 text-center">%</th>
                 <th className="px-3 py-3 text-center">Parcelas</th>
                 <th className="px-3 py-3 text-left">Status</th>
-                <th className="px-3 py-3 text-center">NF/RPA</th>
                 <th className="px-3 py-3 text-left">Mês Pag.</th>
                 <th className="px-3 py-3 text-center">Ações</th>
               </tr>
@@ -456,7 +449,7 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                 const rawAcoes = ACOES_POR_STATUS[c.status] ?? [];
                 const acoes =
                   perfil === 'comercial'
-                    ? rawAcoes.filter((a) => a !== 'liberar' && a !== 'pagar')
+                    ? rawAcoes.filter((a) => a !== 'pagar')
                     : rawAcoes;
 
                 return (
@@ -466,7 +459,7 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                         {c.representante_nome}
                       </div>
                       <div className="text-xs text-gray-400 font-mono">
-                        {c.representante_codigo} ·{' '}
+                        #{c.representante_id} ·{' '}
                         {c.representante_tipo_pessoa.toUpperCase()}
                       </div>
                     </td>
@@ -480,6 +473,9 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                     </td>
                     <td className="px-3 py-3 text-right text-gray-700">
                       {fmt(c.valor_laudo)}
+                    </td>
+                    <td className="px-3 py-3 text-right text-gray-700">
+                      {fmt(c.valor_parcela)}
                     </td>
                     <td className="px-3 py-3 text-right font-semibold text-green-700">
                       {fmt(c.valor_comissao)}
@@ -504,28 +500,6 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                           {STATUS_BADGE[c.status]?.label ?? c.status}
                         </span>
                       </div>
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      {c.nf_rpa_aprovada_em ? (
-                        <span
-                          className="text-xs text-green-700"
-                          title="NF aprovada"
-                        >
-                          ✅
-                        </span>
-                      ) : c.nf_rpa_enviada_em ? (
-                        <a
-                          href={`/api/admin/comissoes/${c.id}/nf`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs px-2 py-1 border border-blue-300 rounded text-blue-700 hover:bg-blue-50 transition-colors whitespace-nowrap"
-                          title={c.nf_nome_arquivo || 'Ver NF/RPA'}
-                        >
-                          📄 Ver NF
-                        </a>
-                      ) : (
-                        <span className="text-xs text-gray-300">—</span>
-                      )}
                     </td>
                     <td className="px-3 py-3 text-gray-500 text-xs">
                       {c.mes_pagamento

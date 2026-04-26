@@ -1,18 +1,22 @@
 /**
  * QWork Color Palette
- * Preto como base, Verde do logo para ações
+ * Cores extraídas do logo oficial QWork.
+ * primary = charcoal do texto "Work" (NÃO preto puro).
+ * accent  = verde do "Q" + checkmark.
+ * accentAlt = segundo tom de verde intencional.
  */
 
 export const QWORK_COLORS = {
-  // Preto como cor base/institucional
-  primary: '#000000',
+  // Charcoal do logo — base institucional (substitui preto puro do protótipo)
+  primary: '#2D2D2D',
   primaryHover: '#1a1a1a',
-  primaryLight: '#2d2d2d',
+  primaryLight: '#4a4a4a',
 
-  // Verde do logo para botões e ações
+  // Verde do logo para botões e ações principais
   accent: '#9ACD32',
   accentHover: '#7BA428',
   accentLight: '#B5E550',
+  accentAlt: '#8DC641',
 
   // Cinza para elementos secundários
   secondary: '#4A5568',

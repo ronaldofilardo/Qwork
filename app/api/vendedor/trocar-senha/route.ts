@@ -94,18 +94,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       [user.id]
     );
 
-    // Buscar código do vendedor para exibir na tela de sucesso
-    const codigoResult = await query<{ codigo: string }>(
-      `SELECT codigo FROM vendedores_perfil WHERE usuario_id = $1 LIMIT 1`,
-      [user.id]
-    );
-    const codigo = codigoResult.rows[0]?.codigo ?? null;
-
     console.log(
       `[TROCAR_SENHA_VENDEDOR] usuario_id=${user.id} (CPF: ${session.cpf}) alterou senha`
     );
 
-    return NextResponse.json({ success: true, codigo });
+    return NextResponse.json({ success: true });
   } catch (err: unknown) {
     const e = err as Error;
     if (e.message === 'UNAUTHORIZED' || e.message?.includes('401')) {

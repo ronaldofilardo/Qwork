@@ -336,9 +336,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       if (err.message === 'Sem permissão') {
         return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
       }
-      if (err.message === 'MFA_REQUIRED') {
-        return NextResponse.json({ error: 'MFA_REQUIRED' }, { status: 403 });
-      }
     }
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }

@@ -20,12 +20,11 @@ describe('POST /api/avaliacao/liberar-massa', () => {
     jest.clearAllMocks();
   });
 
-  it('200 com erro se não é rh', async () => {
+  it('403 se não é rh', async () => {
     mockRequireAuth.mockResolvedValue({ cpf: '111', perfil: 'gestor' } as any);
     const res = await POST({} as Request);
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(403);
     const json = await res.json();
-    expect(json.success).toBe(false);
     expect(json.error).toBe('Acesso negado');
   });
 

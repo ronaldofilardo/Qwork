@@ -10,5 +10,4 @@ export interface VendedorLead {
   data_conversao: string | null;
   representante_id: number;
   representante_nome: string | null;
-  representante_codigo: string | null;
 }

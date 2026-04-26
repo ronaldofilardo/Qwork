@@ -60,16 +60,9 @@ describe('/api/admin/clinicas', () => {
       expect(response.status).toBe(200);
       expect(data).toHaveLength(1);
       expect(data[0].nome).toBe('Clínica Teste');
-      expect(mockRequireRole).toHaveBeenCalledWith('admin');
+      expect(mockRequireRole).toHaveBeenCalledWith(['suporte', 'admin'], false);
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('FROM tomadors'),
-        [],
-        mockSession
-      );
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "WHERE tipo = 'clinica' AND status = 'aprovado'"
-        ),
+        expect.stringContaining('FROM clinicas'),
         [],
         mockSession
       );
@@ -106,7 +99,8 @@ describe('/api/admin/clinicas', () => {
         perfil: 'admin' as const,
       };
       mockRequireRole.mockResolvedValue(mockSession);
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CNPJ duplicado
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CNPJ duplicado (clinicas)
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CNPJ duplicado (entidades)
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // BEGIN
       mockQuery.mockResolvedValueOnce({
         // INSERT clínica
@@ -139,9 +133,9 @@ describe('/api/admin/clinicas', () => {
         'Aguardando Confirmação de Pagamento'
       );
 
-      // Verificar que foi chamado INSERT INTO tomadors
+      // Verificar que foi chamado INSERT INTO clinicas
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO tomadors'),
+        expect.stringContaining('INSERT INTO clinicas'),
         expect.any(Array),
         mockSession
       );
@@ -154,7 +148,8 @@ describe('/api/admin/clinicas', () => {
         perfil: 'admin' as const,
       });
 
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CNPJ duplicado
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CNPJ duplicado (clinicas)
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CNPJ duplicado (entidades)
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // BEGIN
       mockQuery.mockResolvedValueOnce({
         // INSERT clínica
@@ -235,12 +230,29 @@ describe('/api/admin/clinicas', () => {
     });
 
     it('deve rejeitar gestor RH inválido (parâmetro ignorado, apenas validação de clínica)', async () => {
-      // Nota: Parâmetro RH é ignorado, mas a requisição deve validar clínica
+      // Nota: Parâmetro RH é ignorado, clínica é processada normalmente
       mockRequireRole.mockResolvedValue({
         cpf: '00000000000',
         nome: 'Admin Teste',
         perfil: 'admin' as const,
       });
+
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // CNPJ check (clinicas)
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // CNPJ check (entidades)
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // BEGIN
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            ...validClinica,
+            cnpj: '11222333000181',
+            ativa: true,
+            criado_em: '2024-01-01T00:00:00.000Z',
+          },
+        ],
+      } as any); // INSERT clínica
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // COMMIT
+      mockLogAudit.mockResolvedValue(undefined);
 
       const request = new Request('http://localhost:3000/api/admin/clinicas', {
         method: 'POST',
@@ -257,9 +269,9 @@ describe('/api/admin/clinicas', () => {
       const response = await POST(request as any);
       const data = await response.json();
 
-      // Requisição é processada, RH é ignorado
-      // Continuará como antes se clínica for válida
-      expect(response.status).toBe(400); // Falha por rejeição de permissão ou outra validação
+      // RH é ignorado, clínica criada com sucesso
+      expect(response.status).toBe(201);
+      expect(data.success).toBe(true);
     });
 
     it('deve rejeitar CNPJ duplicado', async () => {

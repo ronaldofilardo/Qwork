@@ -130,11 +130,9 @@ export type AuditoriaSubTab =
   | 'laudos'
   | 'operacionais'
   | 'aceites'
-  | 'delecao'
-  | 'acesso-suporte'
-  | 'comissoes-leads';
+  | 'delecao';
 
-// ── Acesso por Perfil Operacional (Suporte/Comercial/Representante/Vendedor) ──
+// ── Acesso Suporte ────────────────────────────────────────────────────────────
 
 export interface AcessoSuporte {
   id: number;
@@ -147,40 +145,24 @@ export interface AcessoSuporte {
   nome: string | null;
 }
 
-export interface AcessoComercial {
-  id: number;
-  cpf: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string | null;
-  user_agent: string | null;
-  nome: string | null;
-}
-
-export interface AcessoRepresentante {
-  id: number;
-  cpf: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string | null;
-  user_agent: string | null;
-  representante_nome: string | null;
-}
-
-export interface AcessoVendedor {
-  id: number;
-  cpf: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string | null;
-  user_agent: string | null;
-  nome: string | null;
-}
-
 // ── Lead Abaixo do Custo Mínimo ─────────────────────────────────────────────
+
+export interface LeadComissaoGeral {
+  id: number;
+  cnpj: string | null;
+  razao_social: string | null;
+  tipo_cliente: string;
+  valor_negociado: number | null;
+  percentual_comissao_representante: number | null;
+  percentual_comissao_comercial: number | null;
+  valor_custo_fixo_snapshot: number | null;
+  requer_aprovacao_comercial: boolean;
+  status: string;
+  criado_em: string;
+  representante_nome: string | null;
+  representante_id: number | null;
+  modelo_comissionamento: string | null;
+}
 
 export interface LeadAbaixoMinimo {
   id: number;
@@ -197,7 +179,7 @@ export interface LeadAbaixoMinimo {
   status: string;
   criado_em: string;
   representante_nome: string;
-  representante_codigo: string;
+  representante_id: number;
 }
 
 // ── Deleção de Tomador ────────────────────────────────────────────────────

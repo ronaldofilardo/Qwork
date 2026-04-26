@@ -64,6 +64,26 @@ export async function PATCH(
       );
     }
 
+    // Ownership check: comercial só pode inativar vendedores vinculados aos seus representantes
+    if (session.perfil === 'comercial') {
+      const owned = await query<{ id: number }>(
+        `SELECT 1 AS id
+         FROM hierarquia_comercial hc
+         JOIN representantes r ON r.id = hc.representante_id
+         WHERE hc.vendedor_id = $1
+           AND hc.ativo = true
+           AND r.gestor_comercial_cpf = $2
+         LIMIT 1`,
+        [vendedorId, session.cpf]
+      );
+      if (owned.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Vendedor não encontrado' },
+          { status: 404 }
+        );
+      }
+    }
+
     const motivo = parsed.data.motivo ?? 'Inativação via painel comercial';
     const operadorCpf = (session as { cpf?: string }).cpf ?? 'desconhecido';
     const operadorInfo = `comercial:${operadorCpf}`;

@@ -22,7 +22,6 @@ describe('PerfilUsuario.REPRESENTANTE', () => {
       'admin',
       'emissor',
       'gestor',
-      'cadastro',
       'representante',
     ];
     perfilsEsperados.forEach((perfil) => {

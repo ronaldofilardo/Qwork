@@ -41,11 +41,17 @@
     "validate:ci-envs": "node scripts/checks/validate-ci-envs.cjs",
     "test": "dotenv -e .env.test --override -- jest",
     "test:ci": "dotenv -e .env.test --override -- jest --bail=50 --forceExit",
-    "test:unit": "cross-env SKIP_GLOBAL_JEST_SETUP=1 dotenv -e .env.test --override -- jest __tests__/lib --runInBand",
+    "test:unit": "cross-env SKIP_GLOBAL_JEST_SETUP=1 dotenv -e .env.test --override -- jest __tests__/lib __tests__/unit --runInBand",
+    "test:api": "dotenv -e .env.test --override -- jest __tests__/api --runInBand",
+    "test:integration": "dotenv -e .env.test --override -- jest __tests__/integration --runInBand",
+    "test:database": "dotenv -e .env.test --override -- jest __tests__/database --runInBand",
+    "test:components": "cross-env SKIP_GLOBAL_JEST_SETUP=1 dotenv -e .env.test --override -- jest __tests__/components --runInBand",
+    "test:security": "dotenv -e .env.test --override -- jest __tests__/security --runInBand",
     "test:regression": "vitest run",
     "test:local": "dotenv -e .env.local -- pnpm test",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test:coverage": "dotenv -e .env.test --override -- jest --coverage",
+    "test:audit": "node scripts/audit-tests.mjs",
     "test:snapshots:update": "dotenv -e .env.test --override -- jest --updateSnapshot --testPathPattern=visual-regression",
     "test:visual": "jest --config jest.visual.config.cjs --runInBand",
     "test:visual:update": "jest --config jest.visual.config.cjs --runInBand -u",
@@ -88,7 +94,8 @@
     "db:validate:schema": "npx tsx scripts/validate-schema-snapshot.ts --check",
     "db:check-divergence": "npx tsx scripts/detect-code-db-divergence.ts",
     "db:check-divergence:strict": "npx tsx scripts/detect-code-db-divergence.ts --strict",
-    "db:erd": "npx tsx scripts/generate-erd.ts"
+    "db:erd": "npx tsx scripts/generate-erd.ts",
+    "reset:tomador": "cross-env DOTENV_CONFIG_PATH=.env.local tsx scripts/helpers/reset-tomador-cnpj.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
@@ -115,6 +122,7 @@
     "chart.js": "^4.5.1",
     "dotenv": "^17.2.3",
     "fast-xml-parser": "^5.4.1",
+    "geist": "^1.7.0",
     "html2canvas": "^1.4.1",
     "iconv-lite": "^0.7.1",
     "idb": "^8.0.3",

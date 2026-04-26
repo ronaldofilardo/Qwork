@@ -121,27 +121,19 @@ export const POST = async (req: Request) => {
         );
       }
 
-      if (tipo && tipo !== 'completo') {
-        const nivelDesejado = tipo === 'operacional' ? 'operacional' : 'gestao';
-        const nivelFiltroResult = await queryAsGestorEntidade(
-          `SELECT cpf FROM funcionarios WHERE cpf = ANY($1::char(11)[]) AND nivel_cargo = $2`,
-          [
-            funcionariosElegiveis.map((f: any) => f.funcionario_cpf),
-            nivelDesejado,
-          ]
-        );
-        const cpfsComNivel = nivelFiltroResult.rows.map((r: any) => r.cpf);
-        funcionariosElegiveis = funcionariosElegiveis.filter((f: any) =>
-          cpfsComNivel.includes(f.funcionario_cpf)
-        );
-      }
-
       console.log(
         `[ENTIDADE-tomador] Após filtros: ${funcionariosElegiveis.length} funcionários`
       );
-      console.log(`[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}`);
+      console.log(`[DEBUG] DataFiltro: ${dataFiltro}`);
 
       if (funcionariosElegiveis.length > 0) {
+        // Verificar se a entidade é isenta de pagamento
+        const isentoRes = await queryAsGestorEntidade(
+          `SELECT isento_pagamento FROM entidades WHERE id = $1`,
+          [entidadeId]
+        );
+        const isento = isentoRes.rows[0]?.isento_pagamento === true;
+
         // ✅ CORREÇÃO: Usar transação para garantir atomicidade (lote + avaliações)
         // withTransactionAsGestor mantém contexto de auditoria durante toda a transação
         const resultado = await withTransactionAsGestor(async (client) => {
@@ -160,6 +152,22 @@ export const POST = async (req: Request) => {
           );
 
           const loteData = loteResult.rows[0];
+
+          // Se isento, marcar lote como pago imediatamente.
+          // A constraint pagamento_completo_check exige método, parcelas e pago_em
+          // sempre que status_pagamento = 'pago'.
+          if (isento) {
+            await client.query(
+              `UPDATE lotes_avaliacao
+                  SET status_pagamento = 'pago',
+                      pagamento_metodo = 'isento',
+                      pagamento_parcelas = 1,
+                      pago_em = NOW(),
+                      atualizado_em = NOW()
+                WHERE id = $1`,
+              [loteData.id]
+            );
+          }
 
           const agora = new Date().toISOString();
           let contadorAvaliacoes = 0;

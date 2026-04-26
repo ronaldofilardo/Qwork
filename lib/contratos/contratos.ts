@@ -1,9 +1,11 @@
 /**
- * Módulo de Contratos - Aceite e Gerenciamento
+ * Módulo de Contratos — Aceite e Gerenciamento
+ *
+ * Fluxo ativo: aceite do contrato de prestação de serviços pelo tomador.
+ * Mecanismo de proposta comercial (plano fixo/personalizado) foi removido.
  */
 
 import { query } from '../db';
-import crypto from 'crypto';
 import { registrarAuditoria } from '../auditoria/auditoria';
 
 export interface AceitarContratoInput {
@@ -19,35 +21,21 @@ export interface ContratoAceito {
   aceito: boolean;
   data_aceite: string;
   ip_aceite?: string;
-  hash_contrato: string;
 }
 
 /**
- * Gera hash SHA-256 do conteúdo do contrato para integridade
- */
-function gerarHashContrato(conteudo: string): string {
-  return crypto.createHash('sha256').update(conteudo).digest('hex');
-}
-
-/**
- * Aceita um contrato e persiste o hash para validação de integridade
+ * Registra o aceite de um contrato de prestação de serviços.
  */
 export async function aceitarContrato(
   input: AceitarContratoInput
 ): Promise<ContratoAceito> {
-  // 1. Buscar contrato
   const contratoResult = await query<{
     id: number;
     entidade_id: number;
-    conteudo: string;
     aceito: boolean;
-    hash_contrato?: string;
-  }>(
-    `SELECT id, entidade_id, conteudo, aceito, hash_contrato 
-     FROM contratos 
-     WHERE id = $1`,
-    [input.contrato_id]
-  );
+  }>(`SELECT id, entidade_id, aceito FROM contratos WHERE id = $1`, [
+    input.contrato_id,
+  ]);
 
   if (contratoResult.rows.length === 0) {
     throw new Error('Contrato não encontrado');
@@ -59,25 +47,18 @@ export async function aceitarContrato(
     throw new Error('Contrato já foi aceito anteriormente');
   }
 
-  // 2. Gerar hash do conteúdo do contrato
-  const hashContrato = gerarHashContrato(contrato.conteudo);
-
-  // 3. Atualizar contrato com aceite e hash
   const updateResult = await query<ContratoAceito>(
-    `UPDATE contratos 
-     SET 
-       aceito = true,
-       data_aceite = CURRENT_TIMESTAMP,
-       ip_aceite = $1,
-       hash_contrato = $2
-     WHERE id = $3
-     RETURNING id, entidade_id, aceito, data_aceite, ip_aceite, hash_contrato`,
-    [input.ip_aceite || null, hashContrato, input.contrato_id]
+    `UPDATE contratos
+     SET aceito = true,
+         data_aceite = CURRENT_TIMESTAMP,
+         ip_aceite = $1
+     WHERE id = $2
+     RETURNING id, entidade_id, aceito, data_aceite, ip_aceite`,
+    [input.ip_aceite ?? null, input.contrato_id]
   );
 
   const contratoAceito = updateResult.rows[0];
 
-  // 4. Registrar auditoria
   await registrarAuditoria({
     entidade_tipo: 'contrato',
     entidade_id: input.contrato_id,
@@ -85,15 +66,12 @@ export async function aceitarContrato(
     usuario_cpf: input.cpf_aceite,
     ip_address: input.ip_aceite,
     user_agent: input.user_agent,
-    metadados: {
-      hash_contrato: hashContrato,
-      entidade_id: contrato.entidade_id,
-    },
+    metadados: { entidade_id: contrato.entidade_id },
   });
 
-  // 5. Atualizar status do tomador para aguardando_pagamento
+  // Avançar status da entidade se ainda em etapa de contrato
   await query(
-    `UPDATE entidades 
+    `UPDATE entidades
      SET status = 'aguardando_pagamento'
      WHERE id = $1 AND status = 'contrato_gerado'`,
     [contrato.entidade_id]
@@ -103,60 +81,20 @@ export async function aceitarContrato(
 }
 
 /**
- * Verifica integridade de um contrato comparando hash
- */
-export async function verificarIntegridadeContrato(
-  contrato_id: number
-): Promise<{
-  integro: boolean;
-  hash_esperado?: string;
-  hash_atual?: string;
-}> {
-  const contratoResult = await query<{
-    conteudo: string;
-    hash_contrato?: string;
-  }>(`SELECT conteudo, hash_contrato FROM contratos WHERE id = $1`, [
-    contrato_id,
-  ]);
-
-  if (contratoResult.rows.length === 0) {
-    throw new Error('Contrato não encontrado');
-  }
-
-  const contrato = contratoResult.rows[0];
-
-  if (!contrato.hash_contrato) {
-    return {
-      integro: false,
-      hash_esperado: undefined,
-      hash_atual: undefined,
-    };
-  }
-
-  const hashCalculado = gerarHashContrato(contrato.conteudo);
-
-  return {
-    integro: hashCalculado === contrato.hash_contrato,
-    hash_esperado: hashCalculado,
-    hash_atual: contrato.hash_contrato,
-  };
-}
-
-/**
- * Obtém detalhes completos de um contrato
- * Inclui dados da tomadora (nome, CNPJ, tipo) e do plano
+ * Obtém detalhes completos de um contrato com dados do tomador.
+ * Usa a view `tomadores` para compatibilidade com entidades e clínicas.
  */
 export async function obterContrato(contrato_id: number) {
   const result = await query(
-    `SELECT c.*, 
-            t.nome as tomador_nome,
-            t.cnpj as tomador_cnpj,
-            t.tipo as tomador_tipo
+    `SELECT c.*,
+            t.nome  AS tomador_nome,
+            t.cnpj  AS tomador_cnpj,
+            t.tipo  AS tomador_tipo
      FROM contratos c
      LEFT JOIN tomadores t ON c.tomador_id = t.id
      WHERE c.id = $1`,
     [contrato_id]
   );
 
-  return result.rows[0] || null;
+  return result.rows[0] ?? null;
 }
