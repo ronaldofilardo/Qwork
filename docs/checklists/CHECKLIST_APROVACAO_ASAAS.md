@@ -3,7 +3,7 @@
 **Data de Criação:** 17/02/2026  
 **Versão:** 1.0  
 **Responsável:** Equipe de Desenvolvimento  
-**Ambiente:** PRODUÇÃO (https://qwork-psi.vercel.app)
+**Ambiente:** PRODUÇÃO (https://sistema.qwork.app.br)
 
 ---
 
@@ -16,7 +16,7 @@
   - [x] `ASAAS_API_KEY` (API Key do Asaas Sandbox)
   - [x] `ASAAS_API_URL` (https://api-sandbox.asaas.com/v3)
   - [x] `ASAAS_WEBHOOK_SECRET` (Token dedicado)
-  - [x] `NEXT_PUBLIC_BASE_URL` (https://qwork-psi.vercel.app)
+  - [x] `NEXT_PUBLIC_BASE_URL` (https://sistema.qwork.app.br)
 - [x] **1.3** Arquivo `.env.local` restaurado para localhost (desenvolvimento)
 - [x] **1.4** Webhook secret diferente da API key (requisito Asaas)
 - [x] **1.5** Deploy realizado com sucesso no Vercel
@@ -29,7 +29,7 @@
 ### ✅ Fase 2: Configuração no Asaas (CONCLUÍDO)
 
 - [x] **2.1** Webhook cadastrado no Asaas Sandbox
-  - [x] URL: `https://qwork-psi.vercel.app/api/webhooks/asaas`
+  - [x] URL: `https://sistema.qwork.app.br/api/webhooks/asaas`
   - [x] Token: `qwork_webhook_secret_prod_2026_a7b9c3d5e8f1g2h4i6j8k0l2m4n6p8q0`
   - [x] Eventos habilitados: PAYMENT_RECEIVED, PAYMENT_CONFIRMED, etc.
 - [x] **2.2** Teste de autenticação do webhook realizado
@@ -190,7 +190,7 @@ POST https://qwork-psi.vercel.app/api/pagamento/asaas/criar
 
 ```bash
 # 1. Criar pagamento
-curl -X POST https://qwork-psi.vercel.app/api/pagamento/asaas/criar \
+curl -X POST https://sistema.qwork.app.br/api/pagamento/asaas/criar \
   -H "Content-Type: application/json" \
   -d '{
     "tomador_id": 1,
@@ -240,7 +240,7 @@ curl -X POST https://qwork-psi.vercel.app/api/pagamento/asaas/criar \
 ```powershell
 # Executar múltiplas requisições em sequência
 for ($i=1; $i -le 110; $i++) {
-    Invoke-WebRequest -Uri "https://qwork-psi.vercel.app/api/webhooks/asaas" -Method POST
+    Invoke-WebRequest -Uri "https://sistema.qwork.app.br/api/webhooks/asaas" -Method POST
 }
 ```
 

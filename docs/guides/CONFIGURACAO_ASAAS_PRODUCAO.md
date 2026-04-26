@@ -2,7 +2,7 @@
 
 **Data:** 17/02/2026  
 **Problema:** Sandbox do Asaas está direcionado para `localhost:3000` em vez da URL de produção  
-**URL de Produção:** `https://qwork-psi.vercel.app`
+**URL de Produção:** `https://sistema.qwork.app.br`
 
 ---
 
@@ -16,9 +16,9 @@ Configure as seguintes variáveis:
 
 ```env
 # URL da aplicação em produção
-NEXT_PUBLIC_BASE_URL=https://qwork-psi.vercel.app
-NEXT_PUBLIC_APP_URL=https://qwork-psi.vercel.app
-NEXT_PUBLIC_URL=https://qwork-psi.vercel.app
+NEXT_PUBLIC_BASE_URL=https://sistema.qwork.app.br
+NEXT_PUBLIC_APP_URL=https://sistema.qwork.app.br
+NEXT_PUBLIC_URL=https://sistema.qwork.app.br
 
 # Asaas Sandbox (manter configuração existente)
 ASAAS_API_KEY=[sua chave sandbox existente]
@@ -42,7 +42,7 @@ ASAAS_WEBHOOK_SECRET=[seu secret existente]
    **URL do Webhook:**
 
    ```
-   https://qwork-psi.vercel.app/api/webhooks/asaas
+   https://sistema.qwork.app.br/api/webhooks/asaas
    ```
 
    **Token de Autenticação:**
@@ -84,7 +84,7 @@ Ou acesse o Vercel Dashboard e clique em **"Redeploy"** no último deployment.
 #### Teste 1: Health Check do Webhook
 
 ```bash
-curl https://qwork-psi.vercel.app/api/webhooks/asaas
+curl https://sistema.qwork.app.br/api/webhooks/asaas
 ```
 
 **Resposta esperada:**
@@ -159,7 +159,7 @@ Quando estiver pronto para receber pagamentos reais:
    ASAAS_API_KEY=[chave de produção]
    ASAAS_API_URL=https://api.asaas.com/v3
    ```
-5. Configurar webhook: `https://qwork-psi.vercel.app/api/webhooks/asaas`
+5. Configurar webhook: `https://sistema.qwork.app.br/api/webhooks/asaas`
 
 ---
 

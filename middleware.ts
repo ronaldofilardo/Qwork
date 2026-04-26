@@ -11,32 +11,43 @@ import { NextRequest, NextResponse } from 'next/server';
  * Fallback seguro: retorna false se variáveis malformadas
  */
 function isUnderMaintenance(): boolean {
-  // Maintenance mode só se aplica ao ambiente de produção (APP_ENV=production)
-  // Staging e feature/v2 continuam acessíveis normalmente
-  if (process.env.APP_ENV !== 'production') return false;
+  // ✅ MANUTENÇÃO DESABILITADA — 26 de abril de 2026
+  // Sistema liberado para uso. Manutenção concluída.
+  return false;
+}
 
-  const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
-  if (!enabled) return false;
+/**
+ * Verifica se a requisição tem o cookie de bypass de manutenção válido.
+ * Permite que devs acessem o sistema durante manutenção sem afetar usuários reais.
+ * Token definido via env var MAINTENANCE_BYPASS_TOKEN no Vercel.
+ */
+function hasMaintenanceBypass(request: NextRequest): boolean {
+  const bypassToken = process.env.MAINTENANCE_BYPASS_TOKEN;
+  if (!bypassToken) return false;
 
-  const startStr = process.env.MAINTENANCE_START;
-  const endStr = process.env.MAINTENANCE_END;
+  const cookieValue = request.cookies.get('maintenance_bypass')?.value;
+  if (!cookieValue) return false;
 
-  if (!startStr || !endStr) return false;
-
-  try {
-    const now = new Date();
-    const start = new Date(startStr);
-    const end = new Date(endStr);
-
-    // Validar que as datas são válidas (não NaN)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return false;
-    }
-
-    return now >= start && now <= end;
-  } catch {
-    return false;
+  // Comparação de tempo constante para evitar timing attacks
+  if (cookieValue.length !== bypassToken.length) return false;
+  let valid = true;
+  for (let i = 0; i < bypassToken.length; i++) {
+    if (cookieValue.charCodeAt(i) !== bypassToken.charCodeAt(i)) valid = false;
   }
+  return valid;
+}
+
+/**
+ * Verifica se o IP está na whitelist de IPs de desenvolvedor.
+ * Durante manutenção, IPs autorizados podem acessar normalmente.
+ */
+function isDeveloperIP(clientIP: string): boolean {
+  // Whitelist de IPs de dev autorizados durante manutenção
+  const DEVELOPER_IPS = [
+    '177.146.190.175', // Ronaldo (seu IP público)
+  ];
+
+  return DEVELOPER_IPS.includes(clientIP);
 }
 
 // ─── Rate Limiting — Dual Strategy (Edge Runtime compatible) ─────────────────
@@ -291,8 +302,16 @@ function parseSession(request: NextRequest): MiddlewareSession | null {
 }
 
 export function middleware(request: NextRequest) {
+  // ── Extract client IP FIRST (needed for maintenance and developer checks) ──
+  const clientIP =
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    request.ip ||
+    'unknown';
+
   // ── MAINTENANCE MODE CHECK — FIRST (before everything else) ──
-  if (isUnderMaintenance()) {
+  // But allow: bypass cookie, developer IPs, or /maintenance page itself
+  if (isUnderMaintenance() && !hasMaintenanceBypass(request) && !isDeveloperIP(clientIP)) {
     const { pathname } = request.nextUrl;
     
     // Exceções: /maintenance itself (não redirecionar, deixar renderizar)
@@ -309,11 +328,6 @@ export function middleware(request: NextRequest) {
   const AUTHORIZED_ADMIN_IPS =
     process.env.AUTHORIZED_ADMIN_IPS?.split(',') || [];
   const { pathname } = request.nextUrl;
-  const clientIP =
-    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    request.headers.get('x-real-ip') ||
-    request.ip ||
-    'unknown';
 
   // ── Rate Limiting Global (dual-key: IP + usuário autenticado) ──
   // Parse antecipado de sessão para extrair userId sem duplo parse.

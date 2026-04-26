@@ -274,6 +274,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const userAgent = request.headers.get('user-agent') ?? '';
 
+    // CPF do comercial responsável por leads vindos da landing page
+    const COMERCIAL_LP_CPF = '04256059903';
+
     const insertResult = await query<{ id: string }>(
       `INSERT INTO representantes_cadastro_leads (
         tipo_pessoa, nome, email, telefone,
@@ -281,14 +284,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         doc_cpf_filename, doc_cpf_key, doc_cpf_url,
         doc_cnpj_filename, doc_cnpj_key, doc_cnpj_url,
         doc_cpf_resp_filename, doc_cpf_resp_key, doc_cpf_resp_url,
-        ip_origem, user_agent
+        ip_origem, user_agent,
+        comercial_cpf
       ) VALUES (
         $1, $2, $3, $4,
         $5, $6, $7, $8,
         $9, $10, $11,
         $12, $13, $14,
         $15, $16, $17,
-        $18, $19
+        $18, $19,
+        $20
       ) RETURNING id`,
       [
         tipoPessoa,
@@ -310,6 +315,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         docCpfRespData?.url ?? null,
         ip,
         userAgent,
+        COMERCIAL_LP_CPF,
       ]
     );
 

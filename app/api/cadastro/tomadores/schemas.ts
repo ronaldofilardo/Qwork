@@ -102,7 +102,7 @@ export const CadastroTomadorSchema = z.object({
   responsavel_celular: z
     .string()
     .min(1, 'Celular do responsável é obrigatório'),
-  representante_id: z.coerce.number().int().positive().optional(),
+  codigo_representante: z.string().max(20).optional(),
 });
 
 export type CadastroTomadorInput = z.infer<typeof CadastroTomadorSchema>;
@@ -195,6 +195,6 @@ export function extractFormDataFields(
     responsavel_cargo: str('responsavel_cargo') || null,
     responsavel_email: str('responsavel_email') || '',
     responsavel_celular: str('responsavel_celular') || '',
-    representante_id: str('representante_id') || undefined,
+    codigo_representante: str('codigo_representante') || undefined,
   };
 }
