@@ -1,8 +1,9 @@
 /**
- * POST /api/admin/representantes-leads/[id]/converter
+ * POST /api/comercial/representantes-leads/[id]/converter
  *
- * Admin converte lead verificado em representante oficial.
- * Executa em transação: INSERT em representantes + UPDATE no lead.
+ * Comercial converte candidato verificado em representante oficial.
+ * Só pode converter leads atribuídos ao próprio comercial.
+ * O gestor_comercial_cpf do representante criado = session.cpf do comercial.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -23,7 +24,7 @@ export async function POST(
       return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 });
     }
 
-    // Comercial só pode converter leads atribuídos a ele
+    // Verificar ownership antes de converter
     const ownership = await query<{ comercial_cpf: string | null }>(
       `SELECT comercial_cpf FROM representantes_cadastro_leads WHERE id = $1`,
       [leadId]
@@ -36,11 +37,7 @@ export async function POST(
       );
     }
 
-    if (
-      session.perfil === 'comercial' &&
-      ownership.rows[0].comercial_cpf !== null &&
-      ownership.rows[0].comercial_cpf !== session.cpf
-    ) {
+    if (ownership.rows[0].comercial_cpf !== session.cpf) {
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
     }
 
@@ -60,7 +57,6 @@ export async function POST(
     });
   } catch (err: unknown) {
     const e = err as Error;
-
     if (e.message === 'Não autenticado')
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     if (e.message === 'Sem permissão')
@@ -75,7 +71,10 @@ export async function POST(
     if (e.message.includes('Já existe representante'))
       return NextResponse.json({ error: e.message }, { status: 409 });
 
-    console.error('[POST /api/admin/representantes-leads/[id]/converter]', e);
+    console.error(
+      '[POST /api/comercial/representantes-leads/[id]/converter]',
+      e
+    );
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }

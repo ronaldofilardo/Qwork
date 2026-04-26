@@ -1,8 +1,8 @@
 /**
- * POST /api/admin/representantes-leads/[id]/rejeitar
+ * POST /api/comercial/representantes-leads/[id]/rejeitar
  *
- * Admin rejeita cadastro de um lead: status → 'rejeitado'
- * Requer motivo da rejeição.
+ * Comercial rejeita cadastro de um candidato (lead da LP): status → 'rejeitado'
+ * Só pode rejeitar leads atribuídos ao próprio comercial.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -15,14 +15,13 @@ export async function POST(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const session = await requireRole(['comercial', 'suporte'], false);
+    const session = await requireRole('comercial', false);
     const leadId = params.id;
 
     if (!leadId) {
       return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 });
     }
 
-    // Parsear body
     let body: { motivo?: string };
     try {
       body = await request.json();
@@ -41,7 +40,6 @@ export async function POST(
       );
     }
 
-    // Verificar que lead existe e pode ser rejeitado
     const current = await query<{
       status: string;
       comercial_cpf: string | null;
@@ -57,11 +55,7 @@ export async function POST(
       );
     }
 
-    // Comercial só pode rejeitar leads atribuídos a ele
-    if (
-      session.perfil === 'comercial' &&
-      current.rows[0].comercial_cpf !== session.cpf
-    ) {
+    if (current.rows[0].comercial_cpf !== session.cpf) {
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
     }
 
@@ -76,7 +70,6 @@ export async function POST(
       );
     }
 
-    // Rejeitar
     await query(
       `UPDATE representantes_cadastro_leads
        SET status = 'rejeitado',
@@ -87,10 +80,6 @@ export async function POST(
       [leadId, motivo, session.cpf]
     );
 
-    console.log(
-      `[ADMIN] Lead ${leadId} rejeitado por ${session.cpf}: ${motivo}`
-    );
-
     return NextResponse.json({ success: true, status: 'rejeitado' });
   } catch (err: unknown) {
     const e = err as Error;
@@ -98,7 +87,10 @@ export async function POST(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     if (e.message === 'Sem permissão')
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
-    console.error('[POST /api/admin/representantes-leads/[id]/rejeitar]', e);
+    console.error(
+      '[POST /api/comercial/representantes-leads/[id]/rejeitar]',
+      e
+    );
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }
