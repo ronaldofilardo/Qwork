@@ -11,32 +11,9 @@ import { NextRequest, NextResponse } from 'next/server';
  * Fallback seguro: retorna false se variáveis malformadas
  */
 function isUnderMaintenance(): boolean {
-  // Maintenance mode só se aplica ao ambiente de produção (APP_ENV=production)
-  // Staging e feature/v2 continuam acessíveis normalmente
-  if (process.env.APP_ENV !== 'production') return false;
-
-  const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
-  if (!enabled) return false;
-
-  const startStr = process.env.MAINTENANCE_START;
-  const endStr = process.env.MAINTENANCE_END;
-
-  if (!startStr || !endStr) return false;
-
-  try {
-    const now = new Date();
-    const start = new Date(startStr);
-    const end = new Date(endStr);
-
-    // Validar que as datas são válidas (não NaN)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return false;
-    }
-
-    return now >= start && now <= end;
-  } catch {
-    return false;
-  }
+  // ✅ MANUTENÇÃO DESABILITADA — 26 de abril de 2026
+  // Sistema liberado para uso. Manutenção concluída.
+  return false;
 }
 
 /**
