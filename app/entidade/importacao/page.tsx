@@ -297,7 +297,11 @@ export default function ImportacaoEntidadePage() {
         if (nivel && !templateMap[f]) novas[f] = nivel;
       }
       if (Object.keys(novas).length > 0) {
-        updateTemplateNivelCargo(templateId, novas);
+        updateTemplateNivelCargo(
+          '/api/entidade/importacao/templates',
+          templateId,
+          novas
+        );
       }
     }
     void handleExecute(
@@ -327,7 +331,7 @@ export default function ImportacaoEntidadePage() {
   const currentStepIndex = stepOrder.indexOf(step);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="w-full p-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link
@@ -395,6 +399,7 @@ export default function ImportacaoEntidadePage() {
       {step === 'mapeamento' && analyzeData && (
         <>
           <TemplatePicker
+            apiBase="/api/entidade/importacao/templates"
             onApply={(template) => {
               setAppliedTemplate(template);
               setTemplateMapeamento(template.mapeamentos);
@@ -427,6 +432,7 @@ export default function ImportacaoEntidadePage() {
                 mesmo formato de colunas.
               </div>
               <SaveTemplateForm
+                apiBase="/api/entidade/importacao/templates"
                 mapeamentos={mapeamento.map((m) => ({
                   nomeOriginal: m.nomeOriginal,
                   campoQWork: m.campoQWork,

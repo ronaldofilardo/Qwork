@@ -189,25 +189,30 @@ describe('4. POST /api/comercial/representantes/[id]/aprovar-comissao', () => {
     expect(src).toContain('.max(40)');
   });
 
-  it('deve verificar status apto ou apto_pendente (STATUS_INVALIDO)', () => {
-    // Após correção do bug, aceita tanto 'apto' quanto 'apto_pendente'
-    expect(src).toContain("['apto', 'apto_pendente']");
+  it('deve verificar status bloqueado (STATUS_INVALIDO)', () => {
+    // Usa blocklist: rejeitado, desativado, suspenso
+    expect(src).toContain("['rejeitado', 'desativado', 'suspenso']");
     expect(src).toContain('STATUS_INVALIDO');
   });
 
-  it('deve aceitar representante com status apto (fix bug)', () => {
-    expect(src).toContain("'apto'");
-    expect(src).toContain("'apto_pendente'");
-    // Validação via array, não comparação simples
-    expect(src).toMatch(/\['apto',\s*'apto_pendente'\]\.includes/);
+  it('deve aceitar representante com status ativo ou qualquer não-bloqueado', () => {
+    // Blocklist: apenas rejeitado/desativado/suspenso são bloqueados
+    expect(src).toContain("'rejeitado'");
+    expect(src).toContain("'desativado'");
+    expect(src).toContain("'suspenso'");
+    // Garante que é abordagem de blocklist (includes)
+    expect(src).toMatch(
+      /\['rejeitado',\s*'desativado',\s*'suspenso'\]\.includes/
+    );
   });
 
-  it('deve mover para aprovacao_comercial ao aprovar', () => {
-    expect(src).toContain("'aprovacao_comercial'");
+  it('deve permitir qualquer status fora do blocklist (ativo, apto, apto_pendente etc.)', () => {
+    // Não bloqueia status como 'ativo', 'apto', 'apto_pendente', 'aprovacao_comercial'
+    expect(src).not.toMatch(/\['apto',\s*'apto_pendente'/);
   });
 
   it('deve atualizar modelo_comissionamento no DB', () => {
-    expect(src).toContain('modelo_comissionamento = $1');
+    expect(src).toMatch(/modelo_comissionamento\s*=\s*\$1/);
   });
 
   it('deve exigir comercial ou admin', () => {
@@ -282,103 +287,7 @@ describe('5. POST /api/suporte/representantes/[id]/ativar', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// 6. GET /api/suporte/comissionamento/ciclos — Fase 5
-// ---------------------------------------------------------------------------
-
-describe('6. GET /api/suporte/comissionamento/ciclos', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'suporte',
-    'comissionamento',
-    'ciclos',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it('deve consultar ciclos_comissao_mensal', () => {
-    expect(src).toContain('ciclos_comissao_mensal');
-  });
-
-  it('deve retornar nome do representante', () => {
-    expect(src).toContain('representantes');
-  });
-
-  it('deve ter paginação', () => {
-    expect(src).toMatch(/limit|offset|LIMIT|OFFSET/);
-  });
-
-  it('deve exigir suporte ou admin', () => {
-    expect(src).toContain('requireRole');
-  });
-
-  it('deve escutar filtro por status', () => {
-    expect(src).toContain('status');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 7. POST /api/suporte/comissionamento/ciclos/[id]/validar — Fase 5
-// ---------------------------------------------------------------------------
-
-describe('7. POST /api/suporte/comissionamento/ciclos/[id]/validar', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'suporte',
-    'comissionamento',
-    'ciclos',
-    '[id]',
-    'validar',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it('deve aceitar acao validar e rejeitar', () => {
-    expect(src).toContain("z.enum(['validar', 'rejeitar'])");
-  });
-
-  it('deve verificar status nf_rpa_enviada', () => {
-    expect(src).toContain("'nf_rpa_enviada'");
-    expect(src).toContain('STATUS_INVALIDO');
-  });
-
-  it('ao validar deve mover para validado', () => {
-    expect(src).toContain("'validado'");
-    expect(src).toContain('data_validacao_suporte');
-  });
-
-  it('ao rejeitar deve mover para aguardando_nf_rpa', () => {
-    expect(src).toContain("'aguardando_nf_rpa'");
-  });
-
-  it('deve retornar 409 se status inválido', () => {
-    expect(src).toContain('{ status: 409 }');
-  });
-
-  it('deve exigir suporte ou admin', () => {
-    expect(src).toContain("requireRole(['suporte', 'admin']");
-  });
-});
+// [Seções 6-7 REMOVIDAS] — Endpoints eliminados na migration 1212
 
 // ---------------------------------------------------------------------------
 // 8. POST /api/suporte/comissionamento/representantes/[id]/desbloquear — Fase 5
@@ -419,208 +328,7 @@ describe('8. POST /api/suporte/comissionamento/representantes/[id]/desbloquear',
   });
 });
 
-// ---------------------------------------------------------------------------
-// 9. GET /api/representante/financeiro/ciclos — Fase 6
-// ---------------------------------------------------------------------------
-
-describe('9. GET /api/representante/financeiro/ciclos', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'representante',
-    'financeiro',
-    'ciclos',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it('deve filtrar pelo representante logado', () => {
-    expect(src).toContain('representante_id');
-  });
-
-  it('deve usar requireRepresentante ou requireRepresentanteComDB', () => {
-    expect(src).toMatch(/requireRepresentante/);
-  });
-
-  it('deve retornar ciclos_comissao_mensal', () => {
-    expect(src).toContain('ciclos_comissao_mensal');
-  });
-
-  it('deve incluir total/resumo financeiro', () => {
-    // Deve ter algum cálculo de resumo ou SUM
-    expect(src).toMatch(/valor_total|SUM|COALESCE/i);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 10. POST /api/representante/financeiro/nf-rpa — Fase 6
-// ---------------------------------------------------------------------------
-
-describe('10. POST /api/representante/financeiro/nf-rpa', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'representante',
-    'financeiro',
-    'nf-rpa',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it('deve aceitar multipart/form-data', () => {
-    expect(src).toContain('formData');
-    expect(src).toContain('arquivo');
-  });
-
-  it('deve validar tamanho máximo de 2MB', () => {
-    expect(src).toContain('2 * 1024 * 1024');
-    expect(src).toContain('{ status: 422 }');
-  });
-
-  it('deve validar tipos aceitos (PDF, JPEG, PNG, WEBP)', () => {
-    expect(src).toContain('application/pdf');
-    expect(src).toContain('image/jpeg');
-  });
-
-  it('deve verificar que ciclo pertence ao representante', () => {
-    expect(src).toContain('representante_id');
-    expect(src).toContain('$1 AND representante_id = $2');
-  });
-
-  it('deve verificar status aguardando_nf_rpa', () => {
-    expect(src).toContain("'aguardando_nf_rpa'");
-    expect(src).toContain('STATUS_INVALIDO');
-  });
-
-  it('deve mover ciclo para nf_rpa_enviada após upload', () => {
-    expect(src).toContain("'nf_rpa_enviada'");
-  });
-
-  it('deve retornar 409 se ciclo não está aguardando NF', () => {
-    expect(src).toContain('{ status: 409 }');
-  });
-
-  it('deve usar requireRepresentanteComDB', () => {
-    expect(src).toContain('requireRepresentanteComDB');
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 11. POST /api/suporte/jobs/fechar-ciclo — Fase 8
-// ---------------------------------------------------------------------------
-
-describe('11. POST /api/suporte/jobs/fechar-ciclo', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'suporte',
-    'jobs',
-    'fechar-ciclo',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it('deve fechar ciclos com status aberto do mês anterior', () => {
-    expect(src).toContain("'aberto'");
-    expect(src).toContain("'aguardando_nf_rpa'");
-  });
-
-  it('deve só fechar ciclos de meses anteriores (mes_ano < atual)', () => {
-    expect(src).toContain('mes_ano');
-    expect(src).toMatch(/< |<\$/);
-  });
-
-  it('deve exigir suporte ou admin', () => {
-    expect(src).toContain('requireRole');
-  });
-
-  it('deve retornar contagem de ciclos fechados', () => {
-    expect(src).toMatch(/ciclos_fechados|ciclos_atualizados/);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 12. POST /api/suporte/jobs/verificar-vencimento-nf-rpa — Fase 8
-// ---------------------------------------------------------------------------
-
-describe('12. POST /api/suporte/jobs/verificar-vencimento-nf-rpa', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'suporte',
-    'jobs',
-    'verificar-vencimento-nf-rpa',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it('deve ter DIA_CORTE = 10', () => {
-    expect(src).toContain('DIA_CORTE = 10');
-  });
-
-  it('deve retornar early quando dia < DIA_CORTE', () => {
-    expect(src).toContain('dentro do prazo');
-    expect(src).toContain('ciclos_vencidos: 0');
-  });
-
-  it('deve marcar ciclos como vencido', () => {
-    expect(src).toContain("'vencido'");
-  });
-
-  it('deve bloquear representantes com status apto', () => {
-    expect(src).toContain("'apto_bloqueado'");
-    expect(src).toContain("status = 'apto'");
-  });
-
-  it('deve filtrar ciclos de meses anteriores', () => {
-    expect(src).toContain('mes_ano < $1');
-  });
-
-  it('deve retornar contagens (ciclos_vencidos e representantes_bloqueados)', () => {
-    expect(src).toContain('ciclos_vencidos');
-    expect(src).toContain('representantes_bloqueados');
-  });
-
-  it('deve exigir suporte ou admin', () => {
-    expect(src).toContain('requireRole');
-  });
-});
+// [Seções 9-12 REMOVIDAS] — Endpoints eliminados na migration 1212
 
 // ---------------------------------------------------------------------------
 // 13. page.tsx /representante/(portal)/financeiro — Fase 6 UI
@@ -645,16 +353,17 @@ describe('13. page.tsx /representante/(portal)/financeiro', () => {
     expect(fs.existsSync(pagePath)).toBe(true);
   });
 
-  it('deve buscar ciclos da API', () => {
-    expect(src).toContain('/api/representante/financeiro/ciclos');
+  it('deve buscar ciclos da nova API', () => {
+    expect(src).toContain('/api/representante/ciclos');
   });
 
-  it('deve exibir status dos ciclos', () => {
-    expect(src).toMatch(/aguardando_nf_rpa|nf_rpa_enviada|validado/);
+  it('deve exibir status dos ciclos do novo sistema', () => {
+    expect(src).toMatch(/fechado|nf_enviada|nf_aprovada|pago/);
   });
 
-  it('deve ter opção de upload de NF/RPA', () => {
-    expect(src).toMatch(/upload|NF|RPA|nf-rpa/i);
+  it('deve ter opção de upload de NF/RPA ou exibir repasse auditado', () => {
+    // Feature de upload NF/RPA foi substituída por repasse automático auditado pelo sistema
+    expect(src).toMatch(/upload|NF|RPA|nf|repasse|auditado/i);
   });
 });
 
@@ -662,12 +371,14 @@ describe('13. page.tsx /representante/(portal)/financeiro', () => {
 // 14. CiclosComissaoContent — Fase 5 UI (Suporte)
 // ---------------------------------------------------------------------------
 
-describe('14. components/suporte/CiclosComissaoContent', () => {
+// Atualizado: CiclosComissaoContent substituído por CiclosComissaoNovo (migration 1212)
+// CiclosComissaoNovo foi removido — funcionalidade integrada ao ComissoesIndividuaisContent
+describe.skip('14. components/suporte/CiclosComissaoNovo', () => {
   const componentPath = path.join(
     ROOT,
     'components',
     'suporte',
-    'CiclosComissaoContent.tsx'
+    'CiclosComissaoNovo.tsx'
   );
   let src: string;
 
@@ -679,12 +390,13 @@ describe('14. components/suporte/CiclosComissaoContent', () => {
     expect(fs.existsSync(componentPath)).toBe(true);
   });
 
-  it('deve buscar ciclos da API', () => {
-    expect(src).toContain('/api/suporte/comissionamento/ciclos');
+  it('deve usar hook useCiclosComissoes', () => {
+    expect(src).toContain('useCiclosComissoes');
   });
 
-  it('deve ter ação de validar e rejeitar', () => {
-    expect(src).toMatch(/validar|rejeitar/i);
+  it('deve renderizar CiclosTabela e CiclosHeader', () => {
+    expect(src).toContain('CiclosTabela');
+    expect(src).toContain('CiclosHeader');
   });
 
   it('deve estar no sidebar do suporte', () => {

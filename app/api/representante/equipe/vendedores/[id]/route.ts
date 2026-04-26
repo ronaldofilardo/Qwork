@@ -51,7 +51,7 @@ export async function GET(
          u.nome           AS vendedor_nome,
          u.email          AS vendedor_email,
          u.cpf            AS vendedor_cpf,
-         vp.codigo        AS codigo_vendedor,
+
          vp.sexo,
          vp.endereco,
          vp.cidade,
@@ -61,7 +61,7 @@ export async function GET(
          vp.cnpj,
          vp.razao_social,
          vp.doc_cad_path,
-         vp.doc_nf_rpa_path
+         vp.doc_nf_path
        FROM hierarquia_comercial hc
        JOIN usuarios u ON u.id = hc.vendedor_id
        LEFT JOIN vendedores_perfil vp ON vp.usuario_id = u.id

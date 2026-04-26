@@ -27,19 +27,17 @@ describe('useLiberarLote Hook', () => {
     const mockResponse = {
       success: true,
       message: 'Lote liberado com sucesso',
-      lote: {
-        id: 1,
-        numero_ordem: 1,
-        titulo: 'Lote 1',
-        tipo: 'completo',
-        liberado_em: new Date().toISOString(),
-      },
+      loteId: 1,
+      numero_ordem: 1,
+      liberado_em: new Date().toISOString(),
+      avaliacoes_criadas: 10,
+      total_funcionarios: 10,
       estatisticas: {
         avaliacoesCreated: 10,
         totalFuncionarios: 10,
         empresa: 'Empresa Teste',
       },
-      resumoInclusao: {
+      resumo_inclusao: {
         funcionarios_novos: 5,
         indices_atrasados: 3,
         mais_de_1_ano_sem_avaliacao: 2,
@@ -60,16 +58,16 @@ describe('useLiberarLote Hook', () => {
 
     let response;
     await act(async () => {
-      response = await result.current.liberarLote({
-        empresaId: 1,
-        tipo: 'completo',
-      });
+      response = await result.current.liberarLote({ empresaId: 1 });
     });
 
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeNull();
     expect(result.current.result).toEqual(mockResponse);
     expect(response).toEqual(mockResponse);
+    // Verificar campos do novo formato flat
+    expect(response?.loteId).toBe(1);
+    expect(response?.numero_ordem).toBe(1);
   });
 
   it('deve lidar com erro de liberação', async () => {
@@ -87,10 +85,7 @@ describe('useLiberarLote Hook', () => {
 
     let response;
     await act(async () => {
-      response = await result.current.liberarLote({
-        empresaId: 1,
-        tipo: 'completo',
-      });
+      response = await result.current.liberarLote({ empresaId: 1 });
     });
 
     expect(result.current.loading).toBe(false);
@@ -118,10 +113,7 @@ describe('useLiberarLote Hook', () => {
 
     let response;
     await act(async () => {
-      response = await result.current.liberarLote({
-        empresaId: 1,
-        tipo: 'completo',
-      });
+      response = await result.current.liberarLote({ empresaId: 1 });
     });
 
     expect(result.current.loading).toBe(false);
@@ -142,10 +134,7 @@ describe('useLiberarLote Hook', () => {
     const { result } = renderHook(() => useLiberarLote());
 
     await act(async () => {
-      await result.current.liberarLote({
-        empresaId: 1,
-        tipo: 'completo',
-      });
+      await result.current.liberarLote({ empresaId: 1 });
     });
 
     expect(result.current.loading).toBe(false);
@@ -156,13 +145,9 @@ describe('useLiberarLote Hook', () => {
   it('deve resetar estado corretamente', async () => {
     const mockResponse = {
       success: true,
-      lote: {
-        id: 1,
-        numero_ordem: 1,
-        titulo: 'Lote 1',
-        tipo: 'completo',
-        liberado_em: new Date().toISOString(),
-      },
+      loteId: 1,
+      numero_ordem: 1,
+      liberado_em: new Date().toISOString(),
     };
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -173,10 +158,7 @@ describe('useLiberarLote Hook', () => {
     const { result } = renderHook(() => useLiberarLote());
 
     await act(async () => {
-      await result.current.liberarLote({
-        empresaId: 1,
-        tipo: 'completo',
-      });
+      await result.current.liberarLote({ empresaId: 1 });
     });
 
     expect(result.current.result).not.toBeNull();
@@ -200,9 +182,8 @@ describe('useLiberarLote Hook', () => {
 
     const params = {
       empresaId: 123,
-      titulo: 'Lote Teste',
       descricao: 'Descrição do lote',
-      tipo: 'operacional' as const,
+      tipo: 'operacional',
       dataFiltro: '2026-01-01',
     };
 
@@ -230,10 +211,7 @@ describe('useLiberarLote Hook', () => {
     const { result } = renderHook(() => useLiberarLote());
 
     act(() => {
-      result.current.liberarLote({
-        empresaId: 1,
-        tipo: 'completo',
-      });
+      result.current.liberarLote({ empresaId: 1 });
     });
 
     await waitFor(() => {

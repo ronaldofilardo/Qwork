@@ -52,8 +52,8 @@ export async function GET(request: NextRequest) {
       LEFT JOIN entidades ct ON ct.id = source.tomador_id AND source.tipo = 'entidade'
       LEFT JOIN clinicas cl ON cl.id = source.tomador_id AND source.tipo = 'clinica'
       LEFT JOIN contratos cont ON (
-        (source.tipo = 'entidade' AND cont.entidade_id = source.tomador_id) OR
-        (source.tipo = 'clinica' AND cont.clinica_id = source.tomador_id)
+        cont.tomador_id = source.tomador_id
+        OR cont.entidade_id = source.tomador_id
       )
       LEFT JOIN pagamentos p ON (
         (source.tipo = 'entidade' AND p.entidade_id = source.tomador_id) OR
@@ -82,7 +82,8 @@ export async function GET(request: NextRequest) {
     // Sem coluna pagamento_confirmado — verificar pagamento pelo status do tomador e contrato
     const needsPayment =
       statusTomador === 'pendente_pagamento' ||
-      statusTomador === 'pagamento_pendente';
+      statusTomador === 'pagamento_pendente' ||
+      statusTomador === 'aguardando_pagamento';
 
     // Gerar link de pagamento se necessário
     let paymentLink = null;

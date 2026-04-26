@@ -83,6 +83,7 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
               '<html><body>Recibo de Pagamento Parcelado...</body></html>',
           },
           acesso_liberado: true,
+          show_receipt_info: true,
         }),
       } as any);
 

@@ -104,7 +104,7 @@ export async function POST(
 
     const uploadResult = await uploadDocumentoRepresentante(
       buffer,
-      'rpa',
+      'comprovante',
       identificador,
       file.type,
       tipoPessoa,

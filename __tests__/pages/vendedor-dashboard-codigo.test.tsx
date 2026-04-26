@@ -37,7 +37,6 @@ const mockSessionVendedor = {
   id: 10,
   nome: 'Maria Vendedora',
   cpf: '000.000.000-00',
-  codigo: 'VND-ABCDE',
   email: 'maria@vend.com',
   perfil: 'vendedor',
   primeira_senha_alterada: true,
@@ -74,13 +73,13 @@ describe('VendedorDashboard — banner do código', () => {
     });
   });
 
-  it('deve exibir o código do vendedor no banner', async () => {
+  it('deve exibir o ID do vendedor no banner', async () => {
     render(<VendedorDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText('VND-ABCDE')).toBeInTheDocument();
+      expect(screen.getByText('10')).toBeInTheDocument();
     });
-    expect(screen.getByText('Seu código no sistema')).toBeInTheDocument();
+    expect(screen.getByText('Seu ID no sistema')).toBeInTheDocument();
   });
 
   it('deve exibir o botão de copiar no banner', async () => {
@@ -88,12 +87,12 @@ describe('VendedorDashboard — banner do código', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /copiar código/i })
+        screen.getByRole('button', { name: /copiar ID/i })
       ).toBeInTheDocument();
     });
   });
 
-  it('deve copiar o código ao clicar no botão', async () => {
+  it('deve copiar o ID ao clicar no botão', async () => {
     const mockWriteText = jest.fn(() => Promise.resolve());
     Object.assign(navigator, {
       clipboard: { writeText: mockWriteText },
@@ -103,14 +102,14 @@ describe('VendedorDashboard — banner do código', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: /copiar código/i })
+        screen.getByRole('button', { name: /copiar ID/i })
       ).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /copiar código/i }));
+    fireEvent.click(screen.getByRole('button', { name: /copiar ID/i }));
 
     await waitFor(() => {
-      expect(mockWriteText).toHaveBeenCalledWith('VND-ABCDE');
+      expect(mockWriteText).toHaveBeenCalledWith('10');
     });
   });
 });

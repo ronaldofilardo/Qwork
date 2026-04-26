@@ -6,7 +6,6 @@ export interface Representante {
   id: number;
   nome: string;
   email: string;
-  codigo: string;
   status: string;
   tipo_pessoa: string;
   criado_em: string;

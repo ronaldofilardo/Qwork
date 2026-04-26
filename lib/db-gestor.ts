@@ -14,7 +14,10 @@
 
 import { query } from './db';
 import { getSession } from './session';
+import { logger } from './logger';
 import { PerfilUsuarioType } from './types/enums';
+
+const DEBUG_GESTOR = process.env.DEBUG_GESTOR === 'true';
 
 /**
  * Verifica se o perfil é de um gestor (RH ou Entidade)
@@ -74,9 +77,11 @@ async function validateGestorContext(
       }
 
       const gestor = result.rows[0];
-      console.log(
-        `[validateGestorContext] ✓ Gestor de entidade validado: CPF=${cpf}, Entidade=${gestor.entidade_id}`
-      );
+      if (DEBUG_GESTOR) {
+        logger.log(
+          `[validateGestorContext] Gestor de entidade validado: CPF=***${cpf.slice(-4)}, Entidade=${gestor.entidade_id}`
+        );
+      }
 
       return true;
     } else {
@@ -97,9 +102,11 @@ async function validateGestorContext(
       }
 
       const gestor = result.rows[0];
-      console.log(
-        `[validateGestorContext] ✓ Gestor RH validado: CPF=${cpf}, Clínica=${gestor.clinica_id}`
-      );
+      if (DEBUG_GESTOR) {
+        logger.log(
+          `[validateGestorContext] Gestor RH validado: CPF=***${cpf.slice(-4)}, Clínica=${gestor.clinica_id}`
+        );
+      }
 
       return true;
     }
@@ -153,9 +160,11 @@ export async function queryAsGestor<T = Record<string, unknown>>(
   // 🔒 SEGURANÇA: Executar query com contexto de sessão
   // A função query() irá configurar automaticamente app.current_user_cpf e app.current_user_perfil
   // dentro de uma transação única, garantindo que as variáveis estejam disponíveis para auditoria
-  console.log(
-    `[queryAsGestor] Executando query para ${session.perfil} (CPF: ***${session.cpf.slice(-4)})`
-  );
+  if (DEBUG_GESTOR) {
+    logger.log(
+      `[queryAsGestor] Executando query para ${session.perfil} (CPF: ***${session.cpf.slice(-4)})`
+    );
+  }
 
   return query(text, params, session);
 }

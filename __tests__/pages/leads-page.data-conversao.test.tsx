@@ -52,16 +52,34 @@ const leadConvertido = {
 };
 
 function mockFetch(leads: object[]) {
-  global.fetch = jest.fn().mockResolvedValue({
-    ok: true,
-    json: () =>
-      Promise.resolve({
-        leads,
-        total: leads.length,
-        page: 1,
-        limit: 20,
-        contagens: { pendente: 1, convertido: 1, expirado: 0 },
-      }),
+  global.fetch = jest.fn((url: string) => {
+    if (url.includes('/api/representante/me')) {
+      return Promise.resolve({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            representante: {
+              percentual_comissao: 10,
+              percentual_comissao_comercial: 0,
+              modelo_comissionamento: 'percentual',
+              valor_custo_fixo_entidade: 12,
+              valor_custo_fixo_clinica: 5,
+            },
+          }),
+      });
+    }
+    // Default para outras rotas
+    return Promise.resolve({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          leads,
+          total: leads.length,
+          page: 1,
+          limit: 20,
+          contagens: { pendente: 1, convertido: 1, expirado: 0 },
+        }),
+    });
   });
 }
 

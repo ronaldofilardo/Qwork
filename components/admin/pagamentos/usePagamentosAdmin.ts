@@ -27,16 +27,20 @@ export function usePagamentosAdmin() {
         solicitacoes: data.solicitacoes,
       });
       setSolicitacoes(data.solicitacoes || []);
-      // Pré-popular valorInput com lead_valor_negociado para solicitações aguardando cobrança
+      // Pré-popular valorInput para solicitações aguardando cobrança:
+      // - custo_fixo: usar valor_custo_fixo_snapshot (valor unitário por avaliação)
+      // - percentual: usar lead_valor_negociado (% negociado)
       const preFill: Record<number, string> = {};
       for (const s of data.solicitacoes || []) {
-        if (
-          s.status_pagamento === 'aguardando_cobranca' &&
-          s.lead_valor_negociado &&
-          s.lead_valor_negociado > 0
-        ) {
+        if (s.status_pagamento !== 'aguardando_cobranca') continue;
+        // Prioridade: lead_valor_negociado > valor_custo_fixo_snapshot > valor_negociado_vinculo
+        const val =
+          s.lead_valor_negociado ??
+          s.valor_custo_fixo_snapshot ??
+          s.valor_negociado_vinculo;
+        if (val != null && Number(val) > 0) {
           preFill[s.lote_id] =
-            `R$ ${Number(s.lead_valor_negociado).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            `R$ ${Number(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
         }
       }
       setValorInput((prev) => ({ ...preFill, ...prev }));
@@ -120,8 +124,12 @@ export function usePagamentosAdmin() {
           token: data.token,
           loteId: loteId,
           nomeTomador: solicitacao.nome_tomador,
-          valorTotal: solicitacao.valor_total_calculado || 0,
-          numAvaliacoes: solicitacao.num_avaliacoes_concluidas,
+          valorTotal:
+            data.valor_total ?? solicitacao.valor_total_calculado ?? 0,
+          numAvaliacoes:
+            data.num_avaliacoes ??
+            solicitacao.num_avaliacoes_cobradas ??
+            solicitacao.num_avaliacoes_concluidas,
         });
       }
       await carregarSolicitacoes();
@@ -141,7 +149,9 @@ export function usePagamentosAdmin() {
         loteId: solicitacao.lote_id,
         nomeTomador: solicitacao.nome_tomador,
         valorTotal: solicitacao.valor_total_calculado || 0,
-        numAvaliacoes: solicitacao.num_avaliacoes_concluidas,
+        numAvaliacoes:
+          solicitacao.num_avaliacoes_cobradas ??
+          solicitacao.num_avaliacoes_concluidas,
       });
     }
   };
@@ -167,6 +177,33 @@ export function usePagamentosAdmin() {
     } catch (error) {
       console.error('Erro ao verificar pagamento:', error);
       alert('Erro ao verificar pagamento. Tente novamente.');
+    } finally {
+      setProcessando(null);
+    }
+  };
+
+  const handleDeletarLink = async (loteId: number) => {
+    if (
+      !confirm(
+        'Deletar o link de pagamento deste lote? Ele voltará para "Aguardando Cobrança" e o tomador não terá mais acesso ao link.'
+      )
+    )
+      return;
+    try {
+      setProcessando(loteId);
+      const response = await fetch(
+        `/api/admin/emissoes/${loteId}/deletar-link`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Erro ao deletar link');
+        return;
+      }
+      await carregarSolicitacoes();
+    } catch (error) {
+      console.error('Erro ao deletar link:', error);
+      alert('Erro ao deletar link. Tente novamente.');
     } finally {
       setProcessando(null);
     }
@@ -285,97 +322,6 @@ export function usePagamentosAdmin() {
     }
   };
 
-  /** Gerar comissão para um lote pago */
-  const handleGerarComissao = async (loteId: number) => {
-    const solicitacao = solicitacoes.find((s) => s.lote_id === loteId);
-    if (!solicitacao) return;
-    if (!solicitacao.vinculo_id || !solicitacao.representante_id) {
-      alert('Vincule um representante primeiro.');
-      return;
-    }
-
-    const totalParcelas = solicitacao.pagamento_parcelas ?? 1;
-    const geradas = solicitacao.comissoes_geradas_count ?? 0;
-
-    if (geradas >= totalParcelas) {
-      alert('Todas as comissões já foram geradas para este lote.');
-      return;
-    }
-    if (
-      !solicitacao.valor_total_calculado ||
-      solicitacao.valor_total_calculado <= 0
-    ) {
-      alert('Valor total não definido.');
-      return;
-    }
-
-    // Verificar se percentual está definido
-    const percRep = solicitacao.representante_percentual_comissao;
-    if (percRep == null) {
-      alert(
-        'Percentual de comissão não definido para este representante.\n\n' +
-          'Defina o percentual na página do representante antes de gerar comissões.'
-      );
-      return;
-    }
-
-    // A próxima parcela a gerar é geradas + 1
-    const proximaParcela = geradas + 1;
-    // Number() garante coerção segura: PostgreSQL retorna NUMERIC como string em runtime
-    const valorTotal = Number(solicitacao.valor_total_calculado);
-    const valorPorParcela = valorTotal / totalParcelas;
-    const valorComissao = valorPorParcela * (percRep / 100);
-
-    const parcelaInfo =
-      totalParcelas > 1
-        ? `Parcela ${proximaParcela}/${totalParcelas} (R$ ${valorPorParcela.toFixed(2)})`
-        : `Pagamento à vista (R$ ${valorTotal.toFixed(2)})`;
-
-    const confirmar = confirm(
-      `Gerar comissão para o representante ${solicitacao.representante_nome}?\n\n` +
-        `${parcelaInfo}\n` +
-        `Comissão (${percRep}%): R$ ${valorComissao.toFixed(2)}\n\n` +
-        `Confirmar?`
-    );
-    if (!confirmar) return;
-
-    try {
-      setProcessando(loteId);
-      // Determina origem: gestor (entidade_id) ou clínica pura (clinica_id)
-      const gerarPayload: Record<string, unknown> = {
-        lote_pagamento_id: loteId,
-        vinculo_id: solicitacao.vinculo_id,
-        representante_id: solicitacao.representante_id,
-        laudo_id: solicitacao.laudo_id || null,
-        valor_laudo: valorTotal,
-        parcela_numero: proximaParcela,
-        total_parcelas: totalParcelas,
-      };
-      if (solicitacao.entidade_id) {
-        gerarPayload.entidade_id = solicitacao.entidade_id;
-      } else {
-        gerarPayload.clinica_id = solicitacao.clinica_id;
-      }
-      const response = await fetch('/api/admin/comissoes/gerar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(gerarPayload),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        alert(data.error || 'Erro ao gerar comissão');
-        return;
-      }
-      alert(`Comissão de R$ ${valorComissao.toFixed(2)} gerada com sucesso!`);
-      await carregarSolicitacoes();
-    } catch (error) {
-      console.error('Erro ao gerar comissão:', error);
-      alert('Erro ao gerar comissão');
-    } finally {
-      setProcessando(null);
-    }
-  };
-
   return {
     solicitacoes,
     loading,
@@ -393,9 +339,9 @@ export function usePagamentosAdmin() {
     handleGerarLink,
     handleVerLink,
     handleVerificarPagamento,
+    handleDeletarLink,
     handleDisponibilizarLink,
     handleVincularRepresentante,
-    handleGerarComissao,
     getSolicitacoesFiltradas,
     getTabCount,
   };

@@ -43,11 +43,10 @@ export function gerarRelatorioLotePDF(dados: DadosLote): Buffer {
   // Informações do lote
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  const dataGeracaoFormatada = formatarDataCorrigida(new Date());
-  const dataCriacaoFormatada = formatarDataCorrigida(dados.lote.criado_em);
-  const statusFormatado = dados.lote.emitido_em
-    ? `Concluído em ${formatarDataCorrigida(dados.lote.emitido_em)}`
+  const dataGeracaoFormatada = dados.lote.emitido_em
+    ? formatarDataCorrigida(dados.lote.emitido_em)
     : 'Pendente';
+  const dataCriacaoFormatada = formatarDataCorrigida(dados.lote.criado_em);
 
   autoTable(doc, {
     startY: yPos,
@@ -58,7 +57,6 @@ export function gerarRelatorioLotePDF(dados: DadosLote): Buffer {
       ['Data de Criação', dataCriacaoFormatada],
       ['Gerado em', dataGeracaoFormatada],
       ['Hash PDF', dados.lote.hash_pdf || 'Não disponível'],
-      ['Status', statusFormatado],
     ],
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 2 },

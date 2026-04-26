@@ -26,8 +26,7 @@ export interface CreatetomadorOptions {
     | 'aprovado'
     | 'rejeitado'
     | 'em_reanalise'
-    | 'aguardando_pagamento'
-    | 'pago';
+    | 'aguardando_pagamento';
   responsavel_nome?: string;
   responsavel_cpf?: string;
   responsavel_email?: string;
@@ -43,9 +42,8 @@ export interface CreateContratoOptions {
     | 'aprovado'
     | 'rejeitado'
     | 'em_reanalise'
-    | 'aguardando_pagamento'
-    | 'pago';
-  conteudo_gerado?: string;
+    | 'aguardando_pagamento';
+  conteudo?: string;
 }
 
 export interface CreatePagamentoOptions {
@@ -156,24 +154,22 @@ export async function createTestContrato(
   options: CreateContratoOptions
 ): Promise<number> {
   const conteudoDefault =
-    options.conteudo_gerado || 'Contrato de teste gerado automaticamente';
+    options.conteudo || 'Contrato de teste gerado automaticamente';
   const defaults = {
     numero_funcionarios: options.numero_funcionarios || 10,
     valor_total: options.valor_total || 200.0,
     conteudo: conteudoDefault,
-    conteudo_gerado: conteudoDefault,
   };
 
   const result = await query(
-    `INSERT INTO contratos (tomador_id, numero_funcionarios, valor_total, conteudo, conteudo_gerado)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO contratos (tomador_id, numero_funcionarios, valor_total, conteudo)
+     VALUES ($1, $2, $3, $4)
      RETURNING id`,
     [
       options.tomador_id,
       defaults.numero_funcionarios,
       defaults.valor_total,
       defaults.conteudo,
-      defaults.conteudo_gerado,
     ]
   );
 

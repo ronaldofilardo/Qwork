@@ -51,7 +51,6 @@ const vendedorMock = {
   vendedor_nome: 'Huguinho Dsiney',
   vendedor_email: 'huguinho@teste.com',
   vendedor_cpf: '12345678901',
-  codigo_vendedor: 'VND-QYW8Q',
   leads_ativos: 0,
   vinculado_em: '2026-01-01T00:00:00Z',
 };

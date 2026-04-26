@@ -6,6 +6,7 @@ import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,7 @@ export async function PATCH(
     await requireRole(['suporte', 'admin'], false);
 
     const body = await request.json();
-    const { ativa, trocar_gestor } = body;
+    const { ativa, trocar_gestor, isento_pagamento } = body;
     const entidadeId = parseInt(params.id);
 
     if (isNaN(entidadeId)) {
@@ -44,11 +45,26 @@ export async function PATCH(
       );
     }
 
-    if (typeof ativa !== 'boolean') {
+    if (typeof ativa !== 'boolean' && typeof isento_pagamento !== 'boolean') {
       return NextResponse.json(
-        { error: 'Status ativa deve ser boolean' },
+        { error: 'Status ativa ou isento_pagamento deve ser boolean' },
         { status: 400 }
       );
+    }
+
+    // Fluxo de isenção isolado (sem alterar ativa)
+    if (typeof isento_pagamento === 'boolean' && typeof ativa === 'undefined') {
+      const result = await query(
+        `UPDATE entidades SET isento_pagamento = $1, atualizado_em = CURRENT_TIMESTAMP WHERE id = $2 RETURNING id`,
+        [isento_pagamento, entidadeId]
+      );
+      if (result.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Entidade não encontrada' },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ success: true, isento_pagamento });
     }
 
     // Se está reativando E trocando gestor
@@ -97,6 +113,21 @@ export async function PATCH(
       }
 
       const senhaHash = await bcrypt.hash(senhaInicial, 12);
+
+      // Verificar unicidade do CPF no sistema (ignora o gestor atual desta entidade se já existir)
+      const usuarioAtualEntResult = await query(
+        `SELECT id FROM usuarios WHERE cpf = $1 AND entidade_id = $2 AND tipo_usuario = 'gestor'`,
+        [cpfLimpo, entidadeId]
+      );
+      const cpfCheck = await checkCpfUnicoSistema(cpfLimpo, {
+        ignorarUsuarioId: usuarioAtualEntResult.rows[0]?.id,
+      });
+      if (!cpfCheck.disponivel) {
+        return NextResponse.json(
+          { error: cpfCheck.message ?? 'CPF já cadastrado no sistema' },
+          { status: 409 }
+        );
+      }
 
       // Transaction: trocar gestor + reativar
       // 1. Atualizar dados do responsável na entidade
@@ -195,13 +226,19 @@ export async function PATCH(
       });
     }
 
-    // Fluxo padrão: apenas toggle ativa
+    // Fluxo padrão: toggle ativa
+    const isentoSet =
+      typeof isento_pagamento === 'boolean' ? ', isento_pagamento = $3' : '';
+    const args: (boolean | number)[] =
+      typeof isento_pagamento === 'boolean'
+        ? [ativa, entidadeId, isento_pagamento]
+        : [ativa, entidadeId];
     const result = await query(
       `UPDATE entidades 
-       SET ativa = $1, atualizado_em = CURRENT_TIMESTAMP 
+       SET ativa = $1, atualizado_em = CURRENT_TIMESTAMP${isentoSet} 
        WHERE id = $2 
        RETURNING id, nome, cnpj, email, telefone, endereco, ativa, criado_em`,
-      [ativa, entidadeId]
+      args
     );
 
     if (result.rows.length === 0) {
@@ -210,6 +247,13 @@ export async function PATCH(
         { status: 404 }
       );
     }
+
+    // Sincronizar usuarios.ativo com o novo estado da entidade
+    await query(
+      `UPDATE usuarios SET ativo = $1, atualizado_em = CURRENT_TIMESTAMP
+       WHERE entidade_id = $2 AND tipo_usuario = 'gestor'`,
+      [ativa, entidadeId]
+    );
 
     return NextResponse.json({ success: true, entidade: result.rows[0] });
   } catch (error) {

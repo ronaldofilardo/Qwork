@@ -6,7 +6,7 @@
  * ativarComissaoParcelaPaga:
  *   - Comissão não encontrada → { ok: false, motivo: 'comissao_nao_encontrada' }
  *   - Idempotente: parcela_confirmada_em NOT NULL → { ok: true, motivo: 'ja_ativada' }
- *   - Rep apto: seta parcela_confirmada_em + transiciona status para pendente_nf
+ *   - Rep apto: seta parcela_confirmada_em + transiciona status para 'paga' (split já executado)
  *   - Rep não apto: seta apenas parcela_confirmada_em, mantém status retida
  *   - Erro interno (query lança) → { ok: false, motivo: 'erro_interno' }
  *
@@ -56,8 +56,17 @@ function mockCriarAdmin({
     .mockResolvedValueOnce({
       rows: [
         {
+          percentual_comissao_representante: percentual,
+          valor_negociado: null,
+        },
+      ],
+      rowCount: 1,
+    } as any) // vinculos percentual
+    .mockResolvedValueOnce({
+      rows: [
+        {
           id: 99,
-          status: repStatus === 'apto' ? 'pendente_nf' : 'retida',
+          status: 'retida',
           valor_comissao: '5.00',
         },
       ],
@@ -91,7 +100,7 @@ describe('ativarComissaoParcelaPaga', () => {
       rows: [
         {
           id: 10,
-          status: 'pendente_nf',
+          status: 'paga',
           parcela_confirmada_em: new Date(),
           rep_status: 'apto',
         },
@@ -134,9 +143,9 @@ describe('ativarComissaoParcelaPaga', () => {
     expect(res.ok).toBe(true);
     expect(res.motivo).toBeUndefined();
 
-    // O UPDATE deve passar repApto=true ($2)
+    // UPDATE deve ser chamado com apenas o id da comissão ($1)
     const updateCall = mockQuery.mock.calls[1];
-    expect(updateCall[1]).toEqual([10, true]);
+    expect(updateCall[1]).toEqual([10]);
   });
 
   it('deve fazer UPDATE com repApto=false e retornar { ok: true } quando rep não é apto', async () => {
@@ -163,7 +172,7 @@ describe('ativarComissaoParcelaPaga', () => {
     expect(res.ok).toBe(true);
 
     const updateCall = mockQuery.mock.calls[1];
-    expect(updateCall[1]).toEqual([10, false]);
+    expect(updateCall[1]).toEqual([10]);
   });
 
   it('deve retornar { ok: false, motivo: "erro_interno" } quando query lança exceção', async () => {

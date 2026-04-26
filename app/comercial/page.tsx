@@ -4,25 +4,30 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users,
-  UserPlus,
   DollarSign,
-  TrendingUp,
-  Users2,
   ChevronRight,
   LayoutGrid,
   LayoutList,
-  CalendarCheck,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  FileText,
 } from 'lucide-react';
 import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
 import { useComercial } from './comercial-context';
-import { ComissoesContent } from '@/components/admin/ComissoesContent';
+import { ComercialComissoesAbas } from '@/components/comercial/ComercialComissoesAbas';
 import ComercialLeadsAprovacaoPage from './leads/page';
 import type { Lead } from '@/app/admin/representantes/types';
 import { useLeads } from '@/app/admin/representantes/hooks/useLeads';
 import { useCachedDocs } from '@/app/admin/representantes/hooks/useCachedDocs';
 import { useRepActions } from '@/app/admin/representantes/hooks/useRepActions';
 import { LeadsTab } from '@/app/admin/representantes/components/LeadsTab';
+import type {
+  TomadorRow,
+  TomadorEmpresa,
+} from '@/app/api/comercial/tomadores/route';
+import { ContratosTable } from '@/components/shared/ContratosTable';
 
 interface Session {
   cpf: string;
@@ -169,6 +174,11 @@ interface RepMetrica {
   valor_pendente: number;
   aceite_contrato_em: string | null;
   vendedores_count: number;
+  modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+  percentual_comissao: number | null;
+  percentual_comissao_comercial: number | null;
+  valor_custo_fixo_entidade: number | null;
+  valor_custo_fixo_clinica: number | null;
 }
 
 export default function ComercialPage() {
@@ -292,14 +302,313 @@ export default function ComercialPage() {
 
   const handleSectionChange = (section: ComercialSection) => {
     setActiveSection(section);
+    if (section === 'representantes') {
+      router.push('/comercial/representantes');
+    }
   };
 
   const fmtBRL = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // TomadoresContent — inline component to avoid separate file for single use
+  // ──────────────────────────────────────────────────────────────────────────
+  function TomadoresContent() {
+    const [tomadores, setTomadores] = useState<TomadorRow[]>([]);
+    const [loadingT, setLoadingT] = useState(true);
+    const [erroT, setErroT] = useState<string | null>(null);
+    const [expandedClinicas, setExpandedClinicas] = useState<
+      Record<number, boolean>
+    >({});
+    const [busca, setBusca] = useState('');
+
+    useEffect(() => {
+      setLoadingT(true);
+      fetch('/api/comercial/tomadores')
+        .then((r) => r.json())
+        .then((d: { tomadores?: TomadorRow[]; error?: string }) => {
+          if (d.error) {
+            setErroT(d.error);
+            return;
+          }
+          setTomadores(d.tomadores ?? []);
+        })
+        .catch(() => setErroT('Erro ao carregar tomadores'))
+        .finally(() => setLoadingT(false));
+    }, []);
+
+    const fmtDate = (d: string | null | undefined) => {
+      if (!d) return '—';
+      return new Date(d).toLocaleDateString('pt-BR');
+    };
+
+    const semRep = tomadores.filter((t) => !t.rep_nome);
+    const comRep = tomadores.filter((t) => t.rep_nome);
+
+    const filtrar = (lista: TomadorRow[]) =>
+      busca.trim()
+        ? lista.filter(
+            (t) =>
+              t.tomador_nome.toLowerCase().includes(busca.toLowerCase()) ||
+              t.tomador_cnpj.includes(busca.replace(/\D/g, '')) ||
+              (t.rep_nome ?? '').toLowerCase().includes(busca.toLowerCase())
+          )
+        : lista;
+
+    const toggleClinica = (id: number) =>
+      setExpandedClinicas((prev) => ({ ...prev, [id]: !prev[id] }));
+
+    const TomadorRow = ({ t }: { t: TomadorRow }) => {
+      const isExpanded = !!expandedClinicas[t.tomador_id];
+      const isClinica = t.tipo === 'clinica';
+
+      return (
+        <>
+          <div
+            className={`flex items-center gap-3 px-4 py-3 border-b last:border-0 ${
+              isClinica ? 'cursor-pointer hover:bg-gray-50' : ''
+            } transition-colors`}
+            onClick={isClinica ? () => toggleClinica(t.tomador_id) : undefined}
+          >
+            {/* Tipo badge */}
+            <span
+              className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                isClinica
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-purple-100 text-purple-700'
+              }`}
+            >
+              {isClinica ? 'Clínica' : 'Entidade'}
+            </span>
+
+            {/* Nome + CNPJ */}
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-900 text-sm truncate">
+                {t.tomador_nome}
+              </p>
+              <p className="text-xs text-gray-400 font-mono">
+                {t.tomador_cnpj.replace(
+                  /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                  '$1.$2.$3/$4-$5'
+                )}
+              </p>
+            </div>
+
+            {/* Representante */}
+            <div className="hidden sm:block text-right shrink-0 min-w-[120px] max-w-[160px]">
+              {t.rep_nome ? (
+                <>
+                  <p className="text-xs font-semibold text-gray-700 truncate">
+                    {t.rep_nome}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-gray-400 italic">Sem rep</p>
+              )}
+            </div>
+
+            {/* Cadastro */}
+            <div className="hidden md:block text-right shrink-0 w-[80px]">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                Cadastro
+              </p>
+              <p className="text-xs text-gray-700">{fmtDate(t.cadastro_em)}</p>
+            </div>
+
+            {/* Status vínculo */}
+            {t.vinculo_status && (
+              <span
+                className={`shrink-0 hidden sm:inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                  t.vinculo_status === 'ativo'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-gray-100 text-gray-500'
+                }`}
+              >
+                {t.vinculo_status}
+              </span>
+            )}
+
+            {/* Chevron para clínica */}
+            {isClinica ? (
+              <span className="shrink-0 text-gray-400">
+                {isExpanded ? (
+                  <ChevronUp size={16} />
+                ) : (
+                  <ChevronDown size={16} />
+                )}
+              </span>
+            ) : (
+              <span className="w-4 shrink-0" />
+            )}
+          </div>
+
+          {/* Empresas colapsáveis */}
+          {isClinica && isExpanded && (
+            <div className="border-b bg-gray-50 px-6 py-3">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                Empresas vinculadas
+                {t.empresas.length > 0 && ` (${t.empresas.length})`}
+              </p>
+              {t.empresas.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">
+                  Nenhuma empresa vinculada
+                </p>
+              ) : (
+                <div className="divide-y">
+                  {t.empresas.map((emp: TomadorEmpresa) => (
+                    <div
+                      key={emp.empresa_id}
+                      className="py-2 flex flex-wrap items-start gap-x-4 gap-y-1"
+                    >
+                      <div className="flex items-center gap-2 min-w-[180px]">
+                        <Building2
+                          size={12}
+                          className="text-gray-400 shrink-0"
+                        />
+                        <span className="text-sm font-semibold text-gray-800">
+                          {emp.empresa_nome}
+                        </span>
+                      </div>
+                      {emp.empresa_cnpj && (
+                        <span className="text-gray-400 font-mono text-xs">
+                          {emp.empresa_cnpj.replace(
+                            /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                            '$1.$2.$3/$4-$5'
+                          )}
+                        </span>
+                      )}
+                      {emp.empresa_responsavel && (
+                        <span className="text-xs text-gray-600">
+                          <span className="text-gray-400">Resp.: </span>
+                          {emp.empresa_responsavel}
+                        </span>
+                      )}
+                      {(emp.empresa_contato_fone ||
+                        emp.empresa_contato_email) && (
+                        <span className="text-xs text-gray-500">
+                          {emp.empresa_contato_fone && (
+                            <span>{emp.empresa_contato_fone}</span>
+                          )}
+                          {emp.empresa_contato_fone &&
+                            emp.empresa_contato_email && (
+                              <span className="mx-1 text-gray-300">·</span>
+                            )}
+                          {emp.empresa_contato_email && (
+                            <span>{emp.empresa_contato_email}</span>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
+      );
+    };
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Tomadores</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Entidades e clínicas cadastradas, com dados de representante, lead e
+            negociação
+          </p>
+        </div>
+
+        {/* Busca */}
+        <input
+          type="text"
+          placeholder="Buscar por nome, CNPJ ou representante..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="w-full max-w-sm px-4 py-2 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400/30"
+        />
+
+        {loadingT ? (
+          <div className="flex justify-center items-center py-16">
+            <div className="animate-spin h-8 w-8 rounded-full border-4 border-green-500 border-t-transparent" />
+          </div>
+        ) : erroT ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+            {erroT}
+          </div>
+        ) : tomadores.length === 0 ? (
+          <div className="py-20 text-center text-gray-400">
+            <Building2 size={40} className="mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium">Nenhum tomador encontrado.</p>
+          </div>
+        ) : (
+          <div className="space-y-8">
+            {/* Sem representante — topo */}
+            {filtrar(semRep).length > 0 && (
+              <div>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                    <span className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                    Sem representante ({filtrar(semRep).length})
+                  </span>
+                </div>
+                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                  {filtrar(semRep).map((t) => (
+                    <TomadorRow key={`${t.tipo}-${t.tomador_id}`} t={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Com representante */}
+            {filtrar(comRep).length > 0 && (
+              <div>
+                {filtrar(semRep).length > 0 && (
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+                    Com representante ({filtrar(comRep).length})
+                  </p>
+                )}
+                <div className="bg-white rounded-2xl border shadow-sm overflow-hidden">
+                  {filtrar(comRep).map((t) => (
+                    <TomadorRow key={`${t.tipo}-${t.tomador_id}`} t={t} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   const renderContent = () => {
+    if (activeSection === 'tomadores') {
+      return <TomadoresContent />;
+    }
+
+    if (activeSection === 'contratos') {
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Contratos</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Contratos de todos os representantes e tomadores
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
+            <div className="p-4">
+              <ContratosTable
+                endpoint="/api/comercial/contratos"
+                comercial
+                allowExpandClinicaEmpresas
+              />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (activeSection === 'comissoes') {
-      return <ComissoesContent perfil="comercial" />;
+      return <ComercialComissoesAbas />;
     }
 
     if (activeSection === 'leads') {
@@ -324,114 +633,6 @@ export default function ComercialPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-green-50">
-                <Users size={20} className="text-green-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Representantes Aptos
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.representantesAtivos}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              <span className="text-amber-600 font-medium">
-                {kpis.representantesPendentes}
-              </span>{' '}
-              aguardando aprovação
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-blue-50">
-                <Users2 size={20} className="text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Vendedores Ativos
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.vendedoresAtivos}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Vinculados a representantes
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-purple-50">
-                <UserPlus size={20} className="text-purple-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Leads / Candidatos
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.leadsTotal}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              <span className="text-orange-600 font-medium">
-                {kpis.leadsPendentes}
-              </span>{' '}
-              pendentes de verificação
-            </p>
-          </div>
-
-          <div
-            className="bg-white rounded-xl border p-5 cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setActiveSection('comissoes')}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-emerald-50">
-                <DollarSign size={20} className="text-emerald-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Comissões Abertas
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.comissoesAbertas}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Total em aberto</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={18} className="text-amber-600" />
-              <span className="text-sm font-semibold text-amber-700">
-                A Pagar (em aberto)
-              </span>
-            </div>
-            <p className="text-2xl font-bold text-amber-900">
-              {fmtBRL(kpis.valorAReceber)}
-            </p>
-            <p className="text-xs text-amber-600 mt-1">
-              Comissões NF + liberadas + análise
-            </p>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign size={18} className="text-green-600" />
-              <span className="text-sm font-semibold text-green-700">
-                Total Pago (histórico)
-              </span>
-            </div>
-            <p className="text-2xl font-bold text-green-900">
-              {fmtBRL(kpis.valorPagoMes)}
-            </p>
-            <p className="text-xs text-green-600 mt-1">
-              Comissões pagas acumuladas
-            </p>
-          </div>
-        </div>
-
         <div className="bg-white rounded-xl border p-5">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             Ações Rápidas
@@ -450,6 +651,13 @@ export default function ComercialPage() {
             >
               <DollarSign size={16} />
               Ver Comissões
+            </button>
+            <button
+              onClick={() => setActiveSection('contratos')}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <FileText size={16} />
+              Contratos
             </button>
             <button
               onClick={() => {
@@ -561,7 +769,7 @@ export default function ComercialPage() {
                         />
                       </div>
                       <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
-                        {r.codigo || 'S/ COD'}
+                        #{r.id}
                       </p>
                     </div>
                   </div>
@@ -634,112 +842,125 @@ export default function ComercialPage() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">
-                      Representante
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Leads
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Vínculos
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Vendedores
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Aceite Contrato
-                    </th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600">
-                      Pendente
-                    </th>
-                    <th className="px-3 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {repsMetrica.map((r, idx) => (
-                    <tr
-                      key={r.id}
-                      onClick={() =>
-                        router.push(`/comercial/representantes/${r.id}`)
-                      }
-                      className={`cursor-pointer hover:bg-green-50/50 transition-colors ${
-                        idx < repsMetrica.length - 1
-                          ? 'border-b border-gray-50'
-                          : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              r.status === 'apto'
-                                ? 'bg-green-500'
-                                : r.status === 'apto_pendente'
-                                  ? 'bg-amber-500'
-                                  : 'bg-gray-300'
-                            }`}
-                          />
-                          <div>
-                            <p className="font-semibold text-gray-900">
-                              {r.nome}
-                            </p>
-                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">
-                              {r.codigo || 'S/ COD'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="text-center px-3 py-3 font-bold text-gray-800">
-                        {r.leads_ativos + r.leads_mes}
-                      </td>
-                      <td className="text-center px-3 py-3 font-bold text-gray-800">
-                        {r.vinculos_ativos}
-                      </td>
-                      <td className="text-center px-3 py-3 font-bold text-gray-800">
-                        {r.vendedores_count > 0 ? (
-                          r.vendedores_count
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="text-center px-3 py-3">
-                        {r.aceite_contrato_em ? (
-                          <span className="inline-flex items-center gap-1 text-green-700 font-medium">
-                            <CalendarCheck
-                              size={13}
-                              className="text-green-500"
-                            />
-                            {new Date(r.aceite_contrato_em).toLocaleDateString(
-                              'pt-BR'
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="text-right px-4 py-3">
-                        <span
-                          className={`font-bold ${
-                            r.valor_pendente > 0
-                              ? 'text-amber-600'
-                              : 'text-gray-300'
-                          }`}
-                        >
-                          {r.valor_pendente > 0
-                            ? fmtBRL(r.valor_pendente)
-                            : '—'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">
-                        <ChevronRight size={16} className="text-gray-300" />
-                      </td>
+              <div
+                className="overflow-x-auto"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                <style>{`
+                  .kw-scrollbar-hide::-webkit-scrollbar { display: none; }
+                `}</style>
+                <table className="w-full text-sm kw-scrollbar-hide">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/80">
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                        Representante
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Tipo
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600" />
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Valor/%
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Com. Com.
+                      </th>
+                      <th className="px-3 py-3" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {repsMetrica.map((r, idx) => (
+                      <tr
+                        key={r.id}
+                        onClick={() =>
+                          router.push(`/comercial/representantes/${r.id}`)
+                        }
+                        className={`cursor-pointer hover:bg-green-50/50 transition-colors ${
+                          idx < repsMetrica.length - 1
+                            ? 'border-b border-gray-50'
+                            : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                r.status === 'apto'
+                                  ? 'bg-green-500'
+                                  : r.status === 'apto_pendente'
+                                    ? 'bg-amber-500'
+                                    : 'bg-gray-300'
+                              }`}
+                            />
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {r.nome}
+                              </p>
+                              <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">
+                                {r.email}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-center px-3 py-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                            {r.modelo_comissionamento === 'percentual'
+                              ? '%'
+                              : r.modelo_comissionamento === 'custo_fixo'
+                                ? 'Fixo'
+                                : '—'}
+                          </span>
+                        </td>
+                        {/* sub-tipo */}
+                        <td className="text-center px-3 py-3 text-xs text-gray-500">
+                          {r.modelo_comissionamento === 'custo_fixo' ? (
+                            <div className="space-y-1">
+                              <p>Ent.</p>
+                              <p>Cli.</p>
+                            </div>
+                          ) : null}
+                        </td>
+                        {/* valor/% */}
+                        <td className="text-center px-3 py-3 text-xs">
+                          {r.modelo_comissionamento === 'percentual' ? (
+                            <span className="font-semibold text-gray-900">
+                              {r.percentual_comissao?.toFixed(1) ?? '—'}%
+                            </span>
+                          ) : r.modelo_comissionamento === 'custo_fixo' ? (
+                            <div className="space-y-1">
+                              <p className="font-semibold text-gray-900">
+                                {r.valor_custo_fixo_entidade != null
+                                  ? `R$ ${r.valor_custo_fixo_entidade.toFixed(2)}`
+                                  : '—'}
+                              </p>
+                              <p className="text-gray-600">
+                                {r.valor_custo_fixo_clinica != null
+                                  ? `R$ ${r.valor_custo_fixo_clinica.toFixed(2)}`
+                                  : '—'}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                        {/* com. com. */}
+                        <td className="text-center px-3 py-3 text-xs">
+                          {r.percentual_comissao_comercial != null ? (
+                            <span className="font-semibold text-gray-900">
+                              {r.percentual_comissao_comercial.toFixed(1)}%
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3">
+                          <ChevronRight size={16} className="text-gray-300" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -774,8 +995,11 @@ export default function ComercialPage() {
         />
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <div className="p-6">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        <div className="qw-content-area p-4 md:p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
               Painel Comercial

@@ -168,10 +168,41 @@ describe('GET /api/representante/comissoes', () => {
 
     await GET(makeReq());
 
-    // A query de lista (3ª chamada) deve usar e.nome, nunca e.razao_social
+    // A query de lista (3ª chamada) deve usar COALESCE(e.nome, cl.nome) ou e.nome, nunca e.razao_social
     const listSQL = mockQuery.mock.calls[2][0] as string;
-    expect(listSQL).toMatch(/e\.nome\s+AS\s+entidade_nome/i);
+    expect(listSQL).toMatch(
+      /COALESCE\(e\.nome.*\)\s+AS\s+entidade_nome|e\.nome\s+AS\s+entidade_nome/i
+    );
     expect(listSQL).not.toMatch(/e\.razao_social/i);
+  });
+
+  it('SQL de resumo deve incluir congelada_aguardando_admin em valor_pendente', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            pendentes: '0',
+            liberadas: '0',
+            pagas: '0',
+            valor_pendente: '0',
+            valor_liberado: '0',
+            valor_pago_total: '0',
+          },
+        ],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq());
+
+    const resumoSQL = mockQuery.mock.calls[0][0] as string;
+    // valor_pendente deve incluir retida E congelada_aguardando_admin
+    expect(resumoSQL).toContain("'retida'");
+    expect(resumoSQL).toContain("'congelada_aguardando_admin'");
+    expect(resumoSQL).toContain('valor_pendente');
+    // congelada_rep_suspenso NÃO deve estar no agrupamento de valor_pendente
+    // (é filtrado pela lógica de negócio — rep suspenso não recebe)
   });
 
   it('deve paginar resultados (limit=30)', async () => {
@@ -197,5 +228,72 @@ describe('GET /api/representante/comissoes', () => {
     const data = await res.json();
     expect(data.page).toBe(2);
     expect(data.limit).toBe(30);
+  });
+
+  it('deve retornar laudo_id e valor_parcela calculado', async () => {
+    const comissao = {
+      id: 1,
+      laudo_id: 123,
+      lote_pagamento_id: 5,
+      status: 'paga',
+      valor_comissao: '1000.00',
+      valor_laudo: '3000.00',
+      valor_parcela: '1000.00', // 3000 / 3
+      total_parcelas: 3,
+      parcela_numero: 1,
+      entidade_nome: 'Empresa Z',
+    };
+
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            pendentes: '0',
+            liberadas: '0',
+            pagas: '1',
+            valor_pendente: '0',
+            valor_liberado: '0',
+            valor_pago_total: '1000.00',
+          },
+        ],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [comissao], rowCount: 1 } as any);
+
+    const res = await GET(makeReq());
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.comissoes).toHaveLength(1);
+    expect(data.comissoes[0].laudo_id).toBe(123);
+    expect(data.comissoes[0].lote_pagamento_id).toBe(5);
+    expect(data.comissoes[0].valor_parcela).toBe('1000.00');
+  });
+
+  it('SQL de listagem deve incluir laudo_id, lote_pagamento_id e valor_parcela (laudo / total_parcelas)', async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            pendentes: '0',
+            liberadas: '0',
+            pagas: '0',
+            valor_pendente: '0',
+            valor_liberado: '0',
+            valor_pago_total: '0',
+          },
+        ],
+        rowCount: 1,
+      } as any)
+      .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET(makeReq());
+
+    const listSQL = mockQuery.mock.calls[2][0] as string;
+    expect(listSQL).toContain('c.laudo_id');
+    expect(listSQL).toContain('c.lote_pagamento_id');
+    expect(listSQL).toContain('(c.valor_laudo / c.total_parcelas)');
+    expect(listSQL).toContain('AS valor_parcela');
   });
 });

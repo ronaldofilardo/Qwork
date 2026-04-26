@@ -388,10 +388,10 @@ BEGIN
   -- Congela comissões aprovadas sem NF enviada para o mês de pagamento informado
   UPDATE public.comissoes_laudo
   SET    status                = 'congelada_aguardando_admin',
-         motivo_congelamento   = 'nf_rpa_pendente',
+         motivo_congelamento   = 'nf_pendente',
          auto_cancelamento_em  = NOW() + INTERVAL '30 days'
   WHERE  status = 'aprovada'
-    AND  nf_rpa_enviada_em IS NULL
+    AND  nf_enviada_em IS NULL
     AND  mes_pagamento = p_mes_referencia;
 
   GET DIAGNOSTICS _count = ROW_COUNT;
@@ -435,43 +435,7 @@ $$;
 ALTER FUNCTION public.garantir_template_padrao_unico() OWNER TO postgres;
 
 
---
--- Name: gerar_codigo_representante(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.gerar_codigo_representante() RETURNS character varying
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  _chars  TEXT    := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  _code   TEXT    := '';
-  _i      INT;
-  _exists BOOLEAN := TRUE;
-BEGIN
-  WHILE _exists LOOP
-    _code := '';
-    FOR _i IN 1..8 LOOP
-      _code := _code || SUBSTR(_chars, CEIL(RANDOM() * LENGTH(_chars))::INT, 1);
-    END LOOP;
-    -- Formata como XXXX-XXXX para legibilidade
-    _code := SUBSTR(_code, 1, 4) || '-' || SUBSTR(_code, 5, 4);
-    SELECT EXISTS(SELECT 1 FROM public.representantes WHERE codigo = _code) INTO _exists;
-  END LOOP;
-  RETURN _code;
-END;
-$$;
-
-
-ALTER FUNCTION public.gerar_codigo_representante() OWNER TO postgres;
-
-
---
--- Name: FUNCTION gerar_codigo_representante(); Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON FUNCTION public.gerar_codigo_representante() IS 'Gera código único alfanumérico no formato XXXX-XXXX para identificação do representante';
-
-
+-- REMOVED: gerar_codigo_representante() - Migration 1227 (codigo column removed from representantes table)
 
 --
 -- Name: gerar_dados_relatorio(integer, integer, integer, date, date); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1193,24 +1157,7 @@ $$;
 ALTER FUNCTION public.trg_auditar_vinculo_status() OWNER TO postgres;
 
 
---
--- Name: trg_gerar_codigo_representante(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.trg_gerar_codigo_representante() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-  IF NEW.codigo IS NULL OR NEW.codigo = '' THEN
-    NEW.codigo := public.gerar_codigo_representante();
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.trg_gerar_codigo_representante() OWNER TO postgres;
-
+-- REMOVED: trg_gerar_codigo_representante() - Migration 1227 (codigo column removed from representantes table)
 
 --
 -- Name: update_funcionarios_entidades_timestamp(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1398,10 +1345,10 @@ CREATE TABLE public.comissoes_laudo (
     data_aprovacao timestamp with time zone,
     data_liberacao timestamp with time zone,
     data_pagamento timestamp with time zone,
-    nf_rpa_enviada_em timestamp with time zone,
-    nf_rpa_aprovada_em timestamp with time zone,
-    nf_rpa_rejeitada_em timestamp with time zone,
-    nf_rpa_motivo_rejeicao text,
+    nf_enviada_em timestamp with time zone,
+    nf_aprovada_em timestamp with time zone,
+    nf_rejeitada_em timestamp with time zone,
+    nf_motivo_rejeicao text,
     comprovante_pagamento_path text,
     sla_admin_aviso_em timestamp with time zone,
     auto_cancelamento_em timestamp with time zone,
@@ -1905,6 +1852,7 @@ CREATE TABLE public.representantes (
     doc_identificacao_path text,
     comprovante_conta_path text,
     status public.status_representante DEFAULT 'ativo'::public.status_representante NOT NULL,
+    ativo boolean DEFAULT true NOT NULL,
     aceite_termos boolean DEFAULT false NOT NULL,
     aceite_termos_em timestamp with time zone,
     aceite_disclaimer_nv boolean DEFAULT false NOT NULL,
@@ -2070,7 +2018,7 @@ ALTER VIEW public.tomadores OWNER TO postgres;
 CREATE TABLE public.vinculos_comissao (
     id integer NOT NULL,
     representante_id integer NOT NULL,
-    entidade_id integer NOT NULL,
+    entidade_id integer,
     lead_id integer,
     data_inicio date NOT NULL,
     data_expiracao date NOT NULL,
@@ -2082,8 +2030,19 @@ CREATE TABLE public.vinculos_comissao (
     encerrado_motivo text,
     valor_negociado numeric(12,2) DEFAULT NULL::numeric,
     clinica_id integer,
+    percentual_comissao_representante numeric(5,2),
+    percentual_comissao_comercial numeric(5,2) DEFAULT 0 NOT NULL,
+    num_vidas_estimado integer,
     CONSTRAINT vinculo_datas_validas CHECK ((data_expiracao > data_inicio)),
-    CONSTRAINT vinculo_valor_negociado_positivo CHECK (((valor_negociado IS NULL) OR (valor_negociado >= (0)::numeric)))
+    CONSTRAINT vinculo_entidade_ou_clinica CHECK (
+        (entidade_id IS NOT NULL AND clinica_id IS NULL)
+        OR
+        (entidade_id IS NULL AND clinica_id IS NOT NULL)
+    ),
+    CONSTRAINT vinculo_valor_negociado_positivo CHECK (((valor_negociado IS NULL) OR (valor_negociado >= (0)::numeric))),
+    CONSTRAINT chk_vinculos_num_vidas_positivo CHECK ((num_vidas_estimado IS NULL OR num_vidas_estimado > 0)),
+    CONSTRAINT chk_vinculos_perc_rep_range CHECK ((percentual_comissao_representante >= 0 AND percentual_comissao_representante <= 100)),
+    CONSTRAINT vinculos_perc_comercial_range CHECK ((percentual_comissao_comercial >= 0 AND percentual_comissao_comercial <= 40))
 );
 
 
@@ -2372,15 +2331,6 @@ ALTER TABLE ONLY public.leads_representante
 
 ALTER TABLE ONLY public.representantes
     ADD CONSTRAINT representantes_cnpj_key UNIQUE (cnpj);
-
-
-
---
--- Name: representantes representantes_codigo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.representantes
-    ADD CONSTRAINT representantes_codigo_key UNIQUE (codigo);
 
 
 
@@ -2754,14 +2704,6 @@ CREATE INDEX idx_representantes_cnpj ON public.representantes USING btree (cnpj)
 
 
 --
--- Name: idx_representantes_codigo; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_representantes_codigo ON public.representantes USING btree (codigo);
-
-
-
---
 -- Name: idx_representantes_cpf; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2889,13 +2831,7 @@ CREATE TRIGGER trg_leads_atualizado_em BEFORE UPDATE ON public.leads_representan
 
 
 
---
--- Name: representantes trg_representante_codigo; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER trg_representante_codigo BEFORE INSERT ON public.representantes FOR EACH ROW EXECUTE FUNCTION public.trg_gerar_codigo_representante();
-
-
+-- REMOVED: trg_representante_codigo trigger - Migration 1227 (codigo column removed from representantes table)
 
 --
 -- Name: representantes trg_representante_status_audit; Type: TRIGGER; Schema: public; Owner: postgres

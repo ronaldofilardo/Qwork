@@ -16,8 +16,10 @@ export enum PerfilUsuario {
   // Acesso global para emissão de laudos; a visibilidade é gerida por RLS explicitamente.
   EMISSOR = 'emissor',
   // Gestor de Entidade: gera funcionários DIRETAMENTE (sem passar por clínica/empresa)
+  // Presente em perfil_usuario_enum (migration 1220) e usuario_tipo_enum
   GESTOR = 'gestor',
-  CADASTRO = 'cadastro',
+  // Representante: entidade EXTERNA — não é um perfil de funcionarios/usuarios.
+  // Autenticado via tabela `representantes` separada; sessão recebe perfil='representante'.
   REPRESENTANTE = 'representante',
   // Suporte: gestão financeira da plataforma (cobrança, pagamentos, comissões-pagamento)
   SUPORTE = 'suporte',
@@ -33,7 +35,6 @@ export type PerfilUsuarioType =
   | 'admin'
   | 'emissor'
   | 'gestor'
-  | 'cadastro'
   | 'representante'
   | 'suporte'
   | 'comercial'

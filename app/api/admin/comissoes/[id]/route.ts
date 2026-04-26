@@ -1,24 +1,20 @@
 /**
  * PATCH /api/admin/comissoes/[id]
  * Atualiza status de uma comissão.
- * Ações suporte: liberar, pagar, congelar, cancelar, descongelar (acesso total)
- * Ações comercial: congelar, cancelar, descongelar (sem liberar)
+ * Ações suporte: pagar, congelar, cancelar, descongelar (acesso total)
+ * Ações comercial: congelar, cancelar, descongelar (sem pagar)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { registrarAuditoria } from '@/lib/db/comissionamento';
 import { requireRole } from '@/lib/session';
+import { validateComissaoTransition } from '@/lib/state-machine/comissao-state';
+import type { StatusComissao } from '@/lib/types/comissionamento';
 
 export const dynamic = 'force-dynamic';
 
 // Ações permitidas por perfil
-const ACOES_SUPORTE = [
-  'liberar',
-  'pagar',
-  'congelar',
-  'cancelar',
-  'descongelar',
-];
+const ACOES_SUPORTE = ['pagar', 'congelar', 'cancelar', 'descongelar'];
 const ACOES_COMERCIAL = ['congelar', 'cancelar', 'descongelar'];
 
 export async function PATCH(
@@ -64,8 +60,10 @@ export async function PATCH(
       `SELECT c.*, r.nome AS representante_nome
        FROM comissoes_laudo c
        JOIN representantes r ON r.id = c.representante_id
-       WHERE c.id = $1 LIMIT 1`,
-      [comissaoId]
+       WHERE c.id = $1
+         AND ($2::varchar IS NULL OR r.gestor_comercial_cpf = $2)
+       LIMIT 1`,
+      [comissaoId, session.perfil === 'comercial' ? session.cpf : null]
     );
     if (comissaoResult.rows.length === 0) {
       return NextResponse.json(
@@ -84,11 +82,6 @@ export async function PATCH(
       extraParam?: unknown;
     }
     const acaoMap: Record<string, AcaoConfig> = {
-      liberar: {
-        novoStatus: 'liberada',
-        statusPermitidos: ['nf_em_analise'],
-        extraSet: ', data_liberacao = NOW(), nf_rpa_aprovada_em = NOW()',
-      },
       pagar: {
         novoStatus: 'paga',
         statusPermitidos: ['liberada'],
@@ -96,29 +89,18 @@ export async function PATCH(
       },
       congelar: {
         novoStatus: 'congelada_aguardando_admin',
-        statusPermitidos: ['pendente_nf', 'nf_em_analise', 'liberada'],
+        statusPermitidos: ['retida', 'liberada'],
         exigirMotivo: true,
         extraSet: ', motivo_congelamento = $3',
       },
       cancelar: {
         novoStatus: 'cancelada',
-        statusPermitidos: [
-          'pendente_nf',
-          'nf_em_analise',
-          'liberada',
-          'congelada_aguardando_admin',
-          'congelada_rep_suspenso',
-          'retida',
-        ],
+        statusPermitidos: ['retida', 'liberada', 'congelada_aguardando_admin'],
       },
       descongelar: {
-        novoStatus: 'pendente_nf',
-        statusPermitidos: [
-          'congelada_aguardando_admin',
-          'congelada_rep_suspenso',
-        ],
-        extraSet:
-          ', motivo_congelamento = NULL, nf_rpa_enviada_em = NULL, nf_rpa_aprovada_em = NULL, nf_rpa_rejeitada_em = NULL, nf_rpa_motivo_rejeicao = NULL, nf_path = NULL, nf_nome_arquivo = NULL',
+        novoStatus: 'retida',
+        statusPermitidos: ['congelada_aguardando_admin'],
+        extraSet: ', motivo_congelamento = NULL',
       },
     };
 
@@ -132,13 +114,20 @@ export async function PATCH(
       );
     }
 
-    // F-08: liberar exige que NF tenha sido enviada
-    if (acao === 'liberar' && !comissao.nf_rpa_enviada_em) {
+    // Validação via state machine centralizada
+    const transicao = validateComissaoTransition(
+      comissao.status as StatusComissao,
+      config.novoStatus as StatusComissao,
+      { admin_cpf: session.cpf, motivo: motivo ?? undefined }
+    );
+    if (!transicao.valido) {
       return NextResponse.json(
-        { error: 'Não é possível liberar comissão sem NF/RPA enviada.' },
+        { error: transicao.erro },
         { status: 422 }
       );
     }
+
+    // F-08: liberar removido — liberação agora ocorre via ciclo mensal
 
     if (config.exigirMotivo && !motivo?.trim()) {
       return NextResponse.json(

@@ -16,11 +16,25 @@ export async function GET(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    await requireRole(['comercial', 'admin', 'suporte'], false);
+    const session = await requireRole(['comercial', 'admin', 'suporte'], false);
 
     const representanteId = parseInt(params.id, 10);
     if (isNaN(representanteId))
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+
+    // Ownership check: comercial só acessa representantes atribuídos a ele
+    if (session.perfil === 'comercial') {
+      const owned = await query<{ id: number }>(
+        `SELECT 1 AS id FROM representantes WHERE id = $1 AND gestor_comercial_cpf = $2 LIMIT 1`,
+        [representanteId, session.cpf]
+      );
+      if (owned.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Representante não encontrado' },
+          { status: 404 }
+        );
+      }
+    }
 
     const rows = await query(
       `SELECT

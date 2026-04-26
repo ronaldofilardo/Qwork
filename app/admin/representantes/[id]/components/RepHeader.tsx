@@ -55,9 +55,6 @@ export function RepHeader({ rep, sucesso, onSetAcaoPendente }: RepHeaderProps) {
             <div className="mt-2 flex flex-wrap gap-4 text-sm text-gray-500">
               <span>{rep.email}</span>
               {rep.telefone && <span>{rep.telefone}</span>}
-              <span className="font-mono bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs">
-                Código: {rep.codigo}
-              </span>
             </div>
             <div className="mt-2 flex flex-wrap gap-4 text-xs text-gray-400">
               <span>

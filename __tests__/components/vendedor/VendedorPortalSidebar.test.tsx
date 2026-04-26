@@ -74,7 +74,6 @@ const mockSession: VendedorSession = {
   id: 2,
   nome: 'Maria Vendedora',
   cpf: '000.000.000-00',
-  codigo: 'VEND-123',
   email: 'maria@vend.com',
   perfil: 'vendedor',
   primeira_senha_alterada: true,
@@ -147,20 +146,19 @@ describe('VendedorPortalSidebar', () => {
     expect(dashLink?.className).not.toContain('bg-green-50');
   });
 
-  it('deve exibir o código do vendedor no footer quando presente', () => {
+  it('deve exibir o ID do vendedor no footer', () => {
     render(
       <VendedorPortalSidebar session={mockSession} onLogout={mockLogout} />
     );
     const footer = screen.getByTestId('sidebar-footer');
-    expect(footer.textContent).toContain('VEND-123');
+    expect(footer.textContent).toContain('#2');
   });
 
-  it('não deve exibir footer quando sessão não tem código', () => {
-    const sessionSemCodigo: VendedorSession = { ...mockSession, codigo: null };
+  it('deve exibir o footer com o ID do vendedor', () => {
     render(
-      <VendedorPortalSidebar session={sessionSemCodigo} onLogout={mockLogout} />
+      <VendedorPortalSidebar session={mockSession} onLogout={mockLogout} />
     );
-    expect(screen.queryByTestId('sidebar-footer')).not.toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-footer')).toBeInTheDocument();
   });
 
   it('deve chamar onLogout ao clicar no botão Sair', async () => {

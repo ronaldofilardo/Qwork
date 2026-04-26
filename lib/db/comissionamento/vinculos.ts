@@ -44,7 +44,7 @@ export async function getVinculosByRepresentante(
        v.percentual_comissao_representante,
        COUNT(c.id)                  AS total_comissoes,
        COALESCE(SUM(CASE WHEN c.status::text = 'paga' THEN c.valor_comissao ELSE 0 END), 0) AS valor_total_pago,
-       COALESCE(SUM(CASE WHEN c.status::text IN ('pendente_nf','nf_em_analise','liberada') THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente,
+       COALESCE(SUM(CASE WHEN c.status::text = 'retida' AND c.parcela_confirmada_em IS NOT NULL THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente,
        (v.data_expiracao - CURRENT_DATE) AS dias_para_expirar
      FROM vinculos_comissao v
      JOIN entidades e ON e.id = v.entidade_id
@@ -75,14 +75,14 @@ export async function renovarVinculo(vinculoId: number) {
   return result.rows[0] ?? null;
 }
 
-/** Resolve código → representante e cria vínculo se não existe.
+/** Resolve id numérico → representante e cria vínculo se não existe.
  * Suporta dois fluxos:
  *  - Gestor: passa entidadeId (int)
  *  - Clínica pura (RH-flow, sem entidade espelho): passa clinicaId (int)
  * Exatamente um dos dois deve ser fornecido.
  */
-export async function vincularRepresentantePorCodigo(
-  codigo: string,
+export async function vincularRepresentantePorId(
+  representanteId: number,
   entidadeId: number | null | undefined,
   clinicaId?: number | null
 ): Promise<{
@@ -91,13 +91,12 @@ export async function vincularRepresentantePorCodigo(
   representante_nome: string;
 } | null> {
   if (!entidadeId && !clinicaId) return null;
-
-  const codigoNorm = codigo.trim().toUpperCase();
+  if (!Number.isFinite(representanteId)) return null;
 
   // Buscar representante
   const repResult = await query(
-    `SELECT id, nome, status FROM representantes WHERE codigo = $1 AND status NOT IN ('desativado','rejeitado') LIMIT 1`,
-    [codigoNorm]
+    `SELECT id, nome, status FROM representantes WHERE id = $1 AND status NOT IN ('desativado','rejeitado') LIMIT 1`,
+    [representanteId]
   );
   if (repResult.rows.length === 0) return null;
   const rep = repResult.rows[0];

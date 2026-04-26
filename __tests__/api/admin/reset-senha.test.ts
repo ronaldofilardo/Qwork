@@ -21,24 +21,25 @@ jest.mock('@/lib/audit', () => ({
 jest.mock('@/lib/reset-senha/gerar-token', () => ({
   PERFIS_RESET_USUARIOS: ['suporte', 'comercial', 'rh', 'gestor', 'emissor'],
   gerarTokenResetUsuario: jest.fn(),
-  gerarTokenResetRepresentante: jest.fn(),
   logEmailResetSenha: jest.fn(),
 }));
 
 import { query, transaction } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import {
-  gerarTokenResetUsuario,
-  gerarTokenResetRepresentante,
-} from '@/lib/reset-senha/gerar-token';
+import { gerarTokenResetUsuario } from '@/lib/reset-senha/gerar-token';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockTransaction = transaction as jest.MockedFunction<typeof transaction>;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
-const mockGerarTokenUsuario = gerarTokenResetUsuario as jest.MockedFunction<typeof gerarTokenResetUsuario>;
-const mockGerarTokenRep = gerarTokenResetRepresentante as jest.MockedFunction<typeof gerarTokenResetRepresentante>;
+const mockGerarTokenUsuario = gerarTokenResetUsuario as jest.MockedFunction<
+  typeof gerarTokenResetUsuario
+>;
 
-const adminSession = { cpf: '00000000001', nome: 'Admin', perfil: 'admin' as const };
+const adminSession = {
+  cpf: '00000000001',
+  nome: 'Admin',
+  perfil: 'admin' as const,
+};
 
 function makeRequest(body: unknown): NextRequest {
   return new NextRequest('http://localhost/api/admin/reset-senha', {
@@ -84,9 +85,7 @@ describe('POST /api/admin/reset-senha', () => {
 
   describe('Autenticação', () => {
     it('deve retornar 4xx quando não autenticado como admin', async () => {
-      mockRequireRole.mockRejectedValueOnce(
-        new Error('Não autenticado')
-      );
+      mockRequireRole.mockRejectedValueOnce(new Error('Não autenticado'));
 
       const res = await POST(makeRequest({ cpf: '12345678909' }));
       expect(res.status).toBeGreaterThanOrEqual(400);
@@ -98,7 +97,15 @@ describe('POST /api/admin/reset-senha', () => {
     it('deve gerar token para usuário com perfil suporte', async () => {
       const fakeCPF = '12345678909';
       mockQuery.mockResolvedValueOnce({
-        rows: [{ cpf: fakeCPF, nome: 'Suporte Teste', tipo_usuario: 'suporte', email: 'sup@test.com', ativo: true }],
+        rows: [
+          {
+            cpf: fakeCPF,
+            nome: 'Suporte Teste',
+            tipo_usuario: 'suporte',
+            email: 'sup@test.com',
+            ativo: true,
+          },
+        ],
         rowCount: 1,
       } as any);
 
@@ -129,7 +136,15 @@ describe('POST /api/admin/reset-senha', () => {
         jest.clearAllMocks();
         mockRequireRole.mockResolvedValue(adminSession);
         mockQuery.mockResolvedValueOnce({
-          rows: [{ cpf: '12345678909', nome: `${perfil} Teste`, tipo_usuario: perfil, email: null, ativo: true }],
+          rows: [
+            {
+              cpf: '12345678909',
+              nome: `${perfil} Teste`,
+              tipo_usuario: perfil,
+              email: null,
+              ativo: true,
+            },
+          ],
           rowCount: 1,
         } as any);
         mockTransaction.mockResolvedValueOnce({
@@ -150,30 +165,20 @@ describe('POST /api/admin/reset-senha', () => {
   });
 
   describe('Representante', () => {
-    it('deve gerar token para representante quando não há usuário com o CPF', async () => {
+    it('deve bloquear reset por admin e orientar uso do suporte', async () => {
       const fakeCPF = '98765432100';
       // Tabela usuarios: sem resultado
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
       // Tabela representantes: encontrado
       mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 1, nome: 'Rep Teste', email: 'rep@test.com', status: 'ativo' }],
+        rows: [{ id: 1 }],
         rowCount: 1,
       } as any);
 
-      mockTransaction.mockResolvedValueOnce({
-        token: tokenMock,
-        link: linkMock,
-        expira_em: expiraMock,
-        nome: 'Rep Teste',
-        perfil: 'representante',
-        tabela: 'representantes' as const,
-      });
-
       const res = await POST(makeRequest({ cpf: fakeCPF }));
-      expect(res.status).toBe(200);
+      expect(res.status).toBe(403);
       const data = await res.json();
-      expect(data.success).toBe(true);
-      expect(data.perfil).toBe('representante');
+      expect(data.error).toMatch(/suporte/i);
     });
   });
 

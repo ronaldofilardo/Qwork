@@ -90,6 +90,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     const existingNomeMap = new Map<string, string>();
     // CPF → nome da empresa (vínculo ativo mais recente)
     const existingEmpresaMap = new Map<string, string>();
+    // CPFs com vínculo nesta clínica (ativo ou inativo) — escopa detecção de mudanças de função/nível
+    const cpfsVinculadosNaClinica = new Set<string>();
 
     if (cpfsUnicos.length > 0) {
       // Buscar funcionários existentes (inclui funcao, nivel_cargo e nome para detectar mudanças e sugerir classificação)
@@ -125,6 +127,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         for (const vinculo of vinculosResult.rows) {
           const cpfTrim = (vinculo.cpf as string).trim();
+          cpfsVinculadosNaClinica.add(cpfTrim);
           // Mapear CPF → empresa para uso no modal de confirmação de nível
           if (!existingEmpresaMap.has(cpfTrim)) {
             existingEmpresaMap.set(
@@ -232,7 +235,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (
         !novaFuncao ||
         novaFuncao === 'Não informado' ||
-        !existingFuncaoMap.has(cpf)
+        !cpfsVinculadosNaClinica.has(cpf)
       )
         continue;
       const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
@@ -267,7 +270,15 @@ export async function POST(request: Request): Promise<NextResponse> {
             nome: nomeCompleto,
             funcaoAnterior: funcaoAtual,
             nivelAtual,
-            empresa: existingEmpresaMap.get(cpf) ?? '',
+            empresa:
+              (existingEmpresaMap.get(cpf) ?? '') ||
+              (() => {
+                const n =
+                  (row.nome_empresa as string | undefined)?.trim() || '';
+                const c =
+                  (row.cnpj_empresa as string | undefined)?.trim() || '';
+                return n && c ? `${n} (${c})` : n || c || '';
+              })(),
           });
         }
       }
@@ -291,7 +302,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       for (const row of linhasValidasParaFuncoes) {
         const cpf = limparCPF(row.cpf ?? '');
         const funcao = (row.funcao ?? '').trim();
-        if (!funcao || !existingFuncaoMap.has(cpf)) continue;
+        if (!funcao || !cpfsVinculadosNaClinica.has(cpf)) continue;
         // Apenas funcionários que NÃO mudaram de função (esses já são cobertos por isMudancaRole)
         const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
         if (funcaoAtual !== funcao) continue;
@@ -337,7 +348,15 @@ export async function POST(request: Request): Promise<NextResponse> {
               nome: nomeCompleto,
               nivelAtual: nivelBanco,
               nivelProposto: nivelPlanilha,
-              empresa: existingEmpresaMap.get(cpf) ?? '',
+              empresa:
+                (existingEmpresaMap.get(cpf) ?? '') ||
+                (() => {
+                  const n =
+                    (row.nome_empresa as string | undefined)?.trim() || '';
+                  const c =
+                    (row.cnpj_empresa as string | undefined)?.trim() || '';
+                  return n && c ? `${n} (${c})` : n || c || '';
+                })(),
             });
           }
         }
@@ -350,6 +369,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       novosCpfs: Set<string>;
       existentesCpfs: Set<string>;
       niveisSet: Set<NivelCargoValue>;
+      /** CPFs cujo nivel_cargo está vazio/inválido na planilha (rastreado quando temNivelCargoDirecto=true) */
+      semNivelNaPlanilha: Set<string>;
+      /** Detalhes dos funcionários sem nível (para agrupamento visual por empresa no step 4) */
+      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string }>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -364,12 +387,14 @@ export async function POST(request: Request): Promise<NextResponse> {
           novosCpfs: new Set(),
           existentesCpfs: new Set(),
           niveisSet: new Set(),
+          semNivelNaPlanilha: new Set(),
+          semNivelNaPlanilhaDetalhes: [],
         });
       }
       const info = funcaoInfoMap.get(funcaoRow)!;
       info.cpfs.add(cpfRow);
 
-      if (existingFuncaoMap.has(cpfRow)) {
+      if (cpfsVinculadosNaClinica.has(cpfRow)) {
         info.existentesCpfs.add(cpfRow);
         const nivelRaw = existingNivelCargoMap.get(cpfRow) ?? null;
         const nivelNorm: NivelCargoValue =
@@ -377,6 +402,36 @@ export async function POST(request: Request): Promise<NextResponse> {
         info.niveisSet.add(nivelNorm);
       } else {
         info.novosCpfs.add(cpfRow);
+      }
+
+      // Rastreia funcionários (novos OU existentes) sem nivel_cargo válido na planilha.
+      // Crítico quando temNivelCargoDirecto=true: novos com célula vazia não são detectados
+      // pelo bloco funcoesComMudancaNivel (que só verifica existentes), resultando em
+      // importação silenciosa com nivel_cargo=null.
+      if (temNivelCargoDirecto) {
+        const nivelNaPlanilha = ((row.nivel_cargo as string | undefined) ?? '')
+          .trim()
+          .toLowerCase();
+        const nivelValido =
+          nivelNaPlanilha === 'gestao' || nivelNaPlanilha === 'operacional';
+        if (!nivelValido) {
+          if (!info.semNivelNaPlanilha.has(cpfRow)) {
+            const nomeRow = (row.nome as string | undefined)?.trim() || '';
+            const nomeEmpresa =
+              (row.nome_empresa as string | undefined)?.trim() || '';
+            const cnpjEmpresa =
+              (row.cnpj_empresa as string | undefined)?.trim() || '';
+            const empresaRow =
+              nomeEmpresa && cnpjEmpresa
+                ? `${nomeEmpresa} (${cnpjEmpresa})`
+                : nomeEmpresa || cnpjEmpresa || '';
+            info.semNivelNaPlanilhaDetalhes.push({
+              nome: nomeRow,
+              empresa: empresaRow,
+            });
+          }
+          info.semNivelNaPlanilha.add(cpfRow);
+        }
       }
     }
 
@@ -391,6 +446,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         isMudancaNivel: funcoesComMudancaNivel.has(funcao),
         temNivelNuloExistente:
           info.niveisSet.has(null) && info.existentesCpfs.size > 0,
+        qtdSemNivelNaPlanilha: info.semNivelNaPlanilha.size,
+        funcionariosSemNivel: info.semNivelNaPlanilhaDetalhes,
         funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
         funcionariosComMudancaNivel: mudancaNivelDetalhesMap.get(funcao) ?? [],
       }))
@@ -398,8 +455,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         // Prioridade: mudanças de função > novos sem nível > demais
         if (a.isMudancaRole !== b.isMudancaRole)
           return a.isMudancaRole ? -1 : 1;
-        const aRequerAtencao = a.qtdNovos > 0 || a.temNivelNuloExistente;
-        const bRequerAtencao = b.qtdNovos > 0 || b.temNivelNuloExistente;
+        const aRequerAtencao =
+          a.qtdNovos > 0 ||
+          a.temNivelNuloExistente ||
+          a.qtdSemNivelNaPlanilha > 0;
+        const bRequerAtencao =
+          b.qtdNovos > 0 ||
+          b.temNivelNuloExistente ||
+          b.qtdSemNivelNaPlanilha > 0;
         if (aRequerAtencao !== bRequerAtencao) return aRequerAtencao ? -1 : 1;
         return a.funcao.localeCompare(b.funcao, 'pt-BR');
       });
@@ -469,6 +532,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         error.message.includes('Clínica inativa')
       ) {
         return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+      if (error.message.includes('Não autenticado')) {
+        return NextResponse.json({ error: error.message }, { status: 401 });
       }
     }
 

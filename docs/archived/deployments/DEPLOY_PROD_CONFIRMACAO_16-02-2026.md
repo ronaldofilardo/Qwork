@@ -138,7 +138,7 @@ fix(webhook): Remove código obsoleto de tomadores/contratos - CRITICAL FIX
 
    ```bash
    # No painel Asaas Sandbox, configurar webhook URL:
-   https://qwork-psi.vercel.app/api/webhooks/asaas
+   https://sistema.qwork.app.br/api/webhooks/asaas
 
    # Criar pagamento de teste e confirmar
    # Verificar se lote atualiza para 'pago'

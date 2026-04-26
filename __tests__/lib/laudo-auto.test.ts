@@ -118,7 +118,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
       // Act & Assert
       await expect(
         gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf, mockSession)
-      ).rejects.toThrow('já foi emitido e não pode ser regenerado');
+      ).rejects.toThrow('não pode ser regenerado');
     });
 
     it('deve lançar erro ao tentar re-emitir laudo com status "enviado"', async () => {
@@ -130,7 +130,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
 
       await expect(
         gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf, mockSession)
-      ).rejects.toThrow('já foi emitido e não pode ser regenerado');
+      ).rejects.toThrow('não pode ser regenerado');
     });
   });
 
@@ -210,7 +210,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
       // Não deve lançar erro quando session não é passado
       await expect(
         gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf)
-      ).resolves.toBe(1);
+      ).resolves.toMatchObject({ laudoId: 1 });
     });
   });
 
@@ -231,7 +231,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
         mockSession
       );
 
-      expect(result).toBe(42);
+      expect((result as any).laudoId).toBe(42);
     });
 
     it('deve lançar erro quando UPDATE para emitido não afeta nenhuma linha', async () => {
@@ -246,7 +246,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
 
       await expect(
         gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf, mockSession)
-      ).rejects.toThrow('Falha ao salvar hash do laudo');
+      ).rejects.toThrow('Falha ao atualizar laudo para pdf_gerado');
     });
   });
 });

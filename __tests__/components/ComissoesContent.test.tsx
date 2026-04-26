@@ -12,8 +12,7 @@ jest.spyOn(console, 'error').mockImplementation(() => {});
 
 const mockResumo = {
   total_comissoes: '50',
-  pendentes_nf: '3',
-  em_analise: '1',
+  pendentes_consolidacao: '3',
   liberadas: '5',
   pagas: '30',
   congeladas: '2',
@@ -23,16 +22,20 @@ const mockResumo = {
 
 const mockComissao = {
   id: 1,
+  representante_id: 42,
   representante_nome: 'Carlos Rep',
-  representante_codigo: 'AB12-CD34',
   representante_email: 'rep@test.dev',
   representante_tipo_pessoa: 'pf',
   entidade_nome: 'Empresa Z',
-  numero_laudo: 'L-001',
+  lote_pagamento_id: null,
+  lote_pagamento_metodo: null,
+  lote_pagamento_parcelas: null,
   valor_laudo: '10000.00',
   valor_comissao: '500.00',
   percentual_comissao: '5.00',
-  status: 'pendente_nf',
+  parcela_numero: 1,
+  total_parcelas: 1,
+  status: 'pendente_consolidacao',
   motivo_congelamento: null,
   mes_emissao: '2026-01-01',
   mes_pagamento: '2026-02-01',
@@ -40,20 +43,7 @@ const mockComissao = {
   data_aprovacao: null,
   data_liberacao: null,
   data_pagamento: null,
-  nf_path: null,
-  nf_nome_arquivo: null,
-  nf_rpa_enviada_em: null,
-  nf_rpa_aprovada_em: null,
-  nf_rpa_rejeitada_em: null,
-  nf_rpa_motivo_rejeicao: null,
-};
-
-const mockComissaoComNf = {
-  ...mockComissao,
-  nf_path: '/storage/NF/AB12-CD34/nota.pdf',
-  nf_nome_arquivo: 'nota.pdf',
-  nf_rpa_enviada_em: '2026-03-01T10:00:00Z',
-  nf_rpa_aprovada_em: null,
+  comprovante_pagamento_path: null,
 };
 
 function mockAPIResponse(
@@ -114,14 +104,14 @@ describe('ComissoesContent', () => {
     });
   });
 
-  it('deve exibir badge de status da comissao (pendente_nf exibe Aguardando NF)', async () => {
+  it('deve exibir badge de status da comissao (pendente_consolidacao exibe No Ciclo)', async () => {
     mockFetch.mockResolvedValueOnce(mockAPIResponse());
 
     render(<ComissoesContent />);
 
     await waitFor(() => {
-      // status 'pendente_nf' eh renderizado como label 'Aguardando NF' pelo componente
-      expect(screen.getByText(/Aguardando NF/i)).toBeInTheDocument();
+      // status 'pendente_consolidacao' eh renderizado como label 'No Ciclo' pelo componente
+      expect(screen.getByText(/No Ciclo/i)).toBeInTheDocument();
     });
   });
 
@@ -163,18 +153,6 @@ describe('ComissoesContent', () => {
           text.includes('falha') ||
           text.includes('Falha')
       ).toBe(true);
-    });
-  });
-
-  it('deve exibir botao Ver NF quando nf_rpa_enviada_em presente e nao aprovada', async () => {
-    mockFetch.mockResolvedValueOnce(mockAPIResponse([mockComissaoComNf]));
-
-    render(<ComissoesContent />);
-
-    await waitFor(() => {
-      const text = document.body.textContent || '';
-      const hasVerNf = text.includes('Ver NF') || text.includes('NF');
-      expect(hasVerNf).toBe(true);
     });
   });
 });

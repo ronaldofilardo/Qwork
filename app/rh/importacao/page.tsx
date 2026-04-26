@@ -92,6 +92,7 @@ interface ExecuteData {
     vinculosAtualizados: number;
     inativacoesRealizadas: number;
     empresasBloqueadas: number;
+    empresasNomeAtualizados?: number;
   };
   erros: Array<{ linha?: number; campo?: string; mensagem: string }>;
   avisos: Array<{ linha?: number; campo?: string; mensagem: string }>;
@@ -309,7 +310,11 @@ export default function ImportacaoPage() {
         if (nivel && !templateMap[f]) novas[f] = nivel;
       }
       if (Object.keys(novas).length > 0) {
-        updateTemplateNivelCargo(templateId, novas);
+        updateTemplateNivelCargo(
+          '/api/rh/importacao/templates',
+          templateId,
+          novas
+        );
       }
     }
     void handleExecute(
@@ -340,7 +345,7 @@ export default function ImportacaoPage() {
   const currentStepIndex = stepOrder.indexOf(step);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="w-full p-6">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <Link href="/rh" className="text-gray-400 hover:text-gray-600">
@@ -405,6 +410,7 @@ export default function ImportacaoPage() {
       {step === 'mapeamento' && analyzeData && (
         <>
           <TemplatePicker
+            apiBase="/api/rh/importacao/templates"
             onApply={(template) => {
               setAppliedTemplate(template);
               setTemplateMapeamento(template.mapeamentos);
@@ -438,6 +444,7 @@ export default function ImportacaoPage() {
                 mesmo formato de colunas.
               </div>
               <SaveTemplateForm
+                apiBase="/api/rh/importacao/templates"
                 mapeamentos={mapeamento.map((m) => ({
                   nomeOriginal: m.nomeOriginal,
                   campoQWork: m.campoQWork,
@@ -518,6 +525,7 @@ export default function ImportacaoPage() {
             empresas_criadas: executeData.resumo.empresasCriadas,
             empresas_existentes: executeData.resumo.empresasExistentes,
             empresas_bloqueadas: executeData.resumo.empresasBloqueadas,
+            empresas_nome_atualizados: executeData.resumo.empresasNomeAtualizados,
             funcionarios_criados: executeData.resumo.funcionariosCriados,
             funcionarios_atualizados:
               executeData.resumo.funcionariosAtualizados,

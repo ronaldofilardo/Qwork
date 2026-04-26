@@ -54,19 +54,15 @@ describe('1. ComissoesContent — prop perfil filtra ações de comercial', () =
     expect(src).toMatch(/ComissoesContent\s*\(\s*\{[^}]*perfil/);
   });
 
-  it('deve filtrar "liberar" quando perfil === comercial', () => {
-    expect(src).toContain("a !== 'liberar'");
-  });
-
   it('deve filtrar "pagar" quando perfil === comercial', () => {
     expect(src).toContain("a !== 'pagar'");
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. comercial/page.tsx passa perfil="comercial" para ComissoesContent
+// 2. comercial/page.tsx usa ComercialComissoesAbas (com tabs Produtividade + Minhas comissões)
 // ─────────────────────────────────────────────────────────────────────────────
-describe('2. comercial/page.tsx passa perfil="comercial"', () => {
+describe('2. comercial/page.tsx usa ComercialComissoesAbas', () => {
   const filePath = path.join(ROOT, 'app', 'comercial', 'page.tsx');
   let src: string;
 
@@ -74,110 +70,23 @@ describe('2. comercial/page.tsx passa perfil="comercial"', () => {
     src = fs.readFileSync(filePath, 'utf-8');
   });
 
-  it('deve passar perfil="comercial" para ComissoesContent', () => {
-    expect(src).toContain('perfil="comercial"');
+  it('deve importar ComercialComissoesAbas', () => {
+    expect(src).toContain('ComercialComissoesAbas');
+  });
+
+  it('ComercialComissoesAbas deve passar perfil="comercial" para ComissoesContent', () => {
+    const abasPath = path.join(
+      ROOT,
+      'components',
+      'comercial',
+      'ComercialComissoesAbas.tsx'
+    );
+    const abasSrc = fs.readFileSync(abasPath, 'utf-8');
+    expect(abasSrc).toContain('perfil="comercial"');
   });
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 3. ciclos.ts — assinaturas com executorPerfil
-// ─────────────────────────────────────────────────────────────────────────────
-describe('3. ciclos.ts — funções aceitam executorPerfil', () => {
-  const ciclosPath = path.join(
-    ROOT,
-    'lib',
-    'db',
-    'comissionamento',
-    'ciclos.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(ciclosPath, 'utf-8');
-  });
-
-  it('fecharCiclo deve aceitar executorPerfil', () => {
-    expect(src).toMatch(/fecharCiclo\([^)]*executorPerfil/s);
-  });
-
-  it('aprovarNfCiclo deve aceitar executorPerfil', () => {
-    expect(src).toMatch(/aprovarNfCiclo\([^)]*executorPerfil/s);
-  });
-
-  it('rejeitarNfCiclo deve aceitar executorPerfil', () => {
-    expect(src).toMatch(/rejeitarNfCiclo\([^)]*executorPerfil/s);
-  });
-
-  it('registrarPagamentoCiclo deve aceitar executorPerfil', () => {
-    expect(src).toMatch(/registrarPagamentoCiclo\([^)]*executorPerfil/s);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. ciclos.ts — triggador dinâmico suporte_action vs admin_action
-// ─────────────────────────────────────────────────────────────────────────────
-describe('4. ciclos.ts — triggador dinâmico', () => {
-  const ciclosPath = path.join(
-    ROOT,
-    'lib',
-    'db',
-    'comissionamento',
-    'ciclos.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(ciclosPath, 'utf-8');
-  });
-
-  it('deve usar suporte_action quando perfil === suporte', () => {
-    expect(src).toContain("'suporte_action'");
-  });
-
-  it('deve usar admin_action quando perfil !== suporte', () => {
-    expect(src).toContain("'admin_action'");
-  });
-
-  it('deve usar lógica condicional com executorPerfil', () => {
-    expect(src).toContain("executorPerfil === 'suporte'");
-  });
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 5. route PATCH ciclos — passa session.perfil às funções
-// ─────────────────────────────────────────────────────────────────────────────
-describe('5. PATCH /api/comissionamento/ciclos/[id] — passa session.perfil', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'comissionamento',
-    'ciclos',
-    '[id]',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('deve passar session.perfil para fecharCiclo', () => {
-    expect(src).toMatch(/fecharCiclo\([^)]*session\.perfil/s);
-  });
-
-  it('deve passar session.perfil para aprovarNfCiclo', () => {
-    expect(src).toMatch(/aprovarNfCiclo\([^)]*session\.perfil/s);
-  });
-
-  it('deve passar session.perfil para rejeitarNfCiclo', () => {
-    expect(src).toMatch(/rejeitarNfCiclo\([^)]*session\.perfil/s);
-  });
-
-  it('deve passar session.perfil para registrarPagamentoCiclo', () => {
-    expect(src).toMatch(/registrarPagamentoCiclo\([^)]*session\.perfil/s);
-  });
-});
+// [Seções 3-5 REMOVIDAS] — ciclos.ts e rota ciclos/[id] eliminados do sistema
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 6. useComissoes — expõe mesFilter e setMesFilter
@@ -276,8 +185,7 @@ describe('8. ComissoesTab — prop perfil e ACOES_COMERCIAL_BLOQUEADAS', () => {
     expect(typesSrc).toContain('ACOES_COMERCIAL_BLOQUEADAS');
   });
 
-  it('ACOES_COMERCIAL_BLOQUEADAS deve incluir liberar e pagar', () => {
-    expect(typesSrc).toContain("'liberar'");
+  it('ACOES_COMERCIAL_BLOQUEADAS deve incluir pagar', () => {
     expect(typesSrc).toContain("'pagar'");
   });
 
@@ -446,12 +354,23 @@ describe('13. types.ts — interface Comissao: campos de lote e parcela', () => 
   it('deve ter percentual_comissao como string', () => {
     expect(src).toContain('percentual_comissao: string');
   });
+
+  it('deve ter valor_comissao_comercial como string | null (opcional)', () => {
+    // Adicionado para espelhar o painel de sociedade (fonte da verdade)
+    expect(src).toMatch(/valor_comissao_comercial\??: string \| null/);
+  });
+
+  it('deve ter representante_percentual e vinculo_percentual_comercial', () => {
+    // Campos usados pelo ComissoesTab para derivar repPct e comPct
+    expect(src).toContain('representante_percentual');
+    expect(src).toContain('vinculo_percentual_comercial');
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 14. ComissoesTab — colunas espelham o painel comercial
+// 14. ComissoesTab — colunas espelham o painel de sociedade (fonte da verdade)
 // ─────────────────────────────────────────────────────────────────────────────
-describe('14. ComissoesTab — colunas idênticas ao painel comercial', () => {
+describe('14. ComissoesTab — colunas espelham o painel de sociedade (Lote, Valor Total, Comissão, Parcelas)', () => {
   const tabPath = path.join(
     ROOT,
     'app',
@@ -474,8 +393,8 @@ describe('14. ComissoesTab — colunas idênticas ao painel comercial', () => {
     expect(src).toContain('>Valor Total<');
   });
 
-  it('deve ter coluna % no cabeçalho', () => {
-    expect(src).toContain('>%<');
+  it('deve ter coluna Comissão no cabeçalho (renomeada de %)', () => {
+    expect(src).toContain('>Comissão<');
   });
 
   it('deve ter coluna Parcelas no cabeçalho', () => {
@@ -491,9 +410,27 @@ describe('14. ComissoesTab — colunas idênticas ao painel comercial', () => {
     expect(src).toContain('fmt(c.valor_laudo)');
   });
 
-  it('deve renderizar percentual_comissao com %', () => {
-    expect(src).toContain('percentual_comissao');
-    expect(src).toContain('%');
+  it('deve usar valor_comissao do BD para exibir comissão do rep (não cálculo direto)', () => {
+    // Correção: usa c.valor_comissao (gravado no BD) em vez de (valorTotal * pct / 100)
+    expect(src).toContain('fmt(c.valor_comissao)');
+    // Garante que não há cálculo inline do valor do representante
+    expect(src).not.toContain('valorTotal * repPct');
+  });
+
+  it('deve usar valor_comissao_comercial do BD para exibir comissão do comercial', () => {
+    // Correção principal desta refatoração: espelha o painel de sociedade
+    expect(src).toContain('c.valor_comissao_comercial');
+  });
+
+  it('deve exibir breakdown Rep% e Com% na coluna Comissão', () => {
+    expect(src).toContain('% Rep');
+    expect(src).toContain('% Com');
+    expect(src).toContain('repPct');
+    expect(src).toContain('comPct');
+  });
+
+  it('deve renderizar percentual via representante_percentual como fonte primária', () => {
+    expect(src).toContain('representante_percentual');
   });
 
   it('deve renderizar badge X/Y para pagamento parcelado', () => {

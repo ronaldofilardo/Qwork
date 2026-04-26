@@ -12,15 +12,21 @@ import {
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type AdminSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
+export type AdminSection =
+  | 'tomadores'
+  | 'volume'
+  | 'financeiro'
+  | 'geral'
+  | 'auditorias';
 export type VolumeSubSection = 'entidade' | 'rh';
-export type FinanceiroSubSection = 'contagem';
-export type GeralSubSection = 'emissores';
+export type FinanceiroSubSection = 'contagem' | 'contratos' | 'sociedade';
+export type GeralSubSection = 'perfis';
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
   activeSubSection?: string;
   onSectionChange: (section: AdminSection, subSection?: string) => void;
+  counts?: Record<string, number>;
 }
 
 export default function AdminSidebar({
@@ -134,6 +140,13 @@ export default function AdminSidebar({
       onToggleCollapsed={() => setIsCollapsed(!isCollapsed)}
       footer={legend}
     >
+      <MenuItem
+        icon={FileCheck}
+        label="Tomadores"
+        isActive={activeSection === 'tomadores'}
+        onClick={() => onSectionChange('tomadores')}
+      />
+
       {/* Volume */}
       <MenuItem
         icon={BarChart2}
@@ -170,18 +183,45 @@ export default function AdminSidebar({
         label="Financeiro"
         isActive={activeSection === 'financeiro'}
         onClick={() => {
+          toggleSection('financeiro');
           onSectionChange('financeiro', 'contagem');
         }}
+        hasSubMenu
+        isExpanded={isExpanded('financeiro')}
       />
+
+      {isExpanded('financeiro') && (
+        <div className="border-l-2 border-gray-200 ml-4">
+          <SubMenuItem
+            label="Contagem"
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'contagem'
+            }
+            onClick={() => onSectionChange('financeiro', 'contagem')}
+          />
+          <SubMenuItem
+            label="Contratos"
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'contratos'
+            }
+            onClick={() => onSectionChange('financeiro', 'contratos')}
+          />
+          <SubMenuItem
+            label="Sociedade"
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'sociedade'
+            }
+            onClick={() => onSectionChange('financeiro', 'sociedade')}
+          />
+        </div>
+      )}
 
       {/* Geral */}
       <MenuItem
         icon={Settings}
         label="Perfis"
         isActive={activeSection === 'geral'}
-        onClick={() => {
-          onSectionChange('geral', 'emissores');
-        }}
+        onClick={() => onSectionChange('geral', 'perfis')}
       />
 
       {/* Auditorias */}

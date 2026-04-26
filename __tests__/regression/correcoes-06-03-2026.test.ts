@@ -259,17 +259,19 @@ describe('4. View v_solicitacoes_emissao — lotes de entidade incluídos', () =
   });
 
   it('lotes de clínica (empresa_id preenchido) devem continuar na view', async () => {
+    // JOIN na tabela clinicas garante que c.id IS NOT NULL → tipo_solicitante='rh'
     const loteClinica = await query(
-      `SELECT id FROM lotes_avaliacao
-       WHERE clinica_id IS NOT NULL
-         AND empresa_id IS NOT NULL
-         AND status_pagamento IS NOT NULL
+      `SELECT la.id FROM lotes_avaliacao la
+       JOIN clinicas c ON c.id = la.clinica_id
+       WHERE la.clinica_id IS NOT NULL
+         AND la.empresa_id IS NOT NULL
+         AND la.status_pagamento IS NOT NULL
        LIMIT 1`
     );
 
     if (loteClinica.rows.length === 0) {
       console.warn(
-        '[SKIP] Sem lotes de clínica com status_pagamento no banco de testes'
+        '[SKIP] Sem lotes de clínica com status_pagamento e clínica existente no banco de testes'
       );
       return;
     }

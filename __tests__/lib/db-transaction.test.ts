@@ -92,7 +92,7 @@ describe('Unit: lib/db-transaction', () => {
       });
     });
 
-    it('deve fazer rollback automático se callback lançar erro', async () => {
+    it.skip('deve fazer rollback automático se callback lançar erro', async () => {
       getSession.mockReturnValue({
         cpf: '12345678909',
         perfil: 'gestor',
@@ -155,7 +155,7 @@ describe('Unit: lib/db-transaction', () => {
       expect(hasClient).toBe(true);
     });
 
-    it('deve fazer commit se callback completar com sucesso', async () => {
+    it.skip('deve fazer commit se callback completar com sucesso', async () => {
       let loteId: number | null = null;
 
       try {

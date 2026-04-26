@@ -21,8 +21,7 @@ export async function GET(): Promise<NextResponse> {
     const result = await query(
       `SELECT u.id, u.cpf, u.nome, u.email, u.telefone, u.ativo, u.criado_em,
               COALESCE(vp.primeira_senha_alterada, TRUE) AS primeira_senha_alterada,
-              COALESCE(vp.aceite_politica_privacidade, TRUE) AS aceite_politica_privacidade,
-              vp.codigo
+              COALESCE(vp.aceite_politica_privacidade, TRUE) AS aceite_politica_privacidade
        FROM public.usuarios u
        LEFT JOIN public.vendedores_perfil vp ON vp.usuario_id = u.id
        WHERE u.cpf = $1 AND u.tipo_usuario = 'vendedor' AND u.ativo = true

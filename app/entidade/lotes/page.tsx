@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Rocket } from 'lucide-react';
-import { LiberarLoteModal } from '@/components/modals/LiberarLoteModal';
+import { Rocket, Loader2 } from 'lucide-react';
 import { LotesGrid } from '@/components/rh';
+import { useLiberarLoteEntidade } from '@/lib/hooks/useLiberarLoteEntidade';
+import { LiberandoCicloOverlay } from '@/components/LiberandoCicloOverlay';
 import toast from 'react-hot-toast';
 
 interface LoteAvaliacao {
@@ -49,16 +50,20 @@ export default function LotesPage() {
   const [lotes, setLotes] = useState<LoteAvaliacao[]>([]);
   const [laudos, setLaudos] = useState<Laudo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showLiberarModal, setShowLiberarModal] = useState(false);
   const [downloadingLaudo, setDownloadingLaudo] = useState<number | null>(null);
+  const {
+    liberarLote,
+    loading: liberandoLote,
+    error: erroLiberacao,
+  } = useLiberarLoteEntidade();
 
-  // Referência para o intervalo de polling
+  // Referências para controlar polling e evitar duplicidade em Strict Mode
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasLoadedOnceRef = useRef(false);
 
   const loadLotes = useCallback(async () => {
     try {
-      const timestamp = new Date().getTime();
-      const lotesRes = await fetch(`/api/entidade/lotes?_t=${timestamp}`, {
+      const lotesRes = await fetch('/api/entidade/lotes', {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
@@ -97,6 +102,10 @@ export default function LotesPage() {
 
   // Carregamento inicial
   useEffect(() => {
+    if (hasLoadedOnceRef.current) {
+      return;
+    }
+    hasLoadedOnceRef.current = true;
     loadLotes();
   }, [loadLotes]);
 
@@ -126,6 +135,16 @@ export default function LotesPage() {
     },
     [router]
   );
+
+  const handleIniciarCiclo = useCallback(async () => {
+    const result = await liberarLote({});
+    if (result?.success && result.resultados?.[0]?.loteId) {
+      await loadLotes();
+      router.push(`/entidade/lote/${result.resultados[0].loteId}`);
+    } else if (result && !result.success) {
+      toast.error(result.message || 'Nenhum funcionário elegível encontrado');
+    }
+  }, [liberarLote, router, loadLotes]);
 
   const handleDownloadLaudo = useCallback(async (laudo: Laudo) => {
     if (!laudo.id) {
@@ -231,12 +250,25 @@ export default function LotesPage() {
         </div>
 
         <button
-          onClick={() => setShowLiberarModal(true)}
-          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+          onClick={handleIniciarCiclo}
+          disabled={liberandoLote}
+          className="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Rocket size={18} />
-          Iniciar Novo Ciclo
+          {liberandoLote ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Liberando...
+            </>
+          ) : (
+            <>
+              <Rocket size={18} />
+              Iniciar Novo Ciclo
+            </>
+          )}
         </button>
+        {erroLiberacao && (
+          <p className="text-xs text-red-600 mt-1">{erroLiberacao}</p>
+        )}
       </div>
 
       {/* Grid de Lotes - Usando componente reutilizável */}
@@ -251,18 +283,7 @@ export default function LotesPage() {
         />
       </div>
 
-      {/* Modal de Liberação */}
-      {showLiberarModal && (
-        <LiberarLoteModal
-          isOpen={showLiberarModal}
-          onClose={() => setShowLiberarModal(false)}
-          mode="entidade"
-          onSuccess={(_loteId) => {
-            loadLotes();
-            setShowLiberarModal(false);
-          }}
-        />
-      )}
+      <LiberandoCicloOverlay visible={liberandoLote} />
     </div>
   );
 }

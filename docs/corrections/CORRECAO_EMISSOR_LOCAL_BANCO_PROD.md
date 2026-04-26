@@ -112,7 +112,7 @@ BACKBLAZE_ENDPOINT=https://s3.us-east-005.backblazeb2.com
 
 ```env
 # Webhook do Asaas DEVE apontar para produção ou ngrok
-# Produção: https://qwork-psi.vercel.app/api/webhooks/asaas
+# Produção: https://sistema.qwork.app.br/api/webhooks/asaas
 # Local (teste): https://xxxx.ngrok.io/api/webhooks/asaas
 ```
 

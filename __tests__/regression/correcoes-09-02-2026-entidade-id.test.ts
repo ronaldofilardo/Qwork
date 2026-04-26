@@ -10,6 +10,14 @@
 import { query } from '@/lib/db';
 
 describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
+  let testEntidadeId: number;
+
+  beforeAll(async () => {
+    const res = await query(`SELECT id FROM entidades LIMIT 1`);
+    if (res.rows.length === 0) throw new Error('Nenhuma entidade encontrada no banco de testes');
+    testEntidadeId = res.rows[0].id;
+  });
+
   describe('1. Schema Essencial', () => {
     it('deve ter coluna entidade_id em lotes_avaliacao', async () => {
       const result = await query(
@@ -42,9 +50,9 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
       // Inserir lote de teste para entidade 1 (que existe no banco de testes)
       const ins = await query(
         `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, numero_ordem)
-         VALUES (1, 'LOTE TESTE ENTIDADE', 'completo', 'ativo', 99981)
+         VALUES ($1, 'LOTE TESTE ENTIDADE', 'completo', 'ativo', 99981)
          RETURNING id`,
-        undefined,
+        [testEntidadeId],
         { cpf: '00000000000', perfil: 'admin' }
       );
       tempLoteId = ins.rows[0].id;
@@ -58,7 +66,7 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
 
     it('query GET /api/entidade/lotes deve retornar lotes usando entidade_id', async () => {
       // Simular query da API
-      const entidadeId = 1;
+      const entidadeId = testEntidadeId;
       const result = await query(
         `SELECT la.id, la.descricao, la.tipo, la.status, la.liberado_em,
                 e.nome AS entidade_nome, e.cnpj AS entidade_cnpj
@@ -112,25 +120,25 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
 
   describe('3. Casos de Uso End-to-End', () => {
     it('criar e buscar lote de entidade (fluxo completo)', async () => {
-      // 1. Criar lote usando entidade_id = 1 (existe no banco de testes)
+      // 1. Criar lote usando testEntidadeId (existe no banco de testes)
       const insertResult = await query(
         `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, numero_ordem)
-         VALUES (1, 'LOTE E2E TESTE', 'completo', 'ativo', 9992)
+         VALUES ($1, 'LOTE E2E TESTE', 'completo', 'ativo', 9992)
          RETURNING id, entidade_id`,
-        undefined,
+        [testEntidadeId],
         { cpf: '00000000000', perfil: 'admin' }
       );
 
       const loteId = insertResult.rows[0].id;
-      expect(insertResult.rows[0].entidade_id).toBe(1);
+      expect(insertResult.rows[0].entidade_id).toBe(testEntidadeId);
 
       // 2. Buscar lote como API faria
       const selectResult = await query(
         `SELECT la.id, la.descricao, e.nome
          FROM lotes_avaliacao la
          INNER JOIN entidades e ON la.entidade_id = e.id
-         WHERE la.entidade_id = 1 AND la.id = $1`,
-        [loteId]
+         WHERE la.entidade_id = $2 AND la.id = $1`,
+        [loteId, testEntidadeId]
       );
 
       expect(selectResult.rows).toHaveLength(1);
@@ -148,9 +156,9 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
       // Inserir lote de teste para entidade 1 para validar queries de dashboard
       const ins = await query(
         `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, numero_ordem)
-         VALUES (1, 'LOTE DASHBOARD TESTE', 'completo', 'ativo', 99982)
+         VALUES ($1, 'LOTE DASHBOARD TESTE', 'completo', 'ativo', 99982)
          RETURNING id`,
-        undefined,
+        [testEntidadeId],
         { cpf: '00000000000', perfil: 'admin' }
       );
       tempLoteId4 = ins.rows[0].id;
@@ -177,22 +185,23 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
          FROM lotes_avaliacao la
          LEFT JOIN entidades e ON la.entidade_id = e.id
          LEFT JOIN avaliacoes a ON a.lote_id = la.id
-         WHERE la.entidade_id = 1
+         WHERE la.entidade_id = $1
          GROUP BY la.id, la.descricao, la.status, la.tipo, la.entidade_id, e.nome, e.cnpj
-         ORDER BY la.liberado_em DESC`
+         ORDER BY la.liberado_em DESC`,
+        [testEntidadeId]
       );
 
       // Validação principal: deve retornar lotes existentes
       expect(result.rows.length).toBeGreaterThan(0);
 
       result.rows.forEach((lote) => {
-        expect(lote.entidade_id).toBe(1);
+        expect(lote.entidade_id).toBe(testEntidadeId);
         expect(lote.entidade_nome).toBeTruthy();
         expect(lote.total_avaliacoes).toBeDefined();
       });
 
       console.log(
-        `✅ Dashboard pode renderizar ${result.rows.length} lotes da entidade 1`
+        `✅ Dashboard pode renderizar ${result.rows.length} lotes da entidade ${testEntidadeId}`
       );
     });
 

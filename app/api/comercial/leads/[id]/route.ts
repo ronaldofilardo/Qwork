@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import { calcularValoresComissao } from '@/lib/leads-config';
+import type { TipoCliente } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,11 +38,25 @@ export async function PATCH(
     const { acao, obs } = parsed.data;
 
     // Verificar se o lead existe e está pendente com flag de aprovação
-    const existing = await query(
-      `SELECT id, status, requer_aprovacao_comercial
-       FROM public.leads_representante
-       WHERE id = $1`,
-      [leadId]
+    const existing = await query<{
+      id: number;
+      status: string;
+      requer_aprovacao_comercial: boolean;
+      valor_negociado: string | null;
+      percentual_comissao_representante: string | null;
+      percentual_comissao_comercial: string | null;
+      tipo_cliente: TipoCliente;
+      modelo_comissionamento: string | null;
+    }>(
+      `SELECT lr.id, lr.status, lr.requer_aprovacao_comercial,
+              lr.valor_negociado, lr.percentual_comissao_representante,
+              lr.percentual_comissao_comercial, lr.tipo_cliente,
+              r.modelo_comissionamento
+       FROM public.leads_representante lr
+       JOIN public.representantes r ON r.id = lr.representante_id
+       WHERE lr.id = $1
+         AND ($2::varchar IS NULL OR r.gestor_comercial_cpf = $2)`,
+      [leadId, session.perfil === 'comercial' ? session.cpf : null]
     );
 
     if (existing.rows.length === 0) {
@@ -75,6 +91,44 @@ export async function PATCH(
          WHERE id = $1`,
         [leadId, session.cpf, obs ?? null]
       );
+
+      // Verificar se o valor QWork ficou abaixo do custo mínimo e notificar suporte
+      const leadRow = existing.rows[0];
+      const valorNegociado = Number(leadRow.valor_negociado ?? 0);
+      const percRep = Number(leadRow.percentual_comissao_representante ?? 0);
+      const percComercial = Number(leadRow.percentual_comissao_comercial ?? 0);
+
+      const bd = calcularValoresComissao(
+        valorNegociado,
+        percRep,
+        percComercial,
+        leadRow.tipo_cliente
+      );
+
+      if (bd.abaixoCusto) {
+        const tipoLabel =
+          leadRow.tipo_cliente === 'entidade' ? 'Entidade' : 'Clínica';
+        await query(
+          `INSERT INTO notificacoes_admin
+             (tipo, titulo, mensagem, dados_contexto, criado_em)
+           VALUES
+             ($1, $2, $3, $4::jsonb, NOW())`,
+          [
+            'comissao_abaixo_custo_aprovada',
+            `Comissão aprovada abaixo do custo mínimo (${tipoLabel})`,
+            `Lead #${leadId} aprovado pelo comercial com valor QWork de R$ ${bd.valorQWork.toFixed(2)}, abaixo do custo mínimo por avaliação para ${tipoLabel}.`,
+            JSON.stringify({
+              lead_id: leadId,
+              tipo_cliente: leadRow.tipo_cliente,
+              valor_negociado: valorNegociado,
+              perc_rep: percRep,
+              perc_comercial: percComercial,
+              valor_qwork: bd.valorQWork,
+              aprovado_por: session.cpf,
+            }),
+          ]
+        );
+      }
     } else {
       // rejeitar ou remover
       await query(

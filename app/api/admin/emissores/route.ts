@@ -15,10 +15,11 @@ export async function GET() {
   try {
     const session = await requireRole('admin', false);
 
-    // Listar emissores, suporte e comercial da tabela `usuarios` (usa `tipo_usuario`).
+    // Listar emissores, suporte, comercial e admin da tabela `usuarios` (usa `tipo_usuario`).
     const result = await query(
       `
       SELECT
+        u.id,
         u.cpf,
         u.nome,
         u.email,
@@ -28,11 +29,12 @@ export async function GET() {
         u.tipo_usuario as perfil,
         u.crp,
         u.titulo_profissional,
+        u.asaas_wallet_id,
         COUNT(DISTINCT l.id) as total_laudos_emitidos
       FROM usuarios u
       LEFT JOIN laudos l ON l.emissor_cpf = u.cpf AND l.status = 'emitido'
-      WHERE u.tipo_usuario IN ('emissor', 'suporte', 'comercial')
-      GROUP BY u.cpf, u.nome, u.email, u.ativo, u.criado_em, u.atualizado_em, u.tipo_usuario, u.crp, u.titulo_profissional
+      WHERE u.tipo_usuario IN ('emissor', 'suporte', 'comercial', 'admin')
+      GROUP BY u.id, u.cpf, u.nome, u.email, u.ativo, u.criado_em, u.atualizado_em, u.tipo_usuario, u.crp, u.titulo_profissional, u.asaas_wallet_id
       ORDER BY u.tipo_usuario, u.nome
     `,
       [],

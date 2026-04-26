@@ -20,8 +20,8 @@ import {
 // ─── Constantes ──────────────────────────────────────────────────────────────
 
 describe('Constantes de negócio', () => {
-  it('CUSTO_MINIMO.entidade deve ser 15', () => {
-    expect(CUSTO_MINIMO.entidade).toBe(15);
+  it('CUSTO_MINIMO.entidade deve ser 12', () => {
+    expect(CUSTO_MINIMO.entidade).toBe(12);
   });
 
   it('CUSTO_MINIMO.clinica deve ser 5', () => {
@@ -36,24 +36,24 @@ describe('Constantes de negócio', () => {
 // ─── calcularSplit — modelo percentual ────────────────────────────────────────
 
 describe('calcularSplit() — modelo percentual', () => {
-  it('deve calcular corretamente (entidade, 20%)', () => {
+  it('deve calcular corretamente no modelo percentual após impostos', () => {
     const res = calcularSplit('percentual', 100, 'entidade', 20);
     expect(res.modelo).toBe('percentual');
-    expect(res.valorRepresentante).toBe(20);
-    expect(res.valorQWork).toBe(80);
+    expect(res.valorRepresentante).toBe(18.6);
+    expect(res.valorQWork).toBe(74.4);
     expect(res.percentualAplicado).toBe(20);
     expect(res.viavel).toBe(true);
   });
 
-  it('deve calcular corretamente (clinica, 10%)', () => {
+  it('deve calcular corretamente para clínica com base líquida', () => {
     const res = calcularSplit('percentual', 50, 'clinica', 10);
-    expect(res.valorRepresentante).toBe(5);
-    expect(res.valorQWork).toBe(45);
+    expect(res.valorRepresentante).toBe(4.65);
+    expect(res.valorQWork).toBe(41.85);
     expect(res.viavel).toBe(true);
   });
 
   it('deve marcar inviável quando valorQWork < CUSTO_MINIMO.entidade', () => {
-    // valor=20, 80% → valorRep=16, valorQWork=4 < 15 → inviável
+    // valor=20, 80% → valorRep=16, valorQWork=4 < 12 → inviável
     const res = calcularSplit('percentual', 20, 'entidade', 80);
     expect(res.viavel).toBe(false);
   });
@@ -75,15 +75,14 @@ describe('calcularSplit() — modelo percentual', () => {
     expect(res.valorRepresentante).toBe(0);
   });
 
-  it('deve arredondar para 2 casas decimais', () => {
-    // 100 * 33.33% = 33.33; valorQWork = 66.67
+  it('deve arredondar para 2 casas decimais na base líquida', () => {
     const res = calcularSplit('percentual', 100, 'entidade', 33.33);
-    expect(res.valorRepresentante).toBe(33.33);
-    expect(res.valorQWork).toBe(66.67);
+    expect(res.valorRepresentante).toBe(31);
+    expect(res.valorQWork).toBe(62);
   });
 
   it('percentual máximo (40%) deve ser viável para entidade com valor > 25', () => {
-    // valor=30, 40% → valorRep=12, valorQWork=18 > 15 → viável
+    // valor=30, 40% → valorRep=12, valorQWork=18 > 12 → viável
     const res = calcularSplit('percentual', 30, 'entidade', 40);
     expect(res.viavel).toBe(true);
   });
@@ -92,32 +91,31 @@ describe('calcularSplit() — modelo percentual', () => {
 // ─── calcularSplit — modelo custo_fixo ───────────────────────────────────────
 
 describe('calcularSplit() — modelo custo_fixo', () => {
-  it('deve calcular corretamente (entidade)', () => {
+  it('deve calcular corretamente custo fixo de entidade após impostos', () => {
     const res = calcularSplit('custo_fixo', 100, 'entidade');
     expect(res.modelo).toBe('custo_fixo');
-    expect(res.valorQWork).toBe(15);
-    expect(res.valorRepresentante).toBe(85);
+    expect(res.valorQWork).toBe(81);
+    expect(res.valorRepresentante).toBe(12);
     expect(res.viavel).toBe(true);
   });
 
-  it('deve calcular corretamente (clinica)', () => {
+  it('deve calcular corretamente custo fixo de clínica após impostos', () => {
     const res = calcularSplit('custo_fixo', 20, 'clinica');
-    expect(res.valorQWork).toBe(5);
-    expect(res.valorRepresentante).toBe(15);
+    expect(res.valorQWork).toBe(13.6);
+    expect(res.valorRepresentante).toBe(5);
     expect(res.viavel).toBe(true);
   });
 
-  it('deve ser viável quando valorLaudo === CUSTO_MINIMO (zero para representante)', () => {
-    // valorRep = 0, viavel porque valorRep >= 0
-    const res = calcularSplit('custo_fixo', 15, 'entidade');
-    expect(res.valorRepresentante).toBe(0);
-    expect(res.viavel).toBe(true);
+  it('deve ficar inviável quando o bruto não cobre impostos mais custo fixo', () => {
+    const res = calcularSplit('custo_fixo', 12, 'entidade');
+    expect(res.valorRepresentante).toBe(12);
+    expect(res.viavel).toBe(false);
   });
 
-  it('deve marcar inviável quando valorLaudo < CUSTO_MINIMO (representante ficaria negativo)', () => {
+  it('deve marcar inviável quando o bruto fica insuficiente para o custo fixo', () => {
     const res = calcularSplit('custo_fixo', 10, 'entidade');
     expect(res.viavel).toBe(false);
-    expect(res.valorRepresentante).toBeLessThan(0);
+    expect(res.valorRepresentante).toBe(12);
   });
 
   it('percentual não é usado no custo_fixo — percentualAplicado deve ser undefined', () => {
@@ -146,7 +144,7 @@ describe('montarSplitAsaas()', () => {
   });
 
   it('deve retornar null se valorRepresentante <= 0', () => {
-    const split = calcularSplit('custo_fixo', 15, 'entidade');
+    const split = calcularSplit('custo_fixo', 12, 'entidade');
     // valorRepresentante = 0
     expect(montarSplitAsaas('wallet_123', split)).toBeNull();
   });
@@ -169,11 +167,26 @@ describe('montarSplitAsaas()', () => {
     expect(result![0].percentualValue).toBeUndefined();
   });
 
+  it('deve considerar taxa do gateway quando informada explicitamente', () => {
+    const split = calcularSplit(
+      'percentual',
+      100,
+      'entidade',
+      20,
+      0,
+      undefined,
+      { valorTaxaGateway: 3 }
+    );
+
+    expect(split.valorRepresentante).toBe(18);
+    expect(split.valorQWork).toBe(72);
+  });
+
   it('deve usar fixedValue para modelo percentual (Asaas usa fixedValue para exatidão)', () => {
     const split = calcularSplit('percentual', 100, 'entidade', 25);
     const result = montarSplitAsaas('wallet_xyz', split);
     expect(result).not.toBeNull();
     expect(result![0].fixedValue).toBe(split.valorRepresentante);
-    expect(result![0].fixedValue).toBe(25);
+    expect(result![0].fixedValue).toBe(23.25);
   });
 });

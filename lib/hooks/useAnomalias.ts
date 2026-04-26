@@ -1,6 +1,8 @@
+'use client';
+
 import { useState, useCallback } from 'react';
 
-export interface AnomaliaIndice {
+export interface Anomalia {
   cpf: string;
   nome: string;
   setor: string;
@@ -9,52 +11,41 @@ export interface AnomaliaIndice {
   dias_desde_ultima_avaliacao: number | null;
   total_inativacoes: number;
   categoria_anomalia: string;
-  prioridade: 'CRÍTICA' | 'ALTA' | 'MÉDIA';
+  prioridade: 'CRÍTICA' | 'ALTA' | 'MÉDIA' | 'BAIXA';
   mensagem: string;
 }
 
-/**
- * Hook para gerenciar anomalias/pendências de avaliações
- * @param empresaId ID da empresa
- * @returns Estado e funções para manipular anomalias
- */
-export function useAnomalias(empresaId: string) {
-  const [anomalias, setAnomalias] = useState<AnomaliaIndice[]>([]);
+interface UseAnomaliasReturn {
+  anomalias: Anomalia[];
+  loading: boolean;
+  error: string | null;
+  fetchAnomalias: () => Promise<void>;
+}
+
+export function useAnomalias(empresaId: string): UseAnomaliasReturn {
+  const [anomalias, setAnomalias] = useState<Anomalia[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAnomalias = useCallback(async () => {
-    if (!empresaId) return;
-
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-
       const response = await fetch(
         `/api/rh/pendencias?empresa_id=${empresaId}`
       );
-
       if (!response.ok) {
-        throw new Error('Erro ao carregar pendências');
+        throw new Error(`Erro ao carregar pendências: ${response.status}`);
       }
-
-      const anomaliasData = await response.json();
-      setAnomalias(anomaliasData.anomalias || []);
+      const data = await response.json();
+      setAnomalias(data.anomalias ?? []);
     } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : 'Erro desconhecido';
-      console.error('Erro ao carregar pendências:', err);
-      setError(errorMessage);
+      setAnomalias([]);
+      setError(err instanceof Error ? err.message : 'Erro desconhecido');
     } finally {
       setLoading(false);
     }
   }, [empresaId]);
 
-  return {
-    anomalias,
-    loading,
-    error,
-    fetchAnomalias,
-    setAnomalias,
-  };
+  return { anomalias, loading, error, fetchAnomalias };
 }

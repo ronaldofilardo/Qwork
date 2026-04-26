@@ -16,7 +16,7 @@ const MIGRATION_PATH = path.join(
   ROOT,
   'database',
   'migrations',
-  '1140_fix_seq_vendedor_codigo_duplicatas.sql'
+  '1140a_fix_seq_vendedor_codigo_duplicatas.sql'
 );
 
 let src: string;

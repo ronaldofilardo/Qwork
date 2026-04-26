@@ -1,11 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, UserPlus, DollarSign } from 'lucide-react';
+import { Users, UserPlus, DollarSign, Building2 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 import { useComercial } from '@/app/comercial/comercial-context';
 
-export type ComercialSection = 'representantes' | 'leads' | 'comissoes';
+export type ComercialSection =
+  | 'representantes'
+  | 'leads'
+  | 'comissoes'
+  | 'tomadores'
+  | 'contratos';
 
 interface ComercialSidebarProps {
   activeSection?: ComercialSection;
@@ -96,6 +101,13 @@ export default function ComercialSidebar({
         count={counts.comissoes}
         isActive={activeSection === 'comissoes'}
         onClick={() => onSectionChange('comissoes')}
+      />
+
+      <MenuItem
+        icon={Building2}
+        label="Tomadores"
+        isActive={activeSection === 'tomadores'}
+        onClick={() => onSectionChange('tomadores')}
       />
     </SidebarLayout>
   );

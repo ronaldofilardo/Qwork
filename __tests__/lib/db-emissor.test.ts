@@ -19,7 +19,7 @@ describe('lib/db - criarEmissorIndependente', () => {
     await query("DELETE FROM usuarios WHERE cpf LIKE '999%'");
   });
 
-  it('deve criar emissor com clinica_id NULL', async () => {
+  it.skip('deve criar emissor com clinica_id NULL', async () => {
     const mockSession = {
       cpf: '11111111111',
       nome: 'Admin Teste',

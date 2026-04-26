@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
 import { grupos } from '@/lib/questoes';
 
@@ -8,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.FUNCIONARIO]);
     const { grupo, respostas } = await request.json();
 
     // Validar dados
@@ -101,6 +103,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, avaliacaoId, completed: false });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao salvar avaliação:', error);
     return NextResponse.json({ error: 'Erro ao salvar' }, { status: 500 });
   }

@@ -109,13 +109,6 @@ export async function POST(request: NextRequest) {
       [novoHash, sess.representante_id]
     );
 
-    // Buscar código do representante para exibir na tela de sucesso
-    const codigoResult = await query<{ codigo: string }>(
-      `SELECT codigo FROM public.representantes WHERE id = $1 LIMIT 1`,
-      [sess.representante_id]
-    );
-    const codigo = codigoResult.rows[0]?.codigo ?? null;
-
     console.log(
       `[TROCAR_SENHA_REP] Representante #${sess.representante_id} trocou a senha no primeiro acesso`
     );
@@ -123,7 +116,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Senha alterada com sucesso!',
-      codigo,
     });
   } catch (err: unknown) {
     const e = err as Error;

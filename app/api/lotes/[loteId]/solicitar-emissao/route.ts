@@ -54,15 +54,19 @@ export async function POST(
 
     // 2. Buscar informações do lote
     const loteResult = await query(
-      `SELECT 
-        id,
-        status, 
-        clinica_id, 
-        empresa_id, 
-        entidade_id, 
-        emitido_em
-      FROM lotes_avaliacao 
-      WHERE id = $1`,
+      `SELECT
+        la.id,
+        la.status,
+        la.clinica_id,
+        la.empresa_id,
+        la.entidade_id,
+        la.emitido_em,
+        la.status_pagamento,
+        COALESCE(ent.isento_pagamento, cl.isento_pagamento, false) AS isento_pagamento
+      FROM lotes_avaliacao la
+      LEFT JOIN entidades ent ON ent.id = la.entidade_id
+      LEFT JOIN clinicas cl ON cl.id = la.clinica_id
+      WHERE la.id = $1`,
       [loteId]
     );
 
@@ -74,6 +78,7 @@ export async function POST(
     }
 
     const lote = loteResult.rows[0];
+    const isentoTomador = lote.isento_pagamento === true;
 
     // 3. Validar permissões baseado no tipo de lote
     if (lote.clinica_id && user.perfil === 'rh') {
@@ -243,19 +248,37 @@ export async function POST(
           console.log(`[INFO] Nova solicitação registrada para lote ${loteId}`);
         }
 
-        // 9. Atualizar lote com status de pagamento (NOVO FLUXO)
-        await q(
-          `UPDATE lotes_avaliacao
-           SET status_pagamento = 'aguardando_cobranca',
-               solicitacao_emissao_em = NOW(),
-               atualizado_em = NOW()
-           WHERE id = $1`,
-          [loteId]
-        );
+        // 9. Atualizar lote com status de pagamento
+        if (isentoTomador) {
+          await q(
+            `UPDATE lotes_avaliacao
+             SET status_pagamento = 'pago',
+                 pagamento_metodo = 'isento',
+                 pagamento_parcelas = 1,
+                 pago_em = NOW(),
+                 solicitacao_emissao_em = NOW(),
+                 atualizado_em = NOW()
+             WHERE id = $1`,
+            [loteId]
+          );
 
-        console.log(
-          `[INFO] Lote ${loteId} marcado como aguardando cobrança - novo fluxo de pagamento`
-        );
+          console.log(
+            `[INFO] Lote ${loteId} é de tomador isento; pagamento preservado como pago e emissão liberada`
+          );
+        } else {
+          await q(
+            `UPDATE lotes_avaliacao
+             SET status_pagamento = 'aguardando_cobranca',
+                 solicitacao_emissao_em = NOW(),
+                 atualizado_em = NOW()
+             WHERE id = $1`,
+            [loteId]
+          );
+
+          console.log(
+            `[INFO] Lote ${loteId} marcado como aguardando cobrança - novo fluxo de pagamento`
+          );
+        }
 
         // 9b. Inativar automaticamente todas as avaliações ainda não concluídas
         // (funcionários podiam completar até o momento exato da solicitação)
@@ -284,6 +307,10 @@ export async function POST(
           destinatarioTipo = 'gestor';
         }
 
+        const mensagemSolicitacao = isentoTomador
+          ? `Solicitação enviada para lote #${loteId}. Tomador isento de pagamento; o lote foi liberado para emissão.`
+          : `Solicitação enviada para lote #${loteId}. Aguarde o link de pagamento.`;
+
         await q(
           `INSERT INTO notificacoes (
              tipo, 
@@ -307,7 +334,7 @@ export async function POST(
             user.cpf,
             destinatarioTipo,
             'Solicitação de emissão enviada',
-            `Solicitação enviada para lote #${loteId}. Aguarde o link de pagamento.`,
+            mensagemSolicitacao,
             loteId,
           ]
         );
@@ -415,10 +442,12 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: 'Solicitação enviada com sucesso. Aguarde o link de pagamento.',
+      message: isentoTomador
+        ? 'Solicitação enviada com sucesso. Tomador isento de pagamento; o lote está liberado para emissão.'
+        : 'Solicitação enviada com sucesso. Aguarde o link de pagamento.',
       lote: {
         id: lote.id,
-        status_pagamento: 'aguardando_cobranca',
+        status_pagamento: isentoTomador ? 'pago' : 'aguardando_cobranca',
       },
       auto_inativadas_count: autoInativadasCount,
       gestor_contato: gestorContato,

@@ -35,6 +35,9 @@ export default function LeadsRepresentante() {
     handleTipoClienteChange,
     percRep,
     percComercial,
+    modeloComissionamento,
+    valorCustoFixoEntidade,
+    valorCustoFixoClinica,
   } = useLeads();
 
   const totalLeads =
@@ -44,17 +47,38 @@ export default function LeadsRepresentante() {
       ? ((contagens.convertido / totalLeads) * 100).toFixed(1)
       : '0.0';
 
+  const comissionamentoDefinido = !!modeloComissionamento;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-900">Meus Leads</h1>
         <button
-          onClick={() => setShowNovo(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          onClick={() => {
+            if (comissionamentoDefinido) setShowNovo(true);
+          }}
+          disabled={!comissionamentoDefinido}
+          title={
+            !comissionamentoDefinido
+              ? 'Aguardando definição do modelo de comissionamento'
+              : undefined
+          }
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           + Novo Lead
         </button>
       </div>
+
+      {!comissionamentoDefinido && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 text-sm flex items-start gap-2">
+          <span className="mt-0.5">⚠️</span>
+          <span>
+            <strong>Módulo de leads bloqueado.</strong> O cadastro de leads
+            ficará disponível após o Comercial definir seu modelo de
+            comissionamento.
+          </span>
+        </div>
+      )}
 
       {erro && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
@@ -82,6 +106,9 @@ export default function LeadsRepresentante() {
           criarLead={criarLead}
           percRep={percRep}
           percComercial={percComercial}
+          modeloComissionamento={modeloComissionamento}
+          valorCustoFixoEntidade={valorCustoFixoEntidade}
+          valorCustoFixoClinica={valorCustoFixoClinica}
           onClose={() => {
             setShowNovo(false);
             setErrosCampos({

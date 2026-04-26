@@ -61,7 +61,21 @@ describe('Portal Comercial - API Vendedores', () => {
     it('deve criar novo vendedor e retornar 201', async () => {
       requireRole.mockResolvedValue({ cpf: '12345678901', role: 'comercial' });
       query.mockImplementation((q) => {
-        if (q.includes('SELECT id FROM usuarios WHERE cpf = $1'))
+        // checkCpfUnicoSistema — representantes (cpf, cpf_responsavel_pj) → vazio = disponível
+        if (
+          q.includes('WHERE cpf = $1') &&
+          q.includes('FROM representantes')
+        )
+          return Promise.resolve({ rows: [] });
+        if (q.includes('cpf_responsavel_pj = $1'))
+          return Promise.resolve({ rows: [] });
+        // checkCpfUnicoSistema — leads → vazio
+        if (q.includes('FROM representantes_cadastro_leads'))
+          return Promise.resolve({ rows: [] });
+        // checkCpfUnicoSistema — usuarios (vendedor/gestor/rh) → vazio
+        if (
+          q.includes("tipo_usuario IN ('vendedor', 'gestor', 'rh')")
+        )
           return Promise.resolve({ rows: [] });
         if (q.includes('INSERT INTO usuarios'))
           return Promise.resolve({ rows: [{ id: 100 }] });

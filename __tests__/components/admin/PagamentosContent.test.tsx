@@ -46,6 +46,7 @@ const makeSolicitacao = (overrides: Partial<Record<string, any>> = {}) => ({
   solicitante_nome: 'Solicitante Teste',
   solicitante_cpf: '00000000000',
   num_avaliacoes_concluidas: 5,
+  num_avaliacoes_cobradas: 5,
   valor_total_calculado: 250,
   lote_criado_em: '2026-02-17T09:00:00Z',
   lote_liberado_em: '2026-02-17T09:30:00Z',
@@ -170,6 +171,45 @@ describe('PagamentosContent — tab aguardando_pagamento', () => {
     fireEvent.click(tabBtn);
 
     expect(await screen.findByText(/Verificar Pagamento/i)).toBeInTheDocument();
+  });
+
+  it('prioriza a quantidade de avaliações cobradas quando ela diverge das concluídas', async () => {
+    setupFetch([
+      {
+        url: '/api/admin/emissoes',
+        response: {
+          solicitacoes: [
+            makeSolicitacao({
+              lote_id: 321,
+              status_pagamento: 'aguardando_pagamento',
+              num_avaliacoes_concluidas: 3,
+              num_avaliacoes_cobradas: 4,
+              valor_total_calculado: 48,
+              valor_por_funcionario: 12,
+            }),
+          ],
+          total: 1,
+        },
+      },
+    ]);
+
+    render(<PagamentosContent />);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Carregando solicitações...')
+      ).not.toBeInTheDocument()
+    );
+
+    const tabBtn = screen
+      .getAllByRole('button')
+      .find((b) => b.textContent?.includes('Aguardando Pagamento'));
+    fireEvent.click(tabBtn);
+
+    const lote = await screen.findByText('Lote #321');
+    const card = lote.closest('.bg-white');
+    expect(card?.textContent).toContain('Avaliações:4');
+    expect(card?.textContent).toContain('R$ 48,00');
   });
 
   it('lote pago NÃO exibe botão "Verificar Pagamento"', async () => {

@@ -15,7 +15,6 @@ export interface VendedorSession {
   id: number;
   nome: string;
   cpf: string;
-  codigo?: string | null;
   email: string | null;
   perfil: string;
   primeira_senha_alterada?: boolean;
@@ -124,8 +123,8 @@ export function VendedorProvider({ children }: { children: React.ReactNode }) {
 
         {/* Conteúdo principal */}
         <div className="flex-1 overflow-y-auto">
-          <main className="max-w-6xl mx-auto px-4 py-6">
-            {showBoasVindas && session?.codigo && (
+          <main className="qw-content-area max-w-6xl mx-auto px-4 py-6">
+            {showBoasVindas && session?.id && (
               <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">&#127881;</span>
@@ -134,9 +133,9 @@ export function VendedorProvider({ children }: { children: React.ReactNode }) {
                       Bem-vindo(a) à QWORK!
                     </p>
                     <p className="text-xs text-green-700 mt-0.5">
-                      Seu código:{' '}
+                      Seu id:{' '}
                       <span className="font-mono font-bold text-green-900">
-                        {session.codigo}
+                        #{session.id}
                       </span>{' '}
                       &mdash; Guarde-o, ele identifica você na plataforma.
                     </p>

@@ -43,14 +43,15 @@ export default function VendedorPortalSidebar({
   const [copiado, setCopiado] = useState(false);
 
   const handleCopiarCodigo = async () => {
-    if (!session.codigo) return;
+    if (!session.id) return;
+    const idStr = String(session.id);
     try {
-      await navigator.clipboard.writeText(session.codigo);
+      await navigator.clipboard.writeText(idStr);
       setCopiado(true);
       setTimeout(() => setCopiado(false), 2000);
     } catch {
       const input = document.createElement('input');
-      input.value = session.codigo ?? '';
+      input.value = idStr;
       document.body.appendChild(input);
       input.select();
       document.execCommand('copy');
@@ -61,11 +62,9 @@ export default function VendedorPortalSidebar({
   };
 
   const footer =
-    !isCollapsed && session.codigo ? (
+    !isCollapsed && session.id ? (
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-500 font-mono">
-          {session.codigo}
-        </span>
+        <span className="text-xs text-gray-500 font-mono">#{session.id}</span>
         <button
           onClick={handleCopiarCodigo}
           title="Copiar código"

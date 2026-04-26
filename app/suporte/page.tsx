@@ -8,8 +8,10 @@ import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { default as PagamentosContent } from '@/components/admin/PagamentosContent';
 import { RepresentantesContent } from '@/components/suporte/RepresentantesContent';
 import { ComissoesIndividuaisContent } from '@/components/suporte/ComissoesIndividuaisContent';
-import CiclosComissaoContent from '@/components/suporte/CiclosComissaoContent';
 import { PreCadastroContent } from '@/components/suporte/PreCadastroContent';
+import { SuporteLeadsComissoesContent } from '@/components/suporte/SuporteLeadsComissoesContent';
+import { ContratosTable } from '@/components/shared/ContratosTable';
+import { AvaliacoesContent } from '@/components/suporte/AvaliacoesContent';
 
 interface Session {
   cpf: string;
@@ -99,6 +101,15 @@ export default function SuportePage() {
       if (activeSubSection === 'pre-cadastro') {
         return <PreCadastroContent />;
       }
+      if (activeSubSection === 'contratos') {
+        return (
+          <ContratosTable
+            endpoint="/api/suporte/contratos"
+            allowGerarContrato
+            allowExpandClinicaEmpresas
+          />
+        );
+      }
       return <TomadoresContent activeSubSection={activeSubSection} />;
     }
 
@@ -109,15 +120,22 @@ export default function SuportePage() {
       if (activeSubSection === 'individuais') {
         return <ComissoesIndividuaisContent />;
       }
-      if (activeSubSection === 'ciclos_comissao') {
-        return <CiclosComissaoContent />;
-      }
     }
 
     if (activeSection === 'representantes') {
       return (
         <RepresentantesContent activeSubSection={activeSubSection || 'lista'} />
       );
+    }
+
+    if (activeSection === 'leads') {
+      if (activeSubSection === 'comissoes') {
+        return <SuporteLeadsComissoesContent />;
+      }
+    }
+
+    if (activeSection === 'avaliacoes') {
+      return <AvaliacoesContent />;
     }
 
     return (
@@ -161,7 +179,7 @@ export default function SuportePage() {
       </div>
 
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
+        <div className="qw-content-area p-4 md:p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
               Painel de Suporte

@@ -41,6 +41,9 @@ interface RepresentanteData {
   status: string;
   percentual_comissao?: number | null;
   percentual_comissao_comercial?: number | null;
+  modelo_comissionamento?: string | null;
+  valor_custo_fixo_entidade?: number | null;
+  valor_custo_fixo_clinica?: number | null;
   banco_codigo?: string | null;
   agencia?: string | null;
   conta?: string | null;
@@ -83,6 +86,17 @@ export default function EditRepresentanteModal({
       ? String(rep.percentual_comissao_comercial)
       : ''
   );
+  const [modelo, setModelo] = useState(rep.modelo_comissionamento ?? '');
+  const [valorCFEntidade, setValorCFEntidade] = useState(
+    rep.valor_custo_fixo_entidade != null
+      ? String(rep.valor_custo_fixo_entidade)
+      : ''
+  );
+  const [valorCFClinica, setValorCFClinica] = useState(
+    rep.valor_custo_fixo_clinica != null
+      ? String(rep.valor_custo_fixo_clinica)
+      : ''
+  );
 
   // Dados bancários
   const [bancoCode, setBancoCode] = useState(rep.banco_codigo ?? '');
@@ -116,24 +130,41 @@ export default function EditRepresentanteModal({
           ? parseFloat(percentual)
           : null;
       }
+      // No modelo percentual, % comercial é derivado automaticamente como 40 − rep%
+      const effectivePercComercial =
+        modelo === 'percentual' && percentual.trim()
+          ? String(Math.max(0, 40 - parseFloat(percentual || '0')))
+          : percentualComercial;
+
       if (
-        percentualComercial.trim() !==
+        effectivePercComercial.trim() !==
         (rep.percentual_comissao_comercial != null
           ? String(rep.percentual_comissao_comercial)
           : '')
       ) {
-        body.percentual_comissao_comercial = percentualComercial.trim()
-          ? parseFloat(percentualComercial)
+        body.percentual_comissao_comercial = effectivePercComercial.trim()
+          ? parseFloat(effectivePercComercial)
           : null;
       }
-      // Validar soma
+      // Validar soma — aplica APENAS ao modelo percentual
+      // No modelo custo_fixo, percComercial é % sobre o custo fixo (dimensão independente)
       const totalPerc =
-        parseFloat(percentual || '0') + parseFloat(percentualComercial || '0');
-      if (totalPerc > 40) {
+        parseFloat(percentual || '0') + parseFloat(effectivePercComercial || '0');
+      if (modelo !== 'custo_fixo' && modelo !== 'percentual' && totalPerc > 40) {
         setErro(
           `A soma dos percentuais (rep + comercial) não pode ultrapassar 40%. Atual: ${totalPerc.toFixed(1)}%.`
         );
         return;
+      }
+      // Para custo_fixo: validar que % comercial está em 0–40
+      if (modelo === 'custo_fixo') {
+        const percCom = parseFloat(percentualComercial || '0');
+        if (isNaN(percCom) || percCom < 0 || percCom > 40) {
+          setErro(
+            '% Comissão Comercial deve estar entre 0% e 40% (incide sobre o custo fixo).'
+          );
+          return;
+        }
       }
       if (rep.tipo_pessoa === 'pf' && cpf.trim() !== (rep.cpf ?? ''))
         body.cpf = cpf.trim() || null;
@@ -159,6 +190,21 @@ export default function EditRepresentanteModal({
       const walletIdClean = walletId.trim() || null;
       if (walletIdClean !== (rep.asaas_wallet_id ?? null))
         body.asaas_wallet_id = walletIdClean;
+
+      // Modelo de comissionamento
+      const modeloClean = modelo.trim() || null;
+      if (modeloClean !== (rep.modelo_comissionamento ?? null))
+        body.modelo_comissionamento = modeloClean;
+      const cfEntidade = valorCFEntidade.trim()
+        ? parseFloat(valorCFEntidade)
+        : null;
+      if (cfEntidade !== (rep.valor_custo_fixo_entidade ?? null))
+        body.valor_custo_fixo_entidade = cfEntidade;
+      const cfClinica = valorCFClinica.trim()
+        ? parseFloat(valorCFClinica)
+        : null;
+      if (cfClinica !== (rep.valor_custo_fixo_clinica ?? null))
+        body.valor_custo_fixo_clinica = cfClinica;
 
       if (Object.keys(body).length === 0) {
         onClose();
@@ -339,20 +385,81 @@ export default function EditRepresentanteModal({
                 </div>
                 <div>
                   <label className={labelCls}>Comissão Comercial (%)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="40"
-                    step="0.01"
-                    className={inputCls}
-                    value={percentualComercial}
-                    onChange={(e) => setPercentualComercial(e.target.value)}
-                    placeholder="Ex: 2.0"
-                  />
+                  {modelo === 'percentual' ? (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+                      <span className="text-blue-700 font-bold">
+                        {!isNaN(parseFloat(percentual)) && parseFloat(percentual) > 0
+                          ? (40 - parseFloat(percentual)).toFixed(2)
+                          : '—'}%
+                      </span>
+                      <span className="text-xs text-blue-500">
+                        40% − {percentual || '?'}% Rep
+                      </span>
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      min="0"
+                      max="40"
+                      step="0.01"
+                      className={inputCls}
+                      value={percentualComercial}
+                      onChange={(e) => setPercentualComercial(e.target.value)}
+                      placeholder="Ex: 2.0"
+                    />
+                  )}
                   <p className="text-xs text-gray-400 mt-1">
-                    Soma rep + comercial ≤ 40%
+                    {modelo === 'custo_fixo'
+                      ? '% sobre o custo fixo (não sobre o valor negociado)'
+                      : modelo === 'percentual'
+                        ? 'Calculado automaticamente'
+                        : 'Soma rep + comercial ≤ 40%'}
                   </p>
                 </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>Modelo de Comissionamento</label>
+                  <select
+                    className={inputCls}
+                    value={modelo}
+                    onChange={(e) => setModelo(e.target.value)}
+                  >
+                    <option value="">Não configurado</option>
+                    <option value="percentual">Percentual</option>
+                    <option value="custo_fixo">Custo Fixo</option>
+                  </select>
+                </div>
+                {modelo === 'custo_fixo' && (
+                  <>
+                    <div>
+                      <label className={labelCls}>
+                        Custo Fixo Entidade (R$)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={inputCls}
+                        value={valorCFEntidade}
+                        onChange={(e) => setValorCFEntidade(e.target.value)}
+                        placeholder="Ex: 12.00"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>
+                        Custo Fixo Clínica (R$)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={inputCls}
+                        value={valorCFClinica}
+                        onChange={(e) => setValorCFClinica(e.target.value)}
+                        placeholder="Ex: 10.00"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

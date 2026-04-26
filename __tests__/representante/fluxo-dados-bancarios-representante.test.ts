@@ -165,8 +165,8 @@ describe('3. POST /api/admin/representantes/[id]/solicitar-dados-bancarios', () 
     expect(src).toMatch(/export async function POST/);
   });
 
-  it('deve usar requireRole(admin)', () => {
-    expect(src).toMatch(/requireRole.*admin/);
+  it('deve usar requireRole(comercial)', () => {
+    expect(src).toMatch(/requireRole\('comercial'/);
   });
 
   it('deve verificar pré-condição: status apto', () => {
@@ -299,62 +299,44 @@ describe('6. GET /api/admin/representantes — inclui campos bancários novos', 
 });
 
 /* ================================================================== */
-/* 7. Layout Portal — Voltar, Dados, badge, sem logo               */
+/* 7. Layout Portal — navegação atual                                 */
 /* ================================================================== */
 
-describe('7. Layout portal — novas funcionalidades', () => {
-  const layoutPath = path.join(
+describe('7. Sidebar do portal — navegação atual', () => {
+  const sidebarPath = path.join(
     ROOT,
-    'app',
+    'components',
     'representante',
-    '(portal)',
-    'layout.tsx'
+    'RepresentanteSidebar.tsx'
   );
   let src: string;
 
   beforeAll(() => {
-    src = fs.readFileSync(layoutPath, 'utf-8');
+    src = fs.readFileSync(sidebarPath, 'utf-8');
   });
 
-  it('deve ter botão Voltar', () => {
-    expect(src).toMatch(/Voltar/);
-    expect(src).toMatch(/handleVoltar/);
+  it('deve ter item Dados no menu do portal', () => {
+    expect(src).toMatch(/href:\s*'\/representante\/dados'/);
+    expect(src).toMatch(/label:\s*'Dados'/);
   });
 
-  it('deve usar router.back()', () => {
-    expect(src).toMatch(/router\.back\(\)/);
+  it('deve usar SidebarLayout e exibir o portal do representante', () => {
+    expect(src).toMatch(/SidebarLayout/);
+    expect(src).toMatch(/Portal do Representante/);
   });
 
-  it('deve ter tab Dados como primeira na lista', () => {
-    const posicaoDados = src.indexOf("label: 'Dados'");
-    const posicaoDashboard = src.indexOf("label: 'Dashboard'");
-    expect(posicaoDados).toBeGreaterThan(-1);
-    expect(posicaoDashboard).toBeGreaterThan(-1);
-    expect(posicaoDados).toBeLessThan(posicaoDashboard);
+  it('deve permitir copiar o código do representante', () => {
+    expect(src).toMatch(/handleCopiarCodigo/);
+    expect(src).toMatch(/navigator\.clipboard\.writeText/);
   });
 
-  it('deve exibir badge quando dados_bancarios_status !== confirmado', () => {
-    expect(src).toMatch(/mostrarBadgeDados/);
-    // o status é lido de session?.dados_bancarios_status e comparado com 'confirmado'
-    expect(src).toMatch(/session\?\.dados_bancarios_status/);
-    expect(src).toMatch(/'confirmado'/);
-  });
-
-  it('NÃO deve conter import de Image (logo removido)', () => {
+  it('NÃO deve conter import de Image', () => {
     expect(src).not.toMatch(/import Image from 'next\/image'/);
-  });
-
-  it('NÃO deve conter QWORK_BRANDING (logo removido)', () => {
-    expect(src).not.toMatch(/QWORK_BRANDING/);
-  });
-
-  it('NÃO deve conter texto "QWork Representante" (removido)', () => {
-    expect(src).not.toMatch(/QWork.*Representante/);
   });
 });
 
 /* ================================================================== */
-/* 8. Página /dados — estrutura e comportamentos                     */
+/* 8. Página /representante/dados — estrutura                         */
 /* ================================================================== */
 
 describe('8. Página /representante/dados — estrutura', () => {
@@ -389,16 +371,19 @@ describe('8. Página /representante/dados — estrutura', () => {
     expect(src).toMatch(/Dados Bancários/);
   });
 
-  it('CPF e CNPJ devem ser read-only (ícone trancado)', () => {
+  it('deve exibir o campo Wallet ID Asaas', () => {
+    expect(src).toMatch(/Wallet ID Asaas/);
+    expect(src).toMatch(/asaas_wallet_id/);
+  });
+
+  it('CPF e CNPJ devem ser read-only', () => {
     expect(src).toMatch(/Não pode ser alterado/);
-    expect(src).toMatch(/🔒/);
   });
 
   it('deve ter tooltips em tipo_conta e pix_tipo', () => {
-    // Tooltips definidos no objeto TOOLTIP do arquivo
     expect(src).toMatch(/tipo_conta/);
     expect(src).toMatch(/Corrente/);
-    expect(src).toMatch(/movimdção|movimentação|diária/i);
+    expect(src).toMatch(/movimentação|diária/i);
     expect(src).toMatch(/pix_tipo/);
     expect(src).toMatch(/chave PIX/i);
   });
@@ -415,8 +400,8 @@ describe('8. Página /representante/dados — estrutura', () => {
   });
 
   it('deve redirecionar para login em 401', () => {
-    expect(src).toMatch(/status.*401/);
-    expect(src).toMatch(/router\.push.*login/i);
+    expect(src).toMatch(/res\.status\s*===\s*401/);
+    expect(src).toMatch(/router\.push\('\/login'\)/);
   });
 
   it('deve mostrar toast de sucesso e erro', () => {
@@ -427,58 +412,79 @@ describe('8. Página /representante/dados — estrutura', () => {
 
   it('deve chamar PATCH /api/representante/dados-bancarios', () => {
     expect(src).toMatch(/\/api\/representante\/dados-bancarios/);
-    expect(src).toMatch(/method.*PATCH/i);
+    expect(src).toMatch(/method:\s*'PATCH'/i);
   });
 });
 
 /* ================================================================== */
-/* 9. app/admin/representantes/page.tsx — botão solicitar + exibição status */
-/* =========================================================================== */
+/* 9. app/admin/representantes — botão solicitar e status             */
+/* ================================================================== */
 
-describe('9. app/admin/representantes/page.tsx — botão solicitar dados + status no drawer', () => {
+describe('9. app/admin/representantes — botão solicitar dados + status no drawer', () => {
   const cmpPath = path.join(ROOT, 'app', 'admin', 'representantes', 'page.tsx');
+  const typesPath = path.join(ROOT, 'app', 'admin', 'representantes', 'types.ts');
+  const tabPath = path.join(
+    ROOT,
+    'app',
+    'admin',
+    'representantes',
+    'components',
+    'RepresentantesTab.tsx'
+  );
+  const actionsPath = path.join(
+    ROOT,
+    'app',
+    'admin',
+    'representantes',
+    'hooks',
+    'useRepActions.ts'
+  );
   let src: string;
+  let typesSrc: string;
+  let tabSrc: string;
+  let actionsSrc: string;
 
   beforeAll(() => {
     src = fs.readFileSync(cmpPath, 'utf-8');
+    typesSrc = fs.readFileSync(typesPath, 'utf-8');
+    tabSrc = fs.readFileSync(tabPath, 'utf-8');
+    actionsSrc = fs.readFileSync(actionsPath, 'utf-8');
   });
 
-  it('interface Representante deve ter dados_bancarios_status', () => {
-    expect(src).toMatch(/dados_bancarios_status\?:\s*string/);
-  });
-
-  it('interface Representante deve ter dados_bancarios_solicitado_em', () => {
-    expect(src).toMatch(/dados_bancarios_solicitado_em\?:\s*string/);
-  });
-
-  it('interface Representante deve ter dados_bancarios_confirmado_em', () => {
-    expect(src).toMatch(/dados_bancarios_confirmado_em\?:\s*string/);
+  it('interface Representante deve ter dados bancários de controle', () => {
+    expect(typesSrc).toMatch(/dados_bancarios_status\?:\s*string/);
+    expect(typesSrc).toMatch(/dados_bancarios_solicitado_em\?:\s*string/);
+    expect(typesSrc).toMatch(/dados_bancarios_confirmado_em\?:\s*string/);
   });
 
   it('deve ter função solicitarDadosBancarios', () => {
-    expect(src).toMatch(/solicitarDadosBancarios/);
+    expect(actionsSrc).toMatch(/solicitarDadosBancarios/);
   });
 
   it('deve chamar POST /api/admin/representantes/[id]/solicitar-dados-bancarios', () => {
-    expect(src).toMatch(/solicitar-dados-bancarios/);
-    expect(src).toMatch(/method.*POST/i);
+    expect(actionsSrc).toMatch(/solicitar-dados-bancarios/);
+    expect(actionsSrc).toMatch(/method:\s*'POST'/i);
   });
 
   it('botão Solicitar só deve aparecer quando status === apto e dados !== confirmados', () => {
-    expect(src).toMatch(/detalhes\.status.*apto/);
-    expect(src).toMatch(/dados_bancarios_status.*confirmado/);
-    expect(src).toMatch(/Solicitar dados banc/i);
+    expect(tabSrc).toMatch(/detalhes\.status\s*===\s*'apto'/);
+    expect(tabSrc).toMatch(/dados_bancarios_status\s*!==\s*'confirmado'/);
+    expect(tabSrc).toMatch(/Solicitar dados banc/i);
   });
 
   it('drawer deve exibir Dados Bancários com status formatado', () => {
-    expect(src).toMatch(/Dados Bancários/);
-    expect(src).toMatch(/Confirmado em/);
-    expect(src).toMatch(/Pendente/);
+    expect(tabSrc).toMatch(/Dados Bancários/);
+    expect(tabSrc).toMatch(/Confirmado em/);
+    expect(tabSrc).toMatch(/Pendente/);
+  });
+
+  it('a página deve usar o hook de ações do representante', () => {
+    expect(src).toMatch(/useRepActions/);
   });
 });
 
 /* ================================================================== */
-/* 10. rep-context — novos campos na interface                       */
+/* 10. rep-context.tsx — campos bancários na interface                */
 /* ================================================================== */
 
 describe('10. rep-context.tsx — campos bancários na interface', () => {

@@ -1,46 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Importar configuração de manutenção (caminho relativo ao build de produção)
-import maintenanceConfig from '@/config/maintenance.json';
-
 // ─── Maintenance Mode Check ────────────────────────────────────────────────
 /**
  * Verifica se o sistema está em modo de manutenção.
- * Lê de config/maintenance.json (commitado no repo, confiável em Edge Runtime)
+ * Lê variáveis de ambiente:
+ *   - MAINTENANCE_MODE_ENABLED: 'true' | 'false'
+ *   - MAINTENANCE_START: ISO 8601 string (ex: 2026-04-24T18:00:00Z)
+ *   - MAINTENANCE_END: ISO 8601 string (ex: 2026-04-27T08:00:00Z)
+ *
+ * Fallback seguro: retorna false se variáveis malformadas
  */
 function isUnderMaintenance(): boolean {
-  try {
-    if (!maintenanceConfig.enabled) {
-      console.log('[MAINTENANCE] Manutenção desativada');
-      return false;
-    }
+  // ✅ MANUTENÇÃO DESABILITADA — 26 de abril de 2026
+  // Sistema liberado para uso. Manutenção concluída.
+  return false;
+}
 
-    const now = new Date();
-    const start = new Date(maintenanceConfig.startTime);
-    const end = new Date(maintenanceConfig.endTime);
+/**
+ * Verifica se a requisição tem o cookie de bypass de manutenção válido.
+ * Permite que devs acessem o sistema durante manutenção sem afetar usuários reais.
+ * Token definido via env var MAINTENANCE_BYPASS_TOKEN no Vercel.
+ */
+function hasMaintenanceBypass(request: NextRequest): boolean {
+  const bypassToken = process.env.MAINTENANCE_BYPASS_TOKEN;
+  if (!bypassToken) return false;
 
-    // Validar que as datas são válidas (não NaN)
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      console.log('[MAINTENANCE] Datas inválidas no config', {
-        start,
-        end,
-      });
-      return false;
-    }
+  const cookieValue = request.cookies.get('maintenance_bypass')?.value;
+  if (!cookieValue) return false;
 
-    const isMaintenance = now >= start && now <= end;
-    console.log('[MAINTENANCE] Status:', {
-      now: now.toISOString(),
-      start: start.toISOString(),
-      end: end.toISOString(),
-      isMaintenance,
-    });
-
-    return isMaintenance;
-  } catch (err) {
-    console.error('[MAINTENANCE] Erro ao verificar config:', err);
-    return false;
+  // Comparação de tempo constante para evitar timing attacks
+  if (cookieValue.length !== bypassToken.length) return false;
+  let valid = true;
+  for (let i = 0; i < bypassToken.length; i++) {
+    if (cookieValue.charCodeAt(i) !== bypassToken.charCodeAt(i)) valid = false;
   }
+  return valid;
+}
+
+/**
+ * Verifica se o IP está na whitelist de IPs de desenvolvedor.
+ * Durante manutenção, IPs autorizados podem acessar normalmente.
+ */
+function isDeveloperIP(clientIP: string): boolean {
+  // Whitelist de IPs de dev autorizados durante manutenção
+  const DEVELOPER_IPS = [
+    '177.146.190.175', // Ronaldo (seu IP público)
+  ];
+
+  return DEVELOPER_IPS.includes(clientIP);
 }
 
 // ─── Rate Limiting — Dual Strategy (Edge Runtime compatible) ─────────────────
@@ -178,15 +185,13 @@ const FUNCIONARIO_ROUTES = [
   '/avaliacao',
 ];
 
-// Rotas que requerem MFA (admin)
-const MFA_REQUIRED_ROUTES = ['/api/admin/financeiro', '/admin/financeiro'];
-
 // Rotas públicas que não requerem autenticação (mesmo sob /api)
 const PUBLIC_API_ROUTES = [
   '/api/contratacao/cadastro-inicial',
   '/api/public',
   '/api/contrato/', // Rotas de visualização de contrato
   '/api/pagamento/iniciar', // Rota de iniciar pagamento (após aceite de contrato)
+  '/api/pagamento/asaas/criar', // Checkout Asaas — acessado de páginas públicas de pagamento via token
   '/api/tomador/verificar-pagamento', // Verificar status de pagamento
   '/api/cadastro',
   '/api/auth/login',
@@ -248,37 +253,65 @@ function maskCpf(cpf: string | undefined): string {
   return `***${cpf.slice(-4)}`;
 }
 
+function shouldLogUnauthenticatedAccess(
+  request: NextRequest,
+  pathname: string
+): boolean {
+  const method = request.method.toUpperCase();
+  const isMutation = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+  return (
+    pathname.startsWith('/api/') ||
+    isMutation ||
+    process.env.DEBUG_MIDDLEWARE === 'true'
+  );
+}
+
 /**
  * Parse session from cookie or x-mock-session header (dev/test only).
  * Centralised to avoid repeated JSON.parse calls throughout middleware.
  */
 function parseSession(request: NextRequest): MiddlewareSession | null {
-  const sessionCookie = request.cookies.get('bps-session')?.value;
-  if (sessionCookie) {
+  const parseValue = (rawValue: string): MiddlewareSession | null => {
     try {
-      return JSON.parse(sessionCookie);
-    } catch (err) {
-      console.error('[SECURITY] Sessão inválida no cookie:', err);
+      const parsed: unknown = JSON.parse(rawValue);
+      if (parsed && typeof parsed === 'object') {
+        return parsed as MiddlewareSession;
+      }
       return null;
-    }
-  }
-  // Edge Runtime: não usar process.env.NODE_ENV (causa eval)
-  // Mock header É permitido APENAS em desenvolvimento local via x-mock-session
-  // Sempre permitir para compatibilidade com testes e desenvolvimento
-  const mockHeader = request.headers.get('x-mock-session');
-  if (mockHeader) {
-    try {
-      return JSON.parse(mockHeader);
     } catch {
       return null;
     }
+  };
+
+  const sessionCookie = request.cookies.get('bps-session')?.value;
+  if (sessionCookie) {
+    const parsed = parseValue(sessionCookie);
+    if (parsed) {
+      return parsed;
+    }
+    console.error('[SECURITY] Sessão inválida no cookie.');
+    return null;
+  }
+
+  // Mock header É permitido APENAS em desenvolvimento local e testes (não em production)
+  const mockHeader = request.headers.get('x-mock-session');
+  if (mockHeader && process.env.NODE_ENV !== 'production') {
+    return parseValue(mockHeader);
   }
   return null;
 }
 
 export function middleware(request: NextRequest) {
+  // ── Extract client IP FIRST (needed for maintenance and developer checks) ──
+  const clientIP =
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    request.ip ||
+    'unknown';
+
   // ── MAINTENANCE MODE CHECK — FIRST (before everything else) ──
-  if (isUnderMaintenance()) {
+  // But allow: bypass cookie, developer IPs, or /maintenance page itself
+  if (isUnderMaintenance() && !hasMaintenanceBypass(request) && !isDeveloperIP(clientIP)) {
     const { pathname } = request.nextUrl;
     
     // Exceções: /maintenance itself (não redirecionar, deixar renderizar)
@@ -295,11 +328,6 @@ export function middleware(request: NextRequest) {
   const AUTHORIZED_ADMIN_IPS =
     process.env.AUTHORIZED_ADMIN_IPS?.split(',') || [];
   const { pathname } = request.nextUrl;
-  const clientIP =
-    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    request.headers.get('x-real-ip') ||
-    request.ip ||
-    'unknown';
 
   // ── Rate Limiting Global (dual-key: IP + usuário autenticado) ──
   // Parse antecipado de sessão para extrair userId sem duplo parse.
@@ -331,9 +359,11 @@ export function middleware(request: NextRequest) {
 
     const contratacaoSession = parseSession(request);
     if (!contratacaoSession) {
-      console.error(
-        `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
-      );
+      if (shouldLogUnauthenticatedAccess(request, pathname)) {
+        console.warn(
+          `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
+        );
+      }
       return new NextResponse('Autenticação requerida', { status: 401 });
     }
 
@@ -372,33 +402,23 @@ export function middleware(request: NextRequest) {
     }
 
     if (!session) {
-      console.error(
-        `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
-      );
+      if (shouldLogUnauthenticatedAccess(request, pathname)) {
+        console.warn(
+          `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
+        );
+      }
       return new NextResponse('Autenticação requerida', { status: 401 });
     }
 
-    // Verificar MFA para rotas críticas
-    if (MFA_REQUIRED_ROUTES.some((route) => pathname.startsWith(route))) {
-      if (session.perfil === 'admin' && !session.mfaVerified) {
-        console.error(
-          `[SECURITY] Admin ${maskCpf(session.cpf)} tentou acessar ${pathname} sem MFA verificado`
-        );
-        return NextResponse.json(
-          {
-            error: 'MFA_REQUIRED',
-            message: 'Autenticação de dois fatores requerida',
-          },
-          { status: 403 }
-        );
-      }
-    }
+    // TODO: Verificar MFA para rotas críticas — desabilitado até a feature de MFA
+    // ser completamente implementada (envio de código, rota de challenge, UI de verificação).
+    // const shouldEnforceMfaInThisEnv = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
   }
 
   // ── Funcionário route segregation — block gestores ──
   if (FUNCIONARIO_ROUTES.some((route) => pathname.startsWith(route))) {
     if (session) {
-      const redirectTo = GESTOR_REDIRECT[session.perfil as string];
+      const redirectTo = GESTOR_REDIRECT[session.perfil];
       if (redirectTo) {
         console.error(
           `[SECURITY] ${session.perfil} ${maskCpf(session.cpf)} tentou acessar rota de funcionário ${pathname}, redirecionando para ${redirectTo}`

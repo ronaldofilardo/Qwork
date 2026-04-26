@@ -204,7 +204,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         continue;
       }
 
-      // 3e. Criar lote + laudo rascunho + avaliações em transação isolada
+      // 3e. Verificar se a clínica é isenta de pagamento
+      const isentoResult = await query<{ isento_pagamento: boolean }>(
+        `SELECT isento_pagamento FROM clinicas WHERE id = $1`,
+        [empresa.clinica_id]
+      );
+      const isento = isentoResult.rows[0]?.isento_pagamento === true;
+
+      // 3f. Criar lote + laudo rascunho + avaliações em transação isolada
       const resultado = await withTransactionAsGestor(async (client) => {
         const descricao =
           motivo ??
@@ -219,6 +226,22 @@ export async function POST(request: Request): Promise<NextResponse> {
         );
 
         const lote = loteResult.rows[0];
+
+        // Se isento, marcar lote como pago imediatamente.
+        // A constraint pagamento_completo_check exige método, parcelas e pago_em
+        // sempre que status_pagamento = 'pago'.
+        if (isento) {
+          await client.query(
+            `UPDATE lotes_avaliacao
+                SET status_pagamento = 'pago',
+                    pagamento_metodo = 'isento',
+                    pagamento_parcelas = 1,
+                    pago_em = NOW(),
+                    atualizado_em = NOW()
+              WHERE id = $1`,
+            [lote.id]
+          );
+        }
 
         // Reservar laudo (rascunho) com mesmo ID do lote
         try {

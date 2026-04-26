@@ -203,7 +203,7 @@ exports[`Regressão Visual - Responsividade Admin Dashboard - Responsividade dev
 
 exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade deve renderizar corretamente em Desktop (1920px): avaliacao-desktop 1`] = `
 <div
-  class="min-h-screen bg-gray-5 flex items-center justify-center"
+  class="min-h-screen bg-gray-50 flex items-center justify-center"
 >
   <div
     class="text-center"
@@ -212,7 +212,7 @@ exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade de
       class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mx-auto"
     />
     <p
-      class="mt-4 text-lg text-gray-6"
+      class="mt-4 text-lg text-gray-600"
     >
       Carregando sua avaliação...
     </p>
@@ -222,7 +222,7 @@ exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade de
 
 exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade deve renderizar corretamente em Mobile (375px): avaliacao-mobile 1`] = `
 <div
-  class="min-h-screen bg-gray-5 flex items-center justify-center"
+  class="min-h-screen bg-gray-50 flex items-center justify-center"
 >
   <div
     class="text-center"
@@ -231,7 +231,7 @@ exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade de
       class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mx-auto"
     />
     <p
-      class="mt-4 text-lg text-gray-6"
+      class="mt-4 text-lg text-gray-600"
     >
       Carregando sua avaliação...
     </p>
@@ -241,7 +241,7 @@ exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade de
 
 exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade deve renderizar corretamente em Tablet (768px): avaliacao-tablet 1`] = `
 <div
-  class="min-h-screen bg-gray-5 flex items-center justify-center"
+  class="min-h-screen bg-gray-50 flex items-center justify-center"
 >
   <div
     class="text-center"
@@ -250,7 +250,7 @@ exports[`Regressão Visual - Responsividade Avaliação Page - Responsividade de
       class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mx-auto"
     />
     <p
-      class="mt-4 text-lg text-gray-6"
+      class="mt-4 text-lg text-gray-600"
     >
       Carregando sua avaliação...
     </p>
@@ -266,19 +266,20 @@ exports[`Regressão Visual - Responsividade Header - Responsividade deve renderi
 
 exports[`Regressão Visual - Responsividade Login Page - Responsividade deve renderizar corretamente em Desktop (1920px): login-desktop 1`] = `
 <div
-  class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-2 sm:p-4"
+  class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6"
+  style="padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom));"
 >
   <div
-    class="bg-white rounded-lg shadow-xl p-4 sm:p-8 w-full max-w-md"
+    class="bg-white rounded-lg shadow-xl p-5 sm:p-8 w-full max-w-md"
   >
     <div
-      class="text-center mb-6 sm:mb-8"
+      class="text-center mb-5 sm:mb-8"
     >
       <div
-        class="flex flex-col items-center justify-center mb-4"
+        class="flex flex-col items-center justify-center mb-3 sm:mb-4"
       >
         <div
-          class="w-32 h-32 flex items-center justify-center"
+          class="w-48 h-48 flex items-center justify-center"
         >
           <img
             alt="QWork"
@@ -293,21 +294,21 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         </div>
       </div>
       <p
-        class="text-sm sm:text-base text-gray-600 mt-2"
+        class="text-xs sm:text-sm text-gray-600 mt-2"
       >
         Avaliação Psicossocial baseada no COPSOQ III
       </p>
     </div>
     <div
-      class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+      class="mb-5 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg"
     >
       <h3
-        class="text-sm font-semibold text-blue-900 mb-2"
+        class="text-xs sm:text-sm font-semibold text-blue-900 mb-2"
       >
         Como Fazer Login?
       </h3>
       <ul
-        class="space-y-2 text-sm text-blue-800"
+        class="space-y-1.5 text-xs sm:text-sm text-blue-800"
       >
         <li
           class="flex items-start gap-2"
@@ -336,13 +337,13 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
             <strong>
               Com Data de Nascimento
             </strong>
-             - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+             - Funcionários sem senha: insira seu CPF e digite a Data de Nascimento no campo Senha
           </span>
         </li>
       </ul>
     </div>
     <form
-      class="space-y-4 sm:space-y-6"
+      class="space-y-3 sm:space-y-5"
     >
       <div>
         <label
@@ -352,8 +353,9 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
           CPF
         </label>
         <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="cpf"
+          inputmode="numeric"
           maxlength="11"
           name="cpf"
           placeholder="00000000000"
@@ -376,40 +378,24 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
           </span>
         </label>
         <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="senha"
           name="senha"
           placeholder="••••••••"
           type="password"
           value=""
         />
-      </div>
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700"
-          for="dataNascimento"
+        <p
+          class="mt-1.5 text-xs text-gray-500"
         >
-          Data de nascimento
+          Funcionários sem senha: use sua data de nascimento no formato
            
           <span
-            class="text-gray-500 font-normal"
+            class="font-mono font-semibold"
           >
-            (opcional se tiver senha)
+            ddmmaaaa
           </span>
-        </label>
-        <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
-          id="dataNascimento"
-          maxlength="8"
-          name="dataNascimento"
-          placeholder="ddmmaaaa"
-          type="text"
-          value=""
-        />
-        <p
-          class="mt-2 text-xs text-gray-500"
-        >
-          Use este formato: dia/mês/ano (ex: 15031990)
+           (ex: 15031990)
         </p>
       </div>
       <button
@@ -490,19 +476,20 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
 
 exports[`Regressão Visual - Responsividade Login Page - Responsividade deve renderizar corretamente em Mobile (375px): login-mobile 1`] = `
 <div
-  class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-2 sm:p-4"
+  class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6"
+  style="padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom));"
 >
   <div
-    class="bg-white rounded-lg shadow-xl p-4 sm:p-8 w-full max-w-md"
+    class="bg-white rounded-lg shadow-xl p-5 sm:p-8 w-full max-w-md"
   >
     <div
-      class="text-center mb-6 sm:mb-8"
+      class="text-center mb-5 sm:mb-8"
     >
       <div
-        class="flex flex-col items-center justify-center mb-4"
+        class="flex flex-col items-center justify-center mb-3 sm:mb-4"
       >
         <div
-          class="w-32 h-32 flex items-center justify-center"
+          class="w-48 h-48 flex items-center justify-center"
         >
           <img
             alt="QWork"
@@ -517,21 +504,21 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         </div>
       </div>
       <p
-        class="text-sm sm:text-base text-gray-600 mt-2"
+        class="text-xs sm:text-sm text-gray-600 mt-2"
       >
         Avaliação Psicossocial baseada no COPSOQ III
       </p>
     </div>
     <div
-      class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+      class="mb-5 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg"
     >
       <h3
-        class="text-sm font-semibold text-blue-900 mb-2"
+        class="text-xs sm:text-sm font-semibold text-blue-900 mb-2"
       >
         Como Fazer Login?
       </h3>
       <ul
-        class="space-y-2 text-sm text-blue-800"
+        class="space-y-1.5 text-xs sm:text-sm text-blue-800"
       >
         <li
           class="flex items-start gap-2"
@@ -560,13 +547,13 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
             <strong>
               Com Data de Nascimento
             </strong>
-             - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+             - Funcionários sem senha: insira seu CPF e digite a Data de Nascimento no campo Senha
           </span>
         </li>
       </ul>
     </div>
     <form
-      class="space-y-4 sm:space-y-6"
+      class="space-y-3 sm:space-y-5"
     >
       <div>
         <label
@@ -576,8 +563,9 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
           CPF
         </label>
         <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="cpf"
+          inputmode="numeric"
           maxlength="11"
           name="cpf"
           placeholder="00000000000"
@@ -600,40 +588,24 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
           </span>
         </label>
         <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="senha"
           name="senha"
           placeholder="••••••••"
           type="password"
           value=""
         />
-      </div>
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700"
-          for="dataNascimento"
+        <p
+          class="mt-1.5 text-xs text-gray-500"
         >
-          Data de nascimento
+          Funcionários sem senha: use sua data de nascimento no formato
            
           <span
-            class="text-gray-500 font-normal"
+            class="font-mono font-semibold"
           >
-            (opcional se tiver senha)
+            ddmmaaaa
           </span>
-        </label>
-        <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
-          id="dataNascimento"
-          maxlength="8"
-          name="dataNascimento"
-          placeholder="ddmmaaaa"
-          type="text"
-          value=""
-        />
-        <p
-          class="mt-2 text-xs text-gray-500"
-        >
-          Use este formato: dia/mês/ano (ex: 15031990)
+           (ex: 15031990)
         </p>
       </div>
       <button
@@ -714,19 +686,20 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
 
 exports[`Regressão Visual - Responsividade Login Page - Responsividade deve renderizar corretamente em Tablet (768px): login-tablet 1`] = `
 <div
-  class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-2 sm:p-4"
+  class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6"
+  style="padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom));"
 >
   <div
-    class="bg-white rounded-lg shadow-xl p-4 sm:p-8 w-full max-w-md"
+    class="bg-white rounded-lg shadow-xl p-5 sm:p-8 w-full max-w-md"
   >
     <div
-      class="text-center mb-6 sm:mb-8"
+      class="text-center mb-5 sm:mb-8"
     >
       <div
-        class="flex flex-col items-center justify-center mb-4"
+        class="flex flex-col items-center justify-center mb-3 sm:mb-4"
       >
         <div
-          class="w-32 h-32 flex items-center justify-center"
+          class="w-48 h-48 flex items-center justify-center"
         >
           <img
             alt="QWork"
@@ -741,21 +714,21 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         </div>
       </div>
       <p
-        class="text-sm sm:text-base text-gray-600 mt-2"
+        class="text-xs sm:text-sm text-gray-600 mt-2"
       >
         Avaliação Psicossocial baseada no COPSOQ III
       </p>
     </div>
     <div
-      class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+      class="mb-5 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg"
     >
       <h3
-        class="text-sm font-semibold text-blue-900 mb-2"
+        class="text-xs sm:text-sm font-semibold text-blue-900 mb-2"
       >
         Como Fazer Login?
       </h3>
       <ul
-        class="space-y-2 text-sm text-blue-800"
+        class="space-y-1.5 text-xs sm:text-sm text-blue-800"
       >
         <li
           class="flex items-start gap-2"
@@ -784,13 +757,13 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
             <strong>
               Com Data de Nascimento
             </strong>
-             - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+             - Funcionários sem senha: insira seu CPF e digite a Data de Nascimento no campo Senha
           </span>
         </li>
       </ul>
     </div>
     <form
-      class="space-y-4 sm:space-y-6"
+      class="space-y-3 sm:space-y-5"
     >
       <div>
         <label
@@ -800,8 +773,9 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
           CPF
         </label>
         <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="cpf"
+          inputmode="numeric"
           maxlength="11"
           name="cpf"
           placeholder="00000000000"
@@ -824,40 +798,24 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
           </span>
         </label>
         <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          class="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="senha"
           name="senha"
           placeholder="••••••••"
           type="password"
           value=""
         />
-      </div>
-      <div>
-        <label
-          class="block text-sm font-medium text-gray-700"
-          for="dataNascimento"
+        <p
+          class="mt-1.5 text-xs text-gray-500"
         >
-          Data de nascimento
+          Funcionários sem senha: use sua data de nascimento no formato
            
           <span
-            class="text-gray-500 font-normal"
+            class="font-mono font-semibold"
           >
-            (opcional se tiver senha)
+            ddmmaaaa
           </span>
-        </label>
-        <input
-          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
-          id="dataNascimento"
-          maxlength="8"
-          name="dataNascimento"
-          placeholder="ddmmaaaa"
-          type="text"
-          value=""
-        />
-        <p
-          class="mt-2 text-xs text-gray-500"
-        >
-          Use este formato: dia/mês/ano (ex: 15031990)
+           (ex: 15031990)
         </p>
       </div>
       <button

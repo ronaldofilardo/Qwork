@@ -34,12 +34,12 @@ describe('AdminSidebar', () => {
     expect(screen.queryByText('Cobrança')).toBeNull();
   });
 
-  it('deve renderizar os menus principais: Tomadores, Volume, Financeiro, Geral', () => {
+  it('deve renderizar os menus principais: Tomadores, Volume, Financeiro e Perfis', () => {
     render(<AdminSidebar {...defaultProps} />);
     expect(screen.getByText('Tomadores')).toBeInTheDocument();
     expect(screen.getByText('Volume')).toBeInTheDocument();
     expect(screen.getByText('Financeiro')).toBeInTheDocument();
-    expect(screen.getByText('Geral')).toBeInTheDocument();
+    expect(screen.getByText('Perfis')).toBeInTheDocument();
   });
 
   it('deve exibir submenus Entidade e RH ao expandir Volume', () => {
@@ -50,13 +50,14 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('RH')).toBeInTheDocument();
   });
 
-  it('deve exibir Contagem, Pagamentos e Comissões dentro de Financeiro (sem Cobrança)', () => {
-    // Renderiza com seção neutra para que o clique EXPANDA (não colapse) o Financeiro
+  it('deve exibir Contagem, Contratos e Sociedade dentro de Financeiro, sem Pagamentos, Comissões ou Cobrança', () => {
     render(<AdminSidebar {...defaultProps} activeSection="tomadores" />);
     fireEvent.click(screen.getByText('Financeiro'));
     expect(screen.getByText('Contagem')).toBeInTheDocument();
-    expect(screen.getByText('Pagamentos')).toBeInTheDocument();
-    expect(screen.getByText('Comissões')).toBeInTheDocument();
+    expect(screen.getByText('Contratos')).toBeInTheDocument();
+    expect(screen.getByText('Sociedade')).toBeInTheDocument();
+    expect(screen.queryByText('Pagamentos')).toBeNull();
+    expect(screen.queryByText('Comissões')).toBeNull();
     expect(screen.queryByText('Cobrança')).toBeNull();
   });
 
@@ -100,31 +101,17 @@ describe('AdminSidebar', () => {
     expect(onSectionChange).toHaveBeenCalledWith('financeiro', 'contagem');
   });
 
-  it('deve chamar onSectionChange com "financeiro" e "comissoes" ao clicar no submenu Comissões', () => {
+  it('deve chamar onSectionChange com "financeiro" e "sociedade" ao clicar no submenu Sociedade', () => {
     const onSectionChange = jest.fn();
     render(
       <AdminSidebar
         activeSection="financeiro"
         activeSubSection="contagem"
         onSectionChange={onSectionChange}
-        counts={{ comissoes: 3 }}
+        counts={{}}
       />
     );
-    fireEvent.click(screen.getByText('Comissões'));
-    expect(onSectionChange).toHaveBeenCalledWith('financeiro', 'comissoes');
-  });
-
-  it('deve exibir badge de contagem para Comissões quando counts.comissoes > 0', () => {
-    render(
-      <AdminSidebar
-        activeSection="financeiro"
-        activeSubSection="comissoes"
-        onSectionChange={jest.fn()}
-        counts={{ comissoes: 5 }}
-      />
-    );
-    // O badge com valor 5 deve estar visível dentro do submenu Comissões
-    const badges = screen.getAllByText('5');
-    expect(badges.length).toBeGreaterThanOrEqual(1);
+    fireEvent.click(screen.getByText('Sociedade'));
+    expect(onSectionChange).toHaveBeenCalledWith('financeiro', 'sociedade');
   });
 });

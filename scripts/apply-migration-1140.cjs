@@ -18,7 +18,7 @@ if (!baseUrl) {
 
 const sqlFile = path.join(
   __dirname,
-  '../database/migrations/1140_recalcular_lotes_stuck_70_porcento.sql'
+  '../database/migrations/1140b_recalcular_lotes_stuck_70_porcento.sql'
 );
 const sql = fs.readFileSync(sqlFile, 'utf8');
 

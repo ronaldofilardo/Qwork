@@ -340,12 +340,14 @@ describe('Fase 9 — Vendedor leads page (Novo Lead)', () => {
     expect(src).toMatch(/Novo\s+Lead/);
   });
 
-  it('estado semRepresentante controla visibilidade do botão', () => {
-    expect(src).toMatch(/semRepresentante/);
+  it('estado comissionamentoDefinido controla visibilidade do botão', () => {
+    expect(src).toMatch(/comissionamentoDefinido/);
   });
 
-  it('mensagem especial quando semRepresentante=true', () => {
-    expect(src).toMatch(/vinculado.*representante|representante.*vinculado/i);
+  it('mensagem especial quando comissionamento não definido', () => {
+    expect(src).toMatch(
+      /comissionamento.*representante|representante.*comissionamento/i
+    );
   });
 
   it('modal chama POST /api/vendedor/leads (via componente NovoLeadModal)', () => {
@@ -357,25 +359,21 @@ describe('Fase 9 — Vendedor leads page (Novo Lead)', () => {
     expect(src).toMatch(/contato_nome/);
   });
 
-  it('tem campos de CNPJ, valor e comissão', () => {
+  it('tem campos de CNPJ', () => {
     expect(src).toMatch(/cnpj/);
-    expect(src).toMatch(/valor_negociado/);
-    expect(src).toMatch(/percentual_comissao/);
   });
 
   it('tem paginação', () => {
-    expect(src).toMatch(/totalPages/);
     expect(src).toMatch(/Anterior/);
     expect(src).toMatch(/Pr.*xima/);
   });
 
-  it('leads agrupados por representante', () => {
-    expect(src).toMatch(/byRep/);
+  it('leads exibidos em lista/tabela', () => {
+    expect(src).toMatch(/leads\.map/);
   });
 
-  it('exibe status com cores diferenciadas (STATUS_COLORS)', () => {
-    expect(src).toMatch(/STATUS_COLORS/);
-    expect(src).toMatch(/STATUS_LABEL/);
+  it('exibe status com cores diferenciadas (STATUS_BADGE)', () => {
+    expect(src).toMatch(/STATUS_BADGE/);
   });
 });
 
@@ -410,9 +408,8 @@ describe('API — /api/comercial/representantes/[id]/vendedores', () => {
     expect(src).toMatch(/JOIN\s+usuarios/i);
   });
 
-  it('retorna codigo_vendedor via vendedores_perfil', () => {
+  it('faz JOIN com vendedores_perfil', () => {
     expect(src).toMatch(/vendedores_perfil/);
-    expect(src).toMatch(/codigo/);
   });
 
   it('tem paginação com page e limit', () => {

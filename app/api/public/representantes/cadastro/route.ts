@@ -12,6 +12,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { checkRepresentanteDuplicates } from '@/lib/validators/representante';
 
 // ---------------------------------------------------------------------------
 // CORS — permite requisições da landing page (qwork.app.br) e do próprio app
@@ -241,104 +242,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // 6. Verificar duplicatas no banco (apenas leads não rejeitados)
-    const emailExists = await query(
-      `SELECT id FROM representantes_cadastro_leads WHERE email = $1 AND status NOT IN ('rejeitado')`,
-      [email]
-    );
-    if (emailExists.rows.length > 0) {
+    // 6. Verificar duplicatas no banco (centralizado)
+    const dupCheck = await checkRepresentanteDuplicates({
+      email,
+      tipoPessoa: tipoPessoa as 'pf' | 'pj',
+      cpf,
+      cnpj,
+    });
+    if (dupCheck.isDuplicate) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Este e-mail já possui um cadastro em análise',
-          field: 'email',
+          error: dupCheck.message,
+          field: dupCheck.field,
           code: 'DUPLICATE',
         },
         { status: 409 }
       );
-    }
-
-    // Verificar duplicata também na tabela de representantes oficiais
-    const emailExistsRep = await query(
-      `SELECT id FROM representantes WHERE email = $1`,
-      [email]
-    );
-    if (emailExistsRep.rows.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Este e-mail já está cadastrado como representante',
-          field: 'email',
-          code: 'DUPLICATE',
-        },
-        { status: 409 }
-      );
-    }
-
-    if (tipoPessoa === 'pf' && cpf) {
-      const cpfExists = await query(
-        `SELECT id FROM representantes_cadastro_leads WHERE cpf = $1 AND status NOT IN ('rejeitado')`,
-        [cpf]
-      );
-      if (cpfExists.rows.length > 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Este CPF já possui um cadastro em análise',
-            field: 'cpf',
-            code: 'DUPLICATE',
-          },
-          { status: 409 }
-        );
-      }
-      const cpfExistsRep = await query(
-        `SELECT id FROM representantes WHERE cpf = $1`,
-        [cpf]
-      );
-      if (cpfExistsRep.rows.length > 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Este CPF já está cadastrado como representante',
-            field: 'cpf',
-            code: 'DUPLICATE',
-          },
-          { status: 409 }
-        );
-      }
-    }
-
-    if (tipoPessoa === 'pj' && cnpj) {
-      const cnpjExists = await query(
-        `SELECT id FROM representantes_cadastro_leads WHERE cnpj = $1 AND status NOT IN ('rejeitado')`,
-        [cnpj]
-      );
-      if (cnpjExists.rows.length > 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Este CNPJ já possui um cadastro em análise',
-            field: 'cnpj',
-            code: 'DUPLICATE',
-          },
-          { status: 409 }
-        );
-      }
-      const cnpjExistsRep = await query(
-        `SELECT id FROM representantes WHERE cnpj = $1`,
-        [cnpj]
-      );
-      if (cnpjExistsRep.rows.length > 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Este CNPJ já está cadastrado como representante',
-            field: 'cnpj',
-            code: 'DUPLICATE',
-          },
-          { status: 409 }
-        );
-      }
     }
 
     // 7. Validar e processar arquivos

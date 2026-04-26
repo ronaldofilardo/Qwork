@@ -83,4 +83,13 @@ describe('useOrgInfo', () => {
       tipo: 'entidade',
     });
   });
+
+  it('não deve buscar org-info quando o hook está desabilitado', async () => {
+    const { result } = renderHook(() => useOrgInfo(false));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.orgInfo).toBeNull();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
 });

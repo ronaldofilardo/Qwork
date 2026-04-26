@@ -7,6 +7,9 @@ import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { VolumeContent } from '@/components/admin/VolumeContent';
 import { ContagemContent } from '@/components/admin/ContagemContent';
 import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
+import { ContratosTable } from '@/components/shared/ContratosTable';
+import { TomadoresContent } from '@/components/admin/TomadoresContent';
+import SociedadeContent from '@/components/admin/SociedadeContent';
 
 interface Session {
   cpf: string;
@@ -14,13 +17,18 @@ interface Session {
   perfil: string;
 }
 
-type MainSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
+type MainSection =
+  | 'tomadores'
+  | 'volume'
+  | 'financeiro'
+  | 'geral'
+  | 'auditorias';
 type _VolumeSubSection = 'entidade' | 'rh';
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<MainSection>('volume');
+  const [activeSection, setActiveSection] = useState<MainSection>('tomadores');
   const [activeSubSection, setActiveSubSection] = useState<string>('entidade');
 
   const router = useRouter();
@@ -58,18 +66,31 @@ export default function AdminPage() {
   };
 
   const renderContent = () => {
+    if (activeSection === 'tomadores') {
+      return <TomadoresContent activeSubSection={activeSubSection} />;
+    }
+
     if (activeSection === 'volume') {
       return <VolumeContent activeSubSection={activeSubSection} />;
     }
 
     if (activeSection === 'financeiro') {
+      if (activeSubSection === 'contratos')
+        return (
+          <ContratosTable
+            endpoint="/api/admin/contratos"
+            showQWork
+            allowIsentarParceiro
+          />
+        );
+      if (activeSubSection === 'sociedade') {
+        return <SociedadeContent />;
+      }
       return <ContagemContent />;
     }
 
     if (activeSection === 'geral') {
-      if (activeSubSection === 'emissores') {
-        return <EmissoresContent />;
-      }
+      return <EmissoresContent />;
     }
 
     if (activeSection === 'auditorias') {
@@ -113,7 +134,7 @@ export default function AdminPage() {
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        <div className="p-6">
+        <div className="qw-content-area p-4 md:p-6">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">

@@ -49,7 +49,7 @@ describe('receipt-generator', () => {
 
       // Mock - verificar contrato (existe e aceito)
       mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 1, aceito: true, hash_contrato: 'abc123' }],
+        rows: [{ id: 1, aceito: true }],
         rowCount: 1,
       } as any);
 
@@ -83,19 +83,7 @@ describe('receipt-generator', () => {
             plataforma_nome: 'PagBank',
             plataforma_id: 'PAG123',
             data_pagamento: new Date('2025-01-15'),
-
-            plano_nome: 'Plano Fixo',
-            plano_tipo: 'fixo',
-            plano_descricao: 'Plano fixo mensal',
           },
-        ],
-        rowCount: 1,
-      } as any);
-
-      // Mock - busca plano do contrato
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          { nome: 'Plano Fixo', tipo: 'fixo', descricao: 'Plano fixo mensal' },
         ],
         rowCount: 1,
       } as any);
@@ -184,13 +172,7 @@ describe('receipt-generator', () => {
         rowCount: 1,
       } as any);
 
-      // 4) plano do contrato
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ nome: 'Plano Padrão', tipo: 'fixo', descricao: 'Desc' }],
-        rowCount: 1,
-      } as any);
-
-      // 5) numero do recibo
+      // 4) numero do recibo
       mockQuery.mockResolvedValueOnce({
         rows: [{ numero: 'REC-20251231-0001' }],
         rowCount: 1,

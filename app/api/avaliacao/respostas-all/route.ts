@@ -1,14 +1,13 @@
 import { requireAuth } from '@/lib/session';
 import { queryWithContext } from '@/lib/db-security';
 import { NextResponse } from 'next/server';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 export const GET = async (request: Request) => {
   try {
     const user = await requireAuth();
-    if (!user) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
+    assertRoles(user, [ROLES.FUNCIONARIO]);
 
     const url = new URL(request.url);
     const avaliacaoIdParam = url.searchParams.get('avaliacaoId');
@@ -71,6 +70,9 @@ export const GET = async (request: Request) => {
       { status: 200 }
     );
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro em respostas-all:', error);
     return NextResponse.json(
       { error: 'Erro interno', respostas: [], total: 0 },

@@ -55,7 +55,7 @@ export async function GET(
     const result = await query(
       `SELECT vdb.banco_codigo, vdb.agencia, vdb.conta, vdb.tipo_conta,
               vdb.titular_conta, vdb.pix_chave, vdb.pix_tipo, vdb.atualizado_em,
-              vp.codigo AS codigo_vendedor
+
        FROM usuarios u
        LEFT JOIN vendedores_dados_bancarios vdb ON vdb.usuario_id = u.id
        LEFT JOIN vendedores_perfil vp ON vp.usuario_id = u.id

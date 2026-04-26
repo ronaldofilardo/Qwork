@@ -45,6 +45,3 @@ database/backups
 # Plans
 
 plans
-
-# Patches (seed/test only — next@14.2.35.patch is required by pnpm install)
-patches/0001-*

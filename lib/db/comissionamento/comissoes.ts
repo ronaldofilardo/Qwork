@@ -11,7 +11,11 @@ import type {
   MotivoCongelamento,
 } from '../../types/comissionamento';
 import { registrarAuditoria } from './auditoria';
-import { calcularPrevisaoPagamento } from './utils';
+import {
+  calcularValoresComissao,
+  determinarStatusInicialComissao,
+  calcularMesesComissao,
+} from './comissoes-calculos';
 
 /** Lista comissões de um representante com resumo */
 export async function getComissoesByRepresentante(
@@ -28,9 +32,6 @@ export async function getComissoesByRepresentante(
 
   const statusValidos: StatusComissao[] = [
     'retida',
-    'pendente_nf',
-    'nf_em_analise',
-    'congelada_rep_suspenso',
     'congelada_aguardando_admin',
     'liberada',
     'paga',
@@ -50,13 +51,12 @@ export async function getComissoesByRepresentante(
 
   const resumo = await query(
     `SELECT
-       COUNT(*) FILTER (WHERE c.status::text IN ('pendente_nf','nf_em_analise','retida'))      AS pendentes,
+       COUNT(*) FILTER (WHERE c.status::text = 'retida')                                        AS pendentes,
        COUNT(*) FILTER (WHERE c.status::text = 'liberada')                                      AS liberadas,
        COUNT(*) FILTER (WHERE c.status::text = 'paga')                                          AS pagas,
-       -- valor_pendente: apenas comissões ativas no pipeline (parcela já paga ou à vista)
+       -- valor_pendente: comissões retidas com parcela já paga
        COALESCE(SUM(c.valor_comissao) FILTER (WHERE
-         c.status::text IN ('pendente_nf','nf_em_analise')
-         OR (c.status::text = 'retida' AND c.parcela_confirmada_em IS NOT NULL)
+         c.status::text = 'retida' AND c.parcela_confirmada_em IS NOT NULL
        ), 0) AS valor_pendente,
        -- valor_futuro: comissões provisionadas aguardando pagamento da parcela
        COALESCE(SUM(c.valor_comissao) FILTER (WHERE
@@ -107,13 +107,11 @@ export async function atualizarStatusComissao(
 
   if (novoStatus === 'liberada') {
     setClauses.push(`data_liberacao = NOW()`);
-    setClauses.push(`nf_rpa_aprovada_em = NOW()`);
   }
   if (novoStatus === 'paga') setClauses.push(`data_pagamento = NOW()`);
 
   if (
-    (novoStatus === 'congelada_aguardando_admin' ||
-      novoStatus === 'congelada_rep_suspenso') &&
+    novoStatus === 'congelada_aguardando_admin' &&
     extras?.motivo_congelamento
   ) {
     setClauses.push(`motivo_congelamento = $${i++}`);
@@ -125,15 +123,9 @@ export async function atualizarStatusComissao(
     params.push(extras.comprovante_pagamento_path);
   }
 
-  // Limpar campos ao descongelar (F-13: forçar reenvio de NF)
-  if (novoStatus === 'pendente_nf') {
+  // Limpar motivo ao descongelar
+  if (novoStatus === 'retida') {
     setClauses.push(`motivo_congelamento = NULL`);
-    setClauses.push(`nf_rpa_enviada_em = NULL`);
-    setClauses.push(`nf_rpa_aprovada_em = NULL`);
-    setClauses.push(`nf_rpa_rejeitada_em = NULL`);
-    setClauses.push(`nf_rpa_motivo_rejeicao = NULL`);
-    setClauses.push(`nf_path = NULL`);
-    setClauses.push(`nf_nome_arquivo = NULL`);
   }
 
   const result = await query(
@@ -176,6 +168,8 @@ export async function criarComissaoAdmin(params: {
    * Date = parcela efetivamente paga (ex: à vista confirmado pelo admin).
    */
   parcela_confirmada_em?: Date | null;
+  /** ID do pagamento Asaas que originou esta comissão (para rastreio de split). */
+  asaas_payment_id?: string | null;
 }): Promise<{ comissao: Record<string, unknown> | null; erro?: string }> {
   const {
     lote_pagamento_id,
@@ -185,12 +179,13 @@ export async function criarComissaoAdmin(params: {
     clinica_id,
     laudo_id,
     valor_laudo,
-    valor_parcela = null,
+    valor_parcela: _valor_parcela = null,
     parcela_numero = 1,
     total_parcelas = 1,
     admin_cpf,
     forcar_retida = false,
     parcela_confirmada_em = undefined,
+    asaas_payment_id = undefined,
   } = params;
 
   const parcelaNum = Math.max(1, Math.min(parcela_numero, total_parcelas));
@@ -234,9 +229,11 @@ export async function criarComissaoAdmin(params: {
     };
   }
 
-  // Verificar representante
+  // Verificar representante — buscar modelo_comissionamento e campos custo_fixo
   const repResult = await query(
-    `SELECT id, status, percentual_comissao FROM representantes WHERE id = $1 LIMIT 1`,
+    `SELECT id, status, percentual_comissao, modelo_comissionamento,
+            valor_custo_fixo_entidade, valor_custo_fixo_clinica, asaas_wallet_id
+     FROM representantes WHERE id = $1 LIMIT 1`,
     [representante_id]
   );
   if (repResult.rows.length === 0) {
@@ -250,64 +247,67 @@ export async function criarComissaoAdmin(params: {
     };
   }
 
-  // Buscar percentual do vínculo (novo modelo) com fallback para representante (legado)
+  // Buscar valor_negociado do vínculo (para custo_fixo), percentual e % comercial
   const vinculoPercResult = await query(
-    `SELECT percentual_comissao_representante FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
+    `SELECT percentual_comissao_representante, valor_negociado, percentual_comissao_comercial
+     FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
     [vinculo_id]
   );
-  const percVinculo =
-    vinculoPercResult.rows[0]?.percentual_comissao_representante;
-  const percentualRep =
-    percVinculo != null
-      ? parseFloat(percVinculo)
-      : rep.percentual_comissao != null
-        ? parseFloat(rep.percentual_comissao)
-        : null;
-  if (percentualRep == null) {
-    return {
-      comissao: null,
-      erro: 'Percentual de comissão não definido para este vínculo/representante.',
-    };
+
+  // Calcular valores de comissão via função pura extraída
+  const calculoResult = calcularValoresComissao({
+    rep,
+    vinculoPerc: vinculoPercResult.rows[0] ?? {
+      percentual_comissao_representante: null,
+      valor_negociado: null,
+      percentual_comissao_comercial: null,
+    },
+    entidadeId: entId,
+    valorLaudo: valor_laudo,
+    totalParcelas: totalParc,
+    valorParcela: _valor_parcela,
+  });
+
+  if ('erro' in calculoResult) {
+    return { comissao: null, erro: calculoResult.erro };
   }
 
-  // Cálculo: base_calculo × percentual / 100
-  // Se valor_parcela informado (ex: netValue Asaas), usar diretamente.
-  // Caso contrário, distribuir: valor_laudo / total_parcelas.
-  const baseCalculo =
-    valor_parcela != null && valor_parcela > 0
-      ? valor_parcela
-      : valor_laudo / totalParc;
-  const valorComissao =
-    Math.round(((baseCalculo * percentualRep) / 100) * 100) / 100;
+  const {
+    valorComissao,
+    percentualRep,
+    percComercialVinculo,
+    valorComissaoComercial,
+  } = calculoResult.resultado;
 
-  // Status inicial:
-  //   forcar_retida=true → sempre retida (provisionamento antecipado de parcelas futuras)
-  //   forcar_retida=false → pendente_nf se rep é apto, retida caso contrário
-  const statusInicial: StatusComissao =
-    forcar_retida || rep.status !== 'apto' ? 'retida' : 'pendente_nf';
+  // Determinar status inicial via função pura extraída
+  const statusInicial = determinarStatusInicialComissao({
+    forcarRetida: forcar_retida,
+    parcelaConfirmadaEm: parcela_confirmada_em ?? null,
+    repApto: rep.status === 'apto',
+  });
 
-  // Mês de emissão e pagamento
-  const agora = new Date();
-  const mesEmissao = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`;
-  const { mes_pagamento: mesPagBase } = calcularPrevisaoPagamento(agora);
-  // Parcelado: cada parcela N tem previsão deslocada em (N-1) meses
-  // parcela 1 → base, parcela 2 → base+1 mês, etc.
-  const mesPagDate = new Date(mesPagBase + 'T00:00:00Z');
-  mesPagDate.setUTCMonth(mesPagDate.getUTCMonth() + (parcelaNum - 1));
-  const mes_pagamento = `${mesPagDate.getUTCFullYear()}-${String(mesPagDate.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  // Mês de emissão e pagamento via função pura extraída
+  const { mesEmissao, mesPagamento: mes_pagamento } =
+    calcularMesesComissao(parcelaNum);
 
   const result = await query(
     `INSERT INTO comissoes_laudo (
        vinculo_id, representante_id, entidade_id, clinica_id, laudo_id, lote_pagamento_id,
        valor_laudo, percentual_comissao, valor_comissao,
+       percentual_comissao_comercial, valor_comissao_comercial,
        status, mes_emissao, mes_pagamento, data_emissao_laudo,
-       data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em
+       data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em,
+       data_pagamento, asaas_split_executado, asaas_split_confirmado_em,
+       asaas_payment_id
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9,
-       $10::status_comissao, $11::date, $12::date, NOW(),
-       CASE WHEN $10::status_comissao = 'pendente_nf' THEN NOW() ELSE NULL END,
-       $13, $14, $15
+       $10, $11,
+       $12::status_comissao, $13::date, $14::date, NOW(),
+       NULL,
+       $15, $16, $17,
+       $18, $19, $20,
+       $21
      ) RETURNING *`,
     [
       vinculo_id,
@@ -319,6 +319,8 @@ export async function criarComissaoAdmin(params: {
       valor_laudo,
       percentualRep,
       valorComissao,
+      percComercialVinculo,
+      valorComissaoComercial,
       statusInicial,
       mesEmissao,
       mes_pagamento,
@@ -327,6 +329,11 @@ export async function criarComissaoAdmin(params: {
       parcela_confirmada_em != null
         ? parcela_confirmada_em.toISOString()
         : null,
+      // L10: quando paga, gravar data_pagamento e flags de split executado
+      statusInicial === 'paga' ? new Date().toISOString() : null,
+      statusInicial === 'paga',
+      statusInicial === 'paga' ? new Date().toISOString() : null,
+      asaas_payment_id ?? null,
     ]
   );
 
@@ -342,12 +349,16 @@ export async function criarComissaoAdmin(params: {
       triggador: 'admin_action',
       motivo:
         admin_cpf === 'WEBHOOK'
-          ? `Comissão automática parcela ${parcelaNum}/${totalParc} via webhook — lote ${lote_pagamento_id}`
+          ? `Comissão automática parcela ${parcelaNum}/${totalParc} via webhook — lote ${lote_pagamento_id} — base bruta R$${(valor_laudo / totalParc).toFixed(2)}`
           : `Comissão parcela ${parcelaNum}/${totalParc} gerada pelo admin — lote ${lote_pagamento_id}`,
       dados_extras: {
         valor_laudo,
+        base_calculo_bruto: valor_laudo / totalParc,
         percentual_comissao: percentualRep,
         valor_comissao: valorComissao,
+        percentual_comissao_comercial: percComercialVinculo,
+        valor_comissao_comercial: valorComissaoComercial,
+        status_inicial: statusInicial,
       },
       criado_por_cpf: admin_cpf ?? null,
     });
@@ -363,12 +374,12 @@ export async function criarComissaoAdmin(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Ativação de parcela paga (retida → pendente_nf)
+// Ativação de parcela paga (retida → paga)
 // ---------------------------------------------------------------------------
 
 /**
  * Ativa a comissão de uma parcela específica ao confirmar o seu pagamento.
- * Transição: retida → pendente_nf (se rep apto) ou retida + parcela_confirmada_em (se rep não apto).
+ * Transição: retida → paga (se rep apto/apto_bloqueado) ou apenas parcela_confirmada_em (se rep não apto).
  *
  * Idempotente: se parcela_confirmada_em já está preenchida, retorna ok:true/ja_ativada.
  * Nunca lança exceção.
@@ -381,7 +392,8 @@ export async function ativarComissaoParcelaPaga(params: {
 
   try {
     const result = await query(
-      `SELECT cl.id, cl.status, cl.parcela_confirmada_em, r.status AS rep_status
+      `SELECT cl.id, cl.status, cl.parcela_confirmada_em,
+              r.status AS rep_status, r.asaas_wallet_id
        FROM comissoes_laudo cl
        JOIN representantes r ON r.id = cl.representante_id
        WHERE cl.lote_pagamento_id = $1 AND cl.parcela_numero = $2
@@ -406,19 +418,36 @@ export async function ativarComissaoParcelaPaga(params: {
       return { ok: true, motivo: 'ja_ativada' };
     }
 
-    const repApto = comissao.rep_status === 'apto';
+    // Retida = rep não tem wallet_id configurada no Asaas
+    // Se tem wallet, comissão é paga (split já executado pelo Asaas)
+    const repTemWallet = !!comissao.asaas_wallet_id;
     const statusAnterior: string = comissao.status;
-    const statusNovo: StatusComissao = repApto ? 'pendente_nf' : 'retida';
+    const statusNovo: StatusComissao = repTemWallet ? 'paga' : 'retida';
 
-    await query(
-      `UPDATE comissoes_laudo
-       SET parcela_confirmada_em = NOW(),
-           atualizado_em = NOW(),
-           status = CASE WHEN $2::boolean THEN 'pendente_nf'::status_comissao ELSE status END,
-           data_aprovacao = CASE WHEN $2::boolean THEN NOW() ELSE data_aprovacao END
-       WHERE id = $1`,
-      [comissao.id, repApto]
-    );
+    if (repTemWallet) {
+      await query(
+        `UPDATE comissoes_laudo
+         SET parcela_confirmada_em = NOW(),
+             status = 'paga'::status_comissao,
+             data_pagamento = NOW(),
+             asaas_split_executado = TRUE,
+             asaas_split_confirmado_em = NOW(),
+             atualizado_em = NOW(),
+             data_aprovacao = NOW()
+         WHERE id = $1`,
+        [comissao.id]
+      );
+    } else {
+      // Rep sem wallet: registra confirmação da parcela, mantém retida
+      await query(
+        `UPDATE comissoes_laudo
+         SET parcela_confirmada_em = NOW(),
+             atualizado_em = NOW(),
+             data_aprovacao = NOW()
+         WHERE id = $1`,
+        [comissao.id]
+      );
+    }
 
     await registrarAuditoria({
       tabela: 'comissoes_laudo',
@@ -426,11 +455,9 @@ export async function ativarComissaoParcelaPaga(params: {
       status_anterior: statusAnterior,
       status_novo: statusNovo,
       triggador: 'sistema',
-      motivo: `Parcela ${parcela_numero} confirmada como paga via webhook${
-        repApto
-          ? ' — transicionada para pendente_nf'
-          : ' — mantida retida (rep não apto ainda)'
-      }`,
+      motivo: repTemWallet
+        ? `Parcela ${parcela_numero} paga via webhook — status paga (split Asaas executado)`
+        : `Parcela ${parcela_numero} confirmada via webhook — rep sem wallet Asaas, mantida retida`,
     });
 
     console.log(
@@ -468,6 +495,8 @@ export async function criarComissaoAutomatica(params: {
   valor_parcela_liquida: number;
   parcela_numero: number;
   total_parcelas: number;
+  /** ID do pagamento Asaas que originou esta comissão (para rastreio de split). */
+  asaas_payment_id?: string | null;
 }): Promise<{
   ok: boolean;
   motivo?: string;
@@ -481,6 +510,7 @@ export async function criarComissaoAutomatica(params: {
     valor_parcela_liquida,
     parcela_numero,
     total_parcelas,
+    asaas_payment_id,
   } = params;
 
   try {
@@ -494,11 +524,12 @@ export async function criarComissaoAutomatica(params: {
       return { ok: false, motivo: 'sem_entidade_clinica' };
     }
 
-    // Buscar vínculo ativo para a entidade ou clínica
+    // Buscar vínculo ativo ou inativo para a entidade ou clínica
+    // Aceita 'inativo' também: alinhado com criarComissaoAdmin (90 dias sem laudo não bloqueia comissão)
     const vinculoResult = await query(
       `SELECT vc.id, vc.representante_id, vc.entidade_id, vc.clinica_id, vc.num_vidas_estimado
        FROM vinculos_comissao vc
-       WHERE vc.status = 'ativo'
+       WHERE vc.status IN ('ativo', 'inativo')
          AND vc.data_expiracao > CURRENT_DATE
          AND (
            ($1::int IS NOT NULL AND vc.entidade_id = $1)
@@ -596,6 +627,7 @@ export async function criarComissaoAutomatica(params: {
             admin_cpf: 'WEBHOOK',
             forcar_retida: true,
             parcela_confirmada_em: null,
+            asaas_payment_id: asaas_payment_id ?? null,
           });
           if (res.erro && !res.erro.includes('já gerada')) {
             console.warn(
@@ -621,6 +653,7 @@ export async function criarComissaoAutomatica(params: {
           total_parcelas: 1,
           admin_cpf: 'WEBHOOK',
           parcela_confirmada_em: new Date(),
+          asaas_payment_id: asaas_payment_id ?? null,
         });
 
         if (result.erro) {

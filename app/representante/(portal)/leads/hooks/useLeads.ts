@@ -8,13 +8,19 @@ import {
   validarTelefone,
   validarEmail,
 } from '@/lib/validators';
-import { type TipoCliente } from '@/lib/leads-config';
+import {
+  type TipoCliente,
+  valorMinimoCustoFixoTotal,
+} from '@/lib/leads-config';
 import type { Lead, NovoLeadForm, ErrosCampos } from '../types';
 
 interface RepMe {
   representante?: {
     percentual_comissao?: number | null;
     percentual_comissao_comercial?: number | null;
+    modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+    valor_custo_fixo_entidade?: number | null;
+    valor_custo_fixo_clinica?: number | null;
   };
 }
 
@@ -78,6 +84,15 @@ export function useLeads() {
   >('recente');
   const [percRep, setPercRep] = useState(0);
   const [percComercial, setPercComercial] = useState(0);
+  const [modeloComissionamento, setModeloComissionamento] = useState<
+    'percentual' | 'custo_fixo' | null
+  >(null);
+  const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<
+    number | null
+  >(null);
+  const [valorCustoFixoClinica, setValorCustoFixoClinica] = useState<
+    number | null
+  >(null);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -109,6 +124,19 @@ export function useLeads() {
         setPercComercial(
           Number(d.representante?.percentual_comissao_comercial ?? 0)
         );
+        setModeloComissionamento(
+          d.representante?.modelo_comissionamento ?? null
+        );
+        setValorCustoFixoEntidade(
+          d.representante?.valor_custo_fixo_entidade != null
+            ? Number(d.representante.valor_custo_fixo_entidade)
+            : null
+        );
+        setValorCustoFixoClinica(
+          d.representante?.valor_custo_fixo_clinica != null
+            ? Number(d.representante.valor_custo_fixo_clinica)
+            : null
+        );
       })
       .catch(() => {
         /* silencioso */
@@ -116,8 +144,8 @@ export function useLeads() {
   }, []);
 
   const copiarCodigo = async (lead: Lead) => {
-    const codigo = repSession?.codigo ?? '';
-    const texto = `Olá! Faça o cadastro da sua empresa no QWork:\n${baseUrl}/login\n\nNa etapa de confirmação, informe o código do representante: ${codigo}`;
+    const id = repSession?.id ?? '';
+    const texto = `Olá! Faça o cadastro da sua empresa no QWork:\n${baseUrl}/login\n\nNa etapa de confirmação, informe o id do representante: ${id}`;
     try {
       await navigator.clipboard.writeText(texto);
       setCopiado(lead.id);
@@ -166,13 +194,28 @@ export function useLeads() {
     setNovoForm((p) => ({ ...p, tipo_cliente: tipo }));
   };
 
+  const custoFixoRep =
+    modeloComissionamento === 'custo_fixo'
+      ? novoForm.tipo_cliente === 'entidade'
+        ? valorCustoFixoEntidade
+        : valorCustoFixoClinica
+      : null;
+
+  const custoFixoInvalido =
+    modeloComissionamento === 'custo_fixo' &&
+    custoFixoRep !== null &&
+    valorNegociadoNum > 0 &&
+    valorNegociadoNum <
+      valorMinimoCustoFixoTotal(novoForm.tipo_cliente, custoFixoRep);
+
   const formValido =
     normalizeCNPJ(novoForm.cnpj).length === 14 &&
     validarCNPJ(normalizeCNPJ(novoForm.cnpj)) &&
     !errosCampos.contato_email &&
     !errosCampos.contato_telefone &&
     valorNegociadoNum > 0 &&
-    numVidasEstimadoNum > 0;
+    numVidasEstimadoNum > 0 &&
+    !custoFixoInvalido;
 
   const criarLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,5 +303,8 @@ export function useLeads() {
     handleTipoClienteChange,
     percRep,
     percComercial,
+    modeloComissionamento,
+    valorCustoFixoEntidade,
+    valorCustoFixoClinica,
   };
 }

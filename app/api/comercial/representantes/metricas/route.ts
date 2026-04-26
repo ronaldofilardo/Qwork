@@ -22,16 +22,20 @@ export async function GET(request: Request): Promise<NextResponse> {
       nome: string;
       email: string;
       status: string;
-      codigo: string;
+      ativo: boolean;
       leads_ativos: string;
       leads_mes: string;
       vinculos_ativos: string;
       comissoes_pendentes: string;
       valor_pendente: string;
       aceite_contrato_em: string | null;
+      criado_em: string;
       vendedores_count: string;
       modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
       percentual_comissao: string | null;
+      percentual_comissao_comercial: string | null;
+      valor_custo_fixo_entidade: string | null;
+      valor_custo_fixo_clinica: string | null;
       asaas_wallet_id: string | null;
     }>(
       `SELECT
@@ -39,10 +43,14 @@ export async function GET(request: Request): Promise<NextResponse> {
          r.nome,
          r.email,
          r.status,
-         r.codigo,
+         r.ativo,
+         r.criado_em,
          r.aceite_disclaimer_nv_em                                  AS aceite_contrato_em,
          r.modelo_comissionamento,
          r.percentual_comissao,
+         r.percentual_comissao_comercial,
+         r.valor_custo_fixo_entidade,
+         r.valor_custo_fixo_clinica,
          r.asaas_wallet_id,
          COUNT(DISTINCT lr.id) FILTER (
            WHERE lr.status NOT IN ('expirado', 'convertido')
@@ -71,8 +79,8 @@ export async function GET(request: Request): Promise<NextResponse> {
        LEFT JOIN public.leads_representante lr ON lr.representante_id = r.id
        LEFT JOIN public.vinculos_comissao vc ON vc.representante_id = r.id
        LEFT JOIN public.comissoes_laudo cl ON cl.vinculo_id = vc.id
-       WHERE r.status ${soDesativados ? "= 'desativado'" : "NOT IN ('desativado')"}
-       GROUP BY r.id, r.aceite_disclaimer_nv_em, r.modelo_comissionamento, r.percentual_comissao, r.asaas_wallet_id
+       WHERE r.ativo = ${soDesativados ? 'false' : 'true'}
+       GROUP BY r.id, r.ativo, r.criado_em, r.aceite_disclaimer_nv_em, r.modelo_comissionamento, r.percentual_comissao, r.percentual_comissao_comercial, r.valor_custo_fixo_entidade, r.valor_custo_fixo_clinica, r.asaas_wallet_id
        ORDER BY leads_ativos DESC, r.nome`
     );
 
@@ -82,7 +90,8 @@ export async function GET(request: Request): Promise<NextResponse> {
         nome: r.nome,
         email: r.email,
         status: r.status,
-        codigo: r.codigo,
+        ativo: r.ativo ?? true,
+        criado_em: r.criado_em,
         leads_ativos: parseInt(r.leads_ativos ?? '0', 10),
         leads_mes: parseInt(r.leads_mes ?? '0', 10),
         vinculos_ativos: parseInt(r.vinculos_ativos ?? '0', 10),
@@ -94,6 +103,18 @@ export async function GET(request: Request): Promise<NextResponse> {
         percentual_comissao:
           r.percentual_comissao != null
             ? parseFloat(r.percentual_comissao)
+            : null,
+        percentual_comissao_comercial:
+          r.percentual_comissao_comercial != null
+            ? parseFloat(r.percentual_comissao_comercial)
+            : null,
+        valor_custo_fixo_entidade:
+          r.valor_custo_fixo_entidade != null
+            ? parseFloat(r.valor_custo_fixo_entidade)
+            : null,
+        valor_custo_fixo_clinica:
+          r.valor_custo_fixo_clinica != null
+            ? parseFloat(r.valor_custo_fixo_clinica)
             : null,
         asaas_wallet_id: r.asaas_wallet_id ?? null,
       })),

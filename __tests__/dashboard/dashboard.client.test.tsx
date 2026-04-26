@@ -75,3 +75,39 @@ test('Dashboard não redireciona gestor e exibe nome', async () => {
   expect(window.location.href).not.toContain('/rh');
   expect(window.location.href).not.toContain('/representante');
 });
+
+test('Dashboard trata 403 em avaliacoes sem quebrar a tela', async () => {
+  global.fetch = jest.fn((url: RequestInfo) => {
+    const u = String(url);
+
+    if (u.endsWith('/api/auth/session')) {
+      const session: Session = {
+        cpf: '87545772920',
+        nome: 'MARIA GESTORA',
+        perfil: 'gestor',
+      };
+      return Promise.resolve(
+        new Response(JSON.stringify(session), { status: 200 })
+      );
+    }
+
+    if (u.endsWith('/api/avaliacao/todas')) {
+      return Promise.resolve(
+        new Response(JSON.stringify({ error: 'Acesso negado' }), {
+          status: 403,
+        })
+      );
+    }
+
+    return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
+  }) as jest.MockedFunction<typeof fetch>;
+
+  render(<Dashboard />);
+
+  await waitFor(() => {
+    expect(screen.getByText(/MARIA GESTORA/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Nenhuma avaliação concluída/i)
+    ).toBeInTheDocument();
+  });
+});
