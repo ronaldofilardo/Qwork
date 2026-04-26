@@ -9,7 +9,7 @@
 
 ## 🎯 OBJETIVO
 
-Migrar o gateway de pagamento Asaas do ambiente local (localhost:3000) para produção (https://qwork-psi.vercel.app), permitindo processar pagamentos reais via PIX, Boleto e Cartão de Crédito.
+Migrar o gateway de pagamento Asaas do ambiente local (localhost:3000) para produção (https://sistema.qwork.app.br), permitindo processar pagamentos reais via PIX, Boleto e Cartão de Crédito.
 
 ---
 

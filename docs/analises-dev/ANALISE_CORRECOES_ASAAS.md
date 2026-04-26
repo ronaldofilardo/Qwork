@@ -2,7 +2,7 @@
 
 **Data:** 17/02/2026  
 **Status:** ⚠️ Configuração Pendente  
-**URL de Produção:** https://qwork-psi.vercel.app
+**URL de Produção:** https://sistema.qwork.app.br
 
 ---
 
@@ -11,7 +11,7 @@
 ### ✅ O que está funcionando
 
 1. **Endpoint de webhook está ONLINE**
-   - URL: `https://qwork-psi.vercel.app/api/webhooks/asaas`
+   - URL: `https://sistema.qwork.app.br/api/webhooks/asaas`
    - Health check respondendo corretamente
    - Código do webhook validado e correto
 
@@ -54,9 +54,9 @@
 ASAAS_API_KEY=... (copie do .env.production)
 ASAAS_API_URL=https://api-sandbox.asaas.com/v3
 ASAAS_WEBHOOK_SECRET=... (copie do .env.production) ⭐ MAIS IMPORTANTE
-NEXT_PUBLIC_BASE_URL=https://qwork-psi.vercel.app
-NEXT_PUBLIC_APP_URL=https://qwork-psi.vercel.app
-NEXT_PUBLIC_URL=https://qwork-psi.vercel.app
+NEXT_PUBLIC_BASE_URL=https://sistema.qwork.app.br
+NEXT_PUBLIC_APP_URL=https://sistema.qwork.app.br
+NEXT_PUBLIC_URL=https://sistema.qwork.app.br
 ```
 
 **Importante:**
@@ -97,7 +97,7 @@ git push origin main
 1. **URL do Webhook:**
 
    ```
-   https://qwork-psi.vercel.app/api/webhooks/asaas
+   https://sistema.qwork.app.br/api/webhooks/asaas
    ```
 
 2. **Token de Autenticação:**
@@ -192,7 +192,7 @@ Se ainda mostrar "Webhook Secret: False", o redeploy pode não ter concluído. A
 - **Vercel Settings:** https://vercel.com/ronaldofilardos-projects/qwork/settings/environment-variables
 - **Vercel Logs:** https://vercel.com/ronaldofilardos-projects/qwork/logs
 - **Asaas Sandbox:** https://sandbox.asaas.com
-- **Webhook URL:** https://qwork-psi.vercel.app/api/webhooks/asaas
+- **Webhook URL:** https://sistema.qwork.app.br/api/webhooks/asaas
 
 ---
 
@@ -203,7 +203,7 @@ Se após seguir todos os passos ainda houver problemas:
 1. Verifique os logs no Vercel
 2. Execute novamente: `.\scripts\verificar-config-asaas-prod.ps1`
 3. Confirme que o redeploy foi concluído
-4. Teste manualmente: `curl https://qwork-psi.vercel.app/api/webhooks/asaas`
+4. Teste manualmente: `curl https://sistema.qwork.app.br/api/webhooks/asaas`
 
 ---
 
