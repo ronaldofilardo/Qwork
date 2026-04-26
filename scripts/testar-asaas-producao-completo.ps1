@@ -6,7 +6,7 @@
 # ==============================================================================
 
 param(
-    [string]$BaseUrl = "https://qwork-psi.vercel.app",
+    [string]$BaseUrl = "https://sistema.qwork.app.br",
     [switch]$SkipDatabaseTests,
     [switch]$Verbose
 )

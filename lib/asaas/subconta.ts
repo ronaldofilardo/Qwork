@@ -21,7 +21,10 @@ export const CUSTO_MINIMO: Record<'clinica' | 'entidade', number> = {
 /** Percentual máximo de comissão distribuível (representante) */
 export const PERCENTUAL_MAXIMO_COMISSAO = 40;
 
-import { calcularDistribuicaoSociedade } from '../financeiro/sociedade';
+import {
+  calcularDistribuicaoSociedade,
+  type ConfiguracaoGateway,
+} from '../financeiro/sociedade';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -51,6 +54,15 @@ export interface OpcoesFinanceirasSplit {
   valorTaxaGateway?: number | null;
   valorLiquidoGateway?: number | null;
   metodoPagamento?: string | null;
+  /**
+   * Configurações dinâmicas do gateway lidas da tabela configuracoes_gateway.
+   * Quando fornecidas, garantem que taxa_transacao e taxas por método
+   * sejam lidas do banco (admin > financeiro > sociedade > taxas)
+   * em vez de env vars ou zero.
+   */
+  configuracoes?: ConfiguracaoGateway[] | null;
+  /** Número de parcelas — usado para selecionar taxa de cartão correta */
+  numeroParcelas?: number | null;
 }
 
 /** Dados necessários para criar subconta Asaas do representante */
@@ -84,6 +96,20 @@ export interface AsaasSplitItem {
   walletId: string;
   fixedValue?: number;
   percentualValue?: number;
+}
+
+/**
+ * Opções para configurar split societário completo no Asaas.
+ * Permite incluir impostos (QWork institucional) e beneficiários societários (sócios).
+ */
+export interface OpcoesSplitCompleto {
+  /** walletId da conta institucional do QWork para recolhimento de impostos */
+  impostosWalletId?: string | null;
+  /**
+   * Beneficiários societários para distribuição do valorQWork (sócios).
+   * O valorQWork será distribuído proporcionalmente conforme os percentuais informados.
+   */
+  beneficiarios?: Array<{ walletId: string | null; percentual: number }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +181,9 @@ export function calcularSplit(
     valorTaxaGateway: opcoes?.valorTaxaGateway,
     valorLiquidoGateway: opcoes?.valorLiquidoGateway,
     metodoPagamento: opcoes?.metodoPagamento,
+    // Repassa configurações dinâmicas do banco (taxa_transacao, taxas por método)
+    configuracoes: opcoes?.configuracoes ?? null,
+    numeroParcelas: opcoes?.numeroParcelas ?? null,
   });
 
   const valorQWork = Number(distribuicao.valorParaSocios.toFixed(2));
@@ -177,14 +206,22 @@ export function calcularSplit(
  * Monta o array de split para o payload da cobrança Asaas.
  * Retorna null se o representante não tiver walletId ou se o split for inviável.
  *
- * @param repWalletId    walletId da subconta do representante
- * @param splitResult    resultado de calcularSplit()
- * @param comercialWalletId  walletId da subconta do comercial (opcional; env ASAAS_COMERCIAL_WALLET_ID)
+ * Ordem dos itens de split enviados ao Asaas:
+ *  1. Representante (obrigatório — sem ele retorna null)
+ *  2. Comercial (se walletId + valor > 0)
+ *  3. Impostos — wallet institucional do QWork (se walletId + valorImpostos > 0)
+ *  4. Beneficiários societários (sócios) — valorQWork distribuído proporcional aos percentuais
+ *
+ * @param repWalletId       walletId da subconta do representante
+ * @param splitResult       resultado de calcularSplit()
+ * @param comercialWalletId walletId da subconta do comercial (opcional)
+ * @param opcoes            wallets adicionais para impostos e beneficiários societários
  */
 export function montarSplitAsaas(
   repWalletId: string | null | undefined,
   splitResult: ResultadoSplit,
-  comercialWalletId?: string | null
+  comercialWalletId?: string | null,
+  opcoes?: OpcoesSplitCompleto
 ): AsaasSplitItem[] | null {
   if (
     !repWalletId ||
@@ -208,6 +245,41 @@ export function montarSplitAsaas(
       walletId: comercialWalletId,
       fixedValue: splitResult.valorComercial,
     });
+  }
+
+  // Impostos: wallet institucional do QWork para recolhimento dos 7%
+  const valorImpostos = splitResult.valorImpostos ?? 0;
+  if (opcoes?.impostosWalletId && valorImpostos > 0) {
+    items.push({
+      walletId: opcoes.impostosWalletId,
+      fixedValue: valorImpostos,
+    });
+  }
+
+  // Beneficiários societários (sócios): distribuição do valorQWork proporcionalmente
+  const valorQWork = splitResult.valorQWork;
+  if (opcoes?.beneficiarios?.length && valorQWork > 0) {
+    const benefAtivos = opcoes.beneficiarios.filter(
+      (b) => b.walletId && b.percentual > 0
+    );
+    const totalPercentual = benefAtivos.reduce((s, b) => s + b.percentual, 0);
+    if (totalPercentual > 0 && benefAtivos.length > 0) {
+      let restante = valorQWork;
+      benefAtivos.forEach((benef, idx) => {
+        if (!benef.walletId) return;
+        const isUltimo = idx === benefAtivos.length - 1;
+        // Último sócio recebe o restante para evitar erro de arredondamento
+        const valor = isUltimo
+          ? Math.round(restante * 100) / 100
+          : Math.round(
+              ((valorQWork * benef.percentual) / totalPercentual) * 100
+            ) / 100;
+        if (valor > 0) {
+          items.push({ walletId: benef.walletId as string, fixedValue: valor });
+          restante = Math.round((restante - valor) * 100) / 100;
+        }
+      });
+    }
   }
 
   return items;
