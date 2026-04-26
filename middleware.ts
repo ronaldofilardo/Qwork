@@ -39,6 +39,27 @@ function isUnderMaintenance(): boolean {
   }
 }
 
+/**
+ * Verifica se a requisição tem o cookie de bypass de manutenção válido.
+ * Permite que devs acessem o sistema durante manutenção sem afetar usuários reais.
+ * Token definido via env var MAINTENANCE_BYPASS_TOKEN no Vercel.
+ */
+function hasMaintenanceBypass(request: NextRequest): boolean {
+  const bypassToken = process.env.MAINTENANCE_BYPASS_TOKEN;
+  if (!bypassToken) return false;
+
+  const cookieValue = request.cookies.get('maintenance_bypass')?.value;
+  if (!cookieValue) return false;
+
+  // Comparação de tempo constante para evitar timing attacks
+  if (cookieValue.length !== bypassToken.length) return false;
+  let valid = true;
+  for (let i = 0; i < bypassToken.length; i++) {
+    if (cookieValue.charCodeAt(i) !== bypassToken.charCodeAt(i)) valid = false;
+  }
+  return valid;
+}
+
 // ─── Rate Limiting — Dual Strategy (Edge Runtime compatible) ─────────────────
 //
 // Estratégia dupla implementada no Edge (in-memory, sem DB):
@@ -292,7 +313,7 @@ function parseSession(request: NextRequest): MiddlewareSession | null {
 
 export function middleware(request: NextRequest) {
   // ── MAINTENANCE MODE CHECK — FIRST (before everything else) ──
-  if (isUnderMaintenance()) {
+  if (isUnderMaintenance() && !hasMaintenanceBypass(request)) {
     const { pathname } = request.nextUrl;
     
     // Exceções: /maintenance itself (não redirecionar, deixar renderizar)
