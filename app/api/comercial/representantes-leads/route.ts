@@ -1,23 +1,26 @@
 /**
- * GET /api/admin/representantes-leads
+ * GET /api/comercial/representantes-leads
  *
- * Lista cadastros leads de representantes (da landing page) para revisão.
- * Apenas admin.
+ * Lista candidatos (leads de cadastro da landing page) atribuídos ao comercial logado.
+ * Filtro de segurança: comercial_cpf = session.cpf (automático).
+ *
+ * Query params:
+ *   status   - pendente_verificacao | verificado | convertido | rejeitado
+ *   busca    - texto livre (nome, email, cpf, cnpj)
+ *   page     - paginação (default 1)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import { verificarCpfEmUso } from '@/lib/cpf-conflict';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const session = await requireRole(['comercial', 'suporte'], false);
+    const session = await requireRole('comercial', false);
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') ?? undefined;
-    const tipoPessoa = searchParams.get('tipo_pessoa') ?? undefined;
     const busca = searchParams.get('busca') ?? undefined;
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
     const limit = 30;
@@ -27,11 +30,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const params: unknown[] = [];
     let i = 1;
 
-    // Comercial só vê leads atribuídos a ele (segurança)
-    if (session.perfil === 'comercial') {
-      wheres.push(`l.comercial_cpf = $${i++}`);
-      params.push(session.cpf);
-    }
+    // Sempre filtrar por comercial_cpf do usuário logado
+    wheres.push(`l.comercial_cpf = $${i++}`);
+    params.push(session.cpf);
 
     const statusValidos = [
       'pendente_verificacao',
@@ -44,20 +45,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       params.push(status);
     }
 
-    if (tipoPessoa === 'pf' || tipoPessoa === 'pj') {
-      wheres.push(`l.tipo_pessoa = $${i++}`);
-      params.push(tipoPessoa);
-    }
-
     if (busca?.trim()) {
       wheres.push(
-        `(l.nome ILIKE $${i} OR l.email ILIKE $${i} OR l.cpf ILIKE $${i} OR l.cnpj ILIKE $${i})`
+        `(l.nome ILIKE $${i} OR l.email ILIKE $${i} OR l.cpf ILIKE $${i} OR l.cnpj ILIKE $${i} OR l.razao_social ILIKE $${i})`
       );
       params.push(`%${busca.trim()}%`);
       i++;
     }
 
-    const where = wheres.length ? `WHERE ${wheres.join(' AND ')}` : '';
+    const where = `WHERE ${wheres.join(' AND ')}`;
 
     const countResult = await query<{ total: string }>(
       `SELECT COUNT(*) as total FROM representantes_cadastro_leads l ${where}`,
@@ -65,20 +61,26 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
     const total = parseInt(countResult.rows[0]?.total ?? '0', 10);
 
+    // Contar pendentes do comercial (para badge)
+    const pendentesResult = await query<{ cnt: string }>(
+      `SELECT COUNT(*) as cnt FROM representantes_cadastro_leads
+       WHERE comercial_cpf = $1 AND status = 'pendente_verificacao'`,
+      [session.cpf]
+    );
+    const pendentes = parseInt(pendentesResult.rows[0]?.cnt ?? '0', 10);
+
     params.push(limit, offset);
     const rows = await query(
       `SELECT
          l.id, l.tipo_pessoa, l.nome, l.email, l.telefone,
          l.cpf, l.cnpj, l.razao_social, l.cpf_responsavel,
-         l.doc_cpf_filename, l.doc_cpf_key, l.doc_cpf_url,
-         l.doc_cnpj_filename, l.doc_cnpj_key, l.doc_cnpj_url,
-         l.doc_cpf_resp_filename, l.doc_cpf_resp_key, l.doc_cpf_resp_url,
+         l.doc_cpf_filename, l.doc_cpf_key,
+         l.doc_cnpj_filename, l.doc_cnpj_key,
+         l.doc_cpf_resp_filename, l.doc_cpf_resp_key,
          l.status, l.motivo_rejeicao,
-         l.ip_origem, l.criado_em, l.verificado_em, l.convertido_em,
-         l.representante_id, l.comercial_cpf,
-         r.convite_token, r.aceite_termos
+         l.criado_em, l.verificado_em, l.convertido_em,
+         l.representante_id, l.comercial_cpf
        FROM representantes_cadastro_leads l
-       LEFT JOIN public.representantes r ON r.id = l.representante_id
        ${where}
        ORDER BY
          CASE l.status
@@ -92,31 +94,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       params
     );
 
-    // Contar pendentes (para badge independente dos filtros)
-    const pendentesResult = await query<{ cnt: string }>(
-      `SELECT COUNT(*) as cnt FROM representantes_cadastro_leads WHERE status = 'pendente_verificacao'`
-    );
-    const pendentes = parseInt(pendentesResult.rows[0]?.cnt ?? '0', 10);
-
-    // Enriquecer leads PF com verificação de conflito CPF cross-table
-    const leadsEnriquecidos = await Promise.all(
-      rows.rows.map(async (lead: Record<string, unknown>) => {
-        if (
-          lead.tipo_pessoa === 'pf' &&
-          lead.cpf &&
-          lead.status === 'verificado'
-        ) {
-          const conflicts = await verificarCpfEmUso(String(lead.cpf));
-          if (conflicts.length > 0) {
-            return { ...lead, cpf_conflict: conflicts[0] };
-          }
-        }
-        return { ...lead, cpf_conflict: null };
-      })
-    );
-
     return NextResponse.json({
-      leads: leadsEnriquecidos,
+      leads: rows.rows,
       total,
       pendentes,
       page,
@@ -128,7 +107,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     if (e.message === 'Sem permissão')
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
-    console.error('[GET /api/admin/representantes-leads]', e);
+    console.error('[GET /api/comercial/representantes-leads]', e);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }

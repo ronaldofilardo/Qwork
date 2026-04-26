@@ -341,7 +341,12 @@ describe('3. Rota pública — estrutura e validadores embutidos', () => {
     const helpersSrc = fs.existsSync(helpersPath)
       ? fs.readFileSync(helpersPath, 'utf-8')
       : '';
-    src = routeSrc + '\n' + helpersSrc;
+    // checkRepresentanteDuplicates foi movida para lib/validators/representante.ts
+    const validatorPath = path.join(ROOT, 'lib', 'validators', 'representante.ts');
+    const validatorSrc = fs.existsSync(validatorPath)
+      ? fs.readFileSync(validatorPath, 'utf-8')
+      : '';
+    src = routeSrc + '\n' + helpersSrc + '\n' + validatorSrc;
   });
 
   it('arquivo existe', () => {
@@ -1084,8 +1089,8 @@ describe('9. LP route — mapeamento camelCase → snake_case ao encaminhar ao Q
     expect(src).toMatch(/forwardData\.append\(\s*["']cpf_responsavel["']/);
   });
 
-  testIf('encaminha documento_cpf (snake_case, nao documentoCpf)', () => {
-    expect(src).toMatch(/forwardData\.append\(\s*["']documento_cpf["']/);
+  testIf('encaminha documento_cpf_responsavel (snake_case, nao documentoCpfResponsavel)', () => {
+    expect(src).toMatch(/forwardData\.append\(\s*["']documento_cpf_responsavel["']/);
   });
 
   testIf('encaminha documento_cnpj (snake_case, nao documentoCnpj)', () => {
@@ -1131,9 +1136,10 @@ describe('9. LP route — mapeamento camelCase → snake_case ao encaminhar ao Q
     expect(src).toMatch(/status.*400|status.*503/);
   });
 
-  testIf('mapeia erro duplicata de CPF para mensagem legível', () => {
+  testIf('mapeia erro duplicata (email ou cnpj) para mensagem legível', () => {
+    // A LP delega o CPF ao QWork; erros de duplicata identificados são email e CNPJ
     expect(src).toMatch(
-      /CPF.*registrado|registrado.*CPF|CPF.*já.*possui|Este CPF/i
+      /e-mail.*já.*possui|já.*possui.*e-mail|Este CNPJ|Este e-mail/i
     );
   });
 
