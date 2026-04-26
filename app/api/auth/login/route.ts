@@ -13,7 +13,56 @@ import { logger } from '@/lib/logger';
 import { handleRepresentanteLogin, validarSenhaFuncionario } from './helpers';
 
 export const dynamic = 'force-dynamic';
+
+/** Verifica bloqueio de manutenção com suporte a bypass por cookie */
+function isMaintenanceBlocked(request: Request): boolean {
+  const enabled = process.env.MAINTENANCE_MODE_ENABLED === 'true';
+  if (!enabled) return false;
+  if (process.env.APP_ENV !== 'production') return false;
+
+  const startStr = process.env.MAINTENANCE_START;
+  const endStr = process.env.MAINTENANCE_END;
+  if (!startStr || !endStr) return false;
+
+  const now = new Date();
+  const start = new Date(startStr);
+  const end = new Date(endStr);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return false;
+  if (!(now >= start && now <= end)) return false;
+
+  // Verificar cookie de bypass
+  const bypassToken = process.env.MAINTENANCE_BYPASS_TOKEN;
+  if (bypassToken) {
+    const cookieHeader = request.headers.get('cookie') ?? '';
+    const match = cookieHeader.match(/(?:^|;\s*)maintenance_bypass=([^;]+)/);
+    const cookieValue = match?.[1];
+    if (cookieValue === bypassToken) return false;
+  }
+
+  return true;
+}
+
 export async function POST(request: Request) {
+  // 🔒 MANUTENÇÃO: bloquear login durante janela de manutenção (com bypass por cookie)
+  if (isMaintenanceBlocked(request)) {
+    const endTime = process.env.MAINTENANCE_END
+      ? new Date(process.env.MAINTENANCE_END).toLocaleString('pt-BR', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo',
+        })
+      : 'em breve';
+    return NextResponse.json(
+      {
+        error: 'MAINTENANCE_MODE',
+        message: 'Sistema em manutenção programada. Retornamos na segunda-feira, 27 de abril, às 8h.',
+        maintenanceUntil: process.env.MAINTENANCE_END,
+        endTimeFormatted: endTime,
+        contactEmail: 'suporte@qwork.app.br',
+      },
+      { status: 503 }
+    );
+  }
+
   // 🔒 SEGURANÇA: Rate limiting distribuído (DB-backed) — 5 tentativas / 5 min por IP
   const rateLimitResult = await rateLimitAsync(
     request as unknown as NextRequest,
