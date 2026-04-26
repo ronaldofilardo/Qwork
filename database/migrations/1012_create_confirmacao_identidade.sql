@@ -66,44 +66,56 @@ COMMENT ON COLUMN confirmacao_identidade.user_agent IS 'User-Agent do navegador 
 -- Habilitar RLS
 ALTER TABLE confirmacao_identidade ENABLE ROW LEVEL SECURITY;
 
+-- Dropar policies existentes (idempotência)
+DROP POLICY IF EXISTS funcionario_view_own_confirmations ON confirmacao_identidade;
+DROP POLICY IF EXISTS rh_view_clinic_confirmations ON confirmacao_identidade;
+DROP POLICY IF EXISTS gestor_view_entity_confirmations ON confirmacao_identidade;
+DROP POLICY IF EXISTS admin_emissor_full_access ON confirmacao_identidade;
+DROP POLICY IF EXISTS system_insert_confirmations ON confirmacao_identidade;
+
 -- Política: Funcionários podem visualizar apenas suas próprias confirmações
 CREATE POLICY funcionario_view_own_confirmations ON confirmacao_identidade
   FOR SELECT
-  TO funcionario_role
-  USING (funcionario_cpf = current_setting('app.current_user_cpf', true)::TEXT);
+  USING (
+    current_user_perfil() = 'funcionario' AND
+    funcionario_cpf = current_setting('app.current_user_cpf', true)::TEXT
+  );
 
 -- Política: RH pode visualizar confirmações dos funcionários da sua clínica
+-- Usa funcionarios_clinicas (arquitetura segregada pós-migration-605)
 CREATE POLICY rh_view_clinic_confirmations ON confirmacao_identidade
   FOR SELECT
-  TO rh_role
   USING (
+    current_user_perfil() = 'rh' AND
     EXISTS (
       SELECT 1 FROM funcionarios f
+      JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id AND fc.ativo = true
       WHERE f.cpf = confirmacao_identidade.funcionario_cpf
-      AND f.clinica_id::TEXT = current_setting('app.current_user_clinica_id', true)
+        AND fc.clinica_id = current_user_clinica_id_optional()
     )
   );
 
 -- Política: Gestor pode visualizar confirmações dos funcionários da sua entidade
+-- Usa funcionarios_entidades (arquitetura segregada pós-migration-605)
 CREATE POLICY gestor_view_entity_confirmations ON confirmacao_identidade
   FOR SELECT
-  TO gestor_entidade_role
   USING (
+    current_user_perfil() = 'gestor' AND
     EXISTS (
       SELECT 1 FROM funcionarios f
+      JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id AND fe.ativo = true
       WHERE f.cpf = confirmacao_identidade.funcionario_cpf
-      AND f.entidade_id::TEXT = current_setting('app.current_user_entidade_id', true)
+        AND fe.entidade_id = NULLIF(current_setting('app.current_user_entidade_id', true), '')::INTEGER
     )
   );
 
 -- Política: Admin e Emissor têm acesso total
 CREATE POLICY admin_emissor_full_access ON confirmacao_identidade
   FOR ALL
-  TO admin_role, emissor_role
-  USING (true)
-  WITH CHECK (true);
+  USING (current_user_perfil() IN ('admin', 'emissor'))
+  WITH CHECK (current_user_perfil() IN ('admin', 'emissor'));
 
--- Política: Inserção permitida apenas pelo sistema (via API autenticada)
+-- Política: Inserção permitida pelo sistema via API autenticada (neondb_owner bypassa RLS)
 CREATE POLICY system_insert_confirmations ON confirmacao_identidade
   FOR INSERT
   WITH CHECK (true);

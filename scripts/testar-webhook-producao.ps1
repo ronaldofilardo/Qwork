@@ -8,7 +8,7 @@ Write-Host "`n══════════════════════
 Write-Host "  TESTE DO ENDPOINT EM PRODUÇÃO" -ForegroundColor Cyan
 Write-Host "══════════════════════════════════════════`n" -ForegroundColor Cyan
 
-$prodUrl = "https://qwork-psi.vercel.app"
+$prodUrl = "https://sistema.qwork.app.br"
 
 # ==========================================
 # 1. Health Check
