@@ -3,7 +3,11 @@ import { z } from 'zod';
 import { query } from '@/lib/db';
 import { asaasClient } from '@/lib/asaas/client';
 import { mapMetodoPagamentoToAsaasBillingType } from '@/lib/asaas/mappers';
-import { calcularSplit, montarSplitAsaas } from '@/lib/asaas/subconta';
+import {
+  calcularSplit,
+  montarSplitAsaas,
+  type OpcoesSplitCompleto,
+} from '@/lib/asaas/subconta';
 
 export const dynamic = 'force-dynamic';
 
@@ -301,6 +305,21 @@ export async function POST(request: NextRequest) {
       // Split de comissionamento: buscar vínculo ativo para o tomador
       // ---------------------------------------------------------------
       try {
+        // Buscar configurações dinâmicas do gateway (taxa_transacao, boleto, pix, cartão)
+        // Estas são gerenciadas pelo admin em: admin > financeiro > sociedade > taxas
+        const configGatewayRes = await query(
+          `SELECT codigo, descricao, tipo, valor, ativo
+           FROM configuracoes_gateway
+           WHERE ativo = true`
+        );
+        const configuracoesGateway = configGatewayRes.rows as Array<{
+          codigo: string;
+          descricao: string | null;
+          tipo: 'taxa_fixa' | 'percentual';
+          valor: number;
+          ativo: boolean;
+        }>;
+
         const vinculoRes = await query(
           `SELECT vc.id AS vinculo_id,
                   vc.representante_id,
@@ -368,7 +387,13 @@ export async function POST(request: NextRequest) {
             valorCustoFixoRep !== undefined
               ? Number(valorCustoFixoRep)
               : undefined,
-            { metodoPagamento: metodo }
+            {
+              metodoPagamento: metodo,
+              // Configura\u00e7\u00f5es do gateway lidas do banco (taxa_transacao, boleto, pix, cart\u00e3o)
+              // Garante que tx/transa\u00e7\u00e3o configurada pelo admin seja usada no c\u00e1lculo
+              configuracoes: configuracoesGateway,
+              numeroParcelas,
+            }
           );
 
           if (splitResult.viavel) {
@@ -383,17 +408,124 @@ export async function POST(request: NextRequest) {
             );
             const comercialWalletId =
               comercialRes.rows[0]?.asaas_wallet_id ?? null;
+
+            // Buscar wallets dos beneficiários societários (impostos QWork + sócios)
+            const sociedadeRes = await query(
+              `SELECT codigo, asaas_wallet_id, percentual_participacao
+               FROM beneficiarios_sociedade
+               WHERE codigo IN ('qwork', 'ronaldo', 'antonio')
+                 AND ativo = true`
+            );
+            const impostosWalletId =
+              (
+                sociedadeRes.rows.find(
+                  (b: { codigo: string; asaas_wallet_id: string | null }) =>
+                    b.codigo === 'qwork'
+                ) as { asaas_wallet_id: string | null } | undefined
+              )?.asaas_wallet_id ?? null;
+            const beneficiariosSocios = (
+              sociedadeRes.rows as Array<{
+                codigo: string;
+                asaas_wallet_id: string | null;
+                percentual_participacao: string | number;
+              }>
+            )
+              .filter((b) => b.codigo !== 'qwork' && b.asaas_wallet_id)
+              .map((b) => ({
+                walletId: b.asaas_wallet_id,
+                percentual: Number(b.percentual_participacao),
+              }));
+
+            const opcoesCompleto: OpcoesSplitCompleto = {
+              impostosWalletId,
+              beneficiarios: beneficiariosSocios,
+            };
+
             const splits = montarSplitAsaas(
               v.asaas_wallet_id,
               splitResult,
-              comercialWalletId
+              comercialWalletId,
+              opcoesCompleto
             );
             if (splits) {
               await asaasClient.adicionarSplitAoPayment(payment.id, splits);
+
+              // Calcular valores para cada sócio (para auditoria)
+              const totalPercSocios = beneficiariosSocios.reduce(
+                (s, b) => s + b.percentual,
+                0
+              );
+              let valorSocioRonaldo = 0;
+              let valorSocioAntonio = 0;
+              if (totalPercSocios > 0 && splitResult.valorQWork > 0) {
+                const benRonaldo = beneficiariosSocios.find((_, i) => i === 0);
+                const benAntonio = beneficiariosSocios.find((_, i) => i === 1);
+                if (benRonaldo) {
+                  valorSocioRonaldo =
+                    Math.round(
+                      ((splitResult.valorQWork * benRonaldo.percentual) /
+                        totalPercSocios) *
+                        100
+                    ) / 100;
+                }
+                if (benAntonio) {
+                  valorSocioAntonio =
+                    Math.round(
+                      (splitResult.valorQWork - valorSocioRonaldo) * 100
+                    ) / 100;
+                }
+              }
+
+              // Registrar na auditoria societária
+              try {
+                await query(
+                  `INSERT INTO auditoria_sociedade_pagamentos
+                     (pagamento_id, asaas_payment_id, tomador_id, lote_id,
+                      modo_operacao, status,
+                      valor_bruto, valor_impostos, valor_representante,
+                      valor_comercial, valor_socio_ronaldo, valor_socio_antonio,
+                      detalhes)
+                   VALUES ($1, $2, $3, $4, 'split', 'executado',
+                           $5, $6, $7, $8, $9, $10, $11)`,
+                  [
+                    pagamentoId,
+                    payment.id,
+                    finalTomadorId,
+                    lote_id ?? null,
+                    valorParcela,
+                    splitResult.valorImpostos ?? 0,
+                    splitResult.valorRepresentante,
+                    splitResult.valorComercial,
+                    valorSocioRonaldo,
+                    valorSocioAntonio,
+                    JSON.stringify({
+                      modelo: splitResult.modelo,
+                      percentualAplicado: splitResult.percentualAplicado ?? null,
+                      baseLiquida: splitResult.baseLiquida ?? null,
+                      valorGateway: splitResult.valorGateway ?? null,
+                      valorQWork: splitResult.valorQWork,
+                      numeroParcelas,
+                      splitItemsCount: splits.length,
+                      impostosWalletConfigurado: Boolean(impostosWalletId),
+                      sociosCount: beneficiariosSocios.length,
+                    }),
+                  ]
+                );
+              } catch (auditErr) {
+                // Auditoria não deve bloquear o pagamento
+                console.error(
+                  '[ASAAS] Erro ao registrar auditoria societária:',
+                  auditErr
+                );
+              }
+
               console.log('[ASAAS] ✅ Split configurado:', {
                 parcela: valorParcela,
                 rep: splitResult.valorRepresentante,
                 comercial: splitResult.valorComercial,
+                impostos: splitResult.valorImpostos ?? 0,
+                socioRonaldo: valorSocioRonaldo,
+                socioAntonio: valorSocioAntonio,
                 qwork: splitResult.valorQWork,
                 total_splits: splits.length,
               });

@@ -48,14 +48,19 @@ export async function POST(request: Request) {
   if (isMaintenanceBlocked(request)) {
     const endTime = process.env.MAINTENANCE_END
       ? new Date(process.env.MAINTENANCE_END).toLocaleString('pt-BR', {
-          day: '2-digit', month: '2-digit', year: 'numeric',
-          hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo',
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          timeZone: 'America/Sao_Paulo',
         })
       : 'em breve';
     return NextResponse.json(
       {
         error: 'MAINTENANCE_MODE',
-        message: 'Sistema em manutenção programada. Retornamos na segunda-feira, 27 de abril, às 8h.',
+        message:
+          'Sistema em manutenção programada. Retornamos na segunda-feira, 27 de abril, às 8h.',
         maintenanceUntil: process.env.MAINTENANCE_END,
         endTimeFormatted: endTime,
         contactEmail: 'suporte@qwork.app.br',

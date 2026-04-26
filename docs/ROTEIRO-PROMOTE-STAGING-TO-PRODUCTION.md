@@ -1,6 +1,7 @@
 # Roteiro Completo: Promover Staging para Produção — QWork Neon
 
 ## Contexto Histórico
+
 Este roteiro documenta o processo descoberto em 07/04/2026 ao promover code da feature/v2 com database neondb_v2 para produção. A abordagem evita `vercel promote` (que reconstrói a partir do branch padrão configurado) e usa em vez disso um workflow de branch dedicado + deploy explícito.
 
 ---
@@ -8,6 +9,7 @@ Este roteiro documenta o processo descoberto em 07/04/2026 ao promover code da f
 ## Fase 1: Preparação Pré-Deploy
 
 ### 1.1 Validar Estado da Feature Branch
+
 **Objetivo**: Confirmar que `feature/v2` tem o código pronto para produção.
 
 ```bash
@@ -25,12 +27,14 @@ git log --oneline -10
 ```
 
 **Critérios de Aceição**:
+
 - HEAD apontando para commit recente
 - Sem uncommitted changes
 - Build passa localmente: `pnpm build`
 - Testes passam (ou status de teste conhecido e documentado)
 
 ### 1.2 Validar Database Target (Staging ou Neon)
+
 **Objetivo**: Confirmar qual database será promovida junto com o código.
 
 ```bash
@@ -40,11 +44,13 @@ echo $DATABASE_URL
 ```
 
 **Critérios de Aceição**:
+
 - DATABASE_URL aponta para `neondb_v2` (ou o banco novo desejado)
 - Migrations estão atualizadas no banco target
 - Schema em staging == schema esperado em produção
 
 **Método de Verificação** (via psql):
+
 ```bash
 export PGPASSWORD="<neon_password>"
 export PGSSLMODE="require"
@@ -58,11 +64,13 @@ psql -h <host> -U <user> -d <dbname> -c "SELECT COUNT(*) FROM usuarios;"
 ```
 
 ### 1.3 Listar Endpoints de Neon Production vs Staging (via Neon Console)
+
 **Objetivo**: Confirmar URLs de conexão antes de fazer deploy.
 
 Neon Dashboard → Connections → Copy connection string
 
 **Informações a Documentar**:
+
 ```
 STAGING (Preview):
   - Connection string: postgresql://neondb_owner:npg_...@ep-...staging...
@@ -80,6 +88,7 @@ PRODUCTION (Main):
 ## Fase 2: Criar Branch Production Dedicado
 
 ### 2.1 Criar Branch Production a Partir de Feature/V2
+
 **Objetivo**: Estabelecer um branch independente que represente production.
 
 ```bash
@@ -94,11 +103,13 @@ git push -u origin production
 ```
 
 **Resultado Esperado**:
+
 ```
 Branch 'production' set up to track 'origin/production'.
 ```
 
 ### 2.2 Verificar Existência do Branch
+
 ```bash
 git branch -a
 # Deve mostrar:
@@ -115,6 +126,7 @@ git branch -a
 ## Fase 3: Configuração Vercel Production Environment
 
 ### 3.1 Acessar Projeto Vercel
+
 **Objetivo**: Validar configuração antes de deploy.
 
 1. Ir para: https://vercel.com/dashboard
@@ -122,7 +134,9 @@ git branch -a
 3. Ir para aba: **Settings** → **Git**
 
 ### 3.2 Verificar Configuração de Production Branch
+
 **Informação Crítica**:
+
 ```
 Production Branch: main (ou conforme configurado)
 ```
@@ -130,11 +144,13 @@ Production Branch: main (ou conforme configurado)
 **Nota Importante**: Não tente alterar via API (schema rejeitado por Vercel). Deixar como está. O workflow evita dependência dessa setting via deploy explícito (veja Fase 4).
 
 ### 3.3 Verificar Environment Variables em Production
+
 **Objetivo**: Confirmar DATABASE_URL e variáveis críticas.
 
 Caminho: **Settings** → **Environment Variables**
 
 **Variáveis Críticas a Validar**:
+
 ```
 DATABASE_URL = postgresql://neondb_owner:npg_...@ep-...neondb_v2...
 NODE_ENV = production
@@ -144,6 +160,7 @@ NEXTAUTH_URL = https://sistema.qwork.app.br
 ```
 
 **Ação se DATABASE_URL Estiver Errado**:
+
 1. Ir para **Settings** → **Environment Variables**
 2. Clicar em DATABASE_URL
 3. Editar valor para apontar para novo banco
@@ -155,6 +172,7 @@ NEXTAUTH_URL = https://sistema.qwork.app.br
 ## Fase 4: Deploy Explícito via Vercel CLI
 
 ### 4.1 Instalar/Validar Vercel CLI
+
 ```bash
 # 1. Verificar se instalado
 vercel --version
@@ -169,6 +187,7 @@ vercel login
 ```
 
 ### 4.2 Fazer Deploy para Production
+
 **Objetivo**: Build e deploy direto de feature/v2 para production.
 
 ```bash
@@ -185,6 +204,7 @@ vercel deploy --prod
 ```
 
 **Fluxo Esperado**:
+
 ```
 > vercel deploy --prod
 ? Set up and deploy "~/apps/QWork"? [Y/n] y
@@ -196,6 +216,7 @@ vercel deploy --prod
 ```
 
 **Output Final Esperado**:
+
 ```
 ✓ Production: https://sistema.qwork.app.br [<8digits>]
 ✓ Inspect Source: https://vercel.com/.../<deploy-id>/source
@@ -205,9 +226,11 @@ Deployment Complete! Aliased to sistema.qwork.app.br
 ```
 
 ### 4.3 Documentar Deployment ID
+
 **Objetivo**: Ter referência para rollback ou investigação.
 
 Salvar o ID retornado, exemplo:
+
 ```
 Deploy ID: GbroLsvHF (ou similar)
 Timestamp: 2026-04-07 HH:MM:SS
@@ -220,26 +243,31 @@ Target: sistema.qwork.app.br (production)
 ## Fase 5: Promoção Manual para Production (Se Necessário)
 
 ### 5.1 Cenário: Deploy Criada em Preview (Não Production)
+
 **Situação**: Se deploy foi criada como Preview (URL sistema.qwork.app.br), precisa promover.
 
 **Solução**:
+
 1. Ir para **Deployments** → Localizar deploy ID de 4.3
 2. Clicar em deploy
 3. Clicar botão **"Promote to Production"**
 4. Confirmar
 
 **Resultado**:
+
 ```
 ✓ Promoted to production
 Custom Domain: sistema.qwork.app.br
 ```
 
 ### 5.2 Verificar Domínios Customizados
+
 **Objetivo**: Confirmar que deployment está servindo domínio correto.
 
 Caminho: **Settings** → **Domains**
 
 **Domínios Expected**:
+
 ```
 sistema.qwork.app.br → Production (main deployment)
 staging.qwork.app.br → Preview (automated previews)
@@ -251,6 +279,7 @@ sistema.qwork.app.br → Default preview URL
 ## Fase 6: Validação Pós-Deploy
 
 ### 6.1 Verificar Acesso à URL Production
+
 **Objetivo**: Confirmar que deploy está ativa e servindo código.
 
 ```bash
@@ -267,11 +296,13 @@ curl -I https://sistema.qwork.app.br
 ```
 
 **Critérios de Aceição**:
+
 - HTTP 200 (não 403, 404, 500)
 - Página carrega sem erros de build
 - Assets carregam (CSS, JS)
 
 ### 6.2 Verificar Conectividade de Database
+
 **Objetivo**: Confirmar que ENV VAR DATABASE_URL está sendo lida corretamente.
 
 ```bash
@@ -286,12 +317,14 @@ curl -I https://sistema.qwork.app.br
 ```
 
 **Indicadores de Sucesso**:
+
 - Login funciona (database acessível)
 - Queries retornam dados (usuários, clínicas, etc.)
 - Sem mensagens "Connection refused" ou "FATAL"
 - DATABASE_URL não tem typos
 
 ### 6.3 Validar Schema Database
+
 **Objetivo**: Confirmar que banco está na versão esperada.
 
 ```bash
@@ -316,8 +349,9 @@ psql -h <production_host> -U neondb_owner -d neondb_v2 \
 ```
 
 **Esperado**:
+
 ```
-id | name                                      
+id | name
    | 9001 | create_clinicas_table
    | 9002 | create_usuarios_table
    ... (progressão até migration recente)
@@ -331,6 +365,7 @@ usuario_count | >0 (database tem dados)
 ## Fase 7: Validação de Features
 
 ### 7.1 Smoke Test do Application
+
 **Objetivo**: Testar flows críticos em production.
 
 ```bash
@@ -342,6 +377,7 @@ usuario_count | >0 (database tem dados)
 ```
 
 **Checklist**:
+
 - [ ] Login page carrega
 - [ ] Login com credenciais válidas funciona
 - [ ] Dashboard carrega pós-login
@@ -350,6 +386,7 @@ usuario_count | >0 (database tem dados)
 - [ ] Sem console errors no DevTools
 
 ### 7.2 Verificar que é Feature/V2 (Não Legacy)
+
 **Objetivo**: Confirmar que code legacy foi removido.
 
 ```bash
@@ -362,6 +399,7 @@ usuario_count | >0 (database tem dados)
 ```
 
 ### 7.3 Verificar Logs em Vercel (Se Disponível)
+
 **Objetivo**: Diagnosticar qualquer erro silencioso.
 
 Caminho: **Deployments** → [Deploy ID] → **Logs**
@@ -378,6 +416,7 @@ Procurar por:
 ## Fase 8: Limpeza e Documentação
 
 ### 8.1 Atualizar Production Branch com Empty Commit (Se Necessário)
+
 **Objetivo**: Marcar deployment no histórico git.
 
 ```bash
@@ -394,7 +433,9 @@ git push origin production
 **Propósito**: Deixa marca clara no git quando cada deploy foi feito.
 
 ### 8.2 Documentar Status em Wiki ou Notion
+
 **Campos a Documentar**:
+
 ```
 Data: 2026-04-07
 Horário: HH:MM UTC
@@ -416,7 +457,7 @@ Checklist:
 [ ] Dashboard loads
 [ ] No console errors
 
-Rollback Plan: 
+Rollback Plan:
   - If needed, redeploy from main or previous commit
   - DATABASE_URL switch to neondb (legacy) if emergency
 
@@ -427,6 +468,7 @@ Notes:
 ```
 
 ### 8.3 Cleanup Scripts Temporários
+
 **Objetivo**: Remover arquivos de teste usados durante deploy.
 
 ```bash
@@ -445,6 +487,7 @@ git push origin production
 ## Fase 9: Contingência — Rollback (Se Necessário)
 
 ### 9.1 Rollback Rápido via Vercel UI
+
 **Se deployment em production has critical errors**:
 
 1. Ir para **Deployments**
@@ -455,6 +498,7 @@ git push origin production
 **Tempo esperado**: <1 minuto
 
 ### 9.2 Rollback via Git + Redeploy
+
 **Se rollback via UI não funciona**:
 
 ```bash
@@ -472,6 +516,7 @@ vercel deploy --prod
 ```
 
 ### 9.3 Rollback Database (Se Necessário)
+
 **Se dados foram corrompidos**:
 
 ```bash
@@ -487,6 +532,7 @@ vercel redeploy (ou vercel deploy --prod)
 ```
 
 **Documentar Incident**:
+
 - Hora de rollback
 - Razão
 - Tempo para recuperação
@@ -497,6 +543,7 @@ vercel redeploy (ou vercel deploy --prod)
 ## Appendix A: Variáveis e Credenciais Reference
 
 ### Neon Connection Info (Exemplo)
+
 ```
 Environment: PROD
 Host: ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech
@@ -507,6 +554,7 @@ Connection String: postgresql://neondb_owner:npg_J2QYqn5oxCzp@ep-divine-sky-acud
 ```
 
 ### Vercel Project Reference
+
 ```
 Project Name: qwork
 Project ID: prj_LvK5ytsqYligFlwdzBAihqdgj2WS
@@ -516,6 +564,7 @@ Staging Domain: staging.qwork.app.br
 ```
 
 ### Custom Domains
+
 ```
 Production: sistema.qwork.app.br (domínio principal)
 Staging: staging.qwork.app.br (auto-preview)
@@ -525,15 +574,15 @@ Staging: staging.qwork.app.br (auto-preview)
 
 ## Appendix B: Troubleshooting Map
 
-| Sintoma | Possível Causa | Solução |
-|---------|-----------------|---------|
-| "Deployment não aparece em Production" | Deploy criada em preview mode | Promover manually via UI (Fase 5.1) |
-| "Login falha, conexão recusada" | DATABASE_URL incorreta ou DB down | Verificar env var Vercel, confirmar Neon status |
-| "HTTP 500 em alguns endpoints" | Build incompleto ou env var missing | Check Vercel runtime logs |
-| "Assets (CSS/JS) não carregam" | Build artifacts faltando | Rerun `vercel deploy --prod` |
-| "Database version mismatch" | Migrations não aplicadas | Aplicar migrations em Neon manualmente |
-| "Old code (main) sendo servido" | Production branch ainda aponta main | Deploy explícito de feature/v2 ignora isso |
-| "Vercel API reject env var update" | Schema incompatível com Vercel | Usar UI, não CLI; não crítico para workflow |
+| Sintoma                                | Possível Causa                      | Solução                                         |
+| -------------------------------------- | ----------------------------------- | ----------------------------------------------- |
+| "Deployment não aparece em Production" | Deploy criada em preview mode       | Promover manually via UI (Fase 5.1)             |
+| "Login falha, conexão recusada"        | DATABASE_URL incorreta ou DB down   | Verificar env var Vercel, confirmar Neon status |
+| "HTTP 500 em alguns endpoints"         | Build incompleto ou env var missing | Check Vercel runtime logs                       |
+| "Assets (CSS/JS) não carregam"         | Build artifacts faltando            | Rerun `vercel deploy --prod`                    |
+| "Database version mismatch"            | Migrations não aplicadas            | Aplicar migrations em Neon manualmente          |
+| "Old code (main) sendo servido"        | Production branch ainda aponta main | Deploy explícito de feature/v2 ignora isso      |
+| "Vercel API reject env var update"     | Schema incompatível com Vercel      | Usar UI, não CLI; não crítico para workflow     |
 
 ---
 
@@ -569,6 +618,7 @@ PÓS-DEPLOY:
 ## Appendix D: Comandos Rápidos (Copy-Paste)
 
 ### Deploy Rápido
+
 ```bash
 git checkout feature/v2
 git pull origin feature/v2
@@ -576,6 +626,7 @@ vercel deploy --prod
 ```
 
 ### Validar DB
+
 ```bash
 export PGPASSWORD="npg_J2QYqn5oxCzp"
 export PGSSLMODE="require"
@@ -583,6 +634,7 @@ psql -h ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech -U neondb_owner -d
 ```
 
 ### Setup Production Branch (Primeira Vez)
+
 ```bash
 git checkout feature/v2
 git pull origin feature/v2
@@ -594,14 +646,14 @@ git push -u origin production
 
 ## Histórico de Uso
 
-| Data | Status | Notas |
-|------|--------|-------|
+| Data       | Status     | Notas                                       |
+| ---------- | ---------- | ------------------------------------------- |
 | 2026-04-07 | ✅ SUCCESS | Primeira promoção com neondb_v2, verificado |
-| | | |
+|            |            |                                             |
 
 ---
 
 **Versão deste Roteiro**: 1.0  
 **Última Atualização**: 2026-04-07  
 **Responsável**: Squad Deployment QWork  
-**Próxima Revisão**: Conforme novos deploys, solicitar feedback e melhorias  
+**Próxima Revisão**: Conforme novos deploys, solicitar feedback e melhorias
