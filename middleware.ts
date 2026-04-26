@@ -60,6 +60,19 @@ function hasMaintenanceBypass(request: NextRequest): boolean {
   return valid;
 }
 
+/**
+ * Verifica se o IP está na whitelist de IPs de desenvolvedor.
+ * Durante manutenção, IPs autorizados podem acessar normalmente.
+ */
+function isDeveloperIP(clientIP: string): boolean {
+  // Whitelist de IPs de dev autorizados durante manutenção
+  const DEVELOPER_IPS = [
+    '177.146.190.175', // Ronaldo (seu IP público)
+  ];
+
+  return DEVELOPER_IPS.includes(clientIP);
+}
+
 // ─── Rate Limiting — Dual Strategy (Edge Runtime compatible) ─────────────────
 //
 // Estratégia dupla implementada no Edge (in-memory, sem DB):
@@ -312,8 +325,16 @@ function parseSession(request: NextRequest): MiddlewareSession | null {
 }
 
 export function middleware(request: NextRequest) {
+  // ── Extract client IP FIRST (needed for maintenance and developer checks) ──
+  const clientIP =
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+    request.headers.get('x-real-ip') ||
+    request.ip ||
+    'unknown';
+
   // ── MAINTENANCE MODE CHECK — FIRST (before everything else) ──
-  if (isUnderMaintenance() && !hasMaintenanceBypass(request)) {
+  // But allow: bypass cookie, developer IPs, or /maintenance page itself
+  if (isUnderMaintenance() && !hasMaintenanceBypass(request) && !isDeveloperIP(clientIP)) {
     const { pathname } = request.nextUrl;
     
     // Exceções: /maintenance itself (não redirecionar, deixar renderizar)
@@ -330,11 +351,6 @@ export function middleware(request: NextRequest) {
   const AUTHORIZED_ADMIN_IPS =
     process.env.AUTHORIZED_ADMIN_IPS?.split(',') || [];
   const { pathname } = request.nextUrl;
-  const clientIP =
-    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
-    request.headers.get('x-real-ip') ||
-    request.ip ||
-    'unknown';
 
   // ── Rate Limiting Global (dual-key: IP + usuário autenticado) ──
   // Parse antecipado de sessão para extrair userId sem duplo parse.
