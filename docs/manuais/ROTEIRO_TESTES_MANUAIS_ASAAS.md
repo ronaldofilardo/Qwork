@@ -2,7 +2,7 @@
 
 **Data:** 17/02/2026  
 **Versão:** 1.0  
-**Ambiente:** PRODUÇÃO (https://qwork-psi.vercel.app)  
+**Ambiente:** PRODUÇÃO (https://sistema.qwork.app.br)  
 **Testador:** ********\_\_\_********  
 **Data do Teste:** **_/_**/**\_\_**
 
@@ -46,7 +46,7 @@
 
 - ✅ Todas as 4 variáveis existem
 - ✅ Valores não estão vazios
-- ✅ `NEXT_PUBLIC_BASE_URL` = https://qwork-psi.vercel.app
+- ✅ `NEXT_PUBLIC_BASE_URL` = https://sistema.qwork.app.br
 
 | Status                     | Notas |
 | -------------------------- | ----- |
@@ -61,7 +61,7 @@
 **Comando:**
 
 ```powershell
-Invoke-RestMethod -Uri "https://qwork-psi.vercel.app/api/webhooks/asaas" -Method POST -Body '{"test":"config"}' -ContentType "application/json"
+Invoke-RestMethod -Uri "https://sistema.qwork.app.br/api/webhooks/asaas" -Method POST -Body '{"test":"config"}' -ContentType "application/json"
 ```
 
 **Resultado Esperado:**
@@ -95,7 +95,7 @@ Invoke-RestMethod -Uri "https://qwork-psi.vercel.app/api/webhooks/asaas" -Method
 1. Acesse: https://sandbox.asaas.com/
 2. Login com suas credenciais
 3. Menu: **Configurações** > **Integrações** > **Webhooks**
-4. Procure pelo webhook: `https://qwork-psi.vercel.app/api/webhooks/asaas`
+4. Procure pelo webhook: `https://sistema.qwork.app.br/api/webhooks/asaas`
 
 **Resultado Esperado:**
 
@@ -557,7 +557,7 @@ curl -X POST https://qwork-psi.vercel.app/api/pagamento/asaas/criar \
 ```powershell
 for ($i=1; $i -le 110; $i++) {
     Write-Host "Request $i"
-    Invoke-WebRequest -Uri "https://qwork-psi.vercel.app/api/webhooks/asaas" -Method POST -Body '{"test":"rate"}' -ContentType "application/json"
+    Invoke-WebRequest -Uri "https://sistema.qwork.app.br/api/webhooks/asaas" -Method POST -Body '{"test":"rate"}' -ContentType "application/json"
 }
 ```
 
@@ -611,7 +611,7 @@ curl -X POST https://qwork-psi.vercel.app/api/webhooks/asaas \
 $times = @()
 for ($i=1; $i -le 10; $i++) {
     $start = Get-Date
-    Invoke-WebRequest -Uri "https://qwork-psi.vercel.app/api/webhooks/asaas" -Method POST -Body '{"test":"latency"}' -ContentType "application/json" -UseBasicParsing | Out-Null
+    Invoke-WebRequest -Uri "https://sistema.qwork.app.br/api/webhooks/asaas" -Method POST -Body '{"test":"latency"}' -ContentType "application/json" -UseBasicParsing | Out-Null
     $end = Get-Date
     $duration = ($end - $start).TotalMilliseconds
     $times += $duration

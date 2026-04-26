@@ -18,6 +18,7 @@ import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
 import { useComercial } from './comercial-context';
 import { ComercialComissoesAbas } from '@/components/comercial/ComercialComissoesAbas';
 import ComercialLeadsAprovacaoPage from './leads/page';
+import CandidatosLPContent from './leads/CandidatosLPContent';
 import type { Lead } from '@/app/admin/representantes/types';
 import { useLeads } from '@/app/admin/representantes/hooks/useLeads';
 import { useCachedDocs } from '@/app/admin/representantes/hooks/useCachedDocs';
@@ -34,6 +35,9 @@ interface Session {
   nome: string;
   perfil: string;
 }
+
+// LeadsTabsWrapper declarado após CandidatosContent (abaixo) para evitar
+// uso-antes-da-definição exigido pelo @typescript-eslint/no-use-before-define
 
 function CandidatosContent() {
   const ld = useLeads('candidatos', 'pendente_verificacao');
@@ -146,6 +150,55 @@ function CandidatosContent() {
         onRejeitarLead={handleRejeitarLead}
         onConverterLead={handleConverterLead}
       />
+    </div>
+  );
+}
+
+function LeadsTabsWrapper() {
+  const [aba, setAba] = useState<
+    'candidatos-lp' | 'leads-clientes' | 'candidatos-repasse'
+  >('candidatos-lp');
+
+  return (
+    <div className="space-y-4">
+      {/* Abas de navegação */}
+      <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 text-sm w-fit">
+        <button
+          onClick={() => setAba('candidatos-lp')}
+          className={`px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer ${
+            aba === 'candidatos-lp'
+              ? 'bg-white shadow text-gray-900'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Candidatos da LP
+        </button>
+        <button
+          onClick={() => setAba('leads-clientes')}
+          className={`px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer ${
+            aba === 'leads-clientes'
+              ? 'bg-white shadow text-gray-900'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Leads de Clientes
+        </button>
+        <button
+          onClick={() => setAba('candidatos-repasse')}
+          className={`px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer ${
+            aba === 'candidatos-repasse'
+              ? 'bg-white shadow text-gray-900'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Candidatos (Repasse Admin)
+        </button>
+      </div>
+
+      {/* Conteúdo da aba ativa */}
+      {aba === 'candidatos-lp' && <CandidatosLPContent />}
+      {aba === 'leads-clientes' && <ComercialLeadsAprovacaoPage />}
+      {aba === 'candidatos-repasse' && <CandidatosContent />}
     </div>
   );
 }
@@ -613,11 +666,8 @@ export default function ComercialPage() {
 
     if (activeSection === 'leads') {
       return (
-        <div className="space-y-8">
-          <ComercialLeadsAprovacaoPage />
-          <div className="border-t pt-6">
-            <CandidatosContent />
-          </div>
+        <div className="space-y-0">
+          <LeadsTabsWrapper />
         </div>
       );
     }

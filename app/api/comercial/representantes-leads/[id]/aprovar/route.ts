@@ -1,7 +1,8 @@
 /**
- * POST /api/admin/representantes-leads/[id]/aprovar
+ * POST /api/comercial/representantes-leads/[id]/aprovar
  *
- * Admin aprova documentação de um lead: status → 'verificado'
+ * Comercial aprova documentação de um candidato (lead da LP): status → 'verificado'
+ * Só pode aprovar leads atribuídos ao próprio comercial.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -14,14 +15,13 @@ export async function POST(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const session = await requireRole(['comercial', 'suporte'], false);
+    const session = await requireRole('comercial', false);
     const leadId = params.id;
 
     if (!leadId) {
       return NextResponse.json({ error: 'ID obrigatório' }, { status: 400 });
     }
 
-    // Verificar que lead existe e está em status pendente
     const current = await query<{
       status: string;
       comercial_cpf: string | null;
@@ -37,11 +37,7 @@ export async function POST(
       );
     }
 
-    // Comercial só pode aprovar leads atribuídos a ele
-    if (
-      session.perfil === 'comercial' &&
-      current.rows[0].comercial_cpf !== session.cpf
-    ) {
+    if (current.rows[0].comercial_cpf !== session.cpf) {
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
     }
 
@@ -54,7 +50,6 @@ export async function POST(
       );
     }
 
-    // Aprovar
     await query(
       `UPDATE representantes_cadastro_leads
        SET status = 'verificado',
@@ -64,8 +59,6 @@ export async function POST(
       [leadId, session.cpf]
     );
 
-    console.log(`[ADMIN] Lead ${leadId} aprovado por ${session.cpf}`);
-
     return NextResponse.json({ success: true, status: 'verificado' });
   } catch (err: unknown) {
     const e = err as Error;
@@ -73,7 +66,7 @@ export async function POST(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     if (e.message === 'Sem permissão')
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
-    console.error('[POST /api/admin/representantes-leads/[id]/aprovar]', e);
+    console.error('[POST /api/comercial/representantes-leads/[id]/aprovar]', e);
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
 }

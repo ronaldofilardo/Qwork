@@ -43,7 +43,7 @@ O sistema estava funcionando em produção, mas o gateway de pagamento Asaas est
   - `ASAAS_API_KEY`: Chave de API do Asaas Sandbox
   - `ASAAS_API_URL`: https://api-sandbox.asaas.com/v3
   - `ASAAS_WEBHOOK_SECRET`: Token dedicado (separado da API key)
-  - `NEXT_PUBLIC_BASE_URL`: https://qwork-psi.vercel.app
+  - `NEXT_PUBLIC_BASE_URL`: https://sistema.qwork.app.br
 - ✅ Restaurado `.env.local` para localhost (desenvolvimento)
 
 **Arquivos Criados/Modificados:**
@@ -57,7 +57,7 @@ O sistema estava funcionando em produção, mas o gateway de pagamento Asaas est
 **Implementado:**
 
 - ✅ Webhook cadastrado no Asaas Sandbox
-  - URL: `https://qwork-psi.vercel.app/api/webhooks/asaas`
+  - URL: `https://sistema.qwork.app.br/api/webhooks/asaas`
   - Token: `qwork_webhook_secret_prod_2026_a7b9c3d5e8f1g2h4i6j8k0l2m4n6p8q0`
   - Eventos: PAYMENT_RECEIVED, PAYMENT_CONFIRMED, PAYMENT_OVERDUE, etc.
 
@@ -431,7 +431,7 @@ O sistema está pronto para processar pagamentos reais em produção.
 **Build Aprovada Por:** Sistema de CI/CD  
 **Data de Aprovação:** 17/02/2026  
 **Versão:** v1.0.0-asaas-integration  
-**Ambiente:** PRODUÇÃO (https://qwork-psi.vercel.app)
+**Ambiente:** PRODUÇÃO (https://sistema.qwork.app.br)
 
 **Status Final:** ✅ **GO-LIVE AUTORIZADO**
 
