@@ -311,9 +311,13 @@ export function middleware(request: NextRequest) {
 
   // ── MAINTENANCE MODE CHECK — FIRST (before everything else) ──
   // But allow: bypass cookie, developer IPs, or /maintenance page itself
-  if (isUnderMaintenance() && !hasMaintenanceBypass(request) && !isDeveloperIP(clientIP)) {
+  if (
+    isUnderMaintenance() &&
+    !hasMaintenanceBypass(request) &&
+    !isDeveloperIP(clientIP)
+  ) {
     const { pathname } = request.nextUrl;
-    
+
     // Exceções: /maintenance itself (não redirecionar, deixar renderizar)
     // e _next/* (assets estáticos necessários para a página)
     if (pathname === '/maintenance' || pathname.startsWith('/_next/')) {

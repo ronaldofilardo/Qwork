@@ -3,7 +3,7 @@
 **Data:** 17/02/2026  
 **Versão:** 1.0  
 **Ambiente:** PRODUÇÃO (https://sistema.qwork.app.br)  
-**Testador:** ********\_\_\_********  
+**Testador:** **\*\*\*\***\_\_\_**\*\*\*\***  
 **Data do Teste:** **_/_**/**\_\_**
 
 ---
@@ -154,7 +154,7 @@ curl -X POST https://qwork-psi.vercel.app/api/pagamento/asaas/criar \
 - ✅ `asaas_pix_qrcode` (string grande, código PIX)
 - ✅ `asaas_pix_qrcode_image` (base64, começa com "data:image")
 
-**ANOTE O asaas_payment_id:** **********\_\_**********
+**ANOTE O asaas_payment_id:** ****\*\*****\_\_****\*\*****
 
 | Status                     | Notas |
 | -------------------------- | ----- |
@@ -374,7 +374,7 @@ curl -X POST https://qwork-psi.vercel.app/api/pagamento/asaas/criar \
 - ✅ `asaas_boleto_url` preenchido (URL do boleto)
 - ✅ `asaas_invoice_url` preenchido (URL da fatura)
 
-**ANOTE O asaas_payment_id:** **********\_\_**********
+**ANOTE O asaas_payment_id:** ****\*\*****\_\_****\*\*****
 
 | Status                     | Notas |
 | -------------------------- | ----- |
@@ -468,7 +468,7 @@ curl -X POST https://qwork-psi.vercel.app/api/pagamento/asaas/criar \
 - ✅ Status HTTP 200
 - ✅ `asaas_payment_url` preenchido (URL de checkout)
 
-**ANOTE O asaas_payment_id:** **********\_\_**********
+**ANOTE O asaas_payment_id:** ****\*\*****\_\_****\*\*****
 
 | Status                     | Notas |
 | -------------------------- | ----- |
@@ -759,7 +759,7 @@ FROM webhook_logs;
 
 ## 📋 ASSINATURA DO TESTADOR
 
-**Testador:** ******************\_\_\_******************
+**Testador:** ********\*\*********\_\_\_********\*\*********
 
 **Data:** **_/_**/**\_\_**
 
