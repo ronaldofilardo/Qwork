@@ -289,14 +289,17 @@ export async function handleCadastroTomador(
           // Backfill: vinculo existente pode ter lead_id = NULL (criado via rota admin sem lead)
           // Atualizar para garantir que comissões apareçam em "Minhas Vendas" do representante
           if (lead?.id != null) {
-            await txClient
-              .query(
-                `UPDATE vinculos_comissao
+            const backfillResult = await txClient.query(
+              `UPDATE vinculos_comissao
                SET lead_id = $1, atualizado_em = NOW()
                WHERE representante_id = $2 AND ${vinculoColuna} = $3 AND lead_id IS NULL`,
-                [lead.id, rep.id, vinculoValor]
-              )
-              .catch(() => {});
+              [lead.id, rep.id, vinculoValor]
+            );
+            if (backfillResult.rowCount === 0) {
+              console.warn(
+                `[criarTomadorComComissionamento] Backfill de lead_id falhou (nenhuma linha atualizada). lead_id=${lead.id}, representante_id=${rep.id}, ${vinculoColuna}=${vinculoValor}`
+              );
+            }
           }
           console.info(
             JSON.stringify({

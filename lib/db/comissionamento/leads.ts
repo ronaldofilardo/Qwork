@@ -218,7 +218,9 @@ export async function converterLeadEmVinculo(
     );
     const lead = leadData.rows[0];
     const percRep =
-      lead?.percentual_comissao_representante ?? lead?.percentual_comissao ?? 0;
+      lead?.percentual_comissao_representante != null
+        ? lead.percentual_comissao_representante
+        : (lead?.percentual_comissao ?? 0);
 
     await query(
       `INSERT INTO vinculos_comissao (representante_id, entidade_id, lead_id, data_inicio, data_expiracao, percentual_comissao_representante)

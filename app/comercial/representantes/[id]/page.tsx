@@ -52,13 +52,6 @@ const STATUS_LEAD_CLS: Record<string, string> = {
   pendente: 'bg-amber-100 text-amber-700',
 };
 
-const STATUS_VINCULO_CLS: Record<string, string> = {
-  ativo: 'bg-green-100 text-green-700',
-  inativo: 'bg-gray-100 text-gray-500',
-  suspenso: 'bg-red-100 text-red-700',
-  pendente: 'bg-amber-100 text-amber-700',
-};
-
 const STATUS_COMISSAO_CLS: Record<string, string> = {
   pendente: 'bg-amber-100 text-amber-700',
   aprovada: 'bg-blue-100 text-blue-700',
@@ -171,7 +164,6 @@ export default function ComercialRepresentanteDetalhePage() {
   const [painel, setPainel] = useState<PainelTipo>(null);
   const [painelLoading, setPainelLoading] = useState(false);
   const [leadsDetalhe, setLeadsDetalhe] = useState<LeadDetalhe[]>([]);
-  const [vinculosDetalhe, setVinculosDetalhe] = useState<VinculoDetalhe[]>([]);
   const [comissoesDetalhe, setComissoesDetalhe] = useState<ComissaoDetalhe[]>(
     []
   );
@@ -359,8 +351,6 @@ export default function ComercialRepresentanteDetalhePage() {
         };
         if (tipo === 'leads' || tipo === 'leads_mes') {
           setLeadsDetalhe(data.leads ?? []);
-        } else if (tipo === 'vinculos') {
-          setVinculosDetalhe(data.vinculos ?? []);
         } else if (tipo === 'comissoes') {
           setComissoesDetalhe(data.comissoes ?? []);
           setComissoesTotal(data.total_pendente ?? 0);
@@ -613,7 +603,6 @@ export default function ComercialRepresentanteDetalhePage() {
             label="Vínculos"
             value={n(rep.vinculos_ativos)}
             sub="Comissão ativa"
-            onClick={() => void abrirPainel('vinculos')}
           />
           <KPICard
             label="Pendências"
@@ -932,9 +921,7 @@ export default function ComercialRepresentanteDetalhePage() {
                     ? 'Leads Ativos'
                     : painel === 'leads_mes'
                       ? 'Novos Leads (Este Mês)'
-                      : painel === 'vinculos'
-                        ? 'Vínculos Ativos'
-                        : 'Comissões Pendentes'}
+                      : 'Comissões Pendentes'}
               </h3>
               <button
                 onClick={() => setPainel(null)}
@@ -1116,60 +1103,6 @@ export default function ComercialRepresentanteDetalhePage() {
                   </div>
                 ))}
 
-              {painel === 'vinculos' &&
-                (painelLoading ? (
-                  <div className="flex justify-center items-center py-16">
-                    <div className="animate-spin h-8 w-8 rounded-full border-4 border-green-500 border-t-transparent" />
-                  </div>
-                ) : vinculosDetalhe.length === 0 ? (
-                  <p className="text-center text-gray-400 text-sm py-12">
-                    Nenhum vínculo encontrado.
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {vinculosDetalhe.map((v) => (
-                      <div
-                        key={v.id}
-                        className="border rounded-xl p-4 space-y-1"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Building2
-                              size={14}
-                              className="text-gray-400 flex-shrink-0"
-                            />
-                            <p className="font-semibold text-gray-900 text-sm">
-                              {v.entidade_nome || `Vínculo #${v.id}`}
-                            </p>
-                          </div>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${STATUS_VINCULO_CLS[v.status] ?? 'bg-gray-100 text-gray-600'}`}
-                          >
-                            {v.status}
-                          </span>
-                        </div>
-                        {v.entidade_cnpj && (
-                          <p className="text-xs text-gray-400">
-                            {fmtCnpj(v.entidade_cnpj)}
-                          </p>
-                        )}
-                        {v.vendedor_nome && (
-                          <p className="text-xs text-gray-500">
-                            Vendedor: {v.vendedor_nome}
-                          </p>
-                        )}
-                        {v.data_inicio && (
-                          <p className="text-[10px] text-gray-400">
-                            Início:{' '}
-                            {new Date(v.data_inicio).toLocaleDateString(
-                              'pt-BR'
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ))}
 
               {painel === 'comissoes' &&
                 (painelLoading ? (

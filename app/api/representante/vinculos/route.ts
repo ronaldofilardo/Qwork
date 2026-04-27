@@ -42,8 +42,10 @@ export async function GET(request: NextRequest) {
     const rows = await query(
       `SELECT
          v.*,
-         e.nome                       AS entidade_nome,
-         e.cnpj                       AS entidade_cnpj,
+         e.nome                       AS tomador_nome,
+         e.cnpj                       AS tomador_cnpj,
+         e.responsavel_nome           AS tomador_responsavel_nome,
+         e.responsavel_email          AS tomador_responsavel_email,
          COUNT(c.id)                  AS total_comissoes,
          COALESCE(SUM(CASE WHEN c.status = 'paga' THEN c.valor_comissao ELSE 0 END), 0) AS valor_total_pago,
          COALESCE(SUM(CASE WHEN c.status IN ('aprovada','liberada') THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente,
@@ -60,7 +62,7 @@ export async function GET(request: NextRequest) {
        LEFT JOIN comissoes_laudo c ON c.vinculo_id = v.id
        LEFT JOIN leads_representante lr ON lr.id = v.lead_id
        ${where}
-       GROUP BY v.id, e.nome, e.cnpj, lr.valor_negociado, lr.contato_nome, lr.contato_email, lr.criado_em, lr.data_conversao
+       GROUP BY v.id, e.nome, e.cnpj, e.responsavel_nome, e.responsavel_email, lr.valor_negociado, lr.contato_nome, lr.contato_email, lr.criado_em, lr.data_conversao
        ORDER BY v.data_expiracao ASC
        LIMIT $${i} OFFSET $${i + 1}`,
       params
