@@ -190,3 +190,167 @@ describe('montarSplitAsaas()', () => {
     expect(result![0].fixedValue).toBe(23.25);
   });
 });
+
+// ─── calcularSplit — com configuracoes de gateway ────────────────────────────
+
+describe('calcularSplit() — com configuracoes dinâmicas do gateway', () => {
+  const configuracoesBoleto = [
+    { codigo: 'boleto', tipo: 'taxa_fixa' as const, valor: 2.9, ativo: true, descricao: null },
+    { codigo: 'taxa_transacao', tipo: 'taxa_fixa' as const, valor: 2.05, ativo: true, descricao: null },
+    { codigo: 'impostos', tipo: 'percentual' as const, valor: 7.0, ativo: true, descricao: null },
+  ];
+
+  it('sem configuracoes: baseLiquida = bruto - 7% impostos', () => {
+    const res = calcularSplit('percentual', 100, 'entidade', 20);
+    // impostos=7, gateway=0 → baseLiquida=93
+    expect(res.baseLiquida).toBe(93);
+    expect(res.valorRepresentante).toBe(18.6);
+  });
+
+  it('com configuracoes boleto: baseLiquida reduzida pela taxa do gateway + taxa_transacao', () => {
+    const res = calcularSplit('percentual', 100, 'entidade', 20, 0, undefined, {
+      metodoPagamento: 'boleto',
+      configuracoes: configuracoesBoleto,
+    });
+    // impostos=7, boleto=2.90, taxa_transacao=2.05 → gateway=4.95 → baseLiquida=88.05
+    expect(res.baseLiquida).toBe(88.05);
+    expect(res.valorRepresentante).toBe(17.61);
+    expect(res.valorImpostos).toBe(7);
+    expect(res.valorGateway).toBe(4.95);
+    expect(res.viavel).toBe(true);
+  });
+
+  it('taxa_transacao = 0 (sem a config) resulta em gateway = só boleto', () => {
+    const configSemTransacao = [
+      { codigo: 'boleto', tipo: 'taxa_fixa' as const, valor: 2.9, ativo: true, descricao: null },
+    ];
+    const res = calcularSplit('percentual', 100, 'entidade', 20, 0, undefined, {
+      metodoPagamento: 'boleto',
+      configuracoes: configSemTransacao,
+    });
+    // sem taxa_transacao: gateway = 2.90 → baseLiquida = 100 - 7 - 2.90 = 90.10
+    expect(res.baseLiquida).toBe(90.1);
+    expect(res.valorGateway).toBe(2.9);
+  });
+
+  it('com configuracoes PIX: aplica percentual de 0.99%', () => {
+    const configPix = [
+      { codigo: 'pix', tipo: 'percentual' as const, valor: 0.99, ativo: true, descricao: null },
+      { codigo: 'taxa_transacao', tipo: 'taxa_fixa' as const, valor: 2.05, ativo: true, descricao: null },
+    ];
+    const res = calcularSplit('percentual', 200, 'entidade', 20, 0, undefined, {
+      metodoPagamento: 'pix',
+      configuracoes: configPix,
+    });
+    // impostos = 14, pix = 200 * 0.99% = 1.98, taxa_transacao = 2.05 → gateway = 4.03
+    // baseLiquida = 200 - 14 - 4.03 = 181.97
+    expect(res.valorImpostos).toBe(14);
+    expect(res.valorGateway).toBe(4.03);
+    expect(res.baseLiquida).toBe(181.97);
+  });
+});
+
+// ─── montarSplitAsaas — split completo com impostos e sócios ─────────────────
+
+describe('montarSplitAsaas() — split societário completo', () => {
+  const configuracoesBoleto = [
+    { codigo: 'boleto', tipo: 'taxa_fixa' as const, valor: 2.9, ativo: true, descricao: null },
+    { codigo: 'taxa_transacao', tipo: 'taxa_fixa' as const, valor: 2.05, ativo: true, descricao: null },
+  ];
+
+  it('sem opcoes: retorna apenas item do representante (1 item — backward compat)', () => {
+    const split = calcularSplit('percentual', 100, 'entidade', 20);
+    const result = montarSplitAsaas('wallet_rep', split);
+    expect(result).not.toBeNull();
+    expect(result!.length).toBe(1);
+    expect(result![0].walletId).toBe('wallet_rep');
+  });
+
+  it('com impostosWalletId: retorna rep + impostos (2 itens)', () => {
+    const split = calcularSplit('percentual', 100, 'entidade', 20);
+    // sem gateway → valorImpostos=7, valorRep=18.6
+    const result = montarSplitAsaas('wallet_rep', split, null, {
+      impostosWalletId: 'wallet_qwork',
+    });
+    expect(result).not.toBeNull();
+    expect(result!.length).toBe(2);
+    expect(result![0]).toEqual({ walletId: 'wallet_rep', fixedValue: 18.6 });
+    expect(result![1]).toEqual({ walletId: 'wallet_qwork', fixedValue: 7 });
+  });
+
+  it('com beneficiarios socios e impostos: retorna 4 itens na ordem correta', () => {
+    const split = calcularSplit('percentual', 100, 'entidade', 20, 0, undefined, {
+      metodoPagamento: 'boleto',
+      configuracoes: configuracoesBoleto,
+    });
+    // baseLiquida=88.05, rep=17.61, impostos=7, socios=70.44 (ronaldo=35.22, antonio=35.22)
+
+    const result = montarSplitAsaas('wallet_rep', split, null, {
+      impostosWalletId: 'wallet_qwork',
+      beneficiarios: [
+        { walletId: 'wallet_ronaldo', percentual: 50 },
+        { walletId: 'wallet_antonio', percentual: 50 },
+      ],
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.length).toBe(4);
+    // 1. Representante
+    expect(result![0]).toEqual({ walletId: 'wallet_rep', fixedValue: 17.61 });
+    // 2. Impostos (7%)
+    expect(result![1]).toEqual({ walletId: 'wallet_qwork', fixedValue: 7 });
+    // 3. Sócios (50%/50% de valorQWork=70.44)
+    expect(result![2]).toEqual({ walletId: 'wallet_ronaldo', fixedValue: 35.22 });
+    expect(result![3]).toEqual({ walletId: 'wallet_antonio', fixedValue: 35.22 });
+  });
+
+  it('com comercial + socios + impostos: retorna 5 itens na ordem correta', () => {
+    const split = calcularSplit('percentual', 100, 'entidade', 20, 10);
+    // impostos=7, gateway=0, baseLiquida=93
+    // rep = 93*20% = 18.6
+    // comercial (percentual model) = 93*10% = 9.3
+    // margemLivre = 93 - 18.6 = 74.4
+    // valorParaSocios = 74.4 - 9.3 = 65.1
+
+    const result = montarSplitAsaas('wallet_rep', split, 'wallet_comercial', {
+      impostosWalletId: 'wallet_qwork',
+      beneficiarios: [
+        { walletId: 'wallet_ronaldo', percentual: 50 },
+        { walletId: 'wallet_antonio', percentual: 50 },
+      ],
+    });
+
+    expect(result).not.toBeNull();
+    expect(result!.length).toBe(5);
+    expect(result![0].walletId).toBe('wallet_rep');
+    expect(result![1].walletId).toBe('wallet_comercial');
+    expect(result![2].walletId).toBe('wallet_qwork');
+    expect(result![3].walletId).toBe('wallet_ronaldo');
+    expect(result![4].walletId).toBe('wallet_antonio');
+  });
+
+  it('beneficiario sem walletId é ignorado no split', () => {
+    const split = calcularSplit('percentual', 100, 'entidade', 20);
+    const result = montarSplitAsaas('wallet_rep', split, null, {
+      beneficiarios: [
+        { walletId: null, percentual: 50 },
+        { walletId: 'wallet_antonio', percentual: 50 },
+      ],
+    });
+    // apenas antonio é incluído (ronaldo sem walletId é filtrado)
+    expect(result).not.toBeNull();
+    const socios = result!.filter((i) => i.walletId === 'wallet_antonio');
+    expect(socios.length).toBe(1);
+    // antonio como único sócio recebe 100% do valorQWork (=74.4)
+    expect(socios[0].fixedValue).toBe(74.4);
+  });
+
+  it('sem split viável: retorna null mesmo com opcoes completas', () => {
+    const split = calcularSplit('percentual', 20, 'entidade', 80); // inviável
+    const result = montarSplitAsaas('wallet_rep', split, null, {
+      impostosWalletId: 'wallet_qwork',
+      beneficiarios: [{ walletId: 'wallet_ronaldo', percentual: 100 }],
+    });
+    expect(result).toBeNull();
+  });
+});

@@ -361,6 +361,140 @@ function StatusActions({
           </div>
         )}
 
+        {/* Painel de valores negociados por tipo de tomador e modelo de comissionamento */}
+        {temRep && modelo && (() => {
+          const tipoProduto = solicitacao.clinica_id
+            ? 'clinica'
+            : solicitacao.entidade_id
+              ? 'entidade'
+              : null;
+          const baseQWork = tipoProduto === 'clinica' ? 5 : tipoProduto === 'entidade' ? 12 : null;
+
+          // Custo fixo efetivo: prioridade snapshot do lote > snapshot do lead > global do rep por tipo
+          const custoFixoEfetivo = isCustoFixo
+            ? (solicitacao.valor_custo_fixo_snapshot
+                ?? solicitacao.lead_valor_custo_fixo_snapshot
+                ?? (tipoProduto === 'clinica'
+                    ? solicitacao.rep_valor_custo_fixo_clinica
+                    : tipoProduto === 'entidade'
+                      ? solicitacao.rep_valor_custo_fixo_entidade
+                      : null))
+            : null;
+
+          // Percentuais efetivos: prioridade vínculo > lead > global do rep
+          const percRepEfetivo = !isCustoFixo
+            ? (solicitacao.vinculo_percentual_rep
+                ?? solicitacao.lead_percentual_rep
+                ?? solicitacao.representante_percentual_comissao)
+            : null;
+          const percRepFonte = !isCustoFixo
+            ? solicitacao.vinculo_percentual_rep != null
+              ? 'vínculo'
+              : solicitacao.lead_percentual_rep != null
+                ? 'lead'
+                : 'global'
+            : null;
+          const percComEfetivo = !isCustoFixo
+            ? (solicitacao.vinculo_percentual_comercial
+                ?? solicitacao.lead_percentual_comercial
+                ?? solicitacao.representante_percentual_comissao_comercial)
+            : null;
+
+          const minVenda =
+            baseQWork != null && custoFixoEfetivo != null
+              ? baseQWork + Number(custoFixoEfetivo)
+              : null;
+
+          const fmt2 = (v: number) =>
+            `R$ ${v.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
+          return (
+            <div className="bg-white rounded-lg border border-amber-100 px-3 py-2.5">
+              <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
+                {/* Tipo do tomador */}
+                {tipoProduto && (
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                      Tipo
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        tipoProduto === 'clinica'
+                          ? 'bg-sky-100 text-sky-700 border border-sky-200'
+                          : 'bg-violet-100 text-violet-700 border border-violet-200'
+                      }`}
+                    >
+                      {tipoProduto === 'clinica' ? 'Clínica' : 'Entidade'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Custo fixo + base + mínimo */}
+                {isCustoFixo && (
+                  <>
+                    {custoFixoEfetivo != null && (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                          Custo Fixo Rep
+                        </span>
+                        <span className="text-sm font-bold text-orange-700">
+                          {fmt2(Number(custoFixoEfetivo))}
+                        </span>
+                      </div>
+                    )}
+                    {baseQWork != null && (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                          Base QWork
+                        </span>
+                        <span className="text-sm font-bold text-gray-600">
+                          {fmt2(baseQWork)}
+                        </span>
+                      </div>
+                    )}
+                    {minVenda != null && (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                          Mínimo de Venda
+                        </span>
+                        <span className="text-sm font-bold text-emerald-700">
+                          {fmt2(minVenda)}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* Percentuais para modelo percentual */}
+                {!isCustoFixo && (
+                  <>
+                    {percRepEfetivo != null && (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                          Rep{percRepFonte ? ` (${percRepFonte})` : ''}
+                        </span>
+                        <span className="text-sm font-bold text-blue-700">
+                          {percRepEfetivo}%
+                        </span>
+                      </div>
+                    )}
+                    {percComEfetivo != null && percComEfetivo > 0 && (
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                          Comercial
+                        </span>
+                        <span className="text-sm font-bold text-indigo-600">
+                          {percComEfetivo}%
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Input de valor + botão */}
         <div className="flex items-end gap-3">
           <div className="flex-1 min-w-0">
