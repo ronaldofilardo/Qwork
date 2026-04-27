@@ -20,16 +20,6 @@ type EnvAvailability = Record<
 const MAINTENANCE_START_UTC = new Date(maintenanceConfig.startTime);
 const MAINTENANCE_END_UTC = new Date(maintenanceConfig.endTime);
 
-/**
- * Verifica se o sistema está ou estará em manutenção
- * (mostra aviso 12h antes se habilitado)
- */
-function isMaintenanceActive(): boolean {
-  if (!maintenanceConfig.enabled) return false;
-  const now = new Date();
-  return now >= MAINTENANCE_START_UTC && now <= MAINTENANCE_END_UTC;
-}
-
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
