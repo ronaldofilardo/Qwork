@@ -1,18 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireRole } from '@/lib/session';
+import { requireRole, getSession } from '@/lib/session';
 
 /**
  * GET /api/admin/clinicas/[id]/empresas
  *
- * Lista empresas de uma clínica específica com totais de funcionários e avaliações
+ * Lista empresas de uma clínica específica com totais de funcionários e avaliações.
+ *
+ * Autorização:
+ * - admin, suporte: acesso completo com todas as estatísticas (avaliações, funcionários)
+ * - comercial: acesso limitado apenas a dados corporativos (CNPJ, email, telefone, localização)
+ *   sem contagens de avaliações/lotes por questões de segurança
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole(['suporte', 'admin'], false);
+    // Autorizar suporte, admin e comercial
+    await requireRole(['suporte', 'admin', 'comercial'], false);
+
+    // Obter sessão para determinar nível de acesso aos dados
+    const session = getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Sessão não encontrada' },
+        { status: 401 }
+      );
+    }
 
     const clinicaId = parseInt(params.id);
 
@@ -36,7 +51,29 @@ export async function GET(
       );
     }
 
-    // Buscar empresas da clínica com estatísticas
+    // Perfil comercial recebe dados limitados (sem estatísticas sensíveis)
+    const isComerciaiPerfil = session.perfil === 'comercial';
+
+    // Construir query SQL condicionada ao perfil
+    const selectFields = isComerciaiPerfil
+      ? `ec.id, ec.nome, ec.cnpj, ec.email, ec.telefone, ec.cidade, ec.estado, ec.ativa, ec.criado_em`
+      : `ec.id, ec.nome, ec.cnpj, ec.email, ec.telefone, ec.cidade, ec.estado, ec.ativa, ec.criado_em,
+         COUNT(DISTINCT f.cpf) as total_funcionarios,
+         COUNT(DISTINCT a.id) as total_avaliacoes,
+         COUNT(DISTINCT CASE WHEN a.status = 'concluida' OR a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
+         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN a.id END) as avaliacoes_liberadas`;
+
+    const joins = isComerciaiPerfil
+      ? '' // Comercial não precisa de JOINs para contagens
+      : `LEFT JOIN funcionarios_clinicas fc ON fc.empresa_id = ec.id AND fc.ativo = true
+         LEFT JOIN funcionarios f ON f.id = fc.funcionario_id AND f.perfil = 'funcionario'
+         LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf`;
+
+    const groupBy = isComerciaiPerfil
+      ? '' // Comercial não agrupa
+      : `GROUP BY ec.id, ec.nome, ec.cnpj, ec.email, ec.telefone, ec.cidade, ec.estado, ec.ativa, ec.criado_em`;
+
+    // Buscar empresas da clínica
     interface EmpresaRow {
       id: number;
       nome: string;
@@ -47,46 +84,27 @@ export async function GET(
       estado: string | null;
       ativa: boolean;
       criado_em: string;
-      total_funcionarios: string;
-      total_avaliacoes: string;
-      avaliacoes_concluidas: string;
-      avaliacoes_liberadas: string;
+      total_funcionarios?: string;
+      total_avaliacoes?: string;
+      avaliacoes_concluidas?: string;
+      avaliacoes_liberadas?: string;
     }
 
     const result = await query<EmpresaRow>(
       `
-      SELECT 
-        ec.id,
-        ec.nome,
-        ec.cnpj,
-        ec.email,
-        ec.telefone,
-        ec.cidade,
-        ec.estado,
-        ec.ativa,
-        ec.criado_em,
-        COUNT(DISTINCT f.cpf) as total_funcionarios,
-        COUNT(DISTINCT a.id) as total_avaliacoes,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluida' OR a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
-        COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN a.id END) as avaliacoes_liberadas
+      SELECT ${selectFields}
       FROM empresas_clientes ec
-      LEFT JOIN funcionarios_clinicas fc ON fc.empresa_id = ec.id AND fc.ativo = true
-      LEFT JOIN funcionarios f ON f.id = fc.funcionario_id AND f.perfil = 'funcionario'
-      LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
+      ${joins}
       WHERE ec.clinica_id = $1
-      GROUP BY ec.id, ec.nome, ec.cnpj, ec.email, ec.telefone, ec.cidade, ec.estado, ec.ativa, ec.criado_em
+      ${groupBy}
       ORDER BY ec.nome
     `,
       [clinicaId]
     );
 
-    return NextResponse.json({
-      success: true,
-      clinica: {
-        id: clinicaResult.rows[0].id,
-        nome: clinicaResult.rows[0].nome,
-      },
-      empresas: result.rows.map((row) => ({
+    // Mapear resposta: filtrar dados sensíveis para comercial
+    const empresas = result.rows.map((row) => {
+      const baseEmpresa = {
         id: row.id,
         nome: row.nome,
         cnpj: row.cnpj,
@@ -96,11 +114,30 @@ export async function GET(
         estado: row.estado,
         ativa: row.ativa,
         criado_em: row.criado_em,
-        total_funcionarios: parseInt(row.total_funcionarios),
-        total_avaliacoes: parseInt(row.total_avaliacoes),
-        avaliacoes_concluidas: parseInt(row.avaliacoes_concluidas),
-        avaliacoes_liberadas: parseInt(row.avaliacoes_liberadas),
-      })),
+      };
+
+      // Comercial não recebe contagens de avaliações/funcionários
+      if (isComerciaiPerfil) {
+        return baseEmpresa;
+      }
+
+      // Suporte e admin recebem dados completos
+      return {
+        ...baseEmpresa,
+        total_funcionarios: parseInt(row.total_funcionarios || '0'),
+        total_avaliacoes: parseInt(row.total_avaliacoes || '0'),
+        avaliacoes_concluidas: parseInt(row.avaliacoes_concluidas || '0'),
+        avaliacoes_liberadas: parseInt(row.avaliacoes_liberadas || '0'),
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      clinica: {
+        id: clinicaResult.rows[0].id,
+        nome: clinicaResult.rows[0].nome,
+      },
+      empresas,
     });
   } catch (error) {
     console.error('Erro ao buscar empresas da clínica:', error);

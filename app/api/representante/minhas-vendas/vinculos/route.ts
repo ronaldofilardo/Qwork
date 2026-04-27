@@ -20,10 +20,13 @@ export async function GET(request: NextRequest) {
     const limit = 20;
     const offset = (page - 1) * limit;
 
-    // Vínculos de leads DIRETOS do representante (sem vendedor intermediário)
-    const wheres = [`lr.representante_id = $1`, `lr.vendedor_id IS NULL`];
+    // Vínculos DIRETOS do representante (inclui os criados por admin sem lead)
+    const wheres = [`v.representante_id = $1`];
     const params: unknown[] = [sess.representante_id];
     let i = 2;
+
+    // Incluir apenas vínculos sem vendedor intermediário (lead direto OU vínculo sem lead)
+    wheres.push(`(lr.vendedor_id IS NULL OR lr.id IS NULL)`);
 
     if (
       status &&
@@ -38,7 +41,7 @@ export async function GET(request: NextRequest) {
     const countResult = await query<{ total: string }>(
       `SELECT COUNT(DISTINCT v.id) as total
        FROM vinculos_comissao v
-       JOIN leads_representante lr ON lr.id = v.lead_id
+       LEFT JOIN leads_representante lr ON lr.id = v.lead_id
        ${where}`,
       params
     );
@@ -57,9 +60,9 @@ export async function GET(request: NextRequest) {
          COALESCE(SUM(CASE WHEN c.status = 'paga'            THEN c.valor_comissao ELSE 0 END), 0) AS valor_total_pago,
          COALESCE(SUM(CASE WHEN c.status IN ('aprovada','liberada') THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente
        FROM vinculos_comissao v
-       JOIN entidades e           ON e.id  = v.entidade_id
-       JOIN leads_representante lr ON lr.id = v.lead_id
-       LEFT JOIN comissoes_laudo c ON c.vinculo_id = v.id
+       JOIN entidades e               ON e.id  = v.entidade_id
+       LEFT JOIN leads_representante lr ON lr.id = v.lead_id
+       LEFT JOIN comissoes_laudo c    ON c.vinculo_id = v.id
        ${where}
        GROUP BY v.id, e.nome, e.cnpj, lr.valor_negociado, lr.contato_nome, lr.contato_email
        ORDER BY v.data_expiracao ASC

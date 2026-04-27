@@ -62,8 +62,10 @@ interface VinculoItem {
   status: string;
   data_inicio: string | null;
   data_expiracao: string | null;
-  entidade_nome: string | null;
-  entidade_cnpj: string | null;
+  tomador_nome: string | null;
+  tomador_cnpj: string | null;
+  tomador_responsavel_nome: string | null;
+  tomador_responsavel_email: string | null;
   dias_para_expirar: number | null;
 }
 
@@ -617,17 +619,23 @@ export default function DashboardRepresentante() {
                     {vinculos.map((v) => (
                       <div
                         key={v.id}
-                        className="border rounded-xl p-4 space-y-2"
+                        className="border rounded-xl p-4 space-y-2.5 hover:border-indigo-200 hover:shadow-sm transition-all"
                       >
+                        {/* Tomador - Cabeçalho */}
                         <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
                             <Building2
                               size={14}
-                              className="text-gray-400 flex-shrink-0"
+                              className="text-indigo-600 flex-shrink-0"
                             />
-                            <p className="font-semibold text-gray-900 text-sm">
-                              {v.entidade_nome ?? `Vínculo #${v.id}`}
-                            </p>
+                            <div className="min-w-0">
+                              <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+                                Tomador
+                              </p>
+                              <p className="font-semibold text-gray-900 text-sm truncate">
+                                {v.tomador_nome ?? `Vínculo #${v.id}`}
+                              </p>
+                            </div>
                           </div>
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${STATUS_VINCULO_CLS[v.status] ?? 'bg-gray-100 text-gray-600'}`}
@@ -635,14 +643,25 @@ export default function DashboardRepresentante() {
                             {v.status}
                           </span>
                         </div>
-                        {v.entidade_cnpj && (
-                          <p className="text-xs text-gray-400">
-                            {fmtCnpj(v.entidade_cnpj)}
+
+                        {/* CNPJ do Tomador */}
+                        {v.tomador_cnpj && (
+                          <p className="text-xs text-gray-500 ml-6">
+                            CNPJ: {fmtCnpj(v.tomador_cnpj)}
                           </p>
                         )}
+
+                        {/* Responsável do Tomador */}
+                        {v.tomador_responsavel_nome && (
+                          <p className="text-xs text-gray-500 ml-6">
+                            Responsável: {v.tomador_responsavel_nome}
+                          </p>
+                        )}
+
+                        {/* Data de Expiração */}
                         {v.data_expiracao && (
                           <p
-                            className={`text-[10px] font-medium ${
+                            className={`text-[10px] font-medium ml-6 ${
                               (v.dias_para_expirar ?? 99) <= 30
                                 ? 'text-red-500'
                                 : 'text-gray-400'

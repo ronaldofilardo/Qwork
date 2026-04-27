@@ -1,0 +1,52 @@
+tomador_tipo,tomador_id,tomador_nome,tomador_cnpj,empresa_nome,laudo_id,laudo_status,criado_em,emitido_em,enviado_em,lote_numero,lote_tipo,provider_storage,bucket_s3,arquivo_s3_key,arquivo_s3_url,arquivo_tamanho_bytes,arquivo_uploaded_at,avaliacoes_liberadas,avaliacoes_concluidas
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Mecânica",1090,rascunho,2026-04-26T20:49:42.342Z,,,1,completo,,,,,,,2,1
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empres clin 02",1057,rascunho,2026-04-02T21:50:44.746Z,,,6,completo,,,,,,,3,0
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empres clin 02",1056,rascunho,2026-04-02T21:46:58.687Z,,,5,completo,,,,,,,2,0
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1044,rascunho,2026-03-11T01:58:55.770Z,,,8,completo,,,,,,,3,3
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1038,rascunho,2026-02-27T08:43:16.178Z,,,7,completo,,,,,,,2,0
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empres clin 02",1033,rascunho,2026-02-18T14:07:07.504Z,,,4,completo,,,,,,,1,1
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empres clin 02",1032,rascunho,2026-02-18T06:04:23.317Z,,,3,completo,,,,,,,1,1
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empres clin 02",1031,rascunho,2026-02-18T05:38:58.852Z,,,2,completo,,,,,,,1,1
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empres clin 02",1028,rascunho,2026-02-17T22:31:13.767Z,,,1,completo,,,,,,,1,1
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1019,rascunho,2026-02-16T17:23:17.887Z,,,6,completo,,,,,,,2,1
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1018,rascunho,2026-02-13T15:52:21.512Z,,,5,completo,,,,,,,3,1
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1012,rascunho,2026-02-12T23:18:17.914Z,,,4,completo,,,,,,,2,0
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1010,rascunho,2026-02-12T15:24:06.406Z,,,3,completo,,,,,,,2,2
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1005,emitido,2026-02-10T15:21:47.979Z,2026-02-10T23:53:23.011Z,,2,completo,backblaze,laudos-qwork,laudos/lote-1005/laudo-1770756960778-42nlgb.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1005/laudo-1770756960778-42nlgb.pdf,,2026-02-11T01:38:56.401Z,2,2
+clinica,104,"RLJ COMERCIAL EXPORTADORA LTDA",09110380000191,"Empresa CM onlinwe",1003,rascunho,2026-02-10T14:30:56.337Z,,,1,completo,,,,,,,0,0
+clinica,107,"Clinica Final Test",97841843000152,"Empresa clin fina 001",1009,emitido,2026-02-11T04:53:04.391Z,2026-02-11T05:06:00.908Z,,1,completo,backblaze,laudos-qwork,laudos/lote-1009/laudo-1770775613063-d02f0l.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1009/laudo-1770775613063-d02f0l.pdf,639837,2026-02-11T05:06:15.641Z,2,2
+clinica,109,"Pos Correc Dep 1202",26698929000120,"Empasa Amada Aeso",1011,rascunho,2026-02-12T22:55:58.791Z,,,1,completo,,,,,,,2,0
+clinica,111,"Clinica Final",79831824000163,"Empresa RH da clini",1017,rascunho,2026-02-13T05:53:27.281Z,,,1,completo,,,,,,,2,0
+clinica,112,"TESTE 16.02",41677495000175,"TESTE TESTE",1023,rascunho,2026-02-16T18:53:20.611Z,,,4,completo,,,,,,,4,0
+clinica,112,"TESTE 16.02",41677495000175,"TESTE TESTE",1022,rascunho,2026-02-16T17:54:08.660Z,,,3,completo,,,,,,,2,0
+clinica,112,"TESTE 16.02",41677495000175,"TESTE TESTE",1021,rascunho,2026-02-16T17:43:59.088Z,,,2,completo,,,,,,,1,0
+clinica,112,"TESTE 16.02",41677495000175,"TESTE TESTE",1020,rascunho,2026-02-16T17:41:07.474Z,,,1,completo,,,,,,,1,0
+clinica,113,"Clinex MedOCup",04228123000135,"GEsor Clinex",1024,rascunho,2026-02-16T21:28:42.879Z,,,1,completo,,,,,,,1,1
+clinica,115,"Clinica End",60772535000102,"Empresa Clinica End",1027,emitido,2026-02-17T19:17:22.406Z,2026-02-17T19:30:20.202Z,,1,completo,backblaze,laudos-qwork,laudos/lote-1027/laudo-1771345848652-x2oidr.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1027/laudo-1771345848652-x2oidr.pdf,640776,2026-02-17T19:30:45.231Z,3,1
+clinica,118,"clinex 2026 ltda",91280455000163,"Emp cline 2026 fev",1035,emitido,2026-02-24T02:08:34.460Z,2026-02-24T02:23:42.363Z,,1,completo,backblaze,laudos-qwork,laudos/lote-1035/laudo-1771889082468-7maq40.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1035/laudo-1771889082468-7maq40.pdf,584889,2026-02-24T02:24:38.714Z,3,2
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"Empresa de Teste",1063,rascunho,2026-04-07T17:49:44.536Z,,,2,completo,,,,,,,1,0
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"Empresa de Teste",1062,rascunho,2026-04-07T17:43:36.208Z,,,1,completo,,,,,,,1,0
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"CONSTRUTORA INOVA AGORA",1055,rascunho,2026-04-02T15:41:10.291Z,,,3,completo,,,,,,,1,1
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"CONSTRUTORA INOVA AGORA",1053,rascunho,2026-03-31T21:44:36.771Z,,,2,completo,,,,,,,2,2
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"B&B p├úes e do├ºes",1052,rascunho,2026-03-27T20:42:31.911Z,,,1,completo,,,,,,,1,1
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"CONSTRUTORA INOVA AGORA",1051,rascunho,2026-03-26T21:16:00.815Z,,,1,completo,,,,,,,1,1
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"dfsgsG SDFsfes",1049,rascunho,2026-03-20T14:27:06.686Z,,,2,completo,,,,,,,1,1
+clinica,120,"SDFSDFSDFSDFSD",29060003000100,"dfsgsG SDFsfes",1037,emitido,2026-02-25T21:25:07.383Z,2026-02-25T23:14:53.206Z,,1,completo,backblaze,laudos-qwork,laudos/lote-1037/laudo-1772050534060-djstsp.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1037/laudo-1772050534060-djstsp.pdf,521426,2026-02-25T23:15:20.994Z,1,1
+clinica,123,"clinai pos clena",43315703000111,"emeoa ruao io",1040,rascunho,2026-02-27T16:23:43.884Z,,,1,completo,,,,,,,3,2
+clinica,129,"MedCtba",22765627000176,"Farma Mori",1047,rascunho,2026-03-16T21:30:09.903Z,,,3,completo,,,,,,,6,1
+clinica,129,"MedCtba",22765627000176,"Farma Mori",1046,emitido,2026-03-16T20:58:12.730Z,2026-03-17T05:18:25.710Z,2026-03-17T05:19:59.374Z,2,completo,backblaze,laudos-qwork,laudos/lote-1046/laudo-1773714053280-4ogaqh.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1046/laudo-1773714053280-4ogaqh.pdf,367998,2026-03-17T05:19:59.374Z,6,4
+clinica,129,"MedCtba",22765627000176,"Farma Mori",1043,rascunho,2026-03-09T05:03:14.828Z,,,1,completo,,,,,,,4,0
+clinica,131,"Clinica Teste 160326",47767852000172,"Construtora Teste Ltda",1045,emitido,2026-03-16T16:15:49.656Z,2026-03-25T17:20:51.560Z,,1,completo,backblaze,laudos-qwork,laudos/lote-1045/laudo-1774448718703-hxzzun.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1045/laudo-1774448718703-hxzzun.pdf,,2026-03-25T17:25:19.000Z,12,12
+clinica,136,"Clinica 01 procution",43111128000135,"Teste sem CNPJ",1067,rascunho,2026-04-08T20:29:57.986Z,,,1,completo,,,,,,,3,2
+clinica,136,"Clinica 01 procution",43111128000135,"Metaluri PR",1061,rascunho,2026-04-07T13:07:33.937Z,,,1,completo,,,,,,,5,0
+clinica,136,"Clinica 01 procution",43111128000135,"Industrua SP7",1060,enviado,2026-04-07T13:07:29.019Z,2026-04-26T21:20:14.766Z,2026-04-26T21:20:29.683Z,1,completo,backblaze,laudos-qwork,laudos/lote-1060/laudo-1777227653101-g3xygy.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1060/laudo-1777227653101-g3xygy.pdf,363548,2026-04-26T21:20:29.683Z,5,4
+clinica,136,"Clinica 01 procution",43111128000135,"Acadmia GYN",1059,enviado,2026-04-07T13:06:55.632Z,2026-04-14T18:55:15.887Z,2026-04-14T18:56:12.407Z,1,completo,backblaze,laudos-qwork,laudos/lote-1059/laudo-1776182170237-trn3lj.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1059/laudo-1776182170237-trn3lj.pdf,353850,2026-04-14T18:56:12.407Z,2,2
+entidade,100,"RELEGERE - ASSESSORIA E CONSULTORIA LTDA",02494916000170,"",1029,emitido,2026-02-18T04:35:12.075Z,2026-02-18T04:35:21.375Z,,12,completo,backblaze,laudos-qwork,laudos/lote-1029/laudo-1771378547237-kvkkbs.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1029/laudo-1771378547237-kvkkbs.pdf,627632,2026-02-18T04:35:43.951Z,3,1
+entidade,100,"RELEGERE - ASSESSORIA E CONSULTORIA LTDA",02494916000170,"",1007,emitido,2026-02-10T17:13:18.784Z,2026-02-11T00:57:09.352Z,,4,completo,backblaze,laudos-qwork,laudos/lote-1007/laudo-1770762849769-ua5zu0.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1007/laudo-1770762849769-ua5zu0.pdf,577310,2026-02-11T01:38:56.417Z,2,2
+entidade,100,"RELEGERE - ASSESSORIA E CONSULTORIA LTDA",02494916000170,"",1004,rascunho,2026-02-10T15:10:36.722Z,,,2,completo,,,,,,,2,0
+entidade,100,"RELEGERE - ASSESSORIA E CONSULTORIA LTDA",02494916000170,"",1002,rascunho,2026-02-10T14:29:28.439Z,,,1,completo,,,,,,,0,0
+entidade,105,"DDSDSAGADSGGSD",96104413000195,"",1006,rascunho,2026-02-10T15:33:46.635Z,,,3,completo,,,,,,,2,0
+entidade,106,"Empresa Privada Final",63424269000115,"",1008,emitido,2026-02-11T04:17:41.164Z,2026-02-11T04:18:16.241Z,,5,completo,backblaze,laudos-qwork,laudos/lote-1008/laudo-1770772751916-8j47zr.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1008/laudo-1770772751916-8j47zr.pdf,640751,2026-02-11T04:18:34.481Z,2,2
+entidade,114,"Entidade 00",56853041000185,"",1026,emitido,2026-02-17T17:09:56.862Z,2026-02-17T17:36:48.351Z,,11,completo,backblaze,laudos-qwork,laudos/lote-1026/laudo-1771339091272-j6fndo.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1026/laudo-1771339091272-j6fndo.pdf,579348,2026-02-17T17:38:07.685Z,3,1
+entidade,117,"TKCF Siderurguaca",73357308000162,"",1034,emitido,2026-02-24T00:28:43.051Z,2026-02-24T01:13:19.920Z,,14,completo,backblaze,laudos-qwork,laudos/lote-1034/laudo-1771884852195-j4l6i0.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1034/laudo-1771884852195-j4l6i0.pdf,626011,2026-02-24T01:14:10.400Z,2,1
+entidade,127,"teste lead comiss e contrat",61614511000198,"",1042,emitido,2026-03-03T17:49:52.089Z,2026-03-03T17:59:45.794Z,,18,completo,backblaze,laudos-qwork,laudos/lote-1042/laudo-1772550058047-72ymoa.pdf,https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1042/laudo-1772550058047-72ymoa.pdf,372180,2026-03-03T18:00:32.202Z,2,1

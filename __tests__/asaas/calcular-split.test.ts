@@ -195,9 +195,27 @@ describe('montarSplitAsaas()', () => {
 
 describe('calcularSplit() — com configuracoes dinâmicas do gateway', () => {
   const configuracoesBoleto = [
-    { codigo: 'boleto', tipo: 'taxa_fixa' as const, valor: 2.9, ativo: true, descricao: null },
-    { codigo: 'taxa_transacao', tipo: 'taxa_fixa' as const, valor: 2.05, ativo: true, descricao: null },
-    { codigo: 'impostos', tipo: 'percentual' as const, valor: 7.0, ativo: true, descricao: null },
+    {
+      codigo: 'boleto',
+      tipo: 'taxa_fixa' as const,
+      valor: 2.9,
+      ativo: true,
+      descricao: null,
+    },
+    {
+      codigo: 'taxa_transacao',
+      tipo: 'taxa_fixa' as const,
+      valor: 2.05,
+      ativo: true,
+      descricao: null,
+    },
+    {
+      codigo: 'impostos',
+      tipo: 'percentual' as const,
+      valor: 7.0,
+      ativo: true,
+      descricao: null,
+    },
   ];
 
   it('sem configuracoes: baseLiquida = bruto - 7% impostos', () => {
@@ -222,7 +240,13 @@ describe('calcularSplit() — com configuracoes dinâmicas do gateway', () => {
 
   it('taxa_transacao = 0 (sem a config) resulta em gateway = só boleto', () => {
     const configSemTransacao = [
-      { codigo: 'boleto', tipo: 'taxa_fixa' as const, valor: 2.9, ativo: true, descricao: null },
+      {
+        codigo: 'boleto',
+        tipo: 'taxa_fixa' as const,
+        valor: 2.9,
+        ativo: true,
+        descricao: null,
+      },
     ];
     const res = calcularSplit('percentual', 100, 'entidade', 20, 0, undefined, {
       metodoPagamento: 'boleto',
@@ -235,8 +259,20 @@ describe('calcularSplit() — com configuracoes dinâmicas do gateway', () => {
 
   it('com configuracoes PIX: aplica percentual de 0.99%', () => {
     const configPix = [
-      { codigo: 'pix', tipo: 'percentual' as const, valor: 0.99, ativo: true, descricao: null },
-      { codigo: 'taxa_transacao', tipo: 'taxa_fixa' as const, valor: 2.05, ativo: true, descricao: null },
+      {
+        codigo: 'pix',
+        tipo: 'percentual' as const,
+        valor: 0.99,
+        ativo: true,
+        descricao: null,
+      },
+      {
+        codigo: 'taxa_transacao',
+        tipo: 'taxa_fixa' as const,
+        valor: 2.05,
+        ativo: true,
+        descricao: null,
+      },
     ];
     const res = calcularSplit('percentual', 200, 'entidade', 20, 0, undefined, {
       metodoPagamento: 'pix',
@@ -254,8 +290,20 @@ describe('calcularSplit() — com configuracoes dinâmicas do gateway', () => {
 
 describe('montarSplitAsaas() — split societário completo', () => {
   const configuracoesBoleto = [
-    { codigo: 'boleto', tipo: 'taxa_fixa' as const, valor: 2.9, ativo: true, descricao: null },
-    { codigo: 'taxa_transacao', tipo: 'taxa_fixa' as const, valor: 2.05, ativo: true, descricao: null },
+    {
+      codigo: 'boleto',
+      tipo: 'taxa_fixa' as const,
+      valor: 2.9,
+      ativo: true,
+      descricao: null,
+    },
+    {
+      codigo: 'taxa_transacao',
+      tipo: 'taxa_fixa' as const,
+      valor: 2.05,
+      ativo: true,
+      descricao: null,
+    },
   ];
 
   it('sem opcoes: retorna apenas item do representante (1 item — backward compat)', () => {
@@ -279,10 +327,18 @@ describe('montarSplitAsaas() — split societário completo', () => {
   });
 
   it('com beneficiarios socios e impostos: retorna 4 itens na ordem correta', () => {
-    const split = calcularSplit('percentual', 100, 'entidade', 20, 0, undefined, {
-      metodoPagamento: 'boleto',
-      configuracoes: configuracoesBoleto,
-    });
+    const split = calcularSplit(
+      'percentual',
+      100,
+      'entidade',
+      20,
+      0,
+      undefined,
+      {
+        metodoPagamento: 'boleto',
+        configuracoes: configuracoesBoleto,
+      }
+    );
     // baseLiquida=88.05, rep=17.61, impostos=7, socios=70.44 (ronaldo=35.22, antonio=35.22)
 
     const result = montarSplitAsaas('wallet_rep', split, null, {
@@ -300,8 +356,14 @@ describe('montarSplitAsaas() — split societário completo', () => {
     // 2. Impostos (7%)
     expect(result![1]).toEqual({ walletId: 'wallet_qwork', fixedValue: 7 });
     // 3. Sócios (50%/50% de valorQWork=70.44)
-    expect(result![2]).toEqual({ walletId: 'wallet_ronaldo', fixedValue: 35.22 });
-    expect(result![3]).toEqual({ walletId: 'wallet_antonio', fixedValue: 35.22 });
+    expect(result![2]).toEqual({
+      walletId: 'wallet_ronaldo',
+      fixedValue: 35.22,
+    });
+    expect(result![3]).toEqual({
+      walletId: 'wallet_antonio',
+      fixedValue: 35.22,
+    });
   });
 
   it('com comercial + socios + impostos: retorna 5 itens na ordem correta', () => {

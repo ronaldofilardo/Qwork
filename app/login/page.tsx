@@ -17,7 +17,6 @@ type EnvAvailability = Record<
 >;
 
 // Aviso de manutenção: lê de config/maintenance.json
-const MAINTENANCE_START_UTC = new Date(maintenanceConfig.startTime);
 const MAINTENANCE_END_UTC = new Date(maintenanceConfig.endTime);
 
 export default function LoginPage() {
@@ -162,9 +161,7 @@ export default function LoginPage() {
             return;
           }
         }
-        setError(
-          'Sistema em manutenção. Voltamos em 27 de abril às 8h.'
-        );
+        setError('Sistema em manutenção. Voltamos em 27 de abril às 8h.');
         setLoading(false);
         return;
       }

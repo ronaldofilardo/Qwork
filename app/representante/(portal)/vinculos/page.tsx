@@ -4,8 +4,10 @@ import { useEffect, useState, useCallback } from 'react';
 
 interface Vinculo {
   id: number;
-  entidade_nome: string;
-  entidade_cnpj: string;
+  tomador_nome: string;
+  tomador_cnpj: string;
+  tomador_responsavel_nome: string | null;
+  tomador_responsavel_email: string | null;
   status: string;
   data_inicio: string;
   data_expiracao: string;
@@ -152,12 +154,16 @@ export default function VinculosRepresentante() {
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    {/* Cabeçalho com Tomador */}
+                    <div className="flex items-center gap-2 flex-wrap mb-2">
+                      <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+                        Tomador:
+                      </p>
                       <span className="font-semibold text-gray-900">
-                        {v.entidade_nome}
+                        {v.tomador_nome}
                       </span>
-                      <span className="font-mono text-xs text-gray-400">
-                        {v.entidade_cnpj}
+                      <span className="font-mono text-xs text-gray-500">
+                        {v.tomador_cnpj}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[v.status] ?? 'bg-gray-100 text-gray-600'}`}
@@ -165,6 +171,13 @@ export default function VinculosRepresentante() {
                         {v.status}
                       </span>
                     </div>
+
+                    {/* Responsável do Tomador */}
+                    {v.tomador_responsavel_nome && (
+                      <p className="text-xs text-gray-500 mb-2">
+                        Responsável: {v.tomador_responsavel_nome}
+                      </p>
+                    )}
 
                     <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 flex-wrap">
                       <span>

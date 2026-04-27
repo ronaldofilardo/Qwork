@@ -290,12 +290,6 @@ export function ContratosTable({
                 {empresa.ativa ? 'Ativa' : 'Inativa'}
               </span>
             </div>
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-gray-600">
-              <span>Funcionários: {empresa.total_funcionarios}</span>
-              <span>Avaliações: {empresa.total_avaliacoes}</span>
-              <span>Concluídas: {empresa.avaliacoes_concluidas}</span>
-              <span>Liberadas: {empresa.avaliacoes_liberadas}</span>
-            </div>
           </div>
         ))}
       </div>
