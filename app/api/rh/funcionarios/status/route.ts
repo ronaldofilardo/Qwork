@@ -1,11 +1,12 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import type { Session } from '@/lib/session';
 import { StatusAvaliacao } from '@/lib/types/avaliacao-status';
 import { StatusLote } from '@/lib/types/lote-status';
 
 export const dynamic = 'force-dynamic';
-async function updateLotesStatus(cpf: string, session: any) {
+async function updateLotesStatus(cpf: string, session: Session) {
   // Buscar lotes que têm avaliações deste funcionário
   const lotesResult = await query(
     `
@@ -104,25 +105,26 @@ async function handleStatusUpdate(request: NextRequest) {
       );
     }
 
-    // Se empresa_id não foi fornecida, buscar pela clínica apenas
+    // Verificar se funcionário tem vínculo com esta clínica (e empresa, se fornecida)
+    // Não filtrar por ativo=true para permitir tanto ativação quanto inativação
     let funcResult;
     if (empresaId) {
-      // Verificar se funcionário existe e pertence à empresa/clínica específica
       funcResult = await query(
-        `SELECT f.cpf, f.ativo 
+        `SELECT f.cpf, fc.ativo as vinculo_ativo
          FROM funcionarios f
          INNER JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
-         WHERE f.cpf = $1 AND fc.empresa_id = $2 AND fc.clinica_id = $3 AND fc.ativo = true`,
+         WHERE f.cpf = $1 AND fc.empresa_id = $2 AND fc.clinica_id = $3`,
         [cpf, empresaId, clinicaId],
         session
       );
     } else {
-      // Buscar funcionário pela clínica apenas (qualquer empresa da clínica)
+      // Buscar qualquer vínculo ativo desta clínica
       funcResult = await query(
-        `SELECT f.cpf, f.ativo 
+        `SELECT f.cpf, fc.ativo as vinculo_ativo
          FROM funcionarios f
          INNER JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
-         WHERE f.cpf = $1 AND fc.clinica_id = $2 AND fc.ativo = true`,
+         WHERE f.cpf = $1 AND fc.clinica_id = $2
+         LIMIT 1`,
         [cpf, clinicaId],
         session
       );
@@ -135,7 +137,7 @@ async function handleStatusUpdate(request: NextRequest) {
       );
     }
 
-    const statusAtual = funcResult.rows[0].ativo;
+    const statusAtual = funcResult.rows[0].vinculo_ativo as boolean;
 
     // Se já está no status desejado, não fazer nada
     if (statusAtual === ativo) {
@@ -145,30 +147,67 @@ async function handleStatusUpdate(request: NextRequest) {
       });
     }
 
-    // Atualizar status do funcionário (com session para auditoria)
-    await query(
-      'UPDATE funcionarios SET ativo = $1 WHERE cpf = $2',
-      [ativo, cpf],
-      session
-    );
-
-    // Atualizar status das avaliações baseado no status do funcionário
-    if (!ativo) {
-      // Desligando da empresa: marcar avaliações não concluídas como 'inativada' (concluídas permanecem)
-      // Nota: verifica both 'concluida' e 'concluido' para retrocompatibilidade
-      const updateResult = await query(
-        "UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != 'concluida' AND status != 'concluido' RETURNING id, status",
-        [StatusAvaliacao.INATIVADA, cpf],
+    // Atualizar funcionarios_clinicas — status segregado por empresa (não altera o registro global)
+    if (empresaId) {
+      await query(
+        `UPDATE funcionarios_clinicas fc
+         SET ativo = $1, atualizado_em = NOW()
+         FROM funcionarios f
+         WHERE fc.funcionario_id = f.id
+           AND f.cpf = $2
+           AND fc.clinica_id = $3
+           AND fc.empresa_id = $4`,
+        [ativo, cpf, clinicaId, empresaId],
         session
       );
+    } else {
+      await query(
+        `UPDATE funcionarios_clinicas fc
+         SET ativo = $1, atualizado_em = NOW()
+         FROM funcionarios f
+         WHERE fc.funcionario_id = f.id
+           AND f.cpf = $2
+           AND fc.clinica_id = $3`,
+        [ativo, cpf, clinicaId],
+        session
+      );
+    }
+
+    // Atualizar avaliações escopadas pela empresa (se fornecida) ou pela clínica
+    if (!ativo) {
+      let updateResult;
+      if (empresaId) {
+        updateResult = await query(
+          `UPDATE avaliacoes a
+           SET status = $1
+           FROM lotes_avaliacao la
+           WHERE a.lote_id = la.id
+             AND a.funcionario_cpf = $2
+             AND la.empresa_id = $3
+             AND a.status NOT IN ('concluida', 'concluido', 'inativada')
+           RETURNING a.id, a.status`,
+          [StatusAvaliacao.INATIVADA, cpf, empresaId],
+          session
+        );
+      } else {
+        updateResult = await query(
+          `UPDATE avaliacoes a
+           SET status = $1
+           FROM lotes_avaliacao la
+           INNER JOIN empresas_clientes ec ON la.empresa_id = ec.id
+           WHERE a.lote_id = la.id
+             AND a.funcionario_cpf = $2
+             AND ec.clinica_id = $3
+             AND a.status NOT IN ('concluida', 'concluido', 'inativada')
+           RETURNING a.id, a.status`,
+          [StatusAvaliacao.INATIVADA, cpf, clinicaId],
+          session
+        );
+      }
       console.log(
         `[INFO] Inativadas ${updateResult.rowCount} avaliações do funcionário ${cpf}`
       );
-      if (updateResult.rowCount > 0) {
-        console.log('[DEBUG] Avaliações inativadas:', updateResult.rows);
-      }
     }
-    // Reativando: não há necessidade de alterar, pois concluídas já estão corretas e outras permanecem inativadas
 
     // Atualizar status dos lotes afetados
     await updateLotesStatus(cpf, session);

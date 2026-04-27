@@ -31,7 +31,7 @@ const DOCS: DocConfig[] = [
     tipo: 'contrato_nao_clt',
     titulo: 'Contrato de Representação Comercial',
     subtitulo: 'Contrato Independente — Sem Vínculo CLT',
-    icon: <ScrollText className="text-orange-600" size={22} />,
+    icon: <ScrollText className="text-[#9ACD32]" size={22} />,
     requireScroll: true,
   },
   {
@@ -143,7 +143,7 @@ function SubModalLeitura({ doc, onAceitar, onVoltar }: SubModalProps) {
           <button
             onClick={handleAceitar}
             disabled={!scrolledToEnd || processando}
-            className="flex items-center gap-2 px-6 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-orange-400 focus:outline-none"
+            className="flex items-center gap-2 px-6 py-2 text-sm bg-[#9ACD32] text-[#2D2D2D] font-semibold rounded-lg hover:bg-[#7BA428] transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-[#9ACD32] focus:outline-none"
             aria-label={`Aceitar ${doc.titulo}`}
           >
             {processando ? (
@@ -243,11 +243,11 @@ export default function ModalTermosRepresentante({ onConcluir }: Props) {
       >
         <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-6 text-white">
+          <div className="bg-[#2D2D2D] px-8 py-6 text-white">
             <h2 id="modal-termos-rep-titulo" className="text-xl font-bold mb-1">
               Bem-vindo(a) ao Portal QWork
             </h2>
-            <p className="text-orange-100 text-sm">
+            <p className="text-gray-300 text-sm">
               Para acessar a plataforma, leia e aceite os documentos abaixo.
             </p>
           </div>
@@ -273,7 +273,7 @@ export default function ModalTermosRepresentante({ onConcluir }: Props) {
                       'w-full flex items-center justify-between p-4 rounded-xl border-2 text-left transition-all duration-150',
                       aceito
                         ? 'border-green-400 bg-green-50 cursor-default'
-                        : 'border-gray-200 hover:border-orange-400 hover:bg-orange-50 cursor-pointer',
+                        : 'border-gray-200 hover:border-[#9ACD32] hover:bg-[#9ACD32]/10 cursor-pointer',
                     ].join(' ')}
                   >
                     <div className="flex items-center gap-3">
@@ -323,7 +323,7 @@ export default function ModalTermosRepresentante({ onConcluir }: Props) {
               className={[
                 'w-full py-3 rounded-xl text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer',
                 todosAceitos && !confirmando
-                  ? 'bg-orange-500 text-white hover:bg-orange-600 focus:ring-2 focus:ring-orange-400 focus:outline-none shadow-md hover:shadow-lg'
+                  ? 'bg-[#9ACD32] text-[#2D2D2D] hover:bg-[#7BA428] focus:ring-2 focus:ring-[#9ACD32] focus:outline-none shadow-md hover:shadow-lg'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed',
               ].join(' ')}
               aria-disabled={!todosAceitos || confirmando}

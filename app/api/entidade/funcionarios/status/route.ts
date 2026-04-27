@@ -22,12 +22,13 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // Verificar se o funcionário pertence à entidade
+    // Verificar se o funcionário tem vínculo com a entidade
+    // Não filtrar por ativo=true para permitir ativação de vínculos inativos
     const funcionarioResult = await queryAsGestorEntidade(
-      `SELECT f.id, f.cpf, f.nome, f.ativo 
+      `SELECT f.id, f.cpf, f.nome, fe.ativo as vinculo_ativo
        FROM funcionarios f
        INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
-       WHERE f.cpf = $1 AND fe.entidade_id = $2 AND fe.ativo = true`,
+       WHERE f.cpf = $1 AND fe.entidade_id = $2`,
       [cpf, entidadeId]
     );
 
@@ -41,29 +42,37 @@ export async function PATCH(request: NextRequest) {
     const funcionario = funcionarioResult.rows[0];
 
     // Se já está no status desejado, retornar sucesso
-    if (funcionario.ativo === ativo) {
+    if (funcionario.vinculo_ativo === ativo) {
       return NextResponse.json({
         success: true,
         message: `Funcionário já está ${ativo ? 'ativo' : 'inativo'}`,
       });
     }
 
-    // Atualizar status
+    // Atualizar funcionarios_entidades — status segregado por entidade
     await queryAsGestorEntidade(
-      'UPDATE funcionarios SET ativo = $1 WHERE cpf = $2',
-      [ativo, cpf]
+      `UPDATE funcionarios_entidades fe
+       SET ativo = $1, atualizado_em = NOW()
+       FROM funcionarios f
+       WHERE fe.funcionario_id = f.id
+         AND f.cpf = $2
+         AND fe.entidade_id = $3`,
+      [ativo, cpf, entidadeId]
     );
 
-    // Se inativando, inativar também todas as avaliações pendentes
+    // Se inativando, inativar avaliações pendentes escopadas pela entidade
     if (!ativo) {
       await queryAsGestorEntidade(
-        `UPDATE avaliacoes
+        `UPDATE avaliacoes a
          SET status = 'inativada',
              motivo_inativacao = 'Funcionário inativado pela entidade',
              inativada_em = NOW()
-         WHERE funcionario_cpf = $1
-           AND status NOT IN ('concluido', 'inativada')`,
-        [cpf]
+         FROM lotes_avaliacao la
+         WHERE a.lote_id = la.id
+           AND a.funcionario_cpf = $1
+           AND la.tomador_id = $2
+           AND a.status NOT IN ('concluido', 'inativada')`,
+        [cpf, entidadeId]
       );
 
       console.log(
