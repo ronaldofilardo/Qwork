@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export const GET = async (
-  req: Request,
+  _req: Request,
   { params }: { params: { id: string } }
 ) => {
   const user = getSession();

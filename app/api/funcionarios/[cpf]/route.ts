@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * Apenas o próprio funcionário pode acessar seus dados (ou RH/Gestor/Admin).
  */
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: { cpf: string } }
 ) {
   try {

@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * Download de laudo para clínicas
  */
 export const GET = async (
-  req: Request,
+  _req: Request,
   { params }: { params: { laudoId: string } }
 ) => {
   try {
