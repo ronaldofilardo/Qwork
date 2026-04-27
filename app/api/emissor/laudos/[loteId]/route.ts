@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 // GET - Buscar laudo de um lote
 export const GET = async (
-  req: Request,
+  _req: Request,
   { params }: { params: { loteId: string } }
 ) => {
   let user;
@@ -359,7 +359,7 @@ export const PATCH = async (
 // O laudo fica com status 'emitido' aguardando o emissor revisar e enviar
 // Para enviar, use PATCH com status='enviado'
 export const POST = async (
-  req: Request,
+  _req: Request,
   { params }: { params: { loteId: string } }
 ) => {
   let user: Awaited<ReturnType<typeof requireRole>> | null;

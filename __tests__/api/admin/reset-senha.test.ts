@@ -31,10 +31,6 @@ import { gerarTokenResetUsuario } from '@/lib/reset-senha/gerar-token';
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockTransaction = transaction as jest.MockedFunction<typeof transaction>;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
-const mockGerarTokenUsuario = gerarTokenResetUsuario as jest.MockedFunction<
-  typeof gerarTokenResetUsuario
->;
-
 const adminSession = {
   cpf: '00000000001',
   nome: 'Admin',
