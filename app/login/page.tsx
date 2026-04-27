@@ -8,6 +8,7 @@ import ModalBoasVindasCadastro from '@/components/modals/ModalBoasVindasCadastro
 import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIdentidade';
 import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
 import { Building2 } from 'lucide-react';
+import maintenanceConfig from '@/config/maintenance.json';
 
 type DbEnvironment = 'development' | 'staging' | 'production';
 type EnvAvailability = Record<
@@ -15,16 +16,38 @@ type EnvAvailability = Record<
   { allowed: boolean; reason: string }
 >;
 
+// Aviso de manutenção: lê de config/maintenance.json
+const MAINTENANCE_START_UTC = new Date(maintenanceConfig.startTime);
+const MAINTENANCE_END_UTC = new Date(maintenanceConfig.endTime);
+
+/**
+ * Verifica se o sistema está ou estará em manutenção
+ * (mostra aviso 12h antes se habilitado)
+ */
+function isMaintenanceActive(): boolean {
+  if (!maintenanceConfig.enabled) return false;
+  const now = new Date();
+  return now >= MAINTENANCE_START_UTC && now <= MAINTENANCE_END_UTC;
+}
+
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [error, setError] = useState('');
+  const [maintenanceError, setMaintenanceError] = useState<{
+    message: string;
+    until?: string;
+    contact?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
   const [isConfirmingIdentity, setIsConfirmingIdentity] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
   const [boasVindasAberto, setBoasVindasAberto] = useState(false);
   const [showConfirmacaoModal, setShowConfirmacaoModal] = useState(false);
   const [showTermosModal, setShowTermosModal] = useState(false);
+  const [showMaintenanceWarning, setShowMaintenanceWarning] = useState(
+    maintenanceConfig.enabled && new Date() < MAINTENANCE_END_UTC
+  );
   const [showDbSelector, setShowDbSelector] = useState(false);
   const [dbEnvironment, setDbEnvironment] =
     useState<DbEnvironment>('development');
@@ -125,7 +148,49 @@ export default function LoginPage() {
         credentials: 'same-origin',
       });
 
-      const data = await response.json();
+      // Verificar se é erro de manutenção (503)
+      if (response.status === 503) {
+        const contentType = response.headers.get('content-type');
+        if (contentType?.includes('application/json')) {
+          const data = await response.json();
+          if (data.error === 'MAINTENANCE_MODE') {
+            const until = data.maintenanceUntil
+              ? new Date(data.maintenanceUntil).toLocaleString('pt-BR', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : 'em breve';
+            setMaintenanceError({
+              message: data.message,
+              until,
+              contact: data.contactEmail,
+            });
+            setLoading(false);
+            return;
+          }
+        }
+        setError(
+          'Sistema em manutenção. Voltamos em 27 de abril às 8h.'
+        );
+        setLoading(false);
+        return;
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseErr) {
+        console.error('[LOGIN] Erro ao fazer parse da resposta:', parseErr);
+        // Se não conseguir fazer parse de JSON, provavelmente é uma página HTML (erro do middleware)
+        setError(
+          'Sistema temporariamente indisponível. Tente novamente em instantes.'
+        );
+        setLoading(false);
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao fazer login');
@@ -295,6 +360,60 @@ export default function LoginPage() {
         paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
       }}
     >
+      {/* Modal de Aviso de Manutenção Programada */}
+      {showMaintenanceWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* Cabeçalho amber */}
+            <div className="bg-amber-500 px-6 py-4 flex items-center gap-3">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-6 h-6 text-white flex-shrink-0"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <h2 className="text-white font-bold text-base">
+                Manutenção Programada
+              </h2>
+            </div>
+
+            {/* Corpo */}
+            <div className="px-6 py-5 space-y-3">
+              <p className="text-gray-800 text-sm font-medium">
+                {maintenanceConfig.message || 'Sistema em manutenção.'}
+              </p>
+              <p className="text-gray-600 text-sm">
+                Se precisar de suporte urgente, entre em contato pelo e-mail{' '}
+                <a
+                  href={`mailto:${maintenanceConfig.contactEmail}`}
+                  className="text-amber-600 underline hover:text-amber-700"
+                >
+                  {maintenanceConfig.contactEmail}
+                </a>
+                .
+              </p>
+            </div>
+
+            {/* Rodapé */}
+            <div className="px-6 pb-5">
+              <button
+                type="button"
+                onClick={() => setShowMaintenanceWarning(false)}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors text-sm"
+              >
+                Entendido, continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Confirmação de Identidade */}
       {showConfirmacaoModal && dadosConfirmacao && (
         <ModalConfirmacaoIdentidade
@@ -412,6 +531,44 @@ export default function LoginPage() {
             {error && (
               <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
                 {error}
+              </div>
+            )}
+
+            {maintenanceError && (
+              <div className="mb-4 text-sm bg-amber-50 border-2 border-amber-400 rounded-md p-4 space-y-2">
+                <div className="flex items-start gap-3">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="font-semibold text-amber-900">
+                      {maintenanceError.message}
+                    </p>
+                    <p className="text-amber-800 text-xs mt-1">
+                      Retornamos às <strong>{maintenanceError.until}</strong>
+                    </p>
+                    {maintenanceError.contact && (
+                      <p className="text-amber-700 text-xs mt-2">
+                        Suporte urgente:{' '}
+                        <a
+                          href={`mailto:${maintenanceError.contact}`}
+                          className="underline font-medium hover:text-amber-900"
+                        >
+                          {maintenanceError.contact}
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
