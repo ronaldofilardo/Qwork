@@ -1,6 +1,7 @@
 'use client';
 
-import { X, ShieldCheck, Loader2, Lock } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { X, ShieldCheck, Loader2, Lock, AlertCircle } from 'lucide-react';
 
 interface ModalConfirmacaoIdentidadeProps {
   isOpen: boolean;
@@ -21,6 +22,31 @@ export default function ModalConfirmacaoIdentidade({
   cpf,
   dataNascimento,
 }: ModalConfirmacaoIdentidadeProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrolledToEnd, setScrolledToEnd] = useState(false);
+
+  // Reset scroll state sempre que o modal abrir
+  useEffect(() => {
+    if (!isOpen) return;
+    setScrolledToEnd(false);
+    // Se o conteúdo couber sem scroll, liberar o botão imediatamente
+    const t = setTimeout(() => {
+      const el = scrollRef.current;
+      if (el && el.clientHeight >= el.scrollHeight) {
+        setScrolledToEnd(true);
+      }
+    }, 150);
+    return () => clearTimeout(t);
+  }, [isOpen]);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 12) {
+      setScrolledToEnd(true);
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   // Formatar CPF: 000.000.000-00
@@ -85,7 +111,11 @@ export default function ModalConfirmacaoIdentidade({
         </div>
 
         {/* Body - scrollável */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          className="p-4 sm:p-6 overflow-y-auto flex-1"
+        >
           <div className="space-y-4 sm:space-y-6">
             {/* Banner de anonimização */}
             <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 sm:p-4">
@@ -205,6 +235,14 @@ export default function ModalConfirmacaoIdentidade({
           </div>
         </div>
 
+        {/* Banner scroll — exibido enquanto não chegou ao final */}
+        {!scrolledToEnd && (
+          <div className="flex items-center gap-2 px-4 sm:px-6 py-2.5 bg-amber-50 border-t border-amber-200 text-amber-800 text-sm flex-shrink-0">
+            <AlertCircle size={15} className="flex-shrink-0" />
+            <span>Role até o final para habilitar a confirmação.</span>
+          </div>
+        )}
+
         {/* Footer com botões */}
         <div
           className="flex flex-col-reverse gap-3 border-t border-gray-200 p-4 sm:p-6 sm:flex-row sm:justify-end flex-shrink-0"
@@ -219,7 +257,7 @@ export default function ModalConfirmacaoIdentidade({
           </button>
           <button
             onClick={onConfirm}
-            disabled={isLoading}
+            disabled={isLoading || !scrolledToEnd}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-green-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
