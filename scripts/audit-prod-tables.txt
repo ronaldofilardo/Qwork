@@ -1,0 +1,88 @@
+_migration_issues|BASE TABLE
+aceites_termos_entidade|BASE TABLE
+aceites_termos_usuario|BASE TABLE
+analise_estatistica|BASE TABLE
+audit_access_denied|BASE TABLE
+audit_delecoes_tomador|BASE TABLE
+audit_logs|BASE TABLE
+auditoria|BASE TABLE
+auditoria_geral|BASE TABLE
+auditoria_laudos|BASE TABLE
+auditoria_recibos|BASE TABLE
+auditoria_sociedade_pagamentos|BASE TABLE
+avaliacao_resets|BASE TABLE
+avaliacoes|BASE TABLE
+beneficiarios_sociedade|BASE TABLE
+ciclos_comissao|BASE TABLE
+clinica_configuracoes|BASE TABLE
+clinicas|BASE TABLE
+clinicas_empresas|BASE TABLE
+clinicas_senhas|BASE TABLE
+comissionamento_auditoria|BASE TABLE
+comissoes_laudo|BASE TABLE
+configuracoes_gateway|BASE TABLE
+contratos|BASE TABLE
+creditos_manutencao|BASE TABLE
+emissao_queue|BASE TABLE
+empresas_clientes|BASE TABLE
+entidade_configuracoes|BASE TABLE
+entidades|BASE TABLE
+entidades_senhas|BASE TABLE
+fila_emissao|BASE TABLE
+fk_migration_audit|BASE TABLE
+funcionarios|BASE TABLE
+funcionarios_clinicas|BASE TABLE
+funcionarios_entidades|BASE TABLE
+hierarquia_comercial|BASE TABLE
+importacao_templates|BASE TABLE
+importacoes_clinica|BASE TABLE
+laudo_arquivos_remotos|BASE TABLE
+laudo_downloads|BASE TABLE
+laudo_generation_jobs|BASE TABLE
+laudos|BASE TABLE
+laudos_storage_log|BASE TABLE
+leads_representante|BASE TABLE
+logs_admin|BASE TABLE
+lote_id_allocator|BASE TABLE
+lotes_avaliacao|BASE TABLE
+mfa_codes|BASE TABLE
+migration_guidelines|BASE TABLE
+notificacoes|BASE TABLE
+notificacoes_admin|BASE TABLE
+notificacoes_traducoes|BASE TABLE
+pagamentos|BASE TABLE
+pdf_jobs|BASE TABLE
+permissions|BASE TABLE
+policy_expression_backups|BASE TABLE
+questao_condicoes|BASE TABLE
+rate_limit_entries|BASE TABLE
+recibos|BASE TABLE
+relatorio_templates|BASE TABLE
+representantes|BASE TABLE
+representantes_cadastro_leads|BASE TABLE
+representantes_senhas|BASE TABLE
+respostas|BASE TABLE
+resultados|BASE TABLE
+role_permissions|BASE TABLE
+roles|BASE TABLE
+schema_migrations|BASE TABLE
+session_logs|BASE TABLE
+templates_contrato|BASE TABLE
+tokens_retomada_pagamento|BASE TABLE
+usuarios|BASE TABLE
+vendedores_dados_bancarios|BASE TABLE
+vendedores_perfil|BASE TABLE
+vinculos_comissao|BASE TABLE
+webhook_logs|BASE TABLE
+audit_stats_by_user|VIEW
+gestores|VIEW
+tomadores|VIEW
+v_auditoria_emissoes|VIEW
+v_fila_emissao|VIEW
+v_relatorio_emissoes|VIEW
+v_solicitacoes_emissao|VIEW
+vw_auditoria_acessos_rh|VIEW
+vw_auditoria_avaliacoes|VIEW
+vw_empresas_stats|VIEW
+vw_funcionarios_por_lote|VIEW
+vw_notificacoes_nao_lidas|VIEW

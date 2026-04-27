@@ -1,0 +1,266 @@
+          table_name           |                column_name                |          data_type          | is_nullable |                 column_default                  
+-------------------------------+-------------------------------------------+-----------------------------+-------------+-------------------------------------------------
+ clinicas                      | id                                        | integer                     | NO          | nextval('seq_contratantes_id'::regclass)
+ clinicas                      | nome                                      | character varying           | NO          | 
+ clinicas                      | cnpj                                      | character varying           | NO          | 
+ clinicas                      | inscricao_estadual                        | character varying           | YES         | 
+ clinicas                      | email                                     | character varying           | NO          | 
+ clinicas                      | telefone                                  | character varying           | NO          | 
+ clinicas                      | endereco                                  | text                        | NO          | 
+ clinicas                      | cidade                                    | character varying           | NO          | 
+ clinicas                      | estado                                    | character varying           | NO          | 
+ clinicas                      | cep                                       | character varying           | NO          | 
+ clinicas                      | responsavel_nome                          | character varying           | NO          | 
+ clinicas                      | responsavel_cpf                           | character varying           | NO          | 
+ clinicas                      | responsavel_cargo                         | character varying           | YES         | 
+ clinicas                      | responsavel_email                         | character varying           | NO          | 
+ clinicas                      | responsavel_celular                       | character varying           | NO          | 
+ clinicas                      | cartao_cnpj_path                          | character varying           | YES         | 
+ clinicas                      | contrato_social_path                      | character varying           | YES         | 
+ clinicas                      | doc_identificacao_path                    | character varying           | YES         | 
+ clinicas                      | status                                    | USER-DEFINED                | YES         | 'pendente'::status_aprovacao_enum
+ clinicas                      | motivo_rejeicao                           | text                        | YES         | 
+ clinicas                      | observacoes_reanalise                     | text                        | YES         | 
+ clinicas                      | ativa                                     | boolean                     | NO          | true
+ clinicas                      | criado_em                                 | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ clinicas                      | atualizado_em                             | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ clinicas                      | aprovado_em                               | timestamp without time zone | YES         | 
+ clinicas                      | aprovado_por_cpf                          | character varying           | YES         | 
+ clinicas                      | data_primeiro_pagamento                   | timestamp without time zone | YES         | 
+ clinicas                      | contrato_aceito                           | boolean                     | YES         | false
+ clinicas                      | tipo                                      | character varying           | YES         | 'clinica'::character varying
+ clinicas                      | cartao_cnpj_arquivo_remoto_provider       | character varying           | YES         | 
+ clinicas                      | cartao_cnpj_arquivo_remoto_bucket         | character varying           | YES         | 
+ clinicas                      | cartao_cnpj_arquivo_remoto_key            | character varying           | YES         | 
+ clinicas                      | cartao_cnpj_arquivo_remoto_url            | text                        | YES         | 
+ clinicas                      | contrato_social_arquivo_remoto_provider   | character varying           | YES         | 
+ clinicas                      | contrato_social_arquivo_remoto_bucket     | character varying           | YES         | 
+ clinicas                      | contrato_social_arquivo_remoto_key        | character varying           | YES         | 
+ clinicas                      | contrato_social_arquivo_remoto_url        | text                        | YES         | 
+ clinicas                      | doc_identificacao_arquivo_remoto_provider | character varying           | YES         | 
+ clinicas                      | doc_identificacao_arquivo_remoto_bucket   | character varying           | YES         | 
+ clinicas                      | doc_identificacao_arquivo_remoto_key      | character varying           | YES         | 
+ clinicas                      | doc_identificacao_arquivo_remoto_url      | text                        | YES         | 
+ clinicas                      | entidade_id                               | integer                     | YES         | 
+ clinicas                      | numero_funcionarios_estimado              | integer                     | YES         | 
+ clinicas                      | credito_manutencao_pendente               | numeric                     | NO          | 0.00
+ entidades                     | id                                        | integer                     | NO          | nextval('seq_contratantes_id'::regclass)
+ entidades                     | nome                                      | character varying           | NO          | 
+ entidades                     | cnpj                                      | character varying           | NO          | 
+ entidades                     | inscricao_estadual                        | character varying           | YES         | 
+ entidades                     | email                                     | character varying           | NO          | 
+ entidades                     | telefone                                  | character varying           | NO          | 
+ entidades                     | endereco                                  | text                        | NO          | 
+ entidades                     | cidade                                    | character varying           | NO          | 
+ entidades                     | estado                                    | character varying           | NO          | 
+ entidades                     | cep                                       | character varying           | NO          | 
+ entidades                     | responsavel_nome                          | character varying           | NO          | 
+ entidades                     | responsavel_cpf                           | character varying           | NO          | 
+ entidades                     | responsavel_cargo                         | character varying           | YES         | 
+ entidades                     | responsavel_email                         | character varying           | NO          | 
+ entidades                     | responsavel_celular                       | character varying           | NO          | 
+ entidades                     | cartao_cnpj_path                          | character varying           | YES         | 
+ entidades                     | contrato_social_path                      | character varying           | YES         | 
+ entidades                     | doc_identificacao_path                    | character varying           | YES         | 
+ entidades                     | status                                    | USER-DEFINED                | YES         | 'pendente'::status_aprovacao_enum
+ entidades                     | motivo_rejeicao                           | text                        | YES         | 
+ entidades                     | observacoes_reanalise                     | text                        | YES         | 
+ entidades                     | ativa                                     | boolean                     | YES         | true
+ entidades                     | criado_em                                 | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ entidades                     | atualizado_em                             | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ entidades                     | aprovado_em                               | timestamp without time zone | YES         | 
+ entidades                     | aprovado_por_cpf                          | character varying           | YES         | 
+ entidades                     | numero_funcionarios_estimado              | integer                     | YES         | 
+ entidades                     | data_primeiro_pagamento                   | timestamp without time zone | YES         | 
+ entidades                     | tipo                                      | character varying           | NO          | 'entidade'::character varying
+ entidades                     | cartao_cnpj_arquivo_remoto_provider       | character varying           | YES         | 
+ entidades                     | cartao_cnpj_arquivo_remoto_bucket         | character varying           | YES         | 
+ entidades                     | cartao_cnpj_arquivo_remoto_key            | character varying           | YES         | 
+ entidades                     | cartao_cnpj_arquivo_remoto_url            | text                        | YES         | 
+ entidades                     | contrato_social_arquivo_remoto_provider   | character varying           | YES         | 
+ entidades                     | contrato_social_arquivo_remoto_bucket     | character varying           | YES         | 
+ entidades                     | contrato_social_arquivo_remoto_key        | character varying           | YES         | 
+ entidades                     | contrato_social_arquivo_remoto_url        | text                        | YES         | 
+ entidades                     | doc_identificacao_arquivo_remoto_provider | character varying           | YES         | 
+ entidades                     | doc_identificacao_arquivo_remoto_bucket   | character varying           | YES         | 
+ entidades                     | doc_identificacao_arquivo_remoto_key      | character varying           | YES         | 
+ entidades                     | doc_identificacao_arquivo_remoto_url      | text                        | YES         | 
+ entidades                     | limite_primeira_cobranca_manutencao       | timestamp with time zone    | YES         | 
+ entidades                     | manutencao_ja_cobrada                     | boolean                     | NO          | false
+ entidades                     | credito_manutencao_pendente               | numeric                     | NO          | 0.00
+ funcionarios                  | id                                        | integer                     | NO          | nextval('funcionarios_id_seq'::regclass)
+ funcionarios                  | cpf                                       | character                   | NO          | 
+ funcionarios                  | nome                                      | character varying           | NO          | 
+ funcionarios                  | setor                                     | character varying           | YES         | 
+ funcionarios                  | funcao                                    | character varying           | YES         | 
+ funcionarios                  | email                                     | character varying           | YES         | 
+ funcionarios                  | senha_hash                                | text                        | NO          | 
+ funcionarios                  | perfil                                    | character varying           | YES         | 'funcionario'::character varying
+ funcionarios                  | ativo                                     | boolean                     | YES         | true
+ funcionarios                  | criado_em                                 | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ funcionarios                  | atualizado_em                             | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ funcionarios                  | matricula                                 | character varying           | YES         | 
+ funcionarios                  | turno                                     | character varying           | YES         | 
+ funcionarios                  | escala                                    | character varying           | YES         | 
+ funcionarios                  | nivel_cargo                               | character varying           | YES         | 
+ funcionarios                  | ultima_avaliacao_id                       | integer                     | YES         | 
+ funcionarios                  | ultima_avaliacao_data_conclusao           | timestamp without time zone | YES         | 
+ funcionarios                  | ultima_avaliacao_status                   | character varying           | YES         | 
+ funcionarios                  | ultimo_motivo_inativacao                  | text                        | YES         | 
+ funcionarios                  | data_ultimo_lote                          | timestamp without time zone | YES         | 
+ funcionarios                  | data_nascimento                           | date                        | YES         | 
+ funcionarios                  | indice_avaliacao                          | integer                     | NO          | 0
+ funcionarios                  | incluido_em                               | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ funcionarios                  | inativado_em                              | timestamp without time zone | YES         | 
+ funcionarios                  | inativado_por                             | character varying           | YES         | 
+ funcionarios                  | ultimo_lote_codigo                        | character varying           | YES         | 
+ funcionarios                  | usuario_tipo                              | USER-DEFINED                | NO          | 
+ laudos                        | id                                        | integer                     | NO          | nextval('laudos_id_seq'::regclass)
+ laudos                        | lote_id                                   | integer                     | NO          | 
+ laudos                        | emissor_cpf                               | character                   | YES         | 
+ laudos                        | observacoes                               | text                        | YES         | 
+ laudos                        | status                                    | character varying           | YES         | 'emitido'::status_laudo_enum
+ laudos                        | criado_em                                 | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ laudos                        | emitido_em                                | timestamp without time zone | YES         | 
+ laudos                        | enviado_em                                | timestamp without time zone | YES         | 
+ laudos                        | atualizado_em                             | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ laudos                        | job_id                                    | bigint                      | YES         | 
+ laudos                        | arquivo_remoto_provider                   | character varying           | YES         | 
+ laudos                        | arquivo_remoto_bucket                     | character varying           | YES         | 
+ laudos                        | arquivo_remoto_key                        | character varying           | YES         | 
+ laudos                        | arquivo_remoto_url                        | text                        | YES         | 
+ laudos                        | relatorio_individual                      | bytea                       | YES         | 
+ laudos                        | relatorio_lote                            | bytea                       | YES         | 
+ laudos                        | hash_relatorio_individual                 | character varying           | YES         | 
+ laudos                        | hash_relatorio_lote                       | character varying           | YES         | 
+ laudos                        | arquivo_remoto_uploaded_at                | timestamp without time zone | YES         | 
+ laudos                        | arquivo_remoto_etag                       | character varying           | YES         | 
+ laudos                        | arquivo_remoto_size                       | bigint                      | YES         | 
+ laudos                        | hash_pdf                                  | character varying           | YES         | 
+ laudos                        | relatorio_setor                           | bytea                       | YES         | 
+ laudos                        | hash_relatorio_setor                      | character varying           | YES         | 
+ leads_representante           | id                                        | integer                     | NO          | nextval('leads_representante_id_seq'::regclass)
+ leads_representante           | representante_id                          | integer                     | NO          | 
+ leads_representante           | cnpj                                      | character                   | NO          | 
+ leads_representante           | razao_social                              | character varying           | YES         | 
+ leads_representante           | contato_nome                              | character varying           | YES         | 
+ leads_representante           | contato_email                             | character varying           | YES         | 
+ leads_representante           | contato_telefone                          | character varying           | YES         | 
+ leads_representante           | criado_em                                 | timestamp with time zone    | NO          | now()
+ leads_representante           | data_expiracao                            | timestamp with time zone    | NO          | (now() + '90 days'::interval)
+ leads_representante           | status                                    | USER-DEFINED                | NO          | 'pendente'::status_lead
+ leads_representante           | tipo_conversao                            | USER-DEFINED                | YES         | 
+ leads_representante           | entidade_id                               | integer                     | YES         | 
+ leads_representante           | data_conversao                            | timestamp with time zone    | YES         | 
+ leads_representante           | token_atual                               | character varying           | YES         | 
+ leads_representante           | token_gerado_em                           | timestamp with time zone    | YES         | 
+ leads_representante           | token_expiracao                           | timestamp with time zone    | YES         | 
+ leads_representante           | atualizado_em                             | timestamp with time zone    | NO          | now()
+ leads_representante           | valor_negociado                           | numeric                     | NO          | 
+ leads_representante           | vendedor_id                               | integer                     | YES         | 
+ leads_representante           | origem                                    | text                        | NO          | 'representante'::text
+ leads_representante           | observacoes                               | text                        | YES         | 
+ leads_representante           | tipo_cliente                              | text                        | NO          | 'entidade'::text
+ leads_representante           | requer_aprovacao_comercial                | boolean                     | NO          | false
+ leads_representante           | aprovado_por                              | text                        | YES         | 
+ leads_representante           | aprovacao_obs                             | text                        | YES         | 
+ leads_representante           | aprovacao_em                              | timestamp with time zone    | YES         | 
+ leads_representante           | num_vidas_estimado                        | integer                     | YES         | 
+ leads_representante           | percentual_comissao                       | numeric                     | YES         | NULL::numeric
+ leads_representante           | percentual_comissao_representante         | numeric                     | YES         | 
+ leads_representante           | percentual_comissao_vendedor              | numeric                     | NO          | 0
+ leads_representante           | percentual_comissao_comercial             | numeric                     | NO          | 0
+ rate_limit_entries            | key                                       | character varying           | NO          | 
+ rate_limit_entries            | count                                     | integer                     | NO          | 1
+ rate_limit_entries            | expires_at                                | timestamp without time zone | NO          | 
+ representantes                | id                                        | integer                     | NO          | nextval('representantes_id_seq'::regclass)
+ representantes                | tipo_pessoa                               | USER-DEFINED                | NO          | 'pf'::tipo_pessoa_representante
+ representantes                | nome                                      | character varying           | NO          | 
+ representantes                | email                                     | character varying           | NO          | 
+ representantes                | telefone                                  | character varying           | NO          | 
+ representantes                | cpf                                       | character                   | YES         | 
+ representantes                | cnpj                                      | character                   | YES         | 
+ representantes                | cpf_responsavel_pj                        | character                   | YES         | 
+ representantes                | codigo                                    | character varying           | NO          | 
+ representantes                | banco_codigo                              | character varying           | YES         | 
+ representantes                | agencia                                   | character varying           | YES         | 
+ representantes                | conta                                     | character varying           | YES         | 
+ representantes                | tipo_conta                                | character varying           | YES         | 
+ representantes                | titular_conta                             | character varying           | YES         | 
+ representantes                | pix_chave                                 | character varying           | YES         | 
+ representantes                | pix_tipo                                  | character varying           | YES         | 
+ representantes                | doc_identificacao_path                    | text                        | YES         | 
+ representantes                | comprovante_conta_path                    | text                        | YES         | 
+ representantes                | status                                    | USER-DEFINED                | NO          | 'ativo'::status_representante
+ representantes                | aceite_termos                             | boolean                     | NO          | false
+ representantes                | aceite_termos_em                          | timestamp with time zone    | YES         | 
+ representantes                | aceite_disclaimer_nv                      | boolean                     | NO          | false
+ representantes                | aceite_disclaimer_nv_em                   | timestamp with time zone    | YES         | 
+ representantes                | bloqueio_conflito_pf_id                   | integer                     | YES         | 
+ representantes                | criado_em                                 | timestamp with time zone    | NO          | now()
+ representantes                | atualizado_em                             | timestamp with time zone    | NO          | now()
+ representantes                | aprovado_em                               | timestamp with time zone    | YES         | 
+ representantes                | aprovado_por_cpf                          | character                   | YES         | 
+ representantes                | senha_hash                                | character varying           | YES         | 
+ representantes                | senha_repres                              | character varying           | YES         | 
+ representantes                | convite_token                             | character varying           | YES         | 
+ representantes                | convite_expira_em                         | timestamp without time zone | YES         | 
+ representantes                | convite_tentativas_falhas                 | integer                     | NO          | 0
+ representantes                | convite_usado_em                          | timestamp without time zone | YES         | 
+ representantes                | dados_bancarios_status                    | character varying           | NO          | 'nao_informado'::character varying
+ representantes                | dados_bancarios_solicitado_em             | timestamp with time zone    | YES         | 
+ representantes                | dados_bancarios_confirmado_em             | timestamp with time zone    | YES         | 
+ representantes                | aceite_politica_privacidade               | boolean                     | NO          | false
+ representantes                | aceite_politica_privacidade_em            | timestamp with time zone    | YES         | 
+ representantes                | percentual_vendedor_direto                | numeric                     | YES         | NULL::numeric
+ representantes                | percentual_comissao                       | numeric                     | YES         | NULL::numeric
+ representantes                | reset_token                               | character varying           | YES         | 
+ representantes                | reset_token_expira_em                     | timestamp without time zone | YES         | 
+ representantes                | reset_tentativas_falhas                   | smallint                    | NO          | 0
+ representantes                | reset_usado_em                            | timestamp without time zone | YES         | 
+ representantes                | percentual_comissao_comercial             | numeric                     | NO          | 0
+ representantes_cadastro_leads | id                                        | uuid                        | NO          | gen_random_uuid()
+ representantes_cadastro_leads | tipo_pessoa                               | USER-DEFINED                | NO          | 
+ representantes_cadastro_leads | nome                                      | character varying           | NO          | 
+ representantes_cadastro_leads | email                                     | character varying           | NO          | 
+ representantes_cadastro_leads | telefone                                  | character varying           | NO          | 
+ representantes_cadastro_leads | cpf                                       | character                   | YES         | 
+ representantes_cadastro_leads | cnpj                                      | character                   | YES         | 
+ representantes_cadastro_leads | razao_social                              | character varying           | YES         | 
+ representantes_cadastro_leads | cpf_responsavel                           | character                   | YES         | 
+ representantes_cadastro_leads | doc_cpf_filename                          | character varying           | YES         | 
+ representantes_cadastro_leads | doc_cpf_key                               | character varying           | YES         | 
+ representantes_cadastro_leads | doc_cpf_url                               | text                        | YES         | 
+ representantes_cadastro_leads | doc_cnpj_filename                         | character varying           | YES         | 
+ representantes_cadastro_leads | doc_cnpj_key                              | character varying           | YES         | 
+ representantes_cadastro_leads | doc_cnpj_url                              | text                        | YES         | 
+ representantes_cadastro_leads | doc_cpf_resp_filename                     | character varying           | YES         | 
+ representantes_cadastro_leads | doc_cpf_resp_key                          | character varying           | YES         | 
+ representantes_cadastro_leads | doc_cpf_resp_url                          | text                        | YES         | 
+ representantes_cadastro_leads | status                                    | USER-DEFINED                | NO          | 'pendente_verificacao'::status_cadastro_lead
+ representantes_cadastro_leads | motivo_rejeicao                           | text                        | YES         | 
+ representantes_cadastro_leads | ip_origem                                 | character varying           | YES         | 
+ representantes_cadastro_leads | user_agent                                | text                        | YES         | 
+ representantes_cadastro_leads | criado_em                                 | timestamp with time zone    | NO          | now()
+ representantes_cadastro_leads | verificado_em                             | timestamp with time zone    | YES         | 
+ representantes_cadastro_leads | verificado_por                            | character varying           | YES         | 
+ representantes_cadastro_leads | convertido_em                             | timestamp with time zone    | YES         | 
+ representantes_cadastro_leads | representante_id                          | integer                     | YES         | 
+ usuarios                      | id                                        | integer                     | NO          | nextval('usuarios_id_seq'::regclass)
+ usuarios                      | cpf                                       | character varying           | NO          | 
+ usuarios                      | nome                                      | character varying           | NO          | 
+ usuarios                      | email                                     | character varying           | YES         | 
+ usuarios                      | clinica_id                                | integer                     | YES         | 
+ usuarios                      | entidade_id                               | integer                     | YES         | 
+ usuarios                      | ativo                                     | boolean                     | YES         | true
+ usuarios                      | criado_em                                 | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ usuarios                      | atualizado_em                             | timestamp without time zone | YES         | CURRENT_TIMESTAMP
+ usuarios                      | tipo_usuario                              | USER-DEFINED                | NO          | 
+ usuarios                      | telefone                                  | character varying           | YES         | NULL::character varying
+ usuarios                      | senha_hash                                | text                        | YES         | 
+ usuarios                      | reset_token                               | character varying           | YES         | 
+ usuarios                      | reset_token_expira_em                     | timestamp without time zone | YES         | 
+ usuarios                      | reset_tentativas_falhas                   | smallint                    | NO          | 0
+ usuarios                      | reset_usado_em                            | timestamp without time zone | YES         | 
+(262 linhas)
+

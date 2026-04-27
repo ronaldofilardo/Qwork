@@ -1,0 +1,337 @@
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+
+    BEGIN
+
+      NEW.atualizado_em = NOW();
+
+      RETURN NEW;
+
+    END;
+
+    $function$
+
+CREATE OR REPLACE FUNCTION public.current_user_contratante_id()
+ RETURNS integer
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+AS $function$
+
+BEGIN
+
+    -- DEPRECATED: Use current_user_entidade_id() para fluxo entidade
+
+    -- ou clinica_id direto na sessão para fluxo clínica.
+
+    -- Esta função será removida em release futura.
+
+    RAISE WARNING '[DEPRECATED] current_user_contratante_id() chamada — use current_user_entidade_id()';
+
+    RETURN NULLIF(current_setting('app.current_user_contratante_id', true), '')::INTEGER;
+
+END;
+
+$function$
+
+CREATE OR REPLACE FUNCTION public.fn_check_cpf_unico_sistema(p_cpf text, p_ignorar_rep_id integer DEFAULT NULL::integer, p_ignorar_lead_id uuid DEFAULT NULL::uuid, p_ignorar_usuario_id integer DEFAULT NULL::integer)
+ RETURNS text
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+
+  v_tipo_usuario TEXT;
+
+BEGIN
+
+  -- 1. representantes.cpf (representante PF)
+
+  PERFORM id
+
+  FROM representantes
+
+  WHERE cpf = p_cpf
+
+    AND (p_ignorar_rep_id IS NULL OR id <> p_ignorar_rep_id)
+
+  LIMIT 1;
+
+  IF FOUND THEN RETURN 'representante'; END IF;
+
+
+
+  -- 2. representantes.cpf_responsavel_pj (responsÃ¡vel representante PJ)
+
+  PERFORM id
+
+  FROM representantes
+
+  WHERE cpf_responsavel_pj = p_cpf
+
+    AND (p_ignorar_rep_id IS NULL OR id <> p_ignorar_rep_id)
+
+  LIMIT 1;
+
+  IF FOUND THEN RETURN 'representante_pj'; END IF;
+
+
+
+  -- 3. lead PF em anÃ¡lise (status ativo)
+
+  PERFORM id
+
+  FROM representantes_cadastro_leads
+
+  WHERE cpf = p_cpf
+
+    AND status NOT IN ('rejeitado', 'convertido')
+
+    AND (p_ignorar_lead_id IS NULL OR id <> p_ignorar_lead_id)
+
+  LIMIT 1;
+
+  IF FOUND THEN RETURN 'representante_lead'; END IF;
+
+
+
+  -- 4. lead PJ em anÃ¡lise (cpf_responsavel ativo)
+
+  PERFORM id
+
+  FROM representantes_cadastro_leads
+
+  WHERE cpf_responsavel = p_cpf
+
+    AND status NOT IN ('rejeitado', 'convertido')
+
+    AND (p_ignorar_lead_id IS NULL OR id <> p_ignorar_lead_id)
+
+  LIMIT 1;
+
+  IF FOUND THEN RETURN 'representante_lead_pj'; END IF;
+
+
+
+  -- 5. usuarios vendedor / gestor / rh ativos
+
+  SELECT tipo_usuario::TEXT INTO v_tipo_usuario
+
+  FROM usuarios
+
+  WHERE cpf = p_cpf
+
+    AND tipo_usuario IN ('vendedor', 'gestor', 'rh')
+
+    AND ativo = true
+
+    AND (p_ignorar_usuario_id IS NULL OR id <> p_ignorar_usuario_id)
+
+  LIMIT 1;
+
+  IF FOUND THEN RETURN v_tipo_usuario; END IF;
+
+
+
+  RETURN NULL;
+
+END;
+
+$function$
+
+CREATE OR REPLACE FUNCTION public.fn_trigger_lead_cpf_unico()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+
+  v_conflito TEXT;
+
+BEGIN
+
+  -- Leads rejeitados/convertidos nÃ£o participam da restriÃ§Ã£o
+
+  IF NEW.status IN ('rejeitado', 'convertido') THEN
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  -- Verificar cpf do lead PF
+
+  IF NEW.cpf IS NOT NULL THEN
+
+    v_conflito := fn_check_cpf_unico_sistema(NEW.cpf::TEXT, NULL, NEW.id, NULL);
+
+    IF v_conflito IS NOT NULL THEN
+
+      RAISE EXCEPTION
+
+        'CPF do lead jÃ¡ cadastrado no sistema como %. OperaÃ§Ã£o bloqueada por regra de negÃ³cio. (cpf=%)',
+
+        v_conflito, NEW.cpf
+
+        USING ERRCODE = '23505',
+
+              CONSTRAINT = 'cpf_unico_sistema';
+
+    END IF;
+
+  END IF;
+
+
+
+  -- Verificar cpf_responsavel do lead PJ
+
+  IF NEW.cpf_responsavel IS NOT NULL THEN
+
+    v_conflito := fn_check_cpf_unico_sistema(NEW.cpf_responsavel::TEXT, NULL, NEW.id, NULL);
+
+    IF v_conflito IS NOT NULL THEN
+
+      RAISE EXCEPTION
+
+        'CPF responsÃ¡vel do lead jÃ¡ cadastrado no sistema como %. OperaÃ§Ã£o bloqueada por regra de negÃ³cio. (cpf=%)',
+
+        v_conflito, NEW.cpf_responsavel
+
+        USING ERRCODE = '23505',
+
+              CONSTRAINT = 'cpf_unico_sistema';
+
+    END IF;
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
+$function$
+
+CREATE OR REPLACE FUNCTION public.fn_trigger_representante_cpf_unico()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+
+  v_conflito TEXT;
+
+BEGIN
+
+  -- Verificar cpf (representante PF)
+
+  IF NEW.cpf IS NOT NULL THEN
+
+    v_conflito := fn_check_cpf_unico_sistema(NEW.cpf::TEXT, NEW.id, NULL, NULL);
+
+    IF v_conflito IS NOT NULL THEN
+
+      RAISE EXCEPTION
+
+        'CPF jÃ¡ cadastrado no sistema como %. OperaÃ§Ã£o bloqueada por regra de negÃ³cio. (cpf=%)',
+
+        v_conflito, NEW.cpf
+
+        USING ERRCODE = '23505',
+
+              CONSTRAINT = 'cpf_unico_sistema';
+
+    END IF;
+
+  END IF;
+
+
+
+  -- Verificar cpf_responsavel_pj (representante PJ)
+
+  IF NEW.cpf_responsavel_pj IS NOT NULL THEN
+
+    v_conflito := fn_check_cpf_unico_sistema(NEW.cpf_responsavel_pj::TEXT, NEW.id, NULL, NULL);
+
+    IF v_conflito IS NOT NULL THEN
+
+      RAISE EXCEPTION
+
+        'CPF responsÃ¡vel PJ jÃ¡ cadastrado no sistema como %. OperaÃ§Ã£o bloqueada por regra de negÃ³cio. (cpf=%)',
+
+        v_conflito, NEW.cpf_responsavel_pj
+
+        USING ERRCODE = '23505',
+
+              CONSTRAINT = 'cpf_unico_sistema';
+
+    END IF;
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
+$function$
+
+CREATE OR REPLACE FUNCTION public.fn_trigger_usuario_cpf_unico()
+ RETURNS trigger
+ LANGUAGE plpgsql
+AS $function$
+
+DECLARE
+
+  v_conflito TEXT;
+
+BEGIN
+
+  -- SÃ³ verificar para tipos bloqueantes
+
+  IF NEW.tipo_usuario::TEXT NOT IN ('vendedor', 'gestor', 'rh') THEN
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  -- UsuÃ¡rios inativos nÃ£o participam da restriÃ§Ã£o
+
+  IF NEW.ativo = false THEN
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  v_conflito := fn_check_cpf_unico_sistema(NEW.cpf::TEXT, NULL, NULL, NEW.id);
+
+  IF v_conflito IS NOT NULL THEN
+
+    RAISE EXCEPTION
+
+      'CPF jÃ¡ cadastrado no sistema como %. OperaÃ§Ã£o bloqueada por regra de negÃ³cio. (cpf=%)',
+
+      v_conflito, NEW.cpf
+
+      USING ERRCODE = '23505',
+
+            CONSTRAINT = 'cpf_unico_sistema';
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
+$function$
+
