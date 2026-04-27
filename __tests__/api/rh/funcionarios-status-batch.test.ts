@@ -1,9 +1,19 @@
 /**
  * Testes para API /api/rh/funcionarios/status/batch
- * - Reativar/desligar funcionários da empresa em lote
- * - Validações de permissão e consistência de clinica_id
+ * - Reativar/desligar funcionários da empresa em lote (status segregado por empresa)
+ * - Validações de permissão e consistência de clinica_id (obtido da sessão, não do DB)
  * - Preservação de dados e efeito cascata nas avaliações e lotes
  */
+
+// Mock client para withTransaction
+const mockClientQuery = jest.fn();
+jest.mock('@/lib/db-transaction', () => ({
+  withTransaction: jest
+    .fn()
+    .mockImplementation(async (cb: (client: unknown) => Promise<unknown>) => {
+      return cb({ query: mockClientQuery });
+    }),
+}));
 
 jest.mock('@/lib/db', () => ({
   query: jest.fn(),
@@ -24,6 +34,7 @@ const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 describe('/api/rh/funcionarios/status/batch', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockClientQuery.mockReset();
   });
 
   describe('PUT - Atualizar status de funcionários em lote', () => {
@@ -32,27 +43,31 @@ describe('/api/rh/funcionarios/status/batch', () => {
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
+        clinica_id: 1,
       });
 
       const cpfs = ['12345678901', '12345678902', '12345678903'];
 
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // RH lookup
-        .mockResolvedValueOnce({
-          rows: [
-            { cpf: '12345678901', ativo: true },
-            { cpf: '12345678902', ativo: true },
-            { cpf: '12345678903', ativo: false },
-          ],
-          rowCount: 3,
-        }) // funcionários encontrados
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // BEGIN
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE funcionarios
+      // Funcionários encontrados (status do vínculo)
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          { cpf: '12345678901', vinculo_ativo: true },
+          { cpf: '12345678902', vinculo_ativo: true },
+          { cpf: '12345678903', vinculo_ativo: false },
+        ],
+        rowCount: 3,
+      });
+
+      // withTransaction client queries
+      mockClientQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 2 }) // UPDATE funcionarios_clinicas
         .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 }) // UPDATE avaliacoes func1
-        .mockResolvedValueOnce({ rows: [{ id: 2 }], rowCount: 1 }) // UPDATE avaliacoes func2
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // lotes func1
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // lotes func2
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // COMMIT
+        .mockResolvedValueOnce({ rows: [{ id: 2 }], rowCount: 1 }); // UPDATE avaliacoes func2
+
+      // updateLotesStatus queries (via query, not client)
+      mockQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // lotes func1
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 }); // lotes func2
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/funcionarios/status/batch',
@@ -76,16 +91,15 @@ describe('/api/rh/funcionarios/status/batch', () => {
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
+        clinica_id: 1,
       });
 
       const cpfs = ['12345678901', '12345678902'];
 
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // RH lookup
-        .mockResolvedValueOnce({
-          rows: [{ cpf: '12345678901', ativo: true }], // Apenas 1 encontrado
-          rowCount: 1,
-        }); // funcionários encontrados (faltando 1)
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ cpf: '12345678901', vinculo_ativo: true }], // Apenas 1 encontrado
+        rowCount: 1,
+      }); // funcionários encontrados (faltando 1)
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/funcionarios/status/batch',
@@ -108,24 +122,27 @@ describe('/api/rh/funcionarios/status/batch', () => {
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
+        clinica_id: 1,
       });
 
       const cpfs = ['12345678901', '12345678902'];
 
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // RH lookup
-        .mockResolvedValueOnce({
-          rows: [
-            { cpf: '12345678901', ativo: false }, // Já inativo
-            { cpf: '12345678902', ativo: true }, // Será atualizado
-          ],
-          rowCount: 2,
-        }) // funcionários encontrados
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // BEGIN
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE funcionarios (apenas 1)
-        .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 }) // UPDATE avaliacoes (apenas 1)
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // lotes (apenas 1)
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // COMMIT
+      // func1 já inativo (vinculo_ativo=false), func2 será atualizado
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          { cpf: '12345678901', vinculo_ativo: false }, // Já inativo
+          { cpf: '12345678902', vinculo_ativo: true }, // Será atualizado
+        ],
+        rowCount: 2,
+      });
+
+      // withTransaction client queries
+      mockClientQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE funcionarios_clinicas
+        .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 }); // UPDATE avaliacoes
+
+      // updateLotesStatus
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // lotes
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/funcionarios/status/batch',
@@ -148,6 +165,7 @@ describe('/api/rh/funcionarios/status/batch', () => {
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
+        clinica_id: 1,
       });
 
       // Sem cpfs
@@ -205,19 +223,19 @@ describe('/api/rh/funcionarios/status/batch', () => {
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
+        clinica_id: 1,
       });
 
       const cpfs = ['12345678901'];
 
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // RH lookup
-        .mockResolvedValueOnce({
-          rows: [{ cpf: '12345678901', ativo: true }],
-          rowCount: 1,
-        }) // funcionários encontrados
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // BEGIN
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE funcionarios
-        .mockRejectedValueOnce(new Error('Erro no banco')); // Erro durante UPDATE avaliacoes
+      // Funcionário encontrado
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ cpf: '12345678901', vinculo_ativo: true }],
+        rowCount: 1,
+      });
+
+      // withTransaction client falha durante UPDATE
+      mockClientQuery.mockRejectedValueOnce(new Error('Erro no banco'));
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/funcionarios/status/batch',
@@ -229,8 +247,6 @@ describe('/api/rh/funcionarios/status/batch', () => {
       const response = await PUT(request);
 
       expect(response.status).toBe(500);
-      // Verificar se ROLLBACK foi chamado
-      expect(mockQuery).toHaveBeenCalledWith('ROLLBACK');
     });
 
     it('deve atualizar status dos lotes afetados', async () => {
@@ -238,19 +254,23 @@ describe('/api/rh/funcionarios/status/batch', () => {
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
+        clinica_id: 1,
       });
 
       const cpfs = ['12345678901'];
 
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ cpf: '12345678901', vinculo_ativo: true }],
+        rowCount: 1,
+      });
+
+      // withTransaction client
+      mockClientQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE funcionarios_clinicas
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE avaliacoes
+
+      // updateLotesStatus
       mockQuery
-        .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // RH lookup
-        .mockResolvedValueOnce({
-          rows: [{ cpf: '12345678901', ativo: true }],
-          rowCount: 1,
-        }) // funcionários encontrados
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // BEGIN
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE funcionarios
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE avaliacoes
         .mockResolvedValueOnce({
           rows: [{ id: 1, status: 'ativo' }],
           rowCount: 1,
@@ -259,8 +279,7 @@ describe('/api/rh/funcionarios/status/batch', () => {
           rows: [{ ativas: '2', concluidas: '2' }],
           rowCount: 1,
         }) // estatísticas do lote
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE lote para 'concluido'
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // COMMIT
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE lote status
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/funcionarios/status/batch',
