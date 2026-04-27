@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     // que avaliações feitas em outros CNPJs "contaminem" o status desta empresa.
     const funcionariosResult = await query(
       `SELECT f.cpf, f.nome, f.data_nascimento, f.setor, f.funcao, f.email, f.matricula, 
-              f.nivel_cargo, f.turno, f.escala, (f.ativo AND fc.ativo) as ativo, f.criado_em, f.atualizado_em,
+              f.nivel_cargo, f.turno, f.escala, fc.ativo as ativo, f.criado_em, f.atualizado_em,
               fc.indice_avaliacao, fc.data_ultimo_lote,
               -- Última avaliação DESTA empresa (não global)
               (

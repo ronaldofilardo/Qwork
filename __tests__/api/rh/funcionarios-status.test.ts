@@ -39,7 +39,7 @@ describe('/api/rh/funcionarios/status', () => {
 
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{ cpf: '12345678901', ativo: false }],
+          rows: [{ cpf: '12345678901', vinculo_ativo: false }],
           rowCount: 1,
         }) // SELECT funcionário via JOIN
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // BEGIN
@@ -74,7 +74,7 @@ describe('/api/rh/funcionarios/status', () => {
 
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{ cpf: '12345678901', ativo: true }],
+          rows: [{ cpf: '12345678901', vinculo_ativo: true }],
           rowCount: 1,
         }) // SELECT funcionário via JOIN
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // BEGIN
@@ -127,7 +127,7 @@ describe('/api/rh/funcionarios/status', () => {
       });
 
       mockQuery.mockResolvedValueOnce({
-        rows: [{ cpf: '12345678901', ativo: true }],
+        rows: [{ cpf: '12345678901', vinculo_ativo: true }],
         rowCount: 1,
       }); // funcionário já ativo
 
