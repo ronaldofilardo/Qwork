@@ -232,10 +232,32 @@ export async function POST(
       );
     }
 
-    // 14. Persistir metadados no banco de dados E MARCAR COMO ENVIADO
-    // ⚠️ IMPORTANTE: Este é o momento em que o laudo é efetivamente marcado como 'enviado'
-    // O status 'enviado' significa que o laudo está disponível ao usuário (no bucket)
-    // CORREÇÃO: Não verificar status='rascunho' pois o laudo pode já estar com status='emitido'
+    // 14. Atualizar status do lote para 'finalizado'.
+    // ⚠️ CRÍTICO: deve vir ANTES do passo 15 para garantir consistência.
+    // ⚠️ NOTA: migration 1230 adicionou exceção no trigger
+    //    prevent_modification_lote_when_laudo_emitted para permitir
+    //    especificamente a transição laudo_emitido → finalizado mesmo
+    //    quando laudos.emitido_em IS NOT NULL.
+    // Guard AND status = 'laudo_emitido' evita transições indevidas
+    // caso o lote já esteja em outro estado.
+    try {
+      await query(
+        `UPDATE lotes_avaliacao SET status = 'finalizado', laudo_enviado_em = NOW(), atualizado_em = NOW() WHERE id = $1 AND status = 'laudo_emitido'`,
+        [laudo.lote_id],
+        user
+      );
+    } catch (loteUpdateError: unknown) {
+      console.warn(
+        `[UPLOAD] Aviso: não foi possível marcar lote ${laudo.lote_id} como finalizado. Upload do laudo já concluído.`,
+        loteUpdateError instanceof Error
+          ? loteUpdateError.message
+          : loteUpdateError
+      );
+    }
+
+    // 15. Persistir metadados no banco de dados E MARCAR COMO ENVIADO
+    // ⚠️ IMPORTANTE: Deve vir APÓS o passo 14 — o trigger check_laudo_immutability
+    // permitirá este UPDATE pois emitido_em ainda é NULL neste momento.
     // A validação de imutabilidade já foi feita no passo 4 (verificando arquivo_remoto_key)
     await query(
       `UPDATE laudos 
@@ -262,26 +284,6 @@ export async function POST(
       ],
       user
     );
-
-    // 15. Atualizar status do lote para 'finalizado' (laudo disponível no bucket)
-    // laudo_enviado_em marca quando o PDF ficou disponível no bucket.
-    // O trigger prevent_modification_lote_when_laudo_emitted pode bloquear
-    // este UPDATE em ambientes onde a migration 1021 ainda não foi aplicada.
-    // Nesse caso, logamos como warning — o upload já foi concluído com sucesso.
-    try {
-      await query(
-        `UPDATE lotes_avaliacao SET status = 'finalizado', laudo_enviado_em = NOW(), atualizado_em = NOW() WHERE id = $1`,
-        [laudo.lote_id],
-        user
-      );
-    } catch (loteUpdateError: unknown) {
-      console.warn(
-        `[UPLOAD] Aviso: não foi possível marcar lote ${laudo.lote_id} como finalizado (trigger pode estar bloqueando). Upload do laudo já concluído.`,
-        loteUpdateError instanceof Error
-          ? loteUpdateError.message
-          : loteUpdateError
-      );
-    }
 
     // 16. Auditoria de sucesso
     await query(

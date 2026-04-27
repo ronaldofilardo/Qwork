@@ -35,6 +35,7 @@ export function useLaudo() {
   const [laudoStatus, setLaudoStatus] = useState<LaudoStatus>(null);
   const [gerandoLaudo, setGerandoLaudo] = useState(false);
   const [assinandoLaudo, setAssinandoLaudo] = useState(false);
+  const [verificandoAssinatura, setVerificandoAssinatura] = useState(false);
   const [modalUploadOpen, setModalUploadOpen] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -86,9 +87,10 @@ export function useLaudo() {
               pollingRef.current = null;
             }
             setLaudoStatus(data.laudo.status as LaudoStatus);
+            // Sempre recarregar para exibir os botões corretos ao mudar de status
+            fetchLaudo().catch(() => null);
             if (data.laudo.status === 'enviado') {
               toast.success('Laudo assinado e enviado com sucesso!');
-              fetchLaudo().catch(() => null);
             }
           }
         } catch {
@@ -222,6 +224,41 @@ export function useLaudo() {
     await fetchLaudo();
   };
 
+  const handleVerificarAssinatura = async () => {
+    try {
+      setVerificandoAssinatura(true);
+      toast.loading('Verificando assinatura no ZapSign...', {
+        id: 'verificar-assinatura',
+      });
+      const response = await fetch(
+        `/api/emissor/laudos/${loteId}/confirmar-assinatura`,
+        { method: 'POST' }
+      );
+      const data = await response.json();
+      toast.dismiss('verificar-assinatura');
+      if (!data.success) {
+        toast.error(data.error || 'Erro ao verificar assinatura');
+        return;
+      }
+      if (data.signed) {
+        toast.success(
+          'Assinatura confirmada! O laudo está disponível em "Laudo Emitido" para upload.'
+        );
+        router.push('/emissor');
+      } else {
+        toast.error(
+          `Documento ainda não assinado no ZapSign (status: ${data.zapsign_status ?? 'desconhecido'})`,
+          { duration: 6000 }
+        );
+      }
+    } catch {
+      toast.dismiss('verificar-assinatura');
+      toast.error('Erro ao conectar com o servidor');
+    } finally {
+      setVerificandoAssinatura(false);
+    }
+  };
+
   return {
     loteId,
     lote,
@@ -232,10 +269,12 @@ export function useLaudo() {
     laudoStatus,
     gerandoLaudo,
     assinandoLaudo,
+    verificandoAssinatura,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
     handleAssinarDigitalmente,
+    handleVerificarAssinatura,
     handleDownloadLaudo,
     handleUploadSuccess,
     router,

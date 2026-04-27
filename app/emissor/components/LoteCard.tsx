@@ -439,9 +439,7 @@ function MainActionButton({
           ? 'bg-primary hover:bg-primary-hover'
           : 'bg-blue-600 hover:bg-blue-700'
       } text-white rounded-md text-sm font-medium focus:outline-none focus:ring-2 ${
-        lote.emissao_automatica
-          ? 'focus:ring-primary'
-          : 'focus:ring-blue-500'
+        lote.emissao_automatica ? 'focus:ring-primary' : 'focus:ring-blue-500'
       } focus:ring-offset-2 transition-colors flex items-center gap-2`}
     >
       {label}

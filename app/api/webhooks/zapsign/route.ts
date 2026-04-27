@@ -298,14 +298,48 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Não bloquear — FASE B ainda marca status='enviado' (sem arquivo_remoto)
   }
 
-  // ── FASE B: Finalizar laudo (status='enviado' + arquivo_remoto) ──────────
   const agora = new Date();
+
+  // ── FASE C: Finalizar lote ANTES de setar emitido_em no laudo ───────────
+  // ⚠️ ORDEM CRÍTICA: O trigger prevent_modification_lote_when_laudo_emitted
+  //    verifica laudos.emitido_em IS NOT NULL. Atualizar o lote enquanto
+  //    emitido_em ainda é NULL (laudo em 'assinado_processando').
+  //
+  // Caminhar até 'laudo_emitido' — não vai até 'finalizado'.
+  // O emissor deve enviar manualmente (PATCH) para mover para 'Laudos Enviados'.
+  const webhookStateWalkSteps = [
+    { from: 'concluido', to: 'emissao_solicitada' },
+    { from: 'emissao_solicitada', to: 'emissao_em_andamento' },
+    { from: 'emissao_em_andamento', to: 'laudo_emitido' },
+  ] as const;
+  for (const step of webhookStateWalkSteps) {
+    try {
+      await query(
+        `UPDATE lotes_avaliacao
+         SET status        = $1,
+             atualizado_em = NOW()
+         WHERE id = $2 AND status = $3`,
+        [step.to, laudo.lote_id, step.from]
+      );
+    } catch (faseCErr) {
+      console.warn(
+        `[ZapSign Webhook] FASE C: lote ${laudo.lote_id} ${step.from}→${step.to}:`,
+        faseCErr
+      );
+    }
+  }
+  console.log(
+    `[ZapSign Webhook] FASE C ✅ Lote ${laudo.lote_id} avançado para laudo_emitido`
+  );
+
+  // ── FASE B: Emitir laudo (status='emitido' + arquivo_remoto) ──────────
+  // NÃO seta enviado_em — o emissor envia manualmente via PATCH.
+  // Assim o card aparece em 'Laudo Emitido', não 'Laudos Enviados'.
   try {
     await query(
       `UPDATE laudos
-       SET status                     = 'enviado',
+       SET status                     = 'emitido',
            emitido_em                 = $1,
-           enviado_em                 = $1,
            arquivo_remoto_provider    = $2,
            arquivo_remoto_bucket      = $3,
            arquivo_remoto_key         = $4,
@@ -316,7 +350,7 @@ export async function POST(req: Request): Promise<NextResponse> {
            atualizado_em              = NOW()
        WHERE id = $9 AND status IN ('assinado_processando', 'aguardando_assinatura')`,
       [
-        agora, // $1 emitido_em = enviado_em
+        agora, // $1 emitido_em
         arquivoRemotoProvider, // $2
         arquivoRemotoBucket, // $3
         arquivoRemotoKey, // $4
@@ -338,27 +372,6 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json(
       { error: 'Falha ao finalizar laudo no banco de dados' },
       { status: 500 }
-    );
-  }
-
-  // ── FASE C: Finalizar lote (lotes_avaliacao) ─────────────────────────────
-  try {
-    await query(
-      `UPDATE lotes_avaliacao
-       SET status           = 'finalizado',
-           laudo_enviado_em = NOW(),
-           atualizado_em    = NOW()
-       WHERE id = $1 AND status NOT IN ('cancelado', 'finalizado')`,
-      [laudo.lote_id]
-    );
-    console.log(
-      `[ZapSign Webhook] FASE C ✅ Lote ${laudo.lote_id} marcado como finalizado`
-    );
-  } catch (faseCErr) {
-    // Não-crítico — laudo já enviado; lote pode ser finalizado manualmente
-    console.warn(
-      `[ZapSign Webhook] FASE C: Falha ao finalizar lote ${laudo.lote_id}:`,
-      faseCErr
     );
   }
 

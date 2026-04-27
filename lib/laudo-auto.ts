@@ -246,6 +246,36 @@ export async function gerarPDFLaudo(
         .digest('hex');
       console.log(`[EMISSÃO] Hash SHA-256 calculado: ${hashReal}`);
 
+      // ⚠️ ORDEM CRÍTICA (legado): caminhar lote ANTES de setar emitido_em.
+      // O trigger prevent_modification_lote_when_laudo_emitted bloqueia qualquer
+      // UPDATE em lotes_avaliacao quando laudos.emitido_em IS NOT NULL.
+      // Portanto, o state walk deve ocorrer enquanto emitido_em ainda é NULL.
+      const legadoStateWalk = [
+        { from: 'concluido', to: 'emissao_solicitada' },
+        { from: 'emissao_solicitada', to: 'emissao_em_andamento' },
+        { from: 'emissao_em_andamento', to: 'laudo_emitido' },
+      ] as const;
+      for (const step of legadoStateWalk) {
+        try {
+          await query(
+            `UPDATE lotes_avaliacao
+             SET status        = $1,
+                 atualizado_em = NOW()
+             WHERE id = $2 AND status = $3`,
+            [step.to, loteId, step.from],
+            session
+          );
+        } catch (e) {
+          console.warn(
+            `[EMISSÃO] Aviso ao transicionar lote ${loteId} ${step.from}→${step.to}:`,
+            e
+          );
+        }
+      }
+      console.log(
+        `[EMISSÃO] Lote ${loteId} caminhado até 'laudo_emitido' (legado).`
+      );
+
       const updateLegado = await query(
         `UPDATE laudos
          SET hash_pdf      = $1,

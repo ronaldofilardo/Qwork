@@ -91,10 +91,13 @@ export const GET = async (req: Request) => {
       GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE
-          WHEN la.status = 'ativo' THEN 1
-          WHEN la.status = 'concluido' THEN 2
-          WHEN la.status = 'finalizado' THEN 3
-          WHEN la.status = 'cancelado' THEN 4
+          WHEN la.status IN ('emissao_solicitada', 'emissao_em_andamento') THEN 1
+          WHEN la.status = 'laudo_emitido'  THEN 2
+          WHEN la.status = 'concluido'      THEN 3
+          WHEN la.status = 'ativo'          THEN 4
+          WHEN la.status = 'finalizado'     THEN 5
+          WHEN la.status = 'cancelado'      THEN 6
+          ELSE 7
         END,
         la.liberado_em DESC
       LIMIT $1 OFFSET $2

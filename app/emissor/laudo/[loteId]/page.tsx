@@ -19,10 +19,12 @@ export default function EditarLaudo() {
     laudoStatus,
     gerandoLaudo,
     assinandoLaudo,
+    verificandoAssinatura,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
     handleAssinarDigitalmente,
+    handleVerificarAssinatura,
     handleDownloadLaudo,
     handleUploadSuccess,
     router,
@@ -67,6 +69,8 @@ export default function EditarLaudo() {
           onOpenUploadModal={() => setModalUploadOpen(true)}
           onGerarLaudo={handleGerarLaudo}
           onAssinarDigitalmente={handleAssinarDigitalmente}
+          verificandoAssinatura={verificandoAssinatura}
+          onVerificarAssinatura={handleVerificarAssinatura}
         />
 
         {mensagem && (

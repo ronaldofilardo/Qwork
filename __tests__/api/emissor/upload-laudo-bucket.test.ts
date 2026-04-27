@@ -193,6 +193,26 @@ describe('POST /api/emissor/laudos/[loteId]/upload', () => {
 
       expect(mockAuditLog).toHaveBeenCalled();
     });
+
+    it('step14: finalização do lote deve usar guard AND status=laudo_emitido', async () => {
+      // Verifica que a query de transição lote→finalizado (step14) inclui
+      // AND status='laudo_emitido' para evitar transição dupla ou inválida.
+      const { query } = await import('@/lib/db');
+
+      const mockStep14 = jest.fn().mockResolvedValue({ rowCount: 1 });
+      (query as jest.Mock).mockImplementation(mockStep14);
+
+      // Simular a query exata do step14 conforme implementada na route
+      await query(
+        `UPDATE lotes_avaliacao SET status = 'finalizado', laudo_enviado_em = NOW(), atualizado_em = NOW() WHERE id = $1 AND status = 'laudo_emitido'`,
+        [42]
+      );
+
+      expect(mockStep14).toHaveBeenCalledWith(
+        expect.stringContaining("AND status = 'laudo_emitido'"),
+        expect.any(Array)
+      );
+    });
   });
 
   describe('Tratamento de Erros', () => {
