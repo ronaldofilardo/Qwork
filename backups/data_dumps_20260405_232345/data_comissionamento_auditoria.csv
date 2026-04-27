@@ -1,4 +1,0 @@
-id,tabela,registro_id,status_anterior,status_novo,triggador,motivo,dados_extras,criado_por_cpf,criado_em
-7,representantes,1,apto_pendente,ativo,admin_action,Mudan├ºa de status representante,,00000000191,2026-03-03 02:12:41.4885+00
-8,representantes,1,ativo,apto,admin_action,Mudan├ºa de status representante,,87545772920,2026-03-03 03:29:08.061381+00
-9,representantes,1,ativo,apto,admin_action,"",,87545772920,2026-03-03 03:29:08.20832+00
