@@ -11,6 +11,7 @@ import { NextRequest } from 'next/server';
 import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { handleRepresentanteLogin, validarSenhaFuncionario } from './helpers';
+import maintenanceConfig from '@/config/maintenance.json';
 
 export const dynamic = 'force-dynamic';
 
