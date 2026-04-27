@@ -517,6 +517,90 @@ describe('/api/emissor/lotes', () => {
       expect(data.lotes[0].status).toBe('ativo');
       expect(data.lotes[1].status).toBe('concluido');
     });
+
+    it('lote em emissao_solicitada deve aparecer antes de concluido e ativo', async () => {
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ total: 3 }],
+        rowCount: 1,
+      } as QueryResult<unknown>);
+      // A ordenação é feita pelo banco — o mock retorna na ordem esperada
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 10,
+            descricao: 'Lote Em Emissão',
+            tipo: 'completo',
+            lote_status: 'emissao_solicitada',
+            liberado_em: '2025-11-28T09:00:00Z',
+            empresa_nome: 'Empresa X',
+            clinica_nome: 'Clínica X',
+            total_avaliacoes: '5',
+            observacoes: null,
+            status_laudo: null,
+            laudo_id: null,
+            emitido_em: null,
+            enviado_em: null,
+          },
+          {
+            id: 20,
+            descricao: 'Lote Laudo Emitido',
+            tipo: 'completo',
+            lote_status: 'laudo_emitido',
+            liberado_em: '2025-11-27T09:00:00Z',
+            empresa_nome: 'Empresa Y',
+            clinica_nome: 'Clínica Y',
+            total_avaliacoes: '3',
+            observacoes: null,
+            status_laudo: 'emitido',
+            laudo_id: 20,
+            emitido_em: '2025-11-28T10:00:00Z',
+            enviado_em: null,
+            hash_pdf: 'abc',
+            emissor_nome: null,
+            emissor_cpf: null,
+            arquivo_remoto_key: null,
+            arquivo_remoto_url: null,
+            arquivo_remoto_uploaded_at: null,
+          },
+          {
+            id: 30,
+            descricao: 'Lote Concluído',
+            tipo: 'completo',
+            lote_status: 'concluido',
+            liberado_em: '2025-11-26T09:00:00Z',
+            empresa_nome: 'Empresa Z',
+            clinica_nome: 'Clínica Z',
+            total_avaliacoes: '4',
+            observacoes: null,
+            status_laudo: null,
+            laudo_id: null,
+            emitido_em: null,
+            enviado_em: null,
+          },
+        ],
+        rowCount: 3,
+      } as QueryResult<unknown>);
+      // mock validar_lote_pre_laudo para cada lote
+      mockQuery.mockResolvedValue({
+        rows: [
+          {
+            valido: true,
+            alertas: [],
+            funcionarios_pendentes: 0,
+            detalhes: {},
+          },
+        ],
+        rowCount: 1,
+      } as any);
+
+      const response = await GET(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(data.lotes).toHaveLength(3);
+      expect(data.lotes[0].status).toBe('emissao_solicitada');
+      expect(data.lotes[1].status).toBe('laudo_emitido');
+      expect(data.lotes[2].status).toBe('concluido');
+    });
   });
 
   describe('Tratamento de Erros', () => {

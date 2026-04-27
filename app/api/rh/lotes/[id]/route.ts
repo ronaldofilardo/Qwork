@@ -149,6 +149,7 @@ export const GET = async (
         laudo_id: lote.laudo_id || null,
         laudo_status: lote.laudo_status || null,
         hash_pdf: lote.hash_pdf || null,
+        arquivo_remoto_url: lote.arquivo_remoto_url || null,
         emissor_cpf: lote.emissor_cpf || null,
         emissor_nome: lote.emissor_nome || null,
         emitido_em: lote.emitido_em || null,

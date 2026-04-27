@@ -170,6 +170,7 @@ export interface LoteInfo extends Omit<LoteAvaliacao, 'liberado_por'> {
   laudo_emitido_em?: string | null;
   laudo_enviado_em?: string | null;
   hash_pdf?: string | null;
+  arquivo_remoto_url?: string | null;
   emissao_solicitada?: boolean;
   emissao_solicitado_em?: string | null;
   tem_laudo?: boolean;

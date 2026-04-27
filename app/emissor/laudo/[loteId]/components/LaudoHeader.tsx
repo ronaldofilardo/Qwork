@@ -15,9 +15,11 @@ interface LaudoHeaderProps {
   laudoStatus: LaudoStatus;
   gerandoLaudo: boolean;
   assinandoLaudo: boolean;
+  verificandoAssinatura: boolean;
   onOpenUploadModal: () => void;
   onGerarLaudo: () => void;
   onAssinarDigitalmente: () => void;
+  onVerificarAssinatura: () => void;
 }
 
 export default function LaudoHeader({
@@ -26,9 +28,11 @@ export default function LaudoHeader({
   laudoStatus,
   gerandoLaudo,
   assinandoLaudo,
+  verificandoAssinatura,
   onOpenUploadModal,
   onGerarLaudo,
   onAssinarDigitalmente,
+  onVerificarAssinatura,
 }: LaudoHeaderProps) {
   const showGerarButtons =
     isPrevia && (!laudoStatus || laudoStatus === 'rascunho');
@@ -130,9 +134,36 @@ export default function LaudoHeader({
       )}
 
       {showAguardandoBanner && (
-        <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-300 text-yellow-800 px-4 py-2.5 rounded-lg text-sm font-medium">
-          <div className="animate-spin rounded-full h-4 w-4 border-2 border-yellow-600 border-t-transparent flex-shrink-0"></div>
-          Aguardando assinatura digital...
+        <div className="flex items-center gap-3">
+          <button
+            onClick={onVerificarAssinatura}
+            disabled={verificandoAssinatura}
+            className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white px-5 py-2.5 rounded-lg font-semibold hover:from-yellow-600 hover:to-yellow-700 transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
+          >
+            {verificandoAssinatura ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                Verificando...
+              </>
+            ) : (
+              <>
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                Já foi assinado
+              </>
+            )}
+          </button>
         </div>
       )}
     </div>

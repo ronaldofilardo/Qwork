@@ -78,10 +78,11 @@ export async function getLoteInfo(
       l.status as laudo_status,
       l.emitido_em as laudo_emitido_em,
       l.enviado_em as laudo_enviado_em,
-      la.hash_pdf as hash_pdf,
+      l.hash_pdf as hash_pdf,
+      l.arquivo_remoto_url,
       CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
       fe.solicitado_em as emissao_solicitado_em,
-      CASE WHEN l.id IS NOT NULL AND l.status != 'rascunho' THEN true ELSE false END as tem_laudo
+      CASE WHEN l.id IS NOT NULL AND l.status IN ('emitido','enviado') THEN true ELSE false END as tem_laudo
     FROM lotes_avaliacao la
     LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
     JOIN empresas_clientes ec ON la.empresa_id = ec.id

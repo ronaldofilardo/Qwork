@@ -311,7 +311,7 @@ export const PATCH = async (
       `UPDATE laudos 
        SET status = 'enviado', enviado_em = NOW(), emissor_cpf = $2, atualizado_em = NOW() 
        WHERE lote_id = $1 AND status = 'emitido'
-       RETURNING id, status`,
+       RETURNING id, status, lote_id`,
       [loteId, user.cpf],
       user
     );
@@ -328,6 +328,22 @@ export const PATCH = async (
         { error: 'Laudo não encontrado', success: false },
         { status: 404 }
       );
+    }
+
+    // Avançar lote de 'laudo_emitido' → 'finalizado' e gravar laudo_enviado_em
+    try {
+      await query(
+        `UPDATE lotes_avaliacao
+         SET status           = 'finalizado',
+             laudo_enviado_em = NOW(),
+             atualizado_em    = NOW()
+         WHERE id = $1 AND status = 'laudo_emitido'`,
+        [loteId],
+        user
+      );
+    } catch (e) {
+      // Não bloqueia o envio — lote pode já estar finalizado
+      console.warn('[PATCH laudo] Aviso ao finalizar lote:', e);
     }
 
     return NextResponse.json(
