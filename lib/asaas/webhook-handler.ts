@@ -436,6 +436,31 @@ export async function activateSubscription(
         );
       }
 
+      // Verificar se o tomador é isento — se for, ignorar atualização de lotes
+      if (lotesResult.rowCount && lotesResult.rowCount > 0) {
+        let isIsentoTomador = false;
+        if (clinica_id) {
+          const isentoRes = await client.query(
+            `SELECT isento_pagamento FROM clinicas WHERE id = $1`,
+            [clinica_id]
+          );
+          isIsentoTomador = isentoRes.rows[0]?.isento_pagamento === true;
+        } else if (entidade_id) {
+          const isentoRes = await client.query(
+            `SELECT isento_pagamento FROM entidades WHERE id = $1`,
+            [entidade_id]
+          );
+          isIsentoTomador = isentoRes.rows[0]?.isento_pagamento === true;
+        }
+        if (isIsentoTomador) {
+          console.warn(
+            `[Asaas Webhook] ⚠️ Tomador ${clinica_id ? `clínica ${clinica_id}` : `entidade ${entidade_id}`} é isento_pagamento — ignorando atualização de lotes`
+          );
+          lotesAtualizados = [];
+          return; // Encerra a transação sem marcar lotes como pago
+        }
+      }
+
       for (const lote of lotesResult.rows) {
         console.log(`[Asaas Webhook] 🔄 Atualizando lote ${lote.id}...`);
         console.log(

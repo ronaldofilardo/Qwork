@@ -31,6 +31,8 @@ export default function PagamentosContent() {
     handleVerLink,
     handleVerificarPagamento,
     handleDeletarLink,
+    handleCancelarCobranca,
+    handleConfirmarPagamento,
     handleDisponibilizarLink,
     handleVincularRepresentante,
     getSolicitacoesFiltradas,
@@ -96,6 +98,8 @@ export default function PagamentosContent() {
           onVerificarPagamento={handleVerificarPagamento}
           onDisponibilizarLink={handleDisponibilizarLink}
           onDeletarLink={handleDeletarLink}
+          onCancelarCobranca={handleCancelarCobranca}
+          onConfirmarPagamento={handleConfirmarPagamento}
           onVincularRepresentante={handleVincularRepresentante}
           formatCurrency={formatCurrency}
           formatDate={formatDate}
@@ -129,6 +133,8 @@ export default function PagamentosContent() {
               onVerificarPagamento={handleVerificarPagamento}
               onDisponibilizarLink={handleDisponibilizarLink}
               onDeletarLink={handleDeletarLink}
+              onCancelarCobranca={handleCancelarCobranca}
+              onConfirmarPagamento={handleConfirmarPagamento}
               onVincularRepresentante={handleVincularRepresentante}
               formatCurrency={formatCurrency}
               formatDate={formatDate}

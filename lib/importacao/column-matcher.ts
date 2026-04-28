@@ -157,7 +157,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'funcao',
     label: 'Cargo / Função',
-    obrigatorio: true,
+    obrigatorio: false,
     sinonimos: [
       'cargo',
       'funcao',
@@ -174,7 +174,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'nivel_cargo',
     label: 'Nível de Cargo',
-    obrigatorio: false,
+    obrigatorio: true,
     sinonimos: [
       'nivel_cargo',
       'nivel cargo',

@@ -209,6 +209,33 @@ export function usePagamentosAdmin() {
     }
   };
 
+  const handleCancelarCobranca = async (loteId: number) => {
+    if (
+      !confirm(
+        'Cancelar esta cobrança? O lote voltará ao estado anterior à solicitação de emissão.'
+      )
+    )
+      return;
+    try {
+      setProcessando(loteId);
+      const response = await fetch(
+        `/api/admin/emissoes/${loteId}/cancelar-cobranca`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Erro ao cancelar cobrança');
+        return;
+      }
+      await carregarSolicitacoes();
+    } catch (error) {
+      console.error('Erro ao cancelar cobrança:', error);
+      alert('Erro ao cancelar cobrança. Tente novamente.');
+    } finally {
+      setProcessando(null);
+    }
+  };
+
   const handleDisponibilizarLink = async (loteId: number) => {
     try {
       setProcessando(loteId);
@@ -275,9 +302,39 @@ export function usePagamentosAdmin() {
     return solicitacoes.filter((s) => s.status_pagamento === tab).length;
   };
 
-  // ---- Comissionamento ----
+  const handleConfirmarPagamento = async (
+    loteId: number,
+    metodo: string,
+    parcelas: number
+  ) => {
+    try {
+      setProcessando(loteId);
+      const response = await fetch(
+        `/api/admin/emissoes/${loteId}/confirmar-pagamento`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            metodo_pagamento: metodo,
+            num_parcelas: parcelas,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Erro ao confirmar pagamento');
+        return;
+      }
+      alert('✅ Pagamento confirmado com sucesso!');
+      await carregarSolicitacoes();
+    } catch (error) {
+      console.error('Erro ao confirmar pagamento:', error);
+      alert('Erro ao confirmar pagamento. Tente novamente.');
+    } finally {
+      setProcessando(null);
+    }
+  };
 
-  /** Vincular representante por código a uma entidade */
   const handleVincularRepresentante = async (loteId: number) => {
     const codigo = codigoRepInput[loteId]?.trim();
     if (!codigo) {
@@ -340,7 +397,9 @@ export function usePagamentosAdmin() {
     handleVerLink,
     handleVerificarPagamento,
     handleDeletarLink,
+    handleCancelarCobranca,
     handleDisponibilizarLink,
+    handleConfirmarPagamento,
     handleVincularRepresentante,
     getSolicitacoesFiltradas,
     getTabCount,

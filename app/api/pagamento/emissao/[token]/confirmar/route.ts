@@ -28,9 +28,13 @@ export async function POST(
     }
 
     const loteResult = await query(
-      `SELECT id, status_pagamento, valor_por_funcionario, liberado_por
-       FROM lotes_avaliacao
-       WHERE link_pagamento_token = $1
+      `SELECT la.id, la.status_pagamento, la.valor_por_funcionario, la.liberado_por,
+              la.clinica_id, la.entidade_id,
+              COALESCE(c.isento_pagamento, e.isento_pagamento, false) AS isento_pagamento
+       FROM lotes_avaliacao la
+       LEFT JOIN clinicas c ON c.id = la.clinica_id
+       LEFT JOIN entidades e ON e.id = la.entidade_id
+       WHERE la.link_pagamento_token = $1
        FOR UPDATE`,
       [token]
     );
@@ -40,6 +44,20 @@ export async function POST(
     }
 
     const lote = loteResult.rows[0];
+
+    // Bloquear pagamento via link se o tomador for isento
+    if (lote.isento_pagamento === true) {
+      console.warn(
+        `[AVISO] Tentativa de pagamento via link para lote isento ${lote.id} — bloqueado`
+      );
+      return NextResponse.json(
+        {
+          error:
+            'Este lote pertence a um tomador isento de pagamento. Nenhuma cobrança é necessária.',
+        },
+        { status: 400 }
+      );
+    }
 
     // Token de uso único: verificar se já foi usado
     if (lote.status_pagamento === 'pago') {

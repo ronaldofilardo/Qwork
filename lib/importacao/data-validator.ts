@@ -183,11 +183,12 @@ export function validarDadosImportacao(
     // === Cargo / Função (aviso — não bloqueia importação) ===
     const funcao = row.funcao ?? '';
     if (!funcao || funcao.trim() === '') {
-      errosLinha.push({
+      avisos.push({
         linha,
         campo: 'funcao',
         valor: funcao,
-        mensagem: 'Cargo / Função não informado — funcionário será importado sem função definida',
+        mensagem:
+          'Cargo / Função não informado — funcionário será importado sem função definida',
         severidade: 'aviso',
       });
     }
@@ -259,6 +260,18 @@ export function validarDadosImportacao(
           severidade: 'erro',
         });
       }
+    }
+
+    // === Nível de Cargo (obrigatório) ===
+    const nivelCargo = row.nivel_cargo ?? '';
+    if (!nivelCargo || nivelCargo.trim() === '') {
+      errosLinha.push({
+        linha,
+        campo: 'nivel_cargo',
+        valor: nivelCargo,
+        mensagem: 'Nível de Cargo é obrigatório',
+        severidade: 'erro',
+      });
     }
 
     if (errosLinha.length > 0) {
