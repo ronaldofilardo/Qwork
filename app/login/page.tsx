@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import QworkLogo from '@/components/QworkLogo';
 import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
 import ModalBoasVindasCadastro from '@/components/modals/ModalBoasVindasCadastro';
 import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIdentidade';
 import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
-import { Building2 } from 'lucide-react';
+import { Building2, Eye, EyeOff } from 'lucide-react';
 import maintenanceConfig from '@/config/maintenance.json';
 
 type DbEnvironment = 'development' | 'staging' | 'production';
@@ -51,7 +51,22 @@ export default function LoginPage() {
     dataNascimento: string;
   } | null>(null);
   const [redirectTo, setRedirectTo] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rateLimitUntil, setRateLimitUntil] = useState<number | null>(null);
+  const [rateLimitSecondsLeft, setRateLimitSecondsLeft] = useState(0);
   const _router = useRouter();
+
+  useEffect(() => {
+    if (rateLimitUntil === null) return;
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((rateLimitUntil - Date.now()) / 1000));
+      setRateLimitSecondsLeft(left);
+      if (left === 0) setRateLimitUntil(null);
+    };
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [rateLimitUntil]);
 
   const formatarCPF = (valor: string) => {
     const apenasNumeros = valor.replace(/\D/g, '');
@@ -136,6 +151,22 @@ export default function LoginPage() {
         body: JSON.stringify(body),
         credentials: 'same-origin',
       });
+
+      // Verificar rate limit (429) — exibir cronômetro de bloqueio
+      if (response.status === 429) {
+        let data429: { message?: string; retryAfter?: number; retryAfterMinutes?: number } = {};
+        try {
+          data429 = await response.json();
+        } catch {
+          // ignora erro de parse
+        }
+        const seconds = data429.retryAfter ?? (data429.retryAfterMinutes ?? 5) * 60;
+        setRateLimitUntil(Date.now() + seconds * 1000);
+        setRateLimitSecondsLeft(seconds);
+        setError('');
+        setLoading(false);
+        return;
+      }
 
       // Verificar se é erro de manutenção (503)
       if (response.status === 503) {
@@ -662,16 +693,31 @@ export default function LoginPage() {
                 (opcional se for funcionário)
               </span>
             </label>
-            <input
-              id="senha"
-              name="senha"
-              type="password"
-              value={senha}
-              onChange={(e) => setSenha((e.target as HTMLInputElement).value)}
-              placeholder="••••••••"
-              className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
-              disabled={showConfirmacaoModal}
-            />
+            <div className="relative mt-1">
+              <input
+                id="senha"
+                name="senha"
+                type={showPassword ? 'text' : 'password'}
+                value={senha}
+                onChange={(e) => setSenha((e.target as HTMLInputElement).value)}
+                placeholder="••••••••"
+                className="block w-full px-3 py-3 pr-11 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+                disabled={showConfirmacaoModal}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 transition-colors"
+                tabIndex={-1}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? (
+                  <EyeOff className="w-5 h-5" />
+                ) : (
+                  <Eye className="w-5 h-5" />
+                )}
+              </button>
+            </div>
             <p className="mt-1.5 text-xs text-gray-500">
               Funcionários sem senha: use sua data de nascimento no formato{' '}
               <span className="font-mono font-semibold">ddmmaaaa</span> (ex:
@@ -679,7 +725,25 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {error && (
+          {rateLimitUntil !== null && (
+            <div className="text-red-700 text-sm bg-red-50 border border-red-200 p-3 rounded-md text-center">
+              {rateLimitSecondsLeft > 0 ? (
+                <>
+                  <span className="font-semibold">Acesso temporariamente bloqueado.</span>
+                  <br />
+                  Tente novamente em{' '}
+                  <span className="font-mono font-bold">
+                    {String(Math.floor(rateLimitSecondsLeft / 60)).padStart(2, '0')}:
+                    {String(rateLimitSecondsLeft % 60).padStart(2, '0')}
+                  </span>
+                </>
+              ) : (
+                'Você já pode tentar novamente.'
+              )}
+            </div>
+          )}
+
+          {error && rateLimitUntil === null && (
             <div className="text-danger text-sm bg-red-50 p-3 rounded-md">
               {error}
             </div>
@@ -687,7 +751,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading || showConfirmacaoModal}
+            disabled={loading || showConfirmacaoModal || (rateLimitUntil !== null && rateLimitSecondsLeft > 0)}
             className="w-full bg-primary text-white py-3 px-4 rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base font-medium"
           >
             {loading ? 'Entrando...' : 'Entrar'}
