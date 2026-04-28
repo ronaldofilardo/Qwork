@@ -729,16 +729,25 @@ export default function LoginPage() {
             <div className="text-red-700 text-sm bg-red-50 border border-red-200 p-3 rounded-md text-center">
               {rateLimitSecondsLeft > 0 ? (
                 <>
-                  <span className="font-semibold">Acesso temporariamente bloqueado.</span>
+                  <span className="font-semibold">Você expirou todas as suas tentativas.</span>
                   <br />
-                  Tente novamente em{' '}
-                  <span className="font-mono font-bold">
-                    {String(Math.floor(rateLimitSecondsLeft / 60)).padStart(2, '0')}:
-                    {String(rateLimitSecondsLeft % 60).padStart(2, '0')}
+                  <span className="block mt-1 text-xs text-red-600">
+                    Verifique suas credenciais e tente novamente em{' '}
+                    <span className="font-mono font-bold">
+                      {String(Math.floor(rateLimitSecondsLeft / 60)).padStart(2, '0')}:
+                      {String(rateLimitSecondsLeft % 60).padStart(2, '0')}
+                    </span>
+                  </span>
+                  <span className="block mt-2 text-xs text-red-600">
+                    Se o problema persistir, entre em contato com seu gestor ou suporte.
                   </span>
                 </>
               ) : (
-                'Você já pode tentar novamente.'
+                <>
+                  <span className="font-semibold">Bloqueio expirado.</span>
+                  <br />
+                  <span className="block mt-1 text-xs">Você já pode tentar novamente.</span>
+                </>
               )}
             </div>
           )}
