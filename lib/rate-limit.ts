@@ -13,7 +13,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
 export interface RateLimitConfig {
-  windowMs: number;    // Janela de tempo em ms
+  windowMs: number; // Janela de tempo em ms
   maxRequests: number; // Máximo de requisições por janela
 }
 
@@ -99,14 +99,16 @@ export async function rateLimitAsync(
 
     if (count > finalConfig.maxRequests) {
       const retryAfter = Math.ceil(remaining_ms / 1000);
+      const retryAfterMinutes = Math.ceil(retryAfter / 60);
       console.error(
         `[RATE_LIMIT] Chave "${key}" excedeu limite: ${count}/${finalConfig.maxRequests}`
       );
       return NextResponse.json(
         {
           error: 'RATE_LIMIT_EXCEEDED',
-          message: 'Muitas requisições. Tente novamente mais tarde.',
+          message: `Muitas tentativas de login. Acesso bloqueado por ${retryAfterMinutes} minuto(s) por segurança. Tente novamente mais tarde.`,
           retryAfter,
+          retryAfterMinutes,
         },
         {
           status: 429,
@@ -118,7 +120,10 @@ export async function rateLimitAsync(
     return null;
   } catch (err) {
     // Fail-open: não bloqueia o usuário se o DB estiver indisponível
-    console.error('[RATE_LIMIT] Falha ao verificar rate limit (fail-open):', err);
+    console.error(
+      '[RATE_LIMIT] Falha ao verificar rate limit (fail-open):',
+      err
+    );
     return null;
   }
 }
@@ -181,10 +186,9 @@ export function rateLimit(config: Partial<RateLimitConfig> = {}) {
  *   - api:   por IP para rotas públicas não autenticadas
  */
 export const RATE_LIMIT_CONFIGS = {
-  auth: { windowMs: 5 * 60 * 1000,  maxRequests: 5   }, // 5 tentativas / 5 min (brute-force)
-  api:  { windowMs: 15 * 60 * 1000, maxRequests: 100  }, // 100 req / 15 min (público)
+  auth: { windowMs: 5 * 60 * 1000, maxRequests: 5 }, // 5 tentativas / 5 min (brute-force)
+  api: { windowMs: 15 * 60 * 1000, maxRequests: 100 }, // 100 req / 15 min (público)
   adminFinanceiro: { windowMs: 10 * 60 * 1000, maxRequests: 50 }, // 50 req / 10 min
-  user:      { windowMs: 15 * 60 * 1000, maxRequests: 300  }, // 300 req / 15 min por usuário
-  shared_ip: { windowMs: 15 * 60 * 1000, maxRequests: 600  }, // 600 req / 15 min por IP (autenticado)
+  user: { windowMs: 15 * 60 * 1000, maxRequests: 300 }, // 300 req / 15 min por usuário
+  shared_ip: { windowMs: 15 * 60 * 1000, maxRequests: 600 }, // 600 req / 15 min por IP (autenticado)
 } as const;
-

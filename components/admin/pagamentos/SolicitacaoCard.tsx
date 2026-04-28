@@ -35,6 +35,12 @@ interface SolicitacaoCardProps {
   onVerificarPagamento: (loteId: number) => void;
   onDisponibilizarLink: (loteId: number) => void;
   onDeletarLink: (loteId: number) => void;
+  onConfirmarPagamento: (
+    loteId: number,
+    metodo: string,
+    parcelas: number
+  ) => void;
+  onCancelarCobranca: (loteId: number) => void;
   onVincularRepresentante: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
   formatDate: (dateString: string | null) => string;
@@ -246,6 +252,8 @@ function StatusActions({
   onVerificarPagamento,
   onDisponibilizarLink,
   onDeletarLink,
+  onCancelarCobranca,
+  onConfirmarPagamento,
 }: Omit<
   SolicitacaoCardProps,
   | 'formatCurrency'
@@ -256,6 +264,9 @@ function StatusActions({
 >) {
   const loteId = solicitacao.lote_id;
   const isProcessando = processando === loteId;
+  const [showConfirmarForm, setShowConfirmarForm] = useState(false);
+  const [metodoConfirm, setMetodoConfirm] = useState('pix');
+  const [parcelasConfirm, setParcelasConfirm] = useState(1);
 
   if (solicitacao.isento_pagamento) {
     return (
@@ -578,6 +589,18 @@ function StatusActions({
             </span>
           </div>
         )}
+
+        {/* Cancelar cobrança */}
+        <div className="pt-1 border-t border-amber-200">
+          <button
+            onClick={() => onCancelarCobranca(loteId)}
+            disabled={isProcessando}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            {isProcessando ? 'Cancelando...' : 'Cancelar Cobrança'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -646,6 +669,80 @@ function StatusActions({
             Deletar Link
           </button>
         </div>
+        {/* Confirmar pagamento manualmente */}
+        {!showConfirmarForm ? (
+          <button
+            type="button"
+            onClick={() => setShowConfirmarForm(true)}
+            disabled={isProcessando}
+            className="mt-2 px-5 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2 text-sm"
+          >
+            <CheckCircle className="w-4 h-4" />
+            Confirmar Pagamento Manualmente
+          </button>
+        ) : (
+          <div className="mt-3 p-3 border border-green-200 bg-green-50 rounded-lg space-y-3">
+            <p className="text-sm font-medium text-green-900">
+              Registrar pagamento
+            </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="block text-xs text-green-800 mb-1">
+                  Método
+                </label>
+                <select
+                  value={metodoConfirm}
+                  onChange={(e) => setMetodoConfirm(e.target.value)}
+                  className="px-3 py-2 text-sm border border-green-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"
+                  disabled={isProcessando}
+                >
+                  <option value="pix">PIX</option>
+                  <option value="boleto">Boleto</option>
+                  <option value="credit_card">Cartão de Crédito</option>
+                  <option value="transferencia">Transferência</option>
+                  <option value="isento">Isento</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-green-800 mb-1">
+                  Parcelas
+                </label>
+                <select
+                  value={parcelasConfirm}
+                  onChange={(e) => setParcelasConfirm(Number(e.target.value))}
+                  className="px-3 py-2 text-sm border border-green-300 rounded-lg bg-white focus:ring-2 focus:ring-green-500"
+                  disabled={isProcessando}
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>
+                      {n}x
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onConfirmarPagamento(loteId, metodoConfirm, parcelasConfirm);
+                  setShowConfirmarForm(false);
+                }}
+                disabled={isProcessando}
+                className="px-5 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {isProcessando ? 'Confirmando...' : 'Confirmar'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowConfirmarForm(false)}
+                disabled={isProcessando}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
