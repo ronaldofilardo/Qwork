@@ -132,12 +132,16 @@ export async function POST(request: Request) {
     let foundInUsuarios = false;
 
     // TIPOS DE SISTEMA: procurar em `usuarios` primeiro
+    // 'rh' e 'gestor' incluídos para garantir prioridade sobre registro em `funcionarios`
+    // (um mesmo CPF pode existir nas duas tabelas; o perfil de responsável prevalece)
     const SYSTEM_ACCOUNT_TYPES = [
       'suporte',
       'comercial',
       'vendedor',
       'admin',
       'emissor',
+      'rh',
+      'gestor',
     ];
 
     logger.log(`[LOGIN] Iniciando autenticação para CPF ***${cpf.slice(-4)}`);
@@ -266,9 +270,12 @@ export async function POST(request: Request) {
       tomadorAtivo = usuario.ativo ?? true;
     } else if (
       foundInUsuarios &&
-      SYSTEM_ACCOUNT_TYPES.includes(usuario.tipo_usuario)
+      SYSTEM_ACCOUNT_TYPES.includes(usuario.tipo_usuario) &&
+      usuario.tipo_usuario !== 'rh' &&
+      usuario.tipo_usuario !== 'gestor'
     ) {
       // Usuário de sistema (suporte, comercial, vendedor, admin, emissor): senha em usuarios
+      // 'rh' e 'gestor' têm senhas em clinicas_senhas/entidades_senhas — caem nos blocos abaixo
       logger.log(
         `[LOGIN] Usuário de sistema (${usuario.tipo_usuario}) autenticando via usuarios`
       );
