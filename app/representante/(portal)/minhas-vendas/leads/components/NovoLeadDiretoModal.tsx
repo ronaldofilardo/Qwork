@@ -13,7 +13,6 @@ import {
   TIPOS_CLIENTE,
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
-  calcularComissaoCustoFixo,
   valorMinimoCustoFixoTotal,
   type TipoCliente,
 } from '@/lib/leads-config';
@@ -179,13 +178,6 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
       ? form.tipo_cliente === 'entidade'
         ? (valorCustoFixoEntidade ?? null)
         : (valorCustoFixoClinica ?? null)
-      : null;
-
-  const breakdownCustoFixo =
-    modeloComissionamento === 'custo_fixo' &&
-    custoFixoRep !== null &&
-    valorNegociadoNum > 0
-      ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
       : null;
 
   const breakdown =

@@ -6,7 +6,6 @@ import {
   TIPOS_CLIENTE,
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
-  calcularComissaoCustoFixo,
   valorMinimoCustoFixoTotal,
 } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
@@ -68,14 +67,6 @@ export default function NovoLeadModal({
       ? novoForm.tipo_cliente === 'entidade'
         ? (valorCustoFixoEntidade ?? null)
         : (valorCustoFixoClinica ?? null)
-      : null;
-
-  // CASO D: custo_fixo model breakdown
-  const breakdownCustoFixo =
-    modeloComissionamento === 'custo_fixo' &&
-    custoFixoRep !== null &&
-    valorNegociadoNum > 0
-      ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
       : null;
 
   // CASO C base: percentual model breakdown

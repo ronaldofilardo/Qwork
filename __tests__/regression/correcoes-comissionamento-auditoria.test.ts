@@ -60,7 +60,7 @@ describe('1. ComissoesContent — prop perfil filtra ações de comercial', () =
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. comercial/page.tsx usa ComercialComissoesAbas (com tabs Produtividade + Minhas comissões)
+// 2. comercial/page.tsx usa ComercialComissoesAbas (renderiza Produtividade apenas)
 // ─────────────────────────────────────────────────────────────────────────────
 describe('2. comercial/page.tsx usa ComercialComissoesAbas', () => {
   const filePath = path.join(ROOT, 'app', 'comercial', 'page.tsx');

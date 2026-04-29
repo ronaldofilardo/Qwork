@@ -14,7 +14,9 @@ import { requireRole } from '@/lib/session';
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 
-function makeGet(url = 'http://localhost/api/comercial/representantes/sem-gestor'): NextRequest {
+function makeGet(
+  url = 'http://localhost/api/comercial/representantes/sem-gestor'
+): NextRequest {
   return new NextRequest(url);
 }
 
@@ -58,7 +60,10 @@ describe('GET /api/comercial/representantes/sem-gestor', () => {
   // --- 200 success ---
   it('deve retornar lista de representantes sem gestor', async () => {
     // Arrange
-    mockQuery.mockResolvedValueOnce({ rows: repsSemGestor, rowCount: 2 } as any);
+    mockQuery.mockResolvedValueOnce({
+      rows: repsSemGestor,
+      rowCount: 2,
+    } as any);
 
     // Act
     const res = await GET(makeGet());
@@ -75,7 +80,10 @@ describe('GET /api/comercial/representantes/sem-gestor', () => {
 
   it('deve converter strings numéricas para número', async () => {
     // Arrange
-    mockQuery.mockResolvedValueOnce({ rows: repsSemGestor, rowCount: 2 } as any);
+    mockQuery.mockResolvedValueOnce({
+      rows: repsSemGestor,
+      rowCount: 2,
+    } as any);
 
     // Act
     const res = await GET(makeGet());
@@ -141,9 +149,12 @@ describe('GET /api/comercial/representantes/sem-gestor', () => {
   });
 
   // --- Conteúdo dos campos retornados ---
-  it('deve retornar campos id, nome, email, status, codigo, tipo_pessoa, criado_em', async () => {
+  it('deve retornar campos id, nome, email, status, tipo_pessoa, criado_em, leads_ativos, vinculos_ativos', async () => {
     // Arrange
-    mockQuery.mockResolvedValueOnce({ rows: [repsSemGestor[0]], rowCount: 1 } as any);
+    mockQuery.mockResolvedValueOnce({
+      rows: [repsSemGestor[0]],
+      rowCount: 1,
+    } as any);
 
     // Act
     const res = await GET(makeGet());
@@ -155,7 +166,6 @@ describe('GET /api/comercial/representantes/sem-gestor', () => {
     expect(rep).toHaveProperty('nome');
     expect(rep).toHaveProperty('email');
     expect(rep).toHaveProperty('status');
-    expect(rep).toHaveProperty('codigo');
     expect(rep).toHaveProperty('tipo_pessoa');
     expect(rep).toHaveProperty('criado_em');
     expect(rep).toHaveProperty('leads_ativos');
@@ -165,7 +175,11 @@ describe('GET /api/comercial/representantes/sem-gestor', () => {
   // --- Verificações de acesso ---
   it('deve aceitar usuário com perfil admin', async () => {
     // Arrange
-    mockRequireRole.mockResolvedValue({ cpf: '00000000001', nome: 'Admin', perfil: 'admin' } as any);
+    mockRequireRole.mockResolvedValue({
+      cpf: '00000000001',
+      nome: 'Admin',
+      perfil: 'admin',
+    } as any);
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
     // Act

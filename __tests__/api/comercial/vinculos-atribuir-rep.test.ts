@@ -1,35 +1,13 @@
 /**
  * @file __tests__/api/comercial/vinculos-atribuir-rep.test.ts
  *
- * Testes para PATCH /api/comercial/vinculos/[id]/atribuir-rep
- * Covers: autenticação, validações, valor_negociado, conflitos.
+ * ❌ DEPRECATED: A rota PATCH /api/comercial/vinculos/[id]/atribuir-rep foi removida na migration 1233
+ * (remoção completa de comissões do perfil comercial).
+ *
+ * Este arquivo é mantido como referência histórica, mas todos os testes foram desabilitados.
  */
 
-jest.mock('@/lib/db', () => ({ query: jest.fn() }));
-jest.mock('@/lib/session', () => ({
-  requireRole: jest.fn().mockResolvedValue({
-    cpf: '00011122233',
-    nome: 'Comercial',
-    perfil: 'comercial',
-  }),
-}));
-
-import { query } from '@/lib/db';
-import { NextRequest } from 'next/server';
-import { PATCH } from '@/app/api/comercial/vinculos/[id]/atribuir-rep/route';
-
-const mockQuery = query as jest.MockedFunction<typeof query>;
-
-function makeReq(body: unknown, id = '42'): [NextRequest, { params: { id: string } }] {
-  const req = new NextRequest('http://localhost/api/comercial/vinculos/42/atribuir-rep', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  return [req, { params: { id } }];
-}
-
-describe('PATCH /api/comercial/vinculos/[id]/atribuir-rep', () => {
+describe.skip('PATCH /api/comercial/vinculos/[id]/atribuir-rep [DEPRECATED - ROUTE REMOVED]', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('retorna 400 para ID inválido', async () => {
@@ -41,7 +19,9 @@ describe('PATCH /api/comercial/vinculos/[id]/atribuir-rep', () => {
   });
 
   it('retorna 400 se schema inválido (representante_id ausente)', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 42, representante_id: null, status: 'ativo' }] } as never);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 42, representante_id: null, status: 'ativo' }],
+    } as never);
     const [req, ctx] = makeReq({ obs: 'teste' });
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(400);
@@ -78,7 +58,9 @@ describe('PATCH /api/comercial/vinculos/[id]/atribuir-rep', () => {
 
   it('retorna 404 quando representante não existe', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 42, representante_id: null, status: 'ativo' }] } as never)
+      .mockResolvedValueOnce({
+        rows: [{ id: 42, representante_id: null, status: 'ativo' }],
+      } as never)
       .mockResolvedValueOnce({ rows: [] } as never); // rep not found
     const [req, ctx] = makeReq({ representante_id: 999 });
     const res = await PATCH(req, ctx);
@@ -89,8 +71,14 @@ describe('PATCH /api/comercial/vinculos/[id]/atribuir-rep', () => {
 
   it('retorna 422 quando representante não está apto', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 42, representante_id: null, status: 'ativo' }] } as never)
-      .mockResolvedValueOnce({ rows: [{ id: 5, status: 'inativo', modelo_comissionamento: 'percentual' }] } as never);
+      .mockResolvedValueOnce({
+        rows: [{ id: 42, representante_id: null, status: 'ativo' }],
+      } as never)
+      .mockResolvedValueOnce({
+        rows: [
+          { id: 5, status: 'inativo', modelo_comissionamento: 'percentual' },
+        ],
+      } as never);
     const [req, ctx] = makeReq({ representante_id: 5 });
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(422);
@@ -100,8 +88,12 @@ describe('PATCH /api/comercial/vinculos/[id]/atribuir-rep', () => {
 
   it('vincula representante com sucesso (modelo percentual, sem valor_negociado)', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 42, representante_id: null, status: 'ativo' }] } as never)
-      .mockResolvedValueOnce({ rows: [{ id: 5, status: 'apto', modelo_comissionamento: 'percentual' }] } as never)
+      .mockResolvedValueOnce({
+        rows: [{ id: 42, representante_id: null, status: 'ativo' }],
+      } as never)
+      .mockResolvedValueOnce({
+        rows: [{ id: 5, status: 'apto', modelo_comissionamento: 'percentual' }],
+      } as never)
       .mockResolvedValueOnce({ rows: [] } as never) // UPDATE vinculos_comissao
       .mockResolvedValueOnce({ rows: [] } as never); // INSERT auditoria
 
@@ -120,8 +112,12 @@ describe('PATCH /api/comercial/vinculos/[id]/atribuir-rep', () => {
 
   it('vincula representante com sucesso passando valor_negociado (modelo custo_fixo)', async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 42, representante_id: null, status: 'ativo' }] } as never)
-      .mockResolvedValueOnce({ rows: [{ id: 5, status: 'apto', modelo_comissionamento: 'custo_fixo' }] } as never)
+      .mockResolvedValueOnce({
+        rows: [{ id: 42, representante_id: null, status: 'ativo' }],
+      } as never)
+      .mockResolvedValueOnce({
+        rows: [{ id: 5, status: 'apto', modelo_comissionamento: 'custo_fixo' }],
+      } as never)
       .mockResolvedValueOnce({ rows: [] } as never) // UPDATE vinculos_comissao
       .mockResolvedValueOnce({ rows: [] } as never); // INSERT auditoria
 
@@ -147,7 +143,9 @@ describe('PATCH /api/comercial/vinculos/[id]/atribuir-rep', () => {
 
   it('retorna 403 quando não autenticado', async () => {
     const { requireRole } = await import('@/lib/session');
-    (requireRole as jest.Mock).mockRejectedValueOnce(new Error('Não autenticado'));
+    (requireRole as jest.Mock).mockRejectedValueOnce(
+      new Error('Não autenticado')
+    );
 
     const [req, ctx] = makeReq({ representante_id: 5 });
     const res = await PATCH(req, ctx);
