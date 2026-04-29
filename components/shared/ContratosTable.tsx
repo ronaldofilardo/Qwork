@@ -640,9 +640,6 @@ export function ContratosTable({
                           Valor/%
                         </th>
                         <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                          Com. Com.
-                        </th>
-                        <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
                           Com. Rep.
                         </th>
                         {showQWork && (
@@ -669,7 +666,7 @@ export function ContratosTable({
                       allowExpandClinicaEmpresas && isClinica;
                     const isExpandedClinica =
                       !!expandedClinicas[row.contratante_id];
-                    const desktopColspan = comercial ? 7 : showQWork ? 10 : 9;
+                    const desktopColspan = comercial ? 7 : showQWork ? 9 : 8;
 
                     const tdRep = (
                       <td className="px-4 py-3">

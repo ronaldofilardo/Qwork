@@ -39,7 +39,6 @@ interface ResumoPeriodo {
   gateway: number;
   custoOperacional: number;
   representantes: number;
-  comercial: number;
   ronaldo: number;
   antonio: number;
   totalEventos: number;
@@ -59,7 +58,6 @@ interface EventoSociedade {
   valorGateway: number;
   valorCustoOperacional: number;
   valorRepresentante: number;
-  valorComercial: number;
   valorSocioRonaldo: number;
   valorSocioAntonio: number;
   representanteNome: string | null;
@@ -90,7 +88,6 @@ interface SociedadeResponse {
   beneficiarios: BeneficiarioSociedade[];
   configuracao: {
     qworkWalletConfigurada: boolean;
-    comercialWalletConfigurada: boolean;
     representantesComWallet: number;
     representantesSemWallet: number;
     socioRonaldoWalletConfigurada: boolean;
@@ -104,7 +101,8 @@ interface SociedadeResponse {
   eventosRecentes: EventoSociedade[];
 }
 
-function formatCurrency(value: number): string {
+function formatCurrency(value: number | undefined | null): string {
+  if (value == null || isNaN(value)) return 'R$ 0,00';
   return value.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
@@ -348,7 +346,7 @@ export default function SociedadeContent() {
           <h2 className="text-2xl font-bold text-gray-900">Sociedade</h2>
           <p className="mt-1 text-sm text-gray-600">
             Auditoria dos valores que entram no sistema e sua distribuição entre
-            impostos, representantes, comercial e sócios.
+            impostos, representantes e sócios.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -415,9 +413,6 @@ export default function SociedadeContent() {
                   Representantes
                 </th>
                 <th className="px-6 py-3 text-right font-semibold text-gray-700">
-                  Comercial
-                </th>
-                <th className="px-6 py-3 text-right font-semibold text-gray-700">
                   Ronaldo
                 </th>
                 <th className="px-6 py-3 text-right font-semibold text-gray-700">
@@ -452,9 +447,6 @@ export default function SociedadeContent() {
                   <td className="px-6 py-3 text-right text-gray-700">
                     {formatCurrency(resumo.representantes)}
                   </td>
-                  <td className="px-6 py-3 text-right text-gray-700">
-                    {formatCurrency(resumo.comercial)}
-                  </td>
                   <td className="px-6 py-3 text-right font-medium text-gray-900">
                     {formatCurrency(resumo.ronaldo)}
                   </td>
@@ -483,10 +475,6 @@ export default function SociedadeContent() {
             <div className="rounded-lg bg-gray-50 p-3 text-sm">
               <div className="mb-1 font-medium text-gray-700">QWork</div>
               <WalletStatus ok={data.configuracao.qworkWalletConfigurada} />
-            </div>
-            <div className="rounded-lg bg-gray-50 p-3 text-sm">
-              <div className="mb-1 font-medium text-gray-700">Comercial</div>
-              <WalletStatus ok={data.configuracao.comercialWalletConfigurada} />
             </div>
             <div className="rounded-lg bg-gray-50 p-3 text-sm">
               <div className="mb-1 font-medium text-gray-700">
@@ -621,7 +609,6 @@ export default function SociedadeContent() {
                   <th className="px-3 py-2">Tipo Pgto</th>
                   <th className="px-3 py-2">Bruto</th>
                   <th className="px-3 py-2">Rep.</th>
-                  <th className="px-3 py-2">Comercial</th>
                   <th className="px-3 py-2">Impostos</th>
                   <th className="px-3 py-2">Tx. Transação</th>
                   <th className="px-3 py-2">Custo Oper.</th>
@@ -662,17 +649,6 @@ export default function SociedadeContent() {
                         {evento.valorBruto > 0
                           ? (
                               (evento.valorRepresentante / evento.valorBruto) *
-                              100
-                            ).toFixed(1) + '%'
-                          : '—'}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div>{formatCurrency(evento.valorComercial)}</div>
-                      <div className="mt-0.5 tabular-nums text-xs text-gray-400">
-                        {evento.valorBruto > 0
-                          ? (
-                              (evento.valorComercial / evento.valorBruto) *
                               100
                             ).toFixed(1) + '%'
                           : '—'}

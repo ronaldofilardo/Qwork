@@ -359,29 +359,6 @@ async function getPagamentosManutencao(
   }
 }
 
-async function getComercialWalletCount(): Promise<number> {
-  try {
-    const [r1, r2] = await Promise.all([
-      query<{ count: string | number }>(
-        `SELECT COUNT(*) AS count FROM beneficiarios_sociedade WHERE codigo = 'comercial' AND asaas_wallet_id IS NOT NULL`
-      ),
-      query<{ count: string | number }>(
-        `SELECT COUNT(*) AS count FROM usuarios WHERE tipo_usuario = 'comercial' AND ativo = true AND asaas_wallet_id IS NOT NULL`
-      ),
-    ]);
-    return Math.max(
-      toNumber(r1.rows[0]?.count ?? 0),
-      toNumber(r2.rows[0]?.count ?? 0)
-    );
-  } catch (error) {
-    console.warn(
-      '[Sociedade] getComercialWalletCount error:',
-      error instanceof Error ? error.message : String(error)
-    );
-    return 0;
-  }
-}
-
 async function getConfiguracoes(): Promise<ConfiguracaoGateway[]> {
   try {
     const result = await query<{
@@ -566,7 +543,6 @@ export async function GET(request: NextRequest) {
       beneficiariosInfo,
       pagamentosRows,
       pagamentosManutencao,
-      comercialWalletCount,
       repWalletStats,
       configuracoes,
     ] = await Promise.all([
@@ -574,7 +550,6 @@ export async function GET(request: NextRequest) {
       getBeneficiarios(),
       getPagamentosSociedade(dias),
       getPagamentosManutencao(dias),
-      getComercialWalletCount(),
       getRepresentantesWalletStats(),
       getConfiguracoes(),
     ]);
@@ -656,15 +631,6 @@ export async function GET(request: NextRequest) {
               ? toNumber(valorBruto - totalGatewayParcela)
               : undefined;
 
-          const distribuicaoBase = calcularDistribuicaoSociedade({
-            valorBruto,
-            valorLiquidoGateway,
-            metodoPagamento: row.metodo,
-            modeloRepresentante: 'custo_fixo',
-            valorRepresentanteFixo: valorRepresentante,
-            percentualImpostos,
-          });
-
           const distribuicao = calcularDistribuicaoSociedade({
             valorBruto,
             valorLiquidoGateway,
@@ -721,7 +687,6 @@ export async function GET(request: NextRequest) {
         qworkWalletConfigurada: Boolean(
           qworkInfo.qwork.walletId || process.env.ASAAS_QWORK_WALLET_ID
         ),
-        comercialWalletConfigurada: comercialWalletCount > 0,
         representantesComWallet: repWalletStats.comWallet,
         representantesSemWallet: repWalletStats.semWallet,
         socioRonaldoWalletConfigurada: Boolean(

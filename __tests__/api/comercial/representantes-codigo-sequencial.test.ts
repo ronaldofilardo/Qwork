@@ -218,7 +218,10 @@ describe('POST /api/comercial/representantes — criação de lead pendente veri
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // email — representantes
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // email — leads
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // cnpj — representantes
-      .mockResolvedValueOnce({ rows: [{ id: 'lead-cnpj' }], rowCount: 1 } as any); // cnpj — leads
+      .mockResolvedValueOnce({
+        rows: [{ id: 'lead-cnpj' }],
+        rowCount: 1,
+      } as any); // cnpj — leads
 
     const { POST } = await import('@/app/api/comercial/representantes/route');
     const req = makeFakeRequest({

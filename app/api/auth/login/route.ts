@@ -86,7 +86,30 @@ export async function POST(request: Request) {
   const contextoRequisicao = extrairContextoRequisicao(request);
 
   try {
-    const { cpf, senha, data_nascimento } = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('[LOGIN] Erro ao fazer parse do JSON:', parseError);
+      console.error(
+        '[LOGIN] Content-Type:',
+        request.headers.get('content-type')
+      );
+      console.error('[LOGIN] Method:', request.method);
+      return NextResponse.json(
+        {
+          error:
+            'Corpo da requisição inválido ou vazio. Verifique o JSON enviado.',
+          details:
+            parseError instanceof Error
+              ? parseError.message
+              : 'Erro desconhecido',
+        },
+        { status: 400 }
+      );
+    }
+
+    const { cpf, senha, data_nascimento } = body;
 
     // Validar entrada
     if (!cpf) {
