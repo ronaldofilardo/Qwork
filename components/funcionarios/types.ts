@@ -63,6 +63,7 @@ export interface FuncionariosSectionProps {
   empresaNome?: string;
   onRefresh?: () => void;
   defaultStatusFilter?: 'todos' | 'ativos' | 'inativos';
+  responsavelCpf?: string;
 }
 
 export interface FuncionariosStats {

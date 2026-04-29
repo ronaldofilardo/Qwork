@@ -8,6 +8,7 @@ interface ModalInserirFuncionarioProps {
   empresaNome: string;
   onClose: () => void;
   onSuccess: () => void;
+  responsavelCpf?: string;
 }
 
 interface FormData {
@@ -34,6 +35,7 @@ export default function ModalInserirFuncionario({
   empresaNome,
   onClose,
   onSuccess,
+  responsavelCpf = '',
 }: ModalInserirFuncionarioProps) {
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -131,6 +133,11 @@ export default function ModalInserirFuncionario({
     }
     if (!validateCPF(cpfDigits)) {
       return 'CPF inválido';
+    }
+    // Validação: Responsável não pode se auto-incluir como funcionário
+    const responsavelCpfLimpo = responsavelCpf.replace(/\D/g, '');
+    if (responsavelCpfLimpo && cpfDigits === responsavelCpfLimpo) {
+      return 'Você não pode se cadastrar como funcionário da própria clínica';
     }
     if (!formData.nome.trim()) {
       return 'Nome é obrigatório';

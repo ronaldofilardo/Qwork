@@ -346,10 +346,11 @@ export default function EmpresaDashboardPage() {
       </main>
 
       {/* Modais */}
-      {showInserirModal && empresa && (
+      {showInserirModal && empresa && session && (
         <ModalInserirFuncionario
           empresaId={parseInt(empresaId)}
           empresaNome={empresa.nome}
+          responsavelCpf={session.cpf}
           onClose={() => setShowInserirModal(false)}
           onSuccess={() => {
             fetchFuncionarios();

@@ -229,6 +229,17 @@ export async function POST(request: Request) {
     // Validar acesso do RH à empresa
     const session = await requireRHWithEmpresaAccess(empresa_id);
 
+    // VALIDAÇÃO: Responsável não pode ser cadastrado como funcionário da própria clínica
+    if (cpfLimpo === session.cpf) {
+      return NextResponse.json(
+        {
+          error:
+            'Responsável não pode ser cadastrado como funcionário da própria clínica',
+        },
+        { status: 409 }
+      );
+    }
+
     // Obter clínica do RH da sessão
     const clinicaId = session.clinica_id;
     if (!clinicaId) {
