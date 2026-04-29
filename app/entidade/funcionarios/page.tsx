@@ -5,6 +5,7 @@ import FuncionariosSection from '@/components/funcionarios/FuncionariosSection';
 
 interface Session {
   tomador_id: number;
+  cpf: string;
 }
 
 export default function FuncionariosPage() {
@@ -47,6 +48,7 @@ export default function FuncionariosPage() {
       <FuncionariosSection
         contexto="entidade"
         tomadorId={session?.tomador_id}
+        responsavelCpf={session?.cpf}
         onRefresh={() => {}}
         defaultStatusFilter="todos"
       />

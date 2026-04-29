@@ -220,6 +220,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 
+    // VALIDAÇÃO: Gestor não pode ser cadastrado como funcionário da própria entidade
+    if (cpfLimpo === session.cpf) {
+      return NextResponse.json(
+        {
+          error:
+            'Responsável não pode ser cadastrado como funcionário da própria entidade',
+        },
+        { status: 409 }
+      );
+    }
+
     // MULTI-ENTIDADE: Verificar se CPF já existe na tabela base
     const existingFunc = await queryAsGestorEntidade(
       'SELECT id, cpf FROM funcionarios WHERE cpf = $1',

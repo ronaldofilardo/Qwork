@@ -17,6 +17,7 @@ export default function FuncionariosSection({
   empresaNome,
   onRefresh,
   defaultStatusFilter = 'todos',
+  responsavelCpf = '',
 }: FuncionariosSectionProps) {
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [filteredFuncionarios, setFilteredFuncionarios] = useState<
@@ -365,6 +366,7 @@ export default function FuncionariosSection({
 
       {showAddModal && contexto === 'entidade' && (
         <ModalAdicionarFuncionarioEntidade
+          responsavelCpf={responsavelCpf}
           onClose={() => setShowAddModal(false)}
           onSuccess={handleSuccess}
         />
@@ -374,6 +376,7 @@ export default function FuncionariosSection({
         <ModalInserirFuncionario
           empresaId={empresaId}
           empresaNome={empresaNome || ''}
+          responsavelCpf={responsavelCpf}
           onClose={() => setShowAddModal(false)}
           onSuccess={handleSuccess}
         />

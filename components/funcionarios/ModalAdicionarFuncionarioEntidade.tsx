@@ -7,6 +7,7 @@ import { UserPlus, X } from 'lucide-react';
 interface ModalAdicionarFuncionarioEntidadeProps {
   onClose: () => void;
   onSuccess: () => void;
+  responsavelCpf?: string;
 }
 
 interface FormData {
@@ -26,6 +27,7 @@ interface FormData {
 export default function ModalAdicionarFuncionarioEntidade({
   onClose,
   onSuccess,
+  responsavelCpf = '',
 }: ModalAdicionarFuncionarioEntidadeProps) {
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -105,6 +107,12 @@ export default function ModalAdicionarFuncionarioEntidade({
   const validateForm = (): string | null => {
     if (!formData.cpf || !validateCPF(formData.cpf)) {
       return 'CPF inválido';
+    }
+    // Validação: Gestor não pode se auto-incluir como funcionário
+    const cpfDigits = formData.cpf.replace(/\D/g, '');
+    const responsavelCpfLimpo = responsavelCpf.replace(/\D/g, '');
+    if (responsavelCpfLimpo && cpfDigits === responsavelCpfLimpo) {
+      return 'Você não pode se cadastrar como funcionário da própria entidade';
     }
     if (!formData.nome.trim()) {
       return 'Nome é obrigatório';
