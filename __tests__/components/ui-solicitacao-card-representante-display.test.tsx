@@ -45,7 +45,6 @@ const createMockSolicitacao = (
   representante_tipo_pessoa: null,
   link_disponibilizado_em: null,
   representante_percentual_comissao: null,
-  representante_percentual_comissao_comercial: null,
   comissao_gerada: false,
   comissoes_geradas_count: 0,
   comissoes_ativas_count: 0,

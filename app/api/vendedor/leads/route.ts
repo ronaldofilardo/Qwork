@@ -256,27 +256,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const requerAprovacao = calcularRequerAprovacao(
       data.valor_negociado ?? 0,
       0,
-      0,
       data.tipo_cliente
     );
 
     // Buscar percentuais do representante para calcular requer_aprovacao_suporte
     const repPercentuais = await query<{
       percentual_comissao: string | null;
-      percentual_comissao_comercial: string | null;
       modelo_comissionamento: string | null;
       valor_custo_fixo_entidade: string | null;
       valor_custo_fixo_clinica: string | null;
     }>(
-      `SELECT percentual_comissao, percentual_comissao_comercial, modelo_comissionamento,
+      `SELECT percentual_comissao, modelo_comissionamento,
               valor_custo_fixo_entidade, valor_custo_fixo_clinica
        FROM representantes WHERE id = $1`,
       [representanteId]
     );
     const percRep = Number(repPercentuais.rows[0]?.percentual_comissao ?? 0);
-    const percCom = Number(
-      repPercentuais.rows[0]?.percentual_comissao_comercial ?? 0
-    );
     const modeloCom = repPercentuais.rows[0]?.modelo_comissionamento ?? null;
 
     // Bloquear criação de lead se representante não tem modelo de comissionamento definido
@@ -307,7 +302,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const calc = calcularComissaoCustoFixo(
         valorNeg,
         valorCustoFixo,
-        percCom,
         CUSTO_POR_AVALIACAO[data.tipo_cliente]
       );
       if (calc.abaixoMinimo) {
@@ -323,7 +317,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const valorQWork =
       modeloCom !== 'custo_fixo' && valorNeg > 0
-        ? valorNeg * (1 - (percRep + percCom) / 100)
+        ? valorNeg * (1 - percRep / 100)
         : valorNeg;
     const requerAprovacaoSuporteCalc =
       requerAprovacao && valorQWork < CUSTO_POR_AVALIACAO[data.tipo_cliente];
@@ -338,9 +332,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
          (representante_id, vendedor_id, contato_nome, contato_email,
           contato_telefone, cnpj, valor_negociado,
           observacoes, tipo_cliente, requer_aprovacao_comercial,
-          requer_aprovacao_suporte, percentual_comissao_comercial,
+          requer_aprovacao_suporte,
           num_vidas_estimado, valor_custo_fixo_snapshot, status, criado_em)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,'pendente',NOW())
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,'pendente',NOW())
        RETURNING id`,
       [
         representanteId,
@@ -354,7 +348,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         data.tipo_cliente,
         requerAprovacao,
         requerAprovacaoSuporteCalc,
-        percCom,
         numVidas,
         valorCustoFixoSnapshot,
       ]

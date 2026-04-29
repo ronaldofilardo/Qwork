@@ -229,7 +229,6 @@ interface RepMetrica {
   vendedores_count: number;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: number | null;
-  percentual_comissao_comercial: number | null;
   valor_custo_fixo_entidade: number | null;
   valor_custo_fixo_clinica: number | null;
 }
@@ -912,9 +911,6 @@ export default function ComercialPage() {
                       <th className="text-center px-3 py-3 font-semibold text-gray-600">
                         Valor/%
                       </th>
-                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                        Com. Com.
-                      </th>
                       <th className="px-3 py-3" />
                     </tr>
                   </thead>
@@ -989,16 +985,6 @@ export default function ComercialPage() {
                                   : '—'}
                               </p>
                             </div>
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
-                        </td>
-                        {/* com. com. */}
-                        <td className="text-center px-3 py-3 text-xs">
-                          {r.percentual_comissao_comercial != null ? (
-                            <span className="font-semibold text-gray-900">
-                              {r.percentual_comissao_comercial.toFixed(1)}%
-                            </span>
                           ) : (
                             <span className="text-gray-400">—</span>
                           )}

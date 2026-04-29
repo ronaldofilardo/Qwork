@@ -87,7 +87,6 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
   const [percRep, setPercRep] = useState(0);
-  const [percComercial, setPercComercial] = useState(0);
   const [modeloComissionamento, setModeloComissionamento] = useState<
     string | null
   >(null);
@@ -106,16 +105,12 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
         (d: {
           representante?: {
             percentual_comissao?: number | null;
-            percentual_comissao_comercial?: number | null;
             modelo_comissionamento?: string | null;
             valor_custo_fixo_entidade?: number | null;
             valor_custo_fixo_clinica?: number | null;
           } | null;
         }) => {
           setPercRep(Number(d.representante?.percentual_comissao ?? 0));
-          setPercComercial(
-            Number(d.representante?.percentual_comissao_comercial ?? 0)
-          );
           setModeloComissionamento(
             d.representante?.modelo_comissionamento ?? null
           );
@@ -217,24 +212,14 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
     modeloComissionamento === 'custo_fixo' &&
     custoFixoRep !== null &&
     valorNegociadoNum > 0
-      ? calcularComissaoCustoFixo(
-          valorNegociadoNum,
-          custoFixoRep,
-          percComercial
-        )
+      ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
       : null;
 
   const breakdown =
     modeloComissionamento !== 'custo_fixo' && valorNegociadoNum > 0
-      ? calcularValoresComissao(
-          valorNegociadoNum,
-          percRep,
-          percComercial,
-          form.tipo_cliente
-        )
+      ? calcularValoresComissao(valorNegociadoNum, percRep, form.tipo_cliente)
       : null;
 
-  const percentualTotal = percRep + percComercial;
   const custoMinimo = CUSTO_POR_AVALIACAO[form.tipo_cliente];
   const fmtBRL = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -538,20 +523,18 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
           )}
 
           {/* Percentual zerado */}
-          {modeloComissionamento === 'percentual' &&
-            percRep === 0 &&
-            percComercial === 0 && (
-              <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-                <AlertTriangle
-                  size={12}
-                  className="text-blue-500 shrink-0 mt-0.5"
-                />
-                <p className="text-blue-700 text-xs">
-                  Percentual de comissão zerado. O lead será registrado sem
-                  simulação de valores.
-                </p>
-              </div>
-            )}
+          {modeloComissionamento === 'percentual' && percRep === 0 && (
+            <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle
+                size={12}
+                className="text-blue-500 shrink-0 mt-0.5"
+              />
+              <p className="text-blue-700 text-xs">
+                Percentual de comissão zerado. O lead será registrado sem
+                simulação de valores.
+              </p>
+            </div>
+          )}
 
           {/* Breakdown percentual */}
           {breakdown && modeloComissionamento !== 'custo_fixo' && (
@@ -588,18 +571,6 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
                   <p className="text-amber-800 text-xs">
                     Valor abaixo do custo mínimo — este lead precisará de
                     aprovação do comercial.
-                  </p>
-                </div>
-              )}
-              {!breakdown.abaixoCusto && percentualTotal > 40 && (
-                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
-                  <AlertTriangle
-                    size={12}
-                    className="text-amber-600 shrink-0 mt-0.5"
-                  />
-                  <p className="text-amber-800 text-xs">
-                    Comissão combinada ({percentualTotal.toFixed(1)}%) excede
-                    40%. Lead precisará de aprovação do comercial.
                   </p>
                 </div>
               )}

@@ -34,8 +34,6 @@ export async function GET(): Promise<NextResponse> {
       avaliacoes_concluidas: string;
       valor_avaliacao: string | null;
       valor_total: string | null;
-      perc_comercial: string | null;
-      valor_comercial: string | null;
       perc_rep: string | null;
       valor_rep: string | null;
       isento_pagamento: boolean;
@@ -100,8 +98,6 @@ export async function GET(): Promise<NextResponse> {
          COALESCE(ls.avaliacoes_concluidas, 0) AS avaliacoes_concluidas,
          ls.valor_avaliacao,
          fin.valor_total,
-         COALESCE(lr.percentual_comissao_comercial, r.percentual_comissao_comercial) AS perc_comercial,
-         fin.valor_comercial,
          r.percentual_comissao AS perc_rep,
          fin.valor_rep,
          tb.isento_pagamento
@@ -139,7 +135,6 @@ export async function GET(): Promise<NextResponse> {
        LEFT JOIN LATERAL (
          SELECT
            SUM(cl.valor_laudo) AS valor_total,
-           SUM(cl.valor_comissao_comercial) AS valor_comercial,
            SUM(cl.valor_comissao) AS valor_rep
          FROM public.comissoes_laudo cl
          WHERE cl.vinculo_id = vc.id

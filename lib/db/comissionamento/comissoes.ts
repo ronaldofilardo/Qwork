@@ -249,7 +249,7 @@ export async function criarComissaoAdmin(params: {
 
   // Buscar valor_negociado do vínculo (para custo_fixo), percentual e % comercial
   const vinculoPercResult = await query(
-    `SELECT percentual_comissao_representante, valor_negociado, percentual_comissao_comercial
+    `SELECT percentual_comissao_representante, valor_negociado
      FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
     [vinculo_id]
   );
@@ -260,7 +260,6 @@ export async function criarComissaoAdmin(params: {
     vinculoPerc: vinculoPercResult.rows[0] ?? {
       percentual_comissao_representante: null,
       valor_negociado: null,
-      percentual_comissao_comercial: null,
     },
     entidadeId: entId,
     valorLaudo: valor_laudo,
@@ -272,12 +271,7 @@ export async function criarComissaoAdmin(params: {
     return { comissao: null, erro: calculoResult.erro };
   }
 
-  const {
-    valorComissao,
-    percentualRep,
-    percComercialVinculo,
-    valorComissaoComercial,
-  } = calculoResult.resultado;
+  const { valorComissao, percentualRep } = calculoResult.resultado;
 
   // Determinar status inicial via função pura extraída
   const statusInicial = determinarStatusInicialComissao({
@@ -294,7 +288,6 @@ export async function criarComissaoAdmin(params: {
     `INSERT INTO comissoes_laudo (
        vinculo_id, representante_id, entidade_id, clinica_id, laudo_id, lote_pagamento_id,
        valor_laudo, percentual_comissao, valor_comissao,
-       percentual_comissao_comercial, valor_comissao_comercial,
        status, mes_emissao, mes_pagamento, data_emissao_laudo,
        data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em,
        data_pagamento, asaas_split_executado, asaas_split_confirmado_em,
@@ -302,12 +295,11 @@ export async function criarComissaoAdmin(params: {
      ) VALUES (
        $1, $2, $3, $4, $5, $6,
        $7, $8, $9,
-       $10, $11,
-       $12::status_comissao, $13::date, $14::date, NOW(),
+       $10::status_comissao, $11::date, $12::date, NOW(),
        NULL,
-       $15, $16, $17,
-       $18, $19, $20,
-       $21
+       $13, $14, $15,
+       $16, $17, $18,
+       $19
      ) RETURNING *`,
     [
       vinculo_id,
@@ -319,8 +311,6 @@ export async function criarComissaoAdmin(params: {
       valor_laudo,
       percentualRep,
       valorComissao,
-      percComercialVinculo,
-      valorComissaoComercial,
       statusInicial,
       mesEmissao,
       mes_pagamento,
@@ -356,8 +346,6 @@ export async function criarComissaoAdmin(params: {
         base_calculo_bruto: valor_laudo / totalParc,
         percentual_comissao: percentualRep,
         valor_comissao: valorComissao,
-        percentual_comissao_comercial: percComercialVinculo,
-        valor_comissao_comercial: valorComissaoComercial,
         status_inicial: statusInicial,
       },
       criado_por_cpf: admin_cpf ?? null,

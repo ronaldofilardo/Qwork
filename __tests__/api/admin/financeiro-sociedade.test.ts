@@ -263,7 +263,6 @@ describe('/api/admin/financeiro/sociedade', () => {
         valorBruto: number;
         tipoCobranca: string;
         valorRepresentante: number;
-        valorComercial: number;
         valorSocioRonaldo: number;
         valorSocioAntonio: number;
       }>;
@@ -275,14 +274,12 @@ describe('/api/admin/financeiro/sociedade', () => {
     expect(evento.tipoCobranca).toBe('manutencao');
     expect(evento.valorBruto).toBe(250);
     expect(evento.valorRepresentante).toBe(0);
-    expect(evento.valorComercial).toBe(0);
     // sócios devem receber o restante após impostos + fees
     expect(evento.valorSocioRonaldo).toBeGreaterThan(0);
     expect(evento.valorSocioAntonio).toBeGreaterThan(0);
-    // sem representante nem comercial, tudo vai para impostos + sócios
+    // sem representante, tudo vai para impostos + sócios
     const total =
       evento.valorRepresentante +
-      evento.valorComercial +
       (data.eventosRecentes[0].valorSocioRonaldo ?? 0) +
       (data.eventosRecentes[0].valorSocioAntonio ?? 0);
     expect(total).toBeGreaterThan(0);

@@ -28,7 +28,6 @@ interface NovoLeadModalProps {
   criarLead: (e: React.FormEvent) => void;
   onClose: () => void;
   percRep: number;
-  percComercial: number;
   modeloComissionamento?: 'percentual' | 'custo_fixo' | null;
   valorCustoFixoEntidade?: number | null;
   valorCustoFixoClinica?: number | null;
@@ -48,7 +47,6 @@ export default function NovoLeadModal({
   criarLead,
   onClose,
   percRep,
-  percComercial,
   modeloComissionamento,
   valorCustoFixoEntidade,
   valorCustoFixoClinica,
@@ -77,11 +75,7 @@ export default function NovoLeadModal({
     modeloComissionamento === 'custo_fixo' &&
     custoFixoRep !== null &&
     valorNegociadoNum > 0
-      ? calcularComissaoCustoFixo(
-          valorNegociadoNum,
-          custoFixoRep,
-          percComercial
-        )
+      ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
       : null;
 
   // CASO C base: percentual model breakdown
@@ -90,12 +84,9 @@ export default function NovoLeadModal({
       ? calcularValoresComissao(
           valorNegociadoNum,
           percRep,
-          percComercial,
           novoForm.tipo_cliente
         )
       : null;
-
-  const percentualTotal = percRep + percComercial;
 
   // Block submit for custo_fixo when value is below minimum (custoFixoRep + CUSTO_POR_AVALIACAO[tipo])
   const custoFixoInvalido =
@@ -319,20 +310,18 @@ export default function NovoLeadModal({
           )}
 
           {/* CASO B: percentual zerado */}
-          {modeloComissionamento === 'percentual' &&
-            percRep === 0 &&
-            percComercial === 0 && (
-              <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-                <AlertTriangle
-                  size={12}
-                  className="text-blue-500 shrink-0 mt-0.5"
-                />
-                <p className="text-blue-700 text-xs">
-                  Percentual de comissão zerado. O lead será registrado sem
-                  simulação de valores.
-                </p>
-              </div>
-            )}
+          {modeloComissionamento === 'percentual' && percRep === 0 && (
+            <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle
+                size={12}
+                className="text-blue-500 shrink-0 mt-0.5"
+              />
+              <p className="text-blue-700 text-xs">
+                Percentual de comissão zerado. O lead será registrado sem
+                simulação de valores.
+              </p>
+            </div>
+          )}
 
           {/* CASO C: percentual model — breakdown padrão */}
           {breakdown && modeloComissionamento !== 'custo_fixo' && (
@@ -376,18 +365,6 @@ export default function NovoLeadModal({
                   </p>
                 </div>
               )}
-              {!breakdown.abaixoCusto && percentualTotal > 40 && (
-                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
-                  <AlertTriangle
-                    size={12}
-                    className="text-amber-600 shrink-0 mt-0.5"
-                  />
-                  <p className="text-amber-800 text-xs">
-                    Comissão combinada ({percentualTotal.toFixed(1)}%) excede
-                    40%. Lead precisará de aprovação do comercial.
-                  </p>
-                </div>
-              )}
             </div>
           )}
 
@@ -417,18 +394,6 @@ export default function NovoLeadModal({
                     {fmtBRL(custoFixoRep)}
                   </span>
                 </div>
-                {breakdownCustoFixo && percComercial > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">
-                      Comissão comercial ({percComercial.toFixed(1)}% do custo
-                      fixo)
-                    </span>
-                    <span className="text-purple-700 font-medium">
-                      {fmtBRL(breakdownCustoFixo.valorComercial)}
-                    </span>
-                  </div>
-                )}
-
                 {custoFixoInvalido && (
                   <div className="flex items-start gap-1.5 bg-red-100 border border-red-300 rounded px-2 py-1.5 mt-1">
                     <AlertTriangle

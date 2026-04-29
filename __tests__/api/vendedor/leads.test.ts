@@ -175,7 +175,6 @@ describe('POST /api/vendedor/leads', () => {
       rows: [
         {
           percentual_comissao: '5',
-          percentual_comissao_comercial: '3',
           modelo_comissionamento: 'percentual',
           valor_custo_fixo_entidade: null,
           valor_custo_fixo_clinica: null,
@@ -374,7 +373,6 @@ describe('POST /api/vendedor/leads', () => {
       rows: [
         {
           percentual_comissao: null,
-          percentual_comissao_comercial: null,
           modelo_comissionamento: null,
           valor_custo_fixo_entidade: null,
           valor_custo_fixo_clinica: null,
@@ -416,7 +414,6 @@ describe('POST /api/vendedor/leads', () => {
       rows: [
         {
           percentual_comissao: '0',
-          percentual_comissao_comercial: '20',
           modelo_comissionamento: 'custo_fixo',
           valor_custo_fixo_entidade: '12.00',
           valor_custo_fixo_clinica: null,

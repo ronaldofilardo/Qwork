@@ -36,8 +36,6 @@ export type ModeloComissionamento = 'percentual' | 'custo_fixo';
 export interface ResultadoSplit {
   valorQWork: number;
   valorRepresentante: number;
-  /** Valor que cabe ao comercial (0 se não houver percentual ou wallet configurado) */
-  valorComercial: number;
   valorImpostos?: number;
   valorGateway?: number;
   baseLiquida?: number;
@@ -136,16 +134,11 @@ export function calcularSplit(
   valorLaudo: number,
   tipoProduto: TipoProdutoSplit,
   percentual?: number,
-  percentualComercial?: number,
   /** Valor custo fixo do representante (R$). Obrigatório para modelo custo_fixo. */
   valorCustoFixoRep?: number,
   opcoes?: OpcoesFinanceirasSplit
 ): ResultadoSplit {
   const custoMinimo = CUSTO_MINIMO[tipoProduto];
-  const percComercial =
-    percentualComercial != null && percentualComercial > 0
-      ? percentualComercial
-      : 0;
 
   if (
     modelo === 'percentual' &&
@@ -156,7 +149,6 @@ export function calcularSplit(
     return {
       valorQWork: valorLaudo,
       valorRepresentante: 0,
-      valorComercial: 0,
       valorImpostos: 0,
       valorGateway: 0,
       baseLiquida: valorLaudo,
@@ -175,7 +167,6 @@ export function calcularSplit(
     modeloRepresentante: modelo,
     percentualRepresentante: modelo === 'percentual' ? (percentual ?? 0) : 0,
     valorRepresentanteFixo: modelo === 'custo_fixo' ? custoFixo : 0,
-    percentualComercial: percComercial,
     percentualImpostos: opcoes?.percentualImpostos,
     percentualGateway: opcoes?.percentualGateway,
     valorTaxaGateway: opcoes?.valorTaxaGateway,
@@ -192,7 +183,6 @@ export function calcularSplit(
   return {
     valorQWork,
     valorRepresentante: distribuicao.valorRepresentante,
-    valorComercial: distribuicao.valorComercial,
     valorImpostos: distribuicao.valorImpostos,
     valorGateway: distribuicao.valorGateway,
     baseLiquida: distribuicao.baseLiquida,
@@ -208,19 +198,16 @@ export function calcularSplit(
  *
  * Ordem dos itens de split enviados ao Asaas:
  *  1. Representante (obrigatório — sem ele retorna null)
- *  2. Comercial (se walletId + valor > 0)
- *  3. Impostos — wallet institucional do QWork (se walletId + valorImpostos > 0)
- *  4. Beneficiários societários (sócios) — valorQWork distribuído proporcional aos percentuais
+ *  2. Impostos — wallet institucional do QWork (se walletId + valorImpostos > 0)
+ *  3. Beneficiários societários (sócios) — valorQWork distribuído proporcional aos percentuais
  *
- * @param repWalletId       walletId da subconta do representante
- * @param splitResult       resultado de calcularSplit()
- * @param comercialWalletId walletId da subconta do comercial (opcional)
- * @param opcoes            wallets adicionais para impostos e beneficiários societários
+ * @param repWalletId  walletId da subconta do representante
+ * @param splitResult  resultado de calcularSplit()
+ * @param opcoes       wallets adicionais para impostos e beneficiários societários
  */
 export function montarSplitAsaas(
   repWalletId: string | null | undefined,
   splitResult: ResultadoSplit,
-  comercialWalletId?: string | null,
   opcoes?: OpcoesSplitCompleto
 ): AsaasSplitItem[] | null {
   if (
@@ -239,13 +226,6 @@ export function montarSplitAsaas(
       fixedValue: splitResult.valorRepresentante,
     },
   ];
-
-  if (comercialWalletId && splitResult.valorComercial > 0) {
-    items.push({
-      walletId: comercialWalletId,
-      fixedValue: splitResult.valorComercial,
-    });
-  }
 
   // Impostos: wallet institucional do QWork para recolhimento dos 7%
   const valorImpostos = splitResult.valorImpostos ?? 0;

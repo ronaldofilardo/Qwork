@@ -25,7 +25,6 @@ describe('calcularValoresComissao', () => {
   const vinculoBase: DadosVinculoCalculo = {
     percentual_comissao_representante: '10.00',
     valor_negociado: null,
-    percentual_comissao_comercial: '0',
   };
 
   it('calcula comissão percentual corretamente sobre a base líquida', () => {
@@ -83,25 +82,17 @@ describe('calcularValoresComissao', () => {
     expect('erro' in result).toBe(true);
   });
 
-  it('calcula comissão comercial quando percentual comercial > 0 sobre a base líquida', () => {
-    const vinculoComercial: DadosVinculoCalculo = {
-      ...vinculoBase,
-      percentual_comissao_comercial: '5',
-    };
-
+  it('retorna resultado mesmo sem percentual comercial', () => {
     const result = calcularValoresComissao({
       rep: repBase,
-      vinculoPerc: vinculoComercial,
+      vinculoPerc: vinculoBase,
       entidadeId: 1,
       valorLaudo: 100,
       totalParcelas: 1,
       valorParcela: 97,
     });
 
-    if ('resultado' in result) {
-      expect(result.resultado.percComercialVinculo).toBe(5);
-      expect(result.resultado.valorComissaoComercial).toBe(4.5);
-    }
+    expect('resultado' in result).toBe(true);
   });
 
   it('modelo custo_fixo usa cálculo diferente', () => {

@@ -16,7 +16,6 @@ interface LeadComissao {
   tipo_cliente: string;
   valor_negociado: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_comercial: number | null;
   valor_custo_fixo_snapshot: number | null;
   requer_aprovacao_comercial: boolean;
   requer_aprovacao_suporte: boolean;
@@ -204,9 +203,6 @@ export function SuporteLeadsComissoesContent() {
                     <th className="px-3 py-3 text-left font-medium">
                       Comissão rep
                     </th>
-                    <th className="px-3 py-3 text-left font-medium">
-                      Comissão com
-                    </th>
                     <th className="px-3 py-3 text-left font-medium">Status</th>
                     <th className="px-3 py-3 text-left font-medium">Data</th>
                     {tab === 'aprovacao_suporte' && (
@@ -257,11 +253,6 @@ export function SuporteLeadsComissoesContent() {
                           : l.percentual_comissao_representante != null
                             ? `${l.percentual_comissao_representante}%`
                             : '—'}
-                      </td>
-                      <td className="px-3 py-3 text-gray-600">
-                        {l.percentual_comissao_comercial != null
-                          ? `${l.percentual_comissao_comercial}%`
-                          : '—'}
                       </td>
                       <td className="px-3 py-3">
                         <span

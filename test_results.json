@@ -1,0 +1,5024 @@
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+FAIL __tests__/lib/validators-representante.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+  ÔùÅ checkCpfDuplicate ÔÇ║ quando CPF n├úo existe ÔÇ║ deve retornar isDuplicate: false
+
+    TypeError: Cannot read properties of undefined (reading 'rows')
+
+      122 |   }
+      123 |
+    > 124 |   if (leadPfResult.rows.length > 0) {
+          |                    ^
+      125 |     return {
+      126 |       disponivel: false,
+      127 |       perfil: 'representante_lead',
+
+      at rows (lib/validators/cpf-unico.ts:124:20)
+      at checkCpfDuplicate (lib/validators/representante.ts:70:18)
+      at Object.<anonymous> (__tests__/lib/validators-representante.test.ts:94:25)
+
+  ÔùÅ checkCpfDuplicate ÔÇ║ quando CPF existe em lead ativo ÔÇ║ deve retornar isDuplicate: true com source: lead
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "lead"
+    Received: "representante"
+
+      132 |       expect(resultado.isDuplicate).toBe(true);
+      133 |       expect(resultado.field).toBe('cpf');
+    > 134 |       expect(resultado.source).toBe('lead');
+          |                                ^
+      135 |     });
+      136 |   });
+      137 | });
+
+      at Object.toBe (__tests__/lib/validators-representante.test.ts:134:32)
+
+RBAC seed applied to test database
+RBAC seed applied to test database
+PASS __tests__/lib/recalculo-emissao-inativadas.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [DEBUG] recalcularStatusLote chamado para avaliacaoId: 1001
+
+      at log (lib/lotes.ts:241:11)
+
+    console.log
+      [DEBUG] Lote encontrado: 42
+
+      at log (lib/lotes.ts:256:11)
+
+    console.log
+      [DEBUG] recalcularStatusLotePorId chamado para loteId: 42
+
+      at log (lib/lotes.ts:26:11)
+
+    console.log
+      [DEBUG] Advisory lock acquired for lote 42
+
+      at log (lib/lotes.ts:34:13)
+
+    console.log
+      [INFO] SKIP_IMMEDIATE_EMISSION=false
+
+      at log (lib/lotes.ts:37:13)
+
+    console.log
+      [DEBUG] Recalculando lote 42: 5 total, 5 liberadas, 3 ativas, 3 conclu├¡das, 2 inativadas, 0 iniciadas
+
+      at log (lib/lotes.ts:72:13)
+
+    console.log
+      [INFO] Lote 42 alterado para 'concluido' - pronto para solicita├º├úo de emiss├úo
+
+      at log (lib/lotes.ts:157:17)
+
+    console.log
+      [DEBUG] recalcularStatusLotePorId chamado para loteId: 77
+
+      at log (lib/lotes.ts:26:11)
+
+    console.log
+      [DEBUG] Advisory lock acquired for lote 77
+
+      at log (lib/lotes.ts:34:13)
+
+    console.log
+      [INFO] SKIP_IMMEDIATE_EMISSION=false
+
+      at log (lib/lotes.ts:37:13)
+
+    console.log
+      [DEBUG] Recalculando lote 77: 4 total, 4 liberadas, 2 ativas, 2 conclu├¡das, 2 inativadas, 0 iniciadas
+
+      at log (lib/lotes.ts:72:13)
+
+    console.log
+      [INFO] Lote 77 alterado para 'concluido' - pronto para solicita├º├úo de emiss├úo
+
+      at log (lib/lotes.ts:157:17)
+
+    console.log
+      [DEBUG] recalcularStatusLotePorId chamado para loteId: 99
+
+      at log (lib/lotes.ts:26:11)
+
+    console.log
+      [DEBUG] Advisory lock acquired for lote 99
+
+      at log (lib/lotes.ts:34:13)
+
+    console.log
+      [INFO] SKIP_IMMEDIATE_EMISSION=false
+
+      at log (lib/lotes.ts:37:13)
+
+    console.log
+      [DEBUG] Recalculando lote 99: 3 total, 3 liberadas, 0 ativas, 0 conclu├¡das, 3 inativadas, 0 iniciadas
+
+      at log (lib/lotes.ts:72:13)
+
+    console.log
+      [INFO] Lote 99 alterado de 'ativo' para 'cancelado'
+
+      at log (lib/lotes.ts:215:17)
+
+RBAC seed applied to test database
+PASS __tests__/lib/instrumentation.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      teste produ├º├úo
+
+      at log (__tests__/lib/instrumentation.test.ts:41:26)
+
+    console.log
+      teste
+
+      at log (__tests__/lib/instrumentation.test.ts:116:26)
+
+RBAC seed applied to test database
+PASS __tests__/lib/health-check.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/relatorio-lote-pdf-conteudo.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/lote-id-allocator.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+RBAC seed applied to test database
+PASS __tests__/lib/comissionamento-ativar-parcela.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [Comissionamento] Parcela 1 do lote 1 j├í ativada ÔÇö ignorando (idempotente)
+
+      at log (lib/db/comissionamento/comissoes.ts:406:15)
+
+    console.log
+      [Comissionamento] Ô£à Parcela 2 do lote 5 ativada ÔÇö status: retida
+
+      at log (lib/db/comissionamento/comissoes.ts:454:13)
+
+    console.log
+      [Comissionamento] Ô£à Parcela 2 do lote 5 ativada ÔÇö status: retida
+
+      at log (lib/db/comissionamento/comissoes.ts:454:13)
+
+    console.log
+      [Comissionamento] Sem entidade_id nem clinica_id para lote 10 ÔÇö sem comiss├úo
+
+      at log (lib/db/comissionamento/comissoes.ts:512:15)
+
+    console.log
+      [Comissionamento] Nenhum v├¡nculo ativo para entidade_id=16, clinica_id=null ÔÇö sem comiss├úo para lote 10
+
+      at log (lib/db/comissionamento/comissoes.ts:536:15)
+
+    console.log
+      [Comissionamento] Ô£à Comiss├úo ├á vista criada: lote=10 valor_comissao=5.00
+
+      at log (lib/db/comissionamento/comissoes.ts:660:17)
+
+    console.log
+      [Comissionamento] Lote 10: provisionando 3 comiss├Áes antecipadamente
+
+      at log (lib/db/comissionamento/comissoes.ts:603:17)
+
+    console.log
+      [Comissionamento] Ô£à 3 comiss├Áes provisionadas para lote 10
+
+      at log (lib/db/comissionamento/comissoes.ts:629:17)
+
+    console.log
+      [Comissionamento] Ô£à Parcela 1 do lote 10 ativada ÔÇö status: retida
+
+      at log (lib/db/comissionamento/comissoes.ts:454:13)
+
+    console.log
+      [Comissionamento] Ô£à Parcela 2 do lote 10 ativada ÔÇö status: retida
+
+      at log (lib/db/comissionamento/comissoes.ts:454:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-emissor.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+    console.log
+      [db][query] local (106ms): INSERT INTO usuarios (
+            cpf,
+            nome,
+            email,
+            tipo_usuario,
+            senha_hash,
+            ativo,
+            criado_em,
+            atualizado_em
+          )
+          VALUES ($1, $2, $3, 'emissor', $4, true, NO...
+
+      at log (lib/db/query.ts:196:23)
+
+    console.debug
+      [CRIAR_EMISSOR] Emissor independente criado: 99900000002 (clinica_id = NULL)
+
+      at debug (lib/db/user-creation.ts:327:13)
+
+    console.debug
+      [CRIAR_EMISSOR] Coluna `role` n├úo existe no schema local ÔÇö ignorando.
+
+      at debug (lib/db/user-creation.ts:342:17)
+
+    console.log
+      [db][query] local (4ms): INSERT INTO usuarios (
+            cpf,
+            nome,
+            email,
+            tipo_usuario,
+            senha_hash,
+            ativo,
+            criado_em,
+            atualizado_em
+          )
+          VALUES ($1, $2, $3, 'emissor', $4, true, NO...
+
+      at log (lib/db/query.ts:196:23)
+
+    console.debug
+      [CRIAR_EMISSOR] Emissor independente criado: 99900000003 (clinica_id = NULL)
+
+      at debug (lib/db/user-creation.ts:327:13)
+
+    console.debug
+      [CRIAR_EMISSOR] Coluna `role` n├úo existe no schema local ÔÇö ignorando.
+
+      at debug (lib/db/user-creation.ts:342:17)
+
+    console.log
+      [db][query] local (3ms): INSERT INTO usuarios (
+            cpf,
+            nome,
+            email,
+            tipo_usuario,
+            senha_hash,
+            ativo,
+            criado_em,
+            atualizado_em
+          )
+          VALUES ($1, $2, $3, 'emissor', $4, true, NO...
+
+      at log (lib/db/query.ts:196:23)
+
+    console.debug
+      [CRIAR_EMISSOR] Emissor independente criado: 99900000004 (clinica_id = NULL)
+
+      at debug (lib/db/user-creation.ts:327:13)
+
+    console.debug
+      [CRIAR_EMISSOR] Coluna `role` n├úo existe no schema local ÔÇö ignorando.
+
+      at debug (lib/db/user-creation.ts:342:17)
+
+    console.log
+      [db][query] local (4ms): INSERT INTO usuarios (
+            cpf,
+            nome,
+            email,
+            tipo_usuario,
+            senha_hash,
+            ativo,
+            criado_em,
+            atualizado_em
+          )
+          VALUES ($1, $2, $3, 'emissor', $4, true, NO...
+
+      at log (lib/db/query.ts:196:23)
+
+    console.debug
+      [CRIAR_EMISSOR] Emissor independente criado: 99900000006 (clinica_id = NULL)
+
+      at debug (lib/db/user-creation.ts:327:13)
+
+    console.debug
+      [CRIAR_EMISSOR] Coluna `role` n├úo existe no schema local ÔÇö ignorando.
+
+      at debug (lib/db/user-creation.ts:342:17)
+
+    console.log
+      [db][query] local (7ms): INSERT INTO usuarios (
+            cpf,
+            nome,
+            email,
+            tipo_usuario,
+            senha_hash,
+            ativo,
+            criado_em,
+            atualizado_em
+          )
+          VALUES ($1, $2, $3, 'emissor', $4, true, NO...
+
+      at log (lib/db/query.ts:196:23)
+
+    console.debug
+      [CRIAR_EMISSOR] Emissor independente criado: 99900000006 (clinica_id = NULL)
+
+      at debug (lib/db/user-creation.ts:327:13)
+
+    console.debug
+      [CRIAR_EMISSOR] Coluna `role` n├úo existe no schema local ÔÇö ignorando.
+
+      at debug (lib/db/user-creation.ts:342:17)
+
+    console.debug
+      [CRIAR_EMISSOR] Emissor independente criado: 99900000007 (clinica_id = NULL)
+
+      at debug (lib/db/user-creation.ts:327:13)
+
+    console.debug
+      [CRIAR_EMISSOR] Coluna `role` n├úo existe no schema local ÔÇö ignorando.
+
+      at debug (lib/db/user-creation.ts:342:17)
+
+RBAC seed applied to test database
+PASS __tests__/lib/backblaze-client.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [BACKBLAZE] Provider: s2, endpoint: https://s3.test, bucket: my-bucket, region:
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=00KEY000..., AppKey source: BACKBLAZE_APPLICATION_KEY=SECRET...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE] Upload bem-sucedido: path/to/file.pdf (10 bytes) ÔåÆ bucket: my-bucket
+
+      at log (lib/storage/backblaze-client.ts:219:13)
+
+    console.log
+      [BACKBLAZE] Provider: s2, endpoint: https://s3.test, bucket: laudos-qwork, region:
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_ACCESS_KEY_ID=002a8144..., AppKey source: BACKBLAZE_SECRET_ACCESS_KEY=00543950...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE] Upload bem-sucedido: path/to/file.pdf (10 bytes) ÔåÆ bucket: laudos-qwork
+
+      at log (lib/storage/backblaze-client.ts:219:13)
+
+    console.log
+      [BACKBLAZE] Provider: s2, endpoint: https://s3.test, bucket: swap-bucket, region:
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=0052a814..., AppKey source: BACKBLAZE_APPLICATION_KEY=superlon...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE] Upload bem-sucedido: path/to/file.pdf (10 bytes) ÔåÆ bucket: swap-bucket
+
+      at log (lib/storage/backblaze-client.ts:219:13)
+
+    console.log
+      [BACKBLAZE] Provider: s2, endpoint: https://s3.test, bucket: my-bucket, region:
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=00KEY000..., AppKey source: BACKBLAZE_APPLICATION_KEY=SECRET...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE] Download bem-sucedido: path/to/remote.pdf (10 bytes)
+
+      at log (lib/storage/backblaze-client.ts:292:13)
+
+    console.log
+      [BACKBLAZE] Provider: s2, endpoint: https://s3.test, bucket: my-bucket, region:
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=00KEY000..., AppKey source: BACKBLAZE_APPLICATION_KEY=SECRET...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+RBAC seed applied to test database
+PASS __tests__/lib/validacoes-avancadas.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+FAIL __tests__/lib/num-vidas-equipe-leads.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+  ÔùÅ num_vidas_estimado ÔÇö field propagation ÔÇ║ calcularRequerAprovacao returns true when below cost
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      20 |   test('calcularRequerAprovacao returns true when below cost', () => {
+      21 |     // valor=15, percRep=30, valorQWork = 15*(1-0.30) = 10.5 < 15 (entidade)
+    > 22 |     expect(calcularRequerAprovacao(15, 30, 0, 'entidade')).toBe(true);
+         |                                                            ^
+      23 |   });
+      24 |
+      25 |   test('calcularRequerAprovacao returns false when above cost', () => {
+
+      at Object.toBe (__tests__/lib/num-vidas-equipe-leads.test.ts:22:60)
+
+  ÔùÅ equipe/leads ÔÇö commission split validation ÔÇ║ below-cost scenario distributes from pool
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      93 |     // valorQWork = 13 - 2.6 = 10.4 < 12 ÔåÆ abaixoCusto
+      94 |     const bd = calcularValoresComissao(13, 20, 0, 'entidade');
+    > 95 |     expect(bd.abaixoCusto).toBe(true);
+         |                            ^
+      96 |     // Pool = max(0, 13 - 12) = 1
+      97 |     expect(bd.poolDisponivel).toBe(1);
+      98 |   });
+
+      at Object.toBe (__tests__/lib/num-vidas-equipe-leads.test.ts:95:28)
+
+RBAC seed applied to test database
+PASS __tests__/lib/interpretacao-grupos-alto-risco.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+FAIL __tests__/lib/sociedade-distribution.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ desconta imposto e taxa do gateway antes da comiss├úo percentual e dos s├│cios
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      15 |     expect(result.valorGateway).toBe(3);
+      16 |     expect(result.valorRepresentante).toBe(36);
+    > 17 |     expect(result.valorComercial).toBe(0);
+         |                                   ^
+      18 |     expect(result.valorSocioRonaldo).toBe(27);
+      19 |     expect(result.valorSocioAntonio).toBe(27);
+      20 |     expect(result.totalDistribuido).toBe(100);
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:17:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ calcula corretamente custo fixo ap├│s imposto e taxa do gateway
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: undefined
+
+      35 |     expect(result.valorRepresentante).toBe(60);
+      36 |     expect(result.margemLivre).toBe(30);
+    > 37 |     expect(result.valorComercial).toBe(9);
+         |                                   ^
+      38 |     expect(result.valorSocioRonaldo).toBe(10.5);
+      39 |     expect(result.valorSocioAntonio).toBe(10.5);
+      40 |     expect(result.totalDistribuido).toBe(100);
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:37:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ suporta pagamento sem representante e sem comercial
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      54 |     expect(result.valorGateway).toBe(2);
+      55 |     expect(result.valorRepresentante).toBe(0);
+    > 56 |     expect(result.valorComercial).toBe(0);
+         |                                   ^
+      57 |     expect(result.valorSocioRonaldo).toBe(45.5);
+      58 |     expect(result.valorSocioAntonio).toBe(45.5);
+      59 |   });
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:56:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ modelo percentual: comercial incide sobre baseLiquida, n├úo sobre margemLivre
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: undefined
+
+      91 |     expect(result.valorRepresentante).toBe(36);
+      92 |     expect(result.margemLivre).toBe(54);
+    > 93 |     expect(result.valorComercial).toBe(9);
+         |                                   ^
+      94 |     expect(result.valorSocioRonaldo).toBe(22.5);
+      95 |     expect(result.valorSocioAntonio).toBe(22.5);
+      96 |     expect(result.totalDistribuido).toBe(100);
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:93:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ modelo custo_fixo: comercial incide sobre margemLivre
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 5
+    Received: undefined
+
+      114 |     expect(result.valorRepresentante).toBe(40);
+      115 |     expect(result.margemLivre).toBe(50);
+    > 116 |     expect(result.valorComercial).toBe(5);
+          |                                   ^
+      117 |     expect(result.valorParaSocios).toBe(45);
+      118 |     expect(result.totalDistribuido).toBe(100);
+      119 |   });
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:116:35)
+
+RBAC seed applied to test database
+PASS __tests__/lib/manutencao-taxa.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/validators.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/questoes.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/relatorio-setor-pdf.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/cadastro-storage.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/cartao_cnpj-1777413281749-3o2v4p.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro contrato_social (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/contrato_social-1777413281752-zy10vz.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100, tipo: clinica) enviado para Backblaze: cad-qwork/clinicas/12345678000100/cartao_cnpj-1777413281753-dv4bvt.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro doc_identificacao (CNPJ: 12345678000100, tipo: clinica) enviado para Backblaze: cad-qwork/clinicas/12345678000100/doc_identificacao-1777413281754-wh8glm.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/cartao_cnpj-1777413281755-fl9v0h.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/cartao_cnpj-1777413281755-w1au3h.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro doc_identificacao (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/doc_identificacao-1777413281756-8mtg2h.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/cartao_cnpj-1777413281757-ykelf0.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/cartao_cnpj-1777413281759-0gldm5.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro contrato_social (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/contrato_social-1777413281760-yk9h6e.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro doc_identificacao (CNPJ: 12345678000100, tipo: entidade) enviado para Backblaze: cad-qwork/entidades/12345678000100/doc_identificacao-1777413281760-nvjkoz.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100, tipo: clinica) enviado para Backblaze: cad-qwork/clinicas/12345678000100/cartao_cnpj-1777413281761-xx2s7v.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro contrato_social (CNPJ: 12345678000100, tipo: clinica) enviado para Backblaze: cad-qwork/clinicas/12345678000100/contrato_social-1777413281762-wihga3.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro doc_identificacao (CNPJ: 12345678000100, tipo: clinica) enviado para Backblaze: cad-qwork/clinicas/12345678000100/doc_identificacao-1777413281762-qbbwvj.pdf
+
+      at log (lib/storage/cadastro-storage.ts:122:13)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj salvo em C:\apps\QWork\storage\tomadores\entidades\12345678000100\cartao_cnpj_1777413281767.pdf
+
+      at log (lib/storage/cadastro-storage.ts:64:11)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj salvo em C:\apps\QWork\storage\tomadores\entidades\12345678000100\cartao_cnpj_1777413281770.pdf
+
+      at log (lib/storage/cadastro-storage.ts:64:11)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj salvo em C:\apps\QWork\storage\tomadores\clinicas\12345678000100\cartao_cnpj_1777413281770.pdf
+
+      at log (lib/storage/cadastro-storage.ts:64:11)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj salvo em C:\apps\QWork\storage\tomadores\entidades\12345678000100\cartao_cnpj_1777413281771.pdf
+
+      at log (lib/storage/cadastro-storage.ts:64:11)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj salvo em C:\apps\QWork\storage\tomadores\clinicas\12345678000100\cartao_cnpj_1777413281772.pdf
+
+      at log (lib/storage/cadastro-storage.ts:64:11)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj salvo em C:\apps\QWork\storage\tomadores\entidades\12345678000100\cartao_cnpj_1777413281773.pdf
+
+      at log (lib/storage/cadastro-storage.ts:64:11)
+
+    console.log
+      [STORAGE] Arquivo de cadastro cartao_cnpj salvo em C:\apps\QWork\storage\tomadores\entidades\12345678000100\cartao_cnpj_1777413281774.pdf
+
+      at log (lib/storage/cadastro-storage.ts:64:11)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-gestor.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/copsoq-grupos-texto.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/hooks/useLaudo.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/hooks/useEmpresa.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/lote/utils.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-environment-guard.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/audit-logger.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/pdf/relatorio-helpers.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/auth-require.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [DEBUG] requireRole: Acesso autorizado para 12345678901 com perfil rh
+
+      at log (lib/session.ts:182:11)
+
+    console.log
+      [DEBUG] requireRole: Perfil funcionario n├úo autorizado para roles rh, admin
+
+      at log (lib/session.ts:171:13)
+
+    console.log
+      [DEBUG] requireRole: Acesso autorizado para 12345678901 com perfil emissor
+
+      at log (lib/session.ts:182:11)
+
+    console.log
+      [DEBUG] requireRole: Acesso autorizado para 12345678901 com perfil admin
+
+      at log (lib/session.ts:182:11)
+
+    console.log
+      [DEBUG] requireRole: Acesso autorizado para 12345678901 com perfil rh
+
+      at log (lib/session.ts:182:11)
+
+    console.log
+      [DEBUG] requireRole: Acesso autorizado para 12345678901 com perfil gestor
+
+      at log (lib/session.ts:182:11)
+
+    console.log
+      [DEBUG] requireRole: Acesso autorizado para 12345678901 com perfil rh
+
+      at log (lib/session.ts:182:11)
+
+    console.log
+      [DEBUG] requireRole: Acesso autorizado para 12345678901 com perfil gestor
+
+      at log (lib/session.ts:182:11)
+
+    console.log
+      [DEBUG] requireRole: Perfil funcionario n├úo autorizado para roles rh
+
+      at log (lib/session.ts:171:13)
+
+    console.log
+      [DEBUG] requireRole: Perfil rh n├úo autorizado para roles admin
+
+      at log (lib/session.ts:171:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-data-access-patterns.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/unit/migracao-1206-trigger-fix.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+RBAC seed applied to test database
+PASS __tests__/lib/termos/registrar-aceite-hotfix.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+FAIL __tests__/lib/comissionamento-criar-admin.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ corre├º├úo 42P08 ÔÇö cast ::status_comissao no INSERT ÔÇ║ deve usar ::status_comissao no par├ómetro $12 no SQL do INSERT
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /\$12::status_comissao/
+    Received string:  "INSERT INTO comissoes_laudo (
+           vinculo_id, representante_id, entidade_id, clinica_id, laudo_id, lote_pagamento_id,
+           valor_laudo, percentual_comissao, valor_comissao,
+           status, mes_emissao, mes_pagamento, data_emissao_laudo,
+           data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em,
+           data_pagamento, asaas_split_executado, asaas_split_confirmado_em,
+           asaas_payment_id
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6,
+           $7, $8, $9,
+           $10::status_comissao, $11::date, $12::date, NOW(),
+           NULL,
+           $13, $14, $15,
+           $16, $17, $18,
+           $19
+         ) RETURNING *"
+
+      107 |
+      108 |       // Verifica que $12 ├® castado para o enum
+    > 109 |       expect(sql).toMatch(/\$12::status_comissao/);
+          |                   ^
+      110 |     });
+      111 |
+      112 |     it('o valor passado para $12 deve ser string do enum (retida por default sem parcela_confirmada_em)', async () => {
+
+      at Object.toMatch (__tests__/lib/comissionamento-criar-admin.test.ts:109:19)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ corre├º├úo 42P08 ÔÇö cast ::status_comissao no INSERT ÔÇ║ o valor passado para $12 deve ser string do enum (retida por default sem parcela_confirmada_em)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      117 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      118 |       // Sem parcela_confirmada_em ÔåÆ parcelaEfetivamentePaga=false ÔåÆ status='retida'
+    > 119 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      120 |       expect(typeof insertCallValues[11]).toBe('string');
+      121 |     });
+      122 |   });
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:119:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando rep apto mas sem parcela_confirmada_em (provisionamento futuro)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      131 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      132 |       // parcela_confirmada_em n├úo fornecido ÔåÆ parcelaEfetivamentePaga=false ÔåÆ 'retida'
+    > 133 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      134 |     });
+      135 |
+      136 |     it('deve usar status "paga" quando rep apto + parcela_confirmada_em preenchida + forcar_retida=false', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:133:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "paga" quando rep apto + parcela_confirmada_em preenchida + forcar_retida=false
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "paga"
+    Received: "2026-05-01"
+
+      146 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      147 |       // rep apto + parcela confirmada + n├úo for├ºado ÔåÆ 'paga'
+    > 148 |       expect(insertCallValues[11]).toBe('paga');
+          |                                    ^
+      149 |     });
+      150 |
+      151 |     it('deve usar status "retida" quando representante.status = "suspenso"', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:148:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando representante.status = "suspenso"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      155 |
+      156 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 157 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      158 |     });
+      159 |
+      160 |     it('deve usar status "retida" quando representante.status = "inativo"', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:157:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando representante.status = "inativo"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      164 |
+      165 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 166 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      167 |     });
+      168 |
+      169 |     // ÔöÇÔöÇ forcar_retida (migration 532) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:166:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando forcar_retida=true mesmo com rep apto + parcela confirmada
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      179 |
+      180 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 181 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      182 |     });
+      183 |
+      184 |     it('deve usar status "retida" quando forcar_retida=false e rep apto mas sem parcela_confirmada_em', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:181:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando forcar_retida=false e rep apto mas sem parcela_confirmada_em
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      189 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      190 |       // Sem parcela_confirmada_em ÔåÆ parcelaEfetivamentePaga=false ÔåÆ 'retida'
+    > 191 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      192 |     });
+      193 |   });
+      194 |
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:191:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ parcela_confirmada_em ÔÇ║ deve passar null como $17 quando parcela_confirmada_em n├úo informado (padr├úo)
+
+    expect(received).toBeNull()
+
+    Received: false
+
+      202 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      203 |       // $17 ├® o 17┬║ par├ómetro (├¡ndice 16)
+    > 204 |       expect(insertCallValues[16]).toBeNull();
+          |                                    ^
+      205 |     });
+      206 |
+      207 |     it('deve passar null como $17 quando parcela_confirmada_em=null (parcela futura)', async () => {
+
+      at Object.toBeNull (__tests__/lib/comissionamento-criar-admin.test.ts:204:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ parcela_confirmada_em ÔÇ║ deve passar null como $17 quando parcela_confirmada_em=null (parcela futura)
+
+    expect(received).toBeNull()
+
+    Received: false
+
+      211 |
+      212 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 213 |       expect(insertCallValues[16]).toBeNull();
+          |                                    ^
+      214 |     });
+      215 |
+      216 |     it('deve passar ISO string como $17 quando parcela_confirmada_em=Date (parcela paga)', async () => {
+
+      at Object.toBeNull (__tests__/lib/comissionamento-criar-admin.test.ts:213:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ parcela_confirmada_em ÔÇ║ deve passar ISO string como $17 quando parcela_confirmada_em=Date (parcela paga)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-03-15T10:00:00.000Z"
+    Received: true
+
+      224 |
+      225 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 226 |       expect(insertCallValues[16]).toBe(agora.toISOString());
+          |                                    ^
+      227 |     });
+      228 |
+      229 |     it('deve incluir parcela_confirmada_em no INSERT SQL (coluna $17)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:226:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 1/4 ÔåÆ mes_pagamento = abril/2026 (base)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-04-01"
+    Received: 4
+
+      395 |       const insertValues = mockQuery.mock.calls[4][1];
+      396 |       // $14 = mes_pagamento (├¡ndice 13)
+    > 397 |       expect(insertValues[13]).toBe('2026-04-01');
+          |                                ^
+      398 |     });
+      399 |
+      400 |     it('parcela 2/4 ÔåÆ mes_pagamento = maio/2026 (base + 1 m├¬s)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:397:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 2/4 ÔåÆ mes_pagamento = maio/2026 (base + 1 m├¬s)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-05-01"
+    Received: 4
+
+      408 |
+      409 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 410 |       expect(insertValues[13]).toBe('2026-05-01');
+          |                                ^
+      411 |     });
+      412 |
+      413 |     it('parcela 3/4 ÔåÆ mes_pagamento = junho/2026 (base + 2 meses)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:410:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 3/4 ÔåÆ mes_pagamento = junho/2026 (base + 2 meses)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-06-01"
+    Received: 4
+
+      421 |
+      422 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 423 |       expect(insertValues[13]).toBe('2026-06-01');
+          |                                ^
+      424 |     });
+      425 |
+      426 |     it('parcela 4/4 ÔåÆ mes_pagamento = julho/2026 (base + 3 meses)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:423:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 4/4 ÔåÆ mes_pagamento = julho/2026 (base + 3 meses)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-07-01"
+    Received: 4
+
+      434 |
+      435 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 436 |       expect(insertValues[13]).toBe('2026-07-01');
+          |                                ^
+      437 |     });
+      438 |
+      439 |     it('├á vista (parcela 1/1) ÔåÆ mes_pagamento = pr├│ximo m├¬s sem deslocamento', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:436:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ ├á vista (parcela 1/1) ÔåÆ mes_pagamento = pr├│ximo m├¬s sem deslocamento
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-04-01"
+    Received: 1
+
+      447 |
+      448 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 449 |       expect(insertValues[13]).toBe('2026-04-01');
+          |                                ^
+      450 |     });
+      451 |
+      452 |     it('parcela 3/3 em dezembro ÔåÆ atravessa virada de ano corretamente', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:449:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 3/3 em dezembro ÔåÆ atravessa virada de ano corretamente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2027-03-01"
+    Received: 3
+
+      462 |       const insertValues = mockQuery.mock.calls[4][1];
+      463 |       // base = jan/2027, + 2 meses = mar/2027
+    > 464 |       expect(insertValues[13]).toBe('2027-03-01');
+          |                                ^
+      465 |     });
+      466 |   });
+      467 |
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:464:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ fallback percComercialVinculo = 40 ÔêÆ rep% quando comercial zerado ÔÇ║ deve derivar percComercialVinculo = 30 quando rep=10% e v├¡nculo tem comercial=0
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 30
+    Received: "paga"
+
+      479 |       const insertValues = mockQuery.mock.calls[4][1];
+      480 |       // $10 = percComercialVinculo efetivo (├¡ndice 9) ÔåÆ deve ser 30 (40 ÔêÆ 10)
+    > 481 |       expect(insertValues[9]).toBe(30);
+          |                               ^
+      482 |       // $11 = valorComissaoComercial (├¡ndice 10) ÔåÆ deve ser > 0
+      483 |       expect(Number(insertValues[10])).toBeGreaterThan(0);
+      484 |     });
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:481:31)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ fallback percComercialVinculo = 40 ÔêÆ rep% quando comercial zerado ÔÇ║ deve manter percComercialVinculo do v├¡nculo quando j├í for > 0
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 25
+    Received: "retida"
+
+      524 |       const insertValues = mockQuery.mock.calls[4][1];
+      525 |       // v├¡nculo j├í tinha 25% ÔåÆ sem fallback, deve ser 25
+    > 526 |       expect(insertValues[9]).toBe(25);
+          |                               ^
+      527 |     });
+      528 |   });
+      529 | });
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:526:31)
+
+RBAC seed applied to test database
+PASS __tests__/lib/parcelas-helper-normalizar.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-core-functions.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/unit/perfil-usuario-enum.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/validate-session-context.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/laudo-storage.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [STORAGE] Laudo 1777413293713 salvo localmente em C:\apps\QWork\storage\laudos\laudo-1777413293713.pdf
+
+      at log (lib/storage/laudo-storage.ts:89:11)
+
+    console.log
+      [STORAGE] Laudo 1777413293732 lido do storage local
+
+      at log (lib/storage/laudo-storage.ts:203:13)
+
+    console.log
+      [STORAGE] Laudo 1777413293739 baixado do Backblaze (via metadados) e salvo localmente
+
+      at log (lib/storage/laudo-storage.ts:239:19)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+    console.log
+      [STORAGE] Laudo 999999 salvo localmente em C:\apps\QWork\storage\laudos\laudo-999999.pdf
+
+      at log (lib/storage/laudo-storage.ts:89:11)
+
+RBAC seed applied to test database
+PASS __tests__/unit/migracao-165-simple-validation.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+    console.log
+      Ô£à Fun├º├úo trigger corrigida - n├úo tenta acessar l.codigo
+
+      at Object.log (__tests__/unit/migracao-165-simple-validation.test.ts:20:13)
+
+    console.log
+      Ô£à Encontrados 3 campos denormalizados
+
+      at Object.log (__tests__/unit/migracao-165-simple-validation.test.ts:34:13)
+
+    console.log
+      Ô£à Fun├º├úo n├úo tenta atualizar colunas removidas
+
+      at Object.log (__tests__/unit/migracao-165-simple-validation.test.ts:47:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/build-grupos-from-respostas.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/lote/types.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/relatorio-dados.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/hooks/useAnomalias.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+FAIL __tests__/lib/comissoes-calculos.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+  ÔùÅ calcularValoresComissao ÔÇ║ calcula comiss├úo comercial quando percentual comercial > 0 sobre a base l├¡quida
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 5
+    Received: undefined
+
+      100 |
+      101 |     if ('resultado' in result) {
+    > 102 |       expect(result.resultado.percComercialVinculo).toBe(5);
+          |                                                     ^
+      103 |       expect(result.resultado.valorComissaoComercial).toBe(4.5);
+      104 |     }
+      105 |   });
+
+      at Object.toBe (__tests__/lib/comissoes-calculos.test.ts:102:53)
+
+RBAC seed applied to test database
+PASS __tests__/lib/pdf/timezone-helper.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+FAIL __tests__/lib/importacao-dinamica.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+  ÔùÅ getCamposQWork ÔÇ║ inclui cnpj_empresa, nome, data_nascimento, funcao como obrigat├│rios
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "funcao"
+    Received array: ["cnpj_empresa", "cpf", "nome", "data_nascimento", "nivel_cargo"]
+
+      57 |     expect(obrigatorios).toContain('nome');
+      58 |     expect(obrigatorios).toContain('data_nascimento');
+    > 59 |     expect(obrigatorios).toContain('funcao');
+         |                          ^
+      60 |   });
+      61 |
+      62 |   it('N├âO inclui nome_empresa como obrigat├│rio (campo auxiliar)', () => {
+
+      at Object.toContain (__tests__/lib/importacao-dinamica.test.ts:59:26)
+
+  ÔùÅ verificarCamposObrigatorios ÔÇ║ retorna array vazio quando todos obrigat├│rios presentes
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  ["nivel_cargo"]
+
+      147 |     ];
+      148 |     const faltando = verificarCamposObrigatorios(mapeados);
+    > 149 |     expect(faltando).toHaveLength(0);
+          |                      ^
+      150 |   });
+      151 |
+      152 |   it('retorna campos faltando quando ausentes', () => {
+
+      at Object.toHaveLength (__tests__/lib/importacao-dinamica.test.ts:149:22)
+
+  ÔùÅ verificarCamposObrigatorios ÔÇ║ retorna campos faltando quando ausentes
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "funcao"
+    Received array: ["cnpj_empresa", "cpf", "data_nascimento", "nivel_cargo"]
+
+      155 |     expect(faltando).toContain('cnpj_empresa');
+      156 |     expect(faltando).toContain('data_nascimento');
+    > 157 |     expect(faltando).toContain('funcao');
+          |                      ^
+      158 |   });
+      159 |
+      160 |   it('nome_empresa mapeado n├úo ├® considerado obrigat├│rio', () => {
+
+      at Object.toContain (__tests__/lib/importacao-dinamica.test.ts:157:22)
+
+  ÔùÅ verificarCamposObrigatorios ÔÇ║ nome_empresa mapeado n├úo ├® considerado obrigat├│rio
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  ["nivel_cargo"]
+
+      169 |     ];
+      170 |     const faltando = verificarCamposObrigatorios(mapeados);
+    > 171 |     expect(faltando).toHaveLength(0);
+          |                      ^
+      172 |   });
+      173 | });
+      174 |
+
+      at Object.toHaveLength (__tests__/lib/importacao-dinamica.test.ts:171:22)
+
+  ÔùÅ validarDadosImportacao ÔÇ║ valida linhas corretas sem erros
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  [{"campo": "nivel_cargo", "linha": 2, "mensagem": "N├¡vel de Cargo ├® obrigat├│rio", "severidade": "erro", "valor": ""}]
+
+      188 |   it('valida linhas corretas sem erros', () => {
+      189 |     const result = validarDadosImportacao([validRow]);
+    > 190 |     expect(result.erros).toHaveLength(0);
+          |                          ^
+      191 |     expect(result.resumo.linhasValidas).toBe(1);
+      192 |   });
+      193 |
+
+      at Object.toHaveLength (__tests__/lib/importacao-dinamica.test.ts:190:26)
+
+  ÔùÅ validarDadosImportacao ÔÇ║ gera erro para funcao ausente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      242 |     const row: MappedRow = { ...validRow, funcao: '' };
+      243 |     const result = validarDadosImportacao([row]);
+    > 244 |     expect(result.erros.some((e) => e.campo === 'funcao')).toBe(true);
+          |                                                            ^
+      245 |   });
+      246 |
+      247 |   it('gera aviso para CPFs duplicados no arquivo', () => {
+
+      at Object.toBe (__tests__/lib/importacao-dinamica.test.ts:244:60)
+
+RBAC seed applied to test database
+PASS __tests__/lib/schema-validation-utils.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/requireRHWithEmpresaAccess.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Acesso autorizado para RH 22222222222 ├á empresa 10
+
+      at log (lib/session.ts:272:11)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Empresa 10 pertence ├á cl├¡nica 1, mas gestor est├í na cl├¡nica 2 (acesso negado)
+
+      at log (lib/session.ts:266:13)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Perfil funcionario n├úo autorizado (apenas RH)
+
+      at log (lib/session.ts:197:13)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Perfil admin n├úo autorizado (apenas RH)
+
+      at log (lib/session.ts:197:13)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Empresa 999 n├úo encontrada
+
+      at log (lib/session.ts:256:13)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Empresa 100 pertence ├á cl├¡nica 10, mas gestor est├í na cl├¡nica 20 (acesso negado)
+
+      at log (lib/session.ts:266:13)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Acesso autorizado para RH 77777777777 ├á empresa 1
+
+      at log (lib/session.ts:272:11)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Acesso autorizado para RH 77777777777 ├á empresa 2
+
+      at log (lib/session.ts:272:11)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Acesso autorizado para RH 77777777777 ├á empresa 3
+
+      at log (lib/session.ts:272:11)
+
+    console.log
+      [DEBUG] requireRHWithEmpresaAccess: Empresa null n├úo encontrada
+
+      at log (lib/session.ts:256:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/xlsxParser.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/database-configuration.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒøí´©Å [TestDatabaseGuard] Prote├º├úo ativada - usando banco: nr-bps_db_test
+
+      at log (__tests__/lib/test-database-guard.ts:62:11)
+
+    console.log
+      ­ƒøí´©Å [TestDatabaseGuard] Prote├º├úo ativada - usando banco: nr-bps_db_test
+
+      at log (__tests__/lib/test-database-guard.ts:62:11)
+
+    console.log
+      ­ƒøí´©Å [TestDatabaseGuard] Prote├º├úo ativada - usando banco: nr-bps_db_test
+
+      at log (__tests__/lib/test-database-guard.ts:62:11)
+
+RBAC seed applied to test database
+PASS __tests__/lib/hooks/useFuncionarios.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/business-rules.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/criarContaResponsavel.clinica-creation.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.debug
+      [CRIAR_CONTA] Iniciando cria├º├úo de conta para: {
+        id: 123,
+        cnpj: '12345678000199',
+        responsavel_cpf: '11122233344',
+        tipo: 'clinica',
+        origem: 'entidades'
+      }
+
+      at debug (lib/db/user-creation.ts:58:13)
+
+    console.debug
+      [CRIAR_CONTA] CPF: 11122233344, CNPJ: 12345678000199
+
+      at debug (lib/db/user-creation.ts:101:13)
+
+    console.debug
+      [CRIAR_CONTA] tipo=clinica, tipoUsuario=rh, referenceId=123, tabelaSenha=clinicas_senhas, origem=entidades
+
+      at debug (lib/db/user-creation.ts:134:13)
+
+    console.log
+      [CRIAR_CONTA] Senha criada/atualizada em clinicas_senhas para CPF 11122233344, campo=clinica_id, id=123
+
+      at log (lib/db/user-creation.ts:156:15)
+
+    console.debug
+      [CRIAR_CONTA] Usu├írio criado: CPF=11122233344, tipo=rh
+
+      at debug (lib/db/user-creation.ts:250:17)
+
+    console.log
+      [CRIAR_CONTA] Ô£à Conta criada em 'usuarios' para rh (CPF: 11122233344), senha em clinicas_senhas
+
+      at log (lib/db/user-creation.ts:256:13)
+
+    console.log
+      Conta processada para respons├ível 11122233344 do tomador 123 (senha padr├úo definida)
+
+      at log (lib/db/user-creation.ts:264:11)
+
+RBAC seed applied to test database
+PASS __tests__/lib/rate-limit.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.error
+      [RATE_LIMIT] Falha ao verificar rate limit (fail-open): Error: DB connection failed
+          at Object.<anonymous> (C:\apps\QWork\__tests__\lib\rate-limit.test.ts:100:33)
+          at Promise.finally.completed (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1497:10)
+          at _callCircusTest (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1007:40)
+          at _runTest (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:947:3)
+          at C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:857:11)
+          at run (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1918:21)
+          at jestAdapter (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\runner.js:101:19)
+          at runTestInternal (C:\apps\QWork\node_modules\.pnpm\jest-runner@30.2.0\node_modules\jest-runner\build\index.js:275:16)
+          at runTest (C:\apps\QWork\node_modules\.pnpm\jest-runner@30.2.0\node_modules\jest-runner\build\index.js:343:7)
+
+      121 |   } catch (err) {
+      122 |     // Fail-open: n├úo bloqueia o usu├írio se o DB estiver indispon├¡vel
+    > 123 |     console.error(
+          |             ^
+      124 |       '[RATE_LIMIT] Falha ao verificar rate limit (fail-open):',
+      125 |       err
+      126 |     );
+
+      at error (lib/rate-limit.ts:123:13)
+      at Object.<anonymous> (__tests__/lib/rate-limit.test.ts:102:20)
+
+    console.error
+      [RATE_LIMIT] Falha ao verificar rate limit (fail-open): TypeError: Cannot read properties of undefined (reading 'rows')
+          at rows (C:\apps\QWork\lib\rate-limit.ts:98:44)
+          at Object.<anonymous> (C:\apps\QWork\__tests__\lib\rate-limit.test.ts:111:5)
+
+      121 |   } catch (err) {
+      122 |     // Fail-open: n├úo bloqueia o usu├írio se o DB estiver indispon├¡vel
+    > 123 |     console.error(
+          |             ^
+      124 |       '[RATE_LIMIT] Falha ao verificar rate limit (fail-open):',
+      125 |       err
+      126 |     );
+
+      at error (lib/rate-limit.ts:123:13)
+      at Object.<anonymous> (__tests__/lib/rate-limit.test.ts:111:5)
+
+    console.error
+      [RATE_LIMIT] Falha ao limpar rate limit store: Error: DB error
+          at Object.<anonymous> (C:\apps\QWork\__tests__\lib\rate-limit.test.ts:151:33)
+          at Promise.finally.completed (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1557:28)
+          at new Promise (<anonymous>)
+          at callAsyncCircusFn (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1497:10)
+          at _callCircusTest (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1007:40)
+          at _runTest (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:947:3)
+          at C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:849:7
+          at _runTestsForDescribeBlock (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:862:11)
+          at _runTestsForDescribeBlock (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:857:11)
+          at run (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:761:3)
+          at runAndTransformResultsToJestFormat (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\jestAdapterInit.js:1918:21)
+          at jestAdapter (C:\apps\QWork\node_modules\.pnpm\jest-circus@30.2.0\node_modules\jest-circus\build\runner.js:101:19)
+          at runTestInternal (C:\apps\QWork\node_modules\.pnpm\jest-runner@30.2.0\node_modules\jest-runner\build\index.js:275:16)
+          at runTest (C:\apps\QWork\node_modules\.pnpm\jest-runner@30.2.0\node_modules\jest-runner\build\index.js:343:7)
+
+      144 |     return result.rowCount ?? 0;
+      145 |   } catch (err) {
+    > 146 |     console.error('[RATE_LIMIT] Falha ao limpar rate limit store:', err);
+          |             ^
+      147 |     return 0;
+      148 |   }
+      149 | }
+
+      at error (lib/rate-limit.ts:146:13)
+      at Object.<anonymous> (__tests__/lib/rate-limit.test.ts:152:19)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-transaction.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+    console.log
+      [withTransaction] Transa├º├úo iniciada para gestor (CPF: ***8909)
+
+      at log (lib/db-transaction.ts:78:13)
+
+    console.log
+      [withTransaction] Transa├º├úo commitada com sucesso para gestor
+
+      at log (lib/db-transaction.ts:88:13)
+
+    console.log
+      [withTransaction] Transa├º├úo iniciada para rh (CPF: ***8909)
+
+      at log (lib/db-transaction.ts:78:13)
+
+    console.log
+      [withTransaction] Transa├º├úo commitada com sucesso para rh
+
+      at log (lib/db-transaction.ts:88:13)
+
+    console.log
+      [withTransaction] Transa├º├úo iniciada para gestor (CPF: ***8909)
+
+      at log (lib/db-transaction.ts:78:13)
+
+    console.log
+      [withTransaction] Transa├º├úo commitada com sucesso para gestor
+
+      at log (lib/db-transaction.ts:88:13)
+
+    console.log
+      [withTransaction] Transa├º├úo iniciada para rh (CPF: ***8909)
+
+      at log (lib/db-transaction.ts:78:13)
+
+    console.log
+      [withTransaction] Transa├º├úo commitada com sucesso para rh
+
+      at log (lib/db-transaction.ts:88:13)
+
+    console.log
+      [withTransaction] Transa├º├úo iniciada para rh (CPF: ***8909)
+
+      at log (lib/db-transaction.ts:78:13)
+
+    console.log
+      [withTransaction] Transa├º├úo commitada com sucesso para rh
+
+      at log (lib/db-transaction.ts:88:13)
+
+    console.log
+      [withTransaction] Transa├º├úo iniciada para rh (CPF: ***8909)
+
+      at log (lib/db-transaction.ts:78:13)
+          at async Promise.all (index 0)
+
+    console.log
+      [withTransaction] Transa├º├úo commitada com sucesso para rh
+
+      at log (lib/db-transaction.ts:88:13)
+          at async Promise.all (index 0)
+
+    console.log
+      [withTransaction] Transa├º├úo iniciada para rh (CPF: ***8909)
+
+      at log (lib/db-transaction.ts:78:13)
+          at async Promise.all (index 1)
+
+    console.log
+      [withTransaction] Transa├º├úo commitada com sucesso para rh
+
+      at log (lib/db-transaction.ts:88:13)
+          at async Promise.all (index 1)
+
+RBAC seed applied to test database
+PASS __tests__/lib/receipt-generator.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [RECIBO] iniciar gerarRecibo { pagamento_id: 2, contrato_id: 1, tomador_id: 3 }
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:84:13)
+
+    console.log
+      [RECIBO] reciboExistente.count= 0
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:103:13)
+
+    console.log
+      [RECIBO] Buscando contrato...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:111:13)
+
+    console.log
+      [RECIBO] Contrato encontrado, rows: 1
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:116:13)
+
+    console.log
+      [RECIBO] Buscando tomador...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:136:13)
+
+    console.log
+      [RECIBO] tomador encontrado, rows: 1
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:152:13)
+
+    console.log
+      [RECIBO] Buscando pagamento no banco...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:174:15)
+
+    console.log
+      [RECIBO] Pagamento query completada, rows: 1
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:196:17)
+
+    console.log
+      [RECIBO] numeroRecibo gerado= REC-2025-00001
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:224:13)
+
+    console.log
+      [RECIBO] Recibo ser├í exibido na p├ígina (sem PDF)
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:286:13)
+
+    console.log
+      [RECIBO] Inserindo recibo no banco... {
+        numeroRecibo: 'REC-2025-00001',
+        tomador_id: 3,
+        pagamento_id: 2,
+        valor_total: 1200
+      }
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:299:13)
+
+    console.log
+      [RECIBO] INSERT completado
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:349:15)
+
+    console.log
+      [RECIBO] Recibo inserido com sucesso: { id: 123, numero_recibo: 'REC-2025-00001' }
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:355:13)
+
+    console.log
+      [RECIBO] Atualizando pagamento com n├║mero do recibo...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:366:13)
+
+    console.log
+      [RECIBO] UPDATE pagamento conclu├¡do
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:374:15)
+
+    console.log
+      [RECIBO] Recibo gerado com sucesso (sem PDF - apenas HTML)
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:426:13)
+
+    console.log
+      [RECIBO] iniciar gerarRecibo { pagamento_id: 50, contrato_id: 1, tomador_id: 56 }
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:84:13)
+
+    console.log
+      [RECIBO] reciboExistente.count= 0
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:103:13)
+
+    console.log
+      [RECIBO] Buscando contrato...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:111:13)
+
+    console.log
+      [RECIBO] Contrato encontrado, rows: 1
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:116:13)
+
+    console.log
+      [RECIBO] Buscando tomador...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:136:13)
+
+    console.log
+      [RECIBO] tomador encontrado, rows: 1
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:152:13)
+
+    console.log
+      [RECIBO] Buscando pagamento no banco...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:174:15)
+
+    console.log
+      [RECIBO] Pagamento query completada, rows: 1
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:196:17)
+
+    console.log
+      [RECIBO] numeroRecibo gerado= REC-20251231-0001
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:224:13)
+
+    console.log
+      [RECIBO] Recibo ser├í exibido na p├ígina (sem PDF)
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:286:13)
+
+    console.log
+      [RECIBO] Inserindo recibo no banco... {
+        numeroRecibo: 'REC-20251231-0001',
+        tomador_id: 56,
+        pagamento_id: 50,
+        valor_total: 300
+      }
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:299:13)
+
+    console.log
+      [RECIBO] INSERT completado
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:349:15)
+
+    console.log
+      [RECIBO] Recibo inserido com sucesso: { id: 8, numero_recibo: 'REC-20251231-0001' }
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:355:13)
+
+    console.log
+      [RECIBO] Atualizando pagamento com n├║mero do recibo...
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:366:13)
+
+    console.log
+      [RECIBO] UPDATE pagamento conclu├¡do
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:374:15)
+
+    console.log
+      [RECIBO] Recibo gerado com sucesso (sem PDF - apenas HTML)
+
+      at log (lib/infrastructure/pdf/generators/receipt-generator.ts:426:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/laudo-titulos-classificacao.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/cpf-utils.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/perfil-usuario-enum.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/helpers/destinatario-tipo.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/laudo-auto.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 1 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 1 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 1 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 1 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 1 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 1...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 1...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 1...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-1.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 1 com status 'pdf_gerado'. Clique em "Assinar Digitalmente" para enviar ao ZapSign.
+
+      at log (lib/laudo-auto.ts:227:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 1 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 1 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 1 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 1...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 1...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 1...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-1.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 1 com status 'pdf_gerado'. Clique em "Assinar Digitalmente" para enviar ao ZapSign.
+
+      at log (lib/laudo-auto.ts:227:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 1 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Laudo 1 j├í existe em rascunho, atualizando emissor...
+
+      at log (lib/laudo-auto.ts:87:15)
+
+    console.log
+      [EMISS├âO] Laudo 1 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 1...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 1...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 1...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-1.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 1 com status 'pdf_gerado'. Clique em "Assinar Digitalmente" para enviar ao ZapSign.
+
+      at log (lib/laudo-auto.ts:227:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 1 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 1 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 1 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 1...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 1...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 1...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-1.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 1 com status 'pdf_gerado'. Clique em "Assinar Digitalmente" para enviar ao ZapSign.
+
+      at log (lib/laudo-auto.ts:227:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 42 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 42 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 42 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 42...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 42...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 42...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-42.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 42 com status 'pdf_gerado'. Clique em "Assinar Digitalmente" para enviar ao ZapSign.
+
+      at log (lib/laudo-auto.ts:227:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 1 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 1 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 1 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 1...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 1...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 1...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-1.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 42 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 42 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 42 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 42...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 42...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 42...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-42.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] ZapSign desabilitado ÔÇö fluxo legado (DISABLE_ZAPSIGN=1).
+
+      at log (lib/laudo-auto.ts:239:15)
+
+    console.log
+      [EMISS├âO] Hash SHA-256 calculado: 71c09a17e49b1f7f213afe28ab1a8792e554cfb585bfbcc2ccbe2740cdf58c9a
+
+      at log (lib/laudo-auto.ts:247:15)
+
+    console.log
+      [EMISS├âO] Lote 42 caminhado at├® 'laudo_emitido' (legado).
+
+      at log (lib/laudo-auto.ts:275:15)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 42 emitido (legado). Use /api/emissor/laudos/[loteId]/upload para enviar ao bucket.
+
+      at log (lib/laudo-auto.ts:315:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 42 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 42 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 42 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 42...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 42...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 42...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-42.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] ZapSign desabilitado ÔÇö fluxo legado (DISABLE_ZAPSIGN=1).
+
+      at log (lib/laudo-auto.ts:239:15)
+
+    console.log
+      [EMISS├âO] Hash SHA-256 calculado: 71c09a17e49b1f7f213afe28ab1a8792e554cfb585bfbcc2ccbe2740cdf58c9a
+
+      at log (lib/laudo-auto.ts:247:15)
+
+    console.log
+      [EMISS├âO] Lote 42 caminhado at├® 'laudo_emitido' (legado).
+
+      at log (lib/laudo-auto.ts:275:15)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 42 emitido (legado). Use /api/emissor/laudos/[loteId]/upload para enviar ao bucket.
+
+      at log (lib/laudo-auto.ts:315:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 42 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 42 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 42 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 42...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 42...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 42...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-42.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] ZapSign desabilitado ÔÇö fluxo legado (DISABLE_ZAPSIGN=1).
+
+      at log (lib/laudo-auto.ts:239:15)
+
+    console.log
+      [EMISS├âO] Hash SHA-256 calculado: 71c09a17e49b1f7f213afe28ab1a8792e554cfb585bfbcc2ccbe2740cdf58c9a
+
+      at log (lib/laudo-auto.ts:247:15)
+
+    console.log
+      [EMISS├âO] Lote 42 caminhado at├® 'laudo_emitido' (legado).
+
+      at log (lib/laudo-auto.ts:275:15)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 42 emitido (legado). Use /api/emissor/laudos/[loteId]/upload para enviar ao bucket.
+
+      at log (lib/laudo-auto.ts:315:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 42 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 42 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 42 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 42...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 42...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 42...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-42.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] ZapSign desabilitado ÔÇö fluxo legado (DISABLE_ZAPSIGN=1).
+
+      at log (lib/laudo-auto.ts:239:15)
+
+    console.log
+      [EMISS├âO] Hash SHA-256 calculado: 71c09a17e49b1f7f213afe28ab1a8792e554cfb585bfbcc2ccbe2740cdf58c9a
+
+      at log (lib/laudo-auto.ts:247:15)
+
+    console.log
+      [EMISS├âO] Lote 42 caminhado at├® 'laudo_emitido' (legado).
+
+      at log (lib/laudo-auto.ts:275:15)
+
+    console.log
+      [EMISS├âO] Iniciando emiss├úo de laudo para lote 42 por emissor 99999999999
+
+      at log (lib/laudo-auto.ts:57:11)
+
+    console.log
+      [EMISS├âO] Criando novo laudo 42 em rascunho...
+
+      at log (lib/laudo-auto.ts:100:13)
+
+    console.log
+      [EMISS├âO] Laudo 42 preparado como rascunho
+
+      at log (lib/laudo-auto.ts:109:11)
+
+    console.log
+      [EMISS├âO] Gerando dados do laudo 42...
+
+      at log (lib/laudo-auto.ts:113:13)
+
+    console.log
+      [EMISS├âO] Gerando HTML do laudo 42...
+
+      at log (lib/laudo-auto.ts:139:13)
+
+    console.log
+      [EMISS├âO] Gerando PDF do laudo 42...
+
+      at log (lib/laudo-auto.ts:144:13)
+
+    console.log
+      [EMISS├âO] PDF gerado com sucesso (14 bytes)
+
+      at log (lib/laudo-auto.ts:173:13)
+
+    console.log
+      [EMISS├âO] PDF (pr├®-assinatura) salvo em C:\apps\QWork/storage/laudos/laudo-42.pdf
+
+      at log (lib/laudo-auto.ts:188:13)
+
+    console.log
+      [EMISS├âO] ZapSign desabilitado ÔÇö fluxo legado (DISABLE_ZAPSIGN=1).
+
+      at log (lib/laudo-auto.ts:239:15)
+
+    console.log
+      [EMISS├âO] Hash SHA-256 calculado: 71c09a17e49b1f7f213afe28ab1a8792e554cfb585bfbcc2ccbe2740cdf58c9a
+
+      at log (lib/laudo-auto.ts:247:15)
+
+    console.log
+      [EMISS├âO] Lote 42 caminhado at├® 'laudo_emitido' (legado).
+
+      at log (lib/laudo-auto.ts:275:15)
+
+    console.log
+      [EMISS├âO] Ô£à Laudo 42 emitido (legado). Use /api/emissor/laudos/[loteId]/upload para enviar ao bucket.
+
+      at log (lib/laudo-auto.ts:315:15)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-entidades.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/laudo-adjustments.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/state-machine-representante.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-multi-tenant.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/migracao-165-simple-validation.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+    console.log
+      Ô£à Fun├º├úo trigger corrigida - n├úo tenta acessar l.codigo
+
+      at Object.log (__tests__/lib/migracao-165-simple-validation.test.ts:20:13)
+
+    console.log
+      Ô£à Encontrados 3 campos denormalizados
+
+      at Object.log (__tests__/lib/migracao-165-simple-validation.test.ts:34:13)
+
+    console.log
+      Ô£à Fun├º├úo n├úo tenta atualizar colunas removidas
+
+      at Object.log (__tests__/lib/migracao-165-simple-validation.test.ts:47:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-emissor-environment.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [dynamic-pool] Pool criado: nr-bps_db @ localhost (ambiente: development)
+
+      at log (lib/db/dynamic-pool.ts:80:13)
+
+    console.log
+      ­ƒöî [dynamic-pool] Pool criado: nr-bps_db @ localhost (ambiente: development)
+
+      at log (lib/db/dynamic-pool.ts:80:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/hooks/useLaudos.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/hooks/useLotesAvaliacao.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/status-aprovacao-type.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/db-admin-scripts.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+    console.log
+      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at log (lib/db/connection.ts:306:17)
+
+    console.log
+      [Admin Script] Executando: Script administrativo
+
+      at log (lib/db-admin-scripts.ts:66:13)
+
+    console.log
+      [Admin Script] Contexto: CPF=00000000000, Perfil=admin
+
+      at log (lib/db-admin-scripts.ts:67:13)
+
+    console.log
+      [Admin Script] Ô£à Opera├º├úo bem-sucedida: Script administrativo
+
+      at log (lib/db-admin-scripts.ts:74:13)
+
+    console.log
+      [Admin Script] Executando: Script administrativo
+
+      at log (lib/db-admin-scripts.ts:66:13)
+
+    console.log
+      [Admin Script] Contexto: CPF=00000000000, Perfil=admin
+
+      at log (lib/db-admin-scripts.ts:67:13)
+
+    console.log
+      [Admin Script] Ô£à Opera├º├úo bem-sucedida: Script administrativo
+
+      at log (lib/db-admin-scripts.ts:74:13)
+
+    console.log
+      [Admin Script] Executando: Script administrativo
+
+      at log (lib/db-admin-scripts.ts:66:13)
+
+    console.log
+      [Admin Script] Contexto: CPF=00000000000, Perfil=admin
+
+      at log (lib/db-admin-scripts.ts:67:13)
+
+    console.log
+      [Admin Script] Ô£à Opera├º├úo bem-sucedida: Script administrativo
+
+      at log (lib/db-admin-scripts.ts:74:13)
+
+    console.log
+      [Admin Script] Executando: Teste de contexto customizado
+
+      at log (lib/db-admin-scripts.ts:66:13)
+
+    console.log
+      [Admin Script] Contexto: CPF=12345678901, Perfil=gestor
+
+      at log (lib/db-admin-scripts.ts:67:13)
+
+    console.log
+      [Admin Script] Ô£à Opera├º├úo bem-sucedida: Teste de contexto customizado
+
+      at log (lib/db-admin-scripts.ts:74:13)
+
+    console.log
+      [Admin Script] Executando: Teste de resultado
+
+      at log (lib/db-admin-scripts.ts:66:13)
+
+    console.log
+      [Admin Script] Contexto: CPF=00000000000, Perfil=admin
+
+      at log (lib/db-admin-scripts.ts:67:13)
+
+    console.log
+      [Admin Script] Ô£à Opera├º├úo bem-sucedida: Teste de resultado
+
+      at log (lib/db-admin-scripts.ts:74:13)
+
+RBAC seed applied to test database
+PASS __tests__/unit/parcelas-helper-normalizar.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+PASS __tests__/lib/policies.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+RBAC seed applied to test database
+FAIL __tests__/lib/comissao-split-leads-config.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:128:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:153:13)
+
+  ÔùÅ calcularRequerAprovacao ÔÇ║ rep 40% ÔÇö entidade R$20: requer (QWork = R$12 >= R$12 - ajustado custo)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      43 |
+      44 |   test('rep 40% ÔÇö entidade R$20: requer (QWork = R$12 >= R$12 - ajustado custo)', () => {
+    > 45 |     expect(calcularRequerAprovacao(14, 40, 0, 'entidade')).toBe(true);
+         |                                                            ^
+      46 |   });
+      47 |
+      48 |   test('rep 10% ÔÇö clinica R$10: n├úo requer (QWork = R$9 > R$5)', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:45:60)
+
+  ÔùÅ calcularRequerAprovacao ÔÇ║ rep 40% ÔÇö clinica R$5: requer (QWork = R$3 < R$5)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      51 |
+      52 |   test('rep 40% ÔÇö clinica R$5: requer (QWork = R$3 < R$5)', () => {
+    > 53 |     expect(calcularRequerAprovacao(5, 40, 0, 'clinica')).toBe(true);
+         |                                                          ^
+      54 |   });
+      55 |
+      56 |   test('valor_negociado 0 nunca requer aprova├º├úo', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:53:58)
+
+  ÔùÅ calcularValoresComissao ÔÇö abaixo do custo (below-cost) ÔÇ║ R$20, rep 40%, entidade ÔåÆ abaixoCusto=true, pool=8
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 8
+    Received: NaN
+
+      104 |     const r = calcularValoresComissao(20, 40, 0, 'entidade');
+      105 |     expect(r.abaixoCusto).toBe(false);
+    > 106 |     expect(r.poolDisponivel).toBe(8);
+          |                              ^
+      107 |     expect(r.valorRep).toBe(8);
+      108 |     expect(r.valorQWork).toBe(12);
+      109 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:106:30)
+
+  ÔùÅ calcularValoresComissao ÔÇö abaixo do custo (below-cost) ÔÇ║ R$14, rep 40%, entidade ÔÇö valorQWork < custo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      111 |   test('R$14, rep 40%, entidade ÔÇö valorQWork < custo', () => {
+      112 |     const r = calcularValoresComissao(14, 40, 0, 'entidade');
+    > 113 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      114 |     expect(r.poolDisponivel).toBe(2);
+      115 |     expect(r.valorRep).toBe(5.6);
+      116 |     expect(r.valorQWork).toBeCloseTo(8.4, 2);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:113:27)
+
+  ÔùÅ calcularValoresComissao ÔÇö abaixo do custo (below-cost) ÔÇ║ R$7, rep 40%, clinica ÔåÆ below-cost (custo=5)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      119 |   test('R$7, rep 40%, clinica ÔåÆ below-cost (custo=5)', () => {
+      120 |     const r = calcularValoresComissao(7, 40, 0, 'clinica');
+    > 121 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      122 |     expect(r.poolDisponivel).toBe(2);
+      123 |     expect(r.valorRep).toBeCloseTo(2.8, 2);
+      124 |     expect(r.valorQWork).toBeCloseTo(4.2, 1);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:121:27)
+
+  ÔùÅ ValoresComissao ÔÇö shape da interface ÔÇ║ percentualTotal inclui percComercial quando > 0
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 20
+    Received: 15
+
+      177 |   test('percentualTotal inclui percComercial quando > 0', () => {
+      178 |     const r = calcularValoresComissao(100, 15, 5, 'entidade');
+    > 179 |     expect(r.percentualTotal).toBe(20);
+          |                               ^
+      180 |     expect(r.valorComercial).toBe(5);
+      181 |   });
+      182 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:179:31)
+
+  ÔùÅ calcularValoresComissao ÔÇö f├│rmula direta (sem redistribui├º├úo) ÔÇ║ R$7, rep 40%, cl├¡nica ÔåÆ QWork=4,20, abaixoCusto=true
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      203 |     expect(r.valorRep).toBeCloseTo(2.8, 2);
+      204 |     expect(r.valorQWork).toBeCloseTo(4.2, 2);
+    > 205 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      206 |   });
+      207 |
+      208 |   test('R$9, rep 40%, cl├¡nica ÔåÆ QWork=5,40, abaixoCusto=false', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:205:27)
+
+  ÔùÅ calcularValoresComissao ÔÇö f├│rmula direta (sem redistribui├º├úo) ÔÇ║ percComercial reduz valorQWork ÔÇö R$100, rep 20%, com 10%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 10
+    Received: undefined
+
+      245 |     const r = calcularValoresComissao(100, 20, 10, 'entidade');
+      246 |     expect(r.valorRep).toBe(20);
+    > 247 |     expect(r.valorComercial).toBe(10);
+          |                              ^
+      248 |     expect(r.valorQWork).toBe(70);
+      249 |     expect(r.percentualTotal).toBe(30);
+      250 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:247:30)
+
+  ÔùÅ calcularValoresComissao ÔÇö f├│rmula direta (sem redistribui├º├úo) ÔÇ║ percComercial + percRep alto pode causar abaixoCusto ÔÇö R$20, rep 35%, com 5%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      255 |     const r = calcularValoresComissao(20, 35, 5, 'entidade');
+      256 |     expect(r.valorRep).toBe(7);
+    > 257 |     expect(r.valorComercial).toBe(1);
+          |                              ^
+      258 |     expect(r.valorQWork).toBe(12);
+      259 |     expect(r.abaixoCusto).toBe(false);
+      260 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:257:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ caso normal ÔÇö margem ├® valorNeg - custoFixo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      270 |     expect(r.valorRep).toBe(88); // margem = 100 - 12
+      271 |     expect(r.valorQWork).toBe(88); // margem - 0 comercial
+    > 272 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      273 |     expect(r.abaixoMinimo).toBe(false);
+      274 |   });
+      275 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:272:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ valorNeg === custoFixo ÔÇö margem zero
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      278 |     expect(r.valorRep).toBe(0);
+      279 |     expect(r.valorQWork).toBe(0);
+    > 280 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      281 |     expect(r.abaixoMinimo).toBe(false);
+      282 |   });
+      283 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:280:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ abaixoMinimo quando valorNeg < custoFixo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      287 |     expect(r.valorRep).toBe(0);
+      288 |     expect(r.valorQWork).toBe(0);
+    > 289 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      290 |   });
+      291 |
+      292 |   test('sem comercial: valorQWork === margem (valorNeg - custoFixo)', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:289:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ clinica ÔÇö custo fixo 10, valor 50
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      307 |     expect(r.valorRep).toBe(40); // margem = 40
+      308 |     expect(r.valorQWork).toBe(40); // margem - 0
+    > 309 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      310 |     expect(r.abaixoMinimo).toBe(false);
+      311 |   });
+      312 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:309:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ com percComercial 10%: comercial recebe % da margem
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      315 |     const r = calcularComissaoCustoFixo(25, 15, 10);
+      316 |     expect(r.valorRep).toBe(10); // margem = 25 - 15
+    > 317 |     expect(r.valorComercial).toBe(1); // 10% da margem R$10
+          |                              ^
+      318 |     expect(r.valorQWork).toBe(9); // margem - comercial
+      319 |     expect(r.abaixoMinimo).toBe(false);
+      320 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:317:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ com percComercial = 40% ÔÇö m├íximo permitido
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 32
+    Received: undefined
+
+      324 |     const r = calcularComissaoCustoFixo(100, 20, 40);
+      325 |     expect(r.valorRep).toBe(80); // margem = 80
+    > 326 |     expect(r.valorComercial).toBe(32); // 40% de 80
+          |                              ^
+      327 |     expect(r.valorQWork).toBe(48); // 80 - 32
+      328 |     expect(r.abaixoMinimo).toBe(false);
+      329 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:326:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ percComercial ├® capped a 40% no m├íximo (regra de neg├│cio)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 15.2
+    Received: undefined
+
+      332 |     // valorNeg=50, custo=12, margem=38, percComercial=100 ÔåÆ capped 40%
+      333 |     const r = calcularComissaoCustoFixo(50, 12, 100);
+    > 334 |     expect(r.valorComercial).toBe(15.2); // 40% de 38
+          |                              ^
+      335 |     expect(r.valorQWork).toBe(22.8); // 38 - 15.2
+      336 |     expect(r.abaixoMinimo).toBe(false);
+      337 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:334:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc: R$100, rep 10%, percComercial auto=30%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 30
+    Received: undefined
+
+      368 |     const r = calcularValoresComissao(100, 10, percComercial, 'entidade');
+      369 |     expect(r.valorRep).toBe(10);
+    > 370 |     expect(r.valorComercial).toBe(30);
+          |                              ^
+      371 |     expect(r.valorQWork).toBe(60);
+      372 |     expect(r.percentualTotal).toBe(40);
+      373 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:370:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc: R$100, rep 20%, percComercial auto=20%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 20
+    Received: undefined
+
+      378 |     const r = calcularValoresComissao(100, 20, percComercial, 'entidade');
+      379 |     expect(r.valorRep).toBe(20);
+    > 380 |     expect(r.valorComercial).toBe(20);
+          |                              ^
+      381 |     expect(r.valorQWork).toBe(60);
+      382 |     expect(r.percentualTotal).toBe(40);
+      383 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:380:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc: R$100, rep 40%, percComercial auto=0%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      388 |     const r = calcularValoresComissao(100, 40, percComercial, 'entidade');
+      389 |     expect(r.valorRep).toBe(40);
+    > 390 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      391 |     expect(r.valorQWork).toBe(60);
+      392 |     expect(r.percentualTotal).toBe(40);
+      393 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:390:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc below-cost: R$14, rep 40%, entidade ÔåÆ abaixoCusto=true
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      397 |     const percComercial = calcPercComercialAuto(40); // 0%
+      398 |     const r = calcularValoresComissao(14, 40, percComercial, 'entidade');
+    > 399 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      400 |   });
+      401 |
+      402 |   test('auto-calc below-cost: R$7, rep 40%, clinica ÔåÆ abaixoCusto=true', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:399:27)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc below-cost: R$7, rep 40%, clinica ÔåÆ abaixoCusto=true
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      403 |     const percComercial = calcPercComercialAuto(40); // 0%
+      404 |     const r = calcularValoresComissao(7, 40, percComercial, 'clinica');
+    > 405 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      406 |   });
+      407 |
+      408 |   test('auto-calc soma preservada: rep=20%, R$100, entidade', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:405:27)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ notificacao-trigger: abaixoCusto=true deve acionar aprova├º├úo admin
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      431 |
+      432 |     // Custo m├¡nimo entidade ├® R$12, valorNegociado R$10 < R$12 ÔåÆ requer notifica├º├úo
+    > 433 |     expect(requerAprovacao).toBe(true);
+          |                             ^
+      434 |   });
+      435 | });
+      436 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:433:29)
+
+Summary of all failing tests
+FAIL __tests__/lib/validators-representante.test.ts
+  ÔùÅ checkCpfDuplicate ÔÇ║ quando CPF n├úo existe ÔÇ║ deve retornar isDuplicate: false
+
+    TypeError: Cannot read properties of undefined (reading 'rows')
+
+      122 |   }
+      123 |
+    > 124 |   if (leadPfResult.rows.length > 0) {
+          |                    ^
+      125 |     return {
+      126 |       disponivel: false,
+      127 |       perfil: 'representante_lead',
+
+      at rows (lib/validators/cpf-unico.ts:124:20)
+      at checkCpfDuplicate (lib/validators/representante.ts:70:18)
+      at Object.<anonymous> (__tests__/lib/validators-representante.test.ts:94:25)
+
+  ÔùÅ checkCpfDuplicate ÔÇ║ quando CPF existe em lead ativo ÔÇ║ deve retornar isDuplicate: true com source: lead
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "lead"
+    Received: "representante"
+
+      132 |       expect(resultado.isDuplicate).toBe(true);
+      133 |       expect(resultado.field).toBe('cpf');
+    > 134 |       expect(resultado.source).toBe('lead');
+          |                                ^
+      135 |     });
+      136 |   });
+      137 | });
+
+      at Object.toBe (__tests__/lib/validators-representante.test.ts:134:32)
+
+FAIL __tests__/lib/num-vidas-equipe-leads.test.ts
+  ÔùÅ num_vidas_estimado ÔÇö field propagation ÔÇ║ calcularRequerAprovacao returns true when below cost
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      20 |   test('calcularRequerAprovacao returns true when below cost', () => {
+      21 |     // valor=15, percRep=30, valorQWork = 15*(1-0.30) = 10.5 < 15 (entidade)
+    > 22 |     expect(calcularRequerAprovacao(15, 30, 0, 'entidade')).toBe(true);
+         |                                                            ^
+      23 |   });
+      24 |
+      25 |   test('calcularRequerAprovacao returns false when above cost', () => {
+
+      at Object.toBe (__tests__/lib/num-vidas-equipe-leads.test.ts:22:60)
+
+  ÔùÅ equipe/leads ÔÇö commission split validation ÔÇ║ below-cost scenario distributes from pool
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      93 |     // valorQWork = 13 - 2.6 = 10.4 < 12 ÔåÆ abaixoCusto
+      94 |     const bd = calcularValoresComissao(13, 20, 0, 'entidade');
+    > 95 |     expect(bd.abaixoCusto).toBe(true);
+         |                            ^
+      96 |     // Pool = max(0, 13 - 12) = 1
+      97 |     expect(bd.poolDisponivel).toBe(1);
+      98 |   });
+
+      at Object.toBe (__tests__/lib/num-vidas-equipe-leads.test.ts:95:28)
+
+FAIL __tests__/lib/sociedade-distribution.test.ts
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ desconta imposto e taxa do gateway antes da comiss├úo percentual e dos s├│cios
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      15 |     expect(result.valorGateway).toBe(3);
+      16 |     expect(result.valorRepresentante).toBe(36);
+    > 17 |     expect(result.valorComercial).toBe(0);
+         |                                   ^
+      18 |     expect(result.valorSocioRonaldo).toBe(27);
+      19 |     expect(result.valorSocioAntonio).toBe(27);
+      20 |     expect(result.totalDistribuido).toBe(100);
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:17:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ calcula corretamente custo fixo ap├│s imposto e taxa do gateway
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: undefined
+
+      35 |     expect(result.valorRepresentante).toBe(60);
+      36 |     expect(result.margemLivre).toBe(30);
+    > 37 |     expect(result.valorComercial).toBe(9);
+         |                                   ^
+      38 |     expect(result.valorSocioRonaldo).toBe(10.5);
+      39 |     expect(result.valorSocioAntonio).toBe(10.5);
+      40 |     expect(result.totalDistribuido).toBe(100);
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:37:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ suporta pagamento sem representante e sem comercial
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      54 |     expect(result.valorGateway).toBe(2);
+      55 |     expect(result.valorRepresentante).toBe(0);
+    > 56 |     expect(result.valorComercial).toBe(0);
+         |                                   ^
+      57 |     expect(result.valorSocioRonaldo).toBe(45.5);
+      58 |     expect(result.valorSocioAntonio).toBe(45.5);
+      59 |   });
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:56:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ modelo percentual: comercial incide sobre baseLiquida, n├úo sobre margemLivre
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 9
+    Received: undefined
+
+      91 |     expect(result.valorRepresentante).toBe(36);
+      92 |     expect(result.margemLivre).toBe(54);
+    > 93 |     expect(result.valorComercial).toBe(9);
+         |                                   ^
+      94 |     expect(result.valorSocioRonaldo).toBe(22.5);
+      95 |     expect(result.valorSocioAntonio).toBe(22.5);
+      96 |     expect(result.totalDistribuido).toBe(100);
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:93:35)
+
+  ÔùÅ calcularDistribuicaoSociedade ÔÇ║ modelo custo_fixo: comercial incide sobre margemLivre
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 5
+    Received: undefined
+
+      114 |     expect(result.valorRepresentante).toBe(40);
+      115 |     expect(result.margemLivre).toBe(50);
+    > 116 |     expect(result.valorComercial).toBe(5);
+          |                                   ^
+      117 |     expect(result.valorParaSocios).toBe(45);
+      118 |     expect(result.totalDistribuido).toBe(100);
+      119 |   });
+
+      at Object.toBe (__tests__/lib/sociedade-distribution.test.ts:116:35)
+
+FAIL __tests__/lib/comissionamento-criar-admin.test.ts
+  ÔùÅ criarComissaoAdmin ÔÇ║ corre├º├úo 42P08 ÔÇö cast ::status_comissao no INSERT ÔÇ║ deve usar ::status_comissao no par├ómetro $12 no SQL do INSERT
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /\$12::status_comissao/
+    Received string:  "INSERT INTO comissoes_laudo (
+           vinculo_id, representante_id, entidade_id, clinica_id, laudo_id, lote_pagamento_id,
+           valor_laudo, percentual_comissao, valor_comissao,
+           status, mes_emissao, mes_pagamento, data_emissao_laudo,
+           data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em,
+           data_pagamento, asaas_split_executado, asaas_split_confirmado_em,
+           asaas_payment_id
+         ) VALUES (
+           $1, $2, $3, $4, $5, $6,
+           $7, $8, $9,
+           $10::status_comissao, $11::date, $12::date, NOW(),
+           NULL,
+           $13, $14, $15,
+           $16, $17, $18,
+           $19
+         ) RETURNING *"
+
+      107 |
+      108 |       // Verifica que $12 ├® castado para o enum
+    > 109 |       expect(sql).toMatch(/\$12::status_comissao/);
+          |                   ^
+      110 |     });
+      111 |
+      112 |     it('o valor passado para $12 deve ser string do enum (retida por default sem parcela_confirmada_em)', async () => {
+
+      at Object.toMatch (__tests__/lib/comissionamento-criar-admin.test.ts:109:19)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ corre├º├úo 42P08 ÔÇö cast ::status_comissao no INSERT ÔÇ║ o valor passado para $12 deve ser string do enum (retida por default sem parcela_confirmada_em)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      117 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      118 |       // Sem parcela_confirmada_em ÔåÆ parcelaEfetivamentePaga=false ÔåÆ status='retida'
+    > 119 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      120 |       expect(typeof insertCallValues[11]).toBe('string');
+      121 |     });
+      122 |   });
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:119:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando rep apto mas sem parcela_confirmada_em (provisionamento futuro)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      131 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      132 |       // parcela_confirmada_em n├úo fornecido ÔåÆ parcelaEfetivamentePaga=false ÔåÆ 'retida'
+    > 133 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      134 |     });
+      135 |
+      136 |     it('deve usar status "paga" quando rep apto + parcela_confirmada_em preenchida + forcar_retida=false', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:133:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "paga" quando rep apto + parcela_confirmada_em preenchida + forcar_retida=false
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "paga"
+    Received: "2026-05-01"
+
+      146 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      147 |       // rep apto + parcela confirmada + n├úo for├ºado ÔåÆ 'paga'
+    > 148 |       expect(insertCallValues[11]).toBe('paga');
+          |                                    ^
+      149 |     });
+      150 |
+      151 |     it('deve usar status "retida" quando representante.status = "suspenso"', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:148:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando representante.status = "suspenso"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      155 |
+      156 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 157 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      158 |     });
+      159 |
+      160 |     it('deve usar status "retida" quando representante.status = "inativo"', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:157:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando representante.status = "inativo"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      164 |
+      165 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 166 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      167 |     });
+      168 |
+      169 |     // ÔöÇÔöÇ forcar_retida (migration 532) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:166:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando forcar_retida=true mesmo com rep apto + parcela confirmada
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      179 |
+      180 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 181 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      182 |     });
+      183 |
+      184 |     it('deve usar status "retida" quando forcar_retida=false e rep apto mas sem parcela_confirmada_em', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:181:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ status inicial ÔÇ║ deve usar status "retida" quando forcar_retida=false e rep apto mas sem parcela_confirmada_em
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "retida"
+    Received: "2026-05-01"
+
+      189 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      190 |       // Sem parcela_confirmada_em ÔåÆ parcelaEfetivamentePaga=false ÔåÆ 'retida'
+    > 191 |       expect(insertCallValues[11]).toBe('retida');
+          |                                    ^
+      192 |     });
+      193 |   });
+      194 |
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:191:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ parcela_confirmada_em ÔÇ║ deve passar null como $17 quando parcela_confirmada_em n├úo informado (padr├úo)
+
+    expect(received).toBeNull()
+
+    Received: false
+
+      202 |       const insertCallValues = mockQuery.mock.calls[4][1];
+      203 |       // $17 ├® o 17┬║ par├ómetro (├¡ndice 16)
+    > 204 |       expect(insertCallValues[16]).toBeNull();
+          |                                    ^
+      205 |     });
+      206 |
+      207 |     it('deve passar null como $17 quando parcela_confirmada_em=null (parcela futura)', async () => {
+
+      at Object.toBeNull (__tests__/lib/comissionamento-criar-admin.test.ts:204:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ parcela_confirmada_em ÔÇ║ deve passar null como $17 quando parcela_confirmada_em=null (parcela futura)
+
+    expect(received).toBeNull()
+
+    Received: false
+
+      211 |
+      212 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 213 |       expect(insertCallValues[16]).toBeNull();
+          |                                    ^
+      214 |     });
+      215 |
+      216 |     it('deve passar ISO string como $17 quando parcela_confirmada_em=Date (parcela paga)', async () => {
+
+      at Object.toBeNull (__tests__/lib/comissionamento-criar-admin.test.ts:213:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ parcela_confirmada_em ÔÇ║ deve passar ISO string como $17 quando parcela_confirmada_em=Date (parcela paga)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-03-15T10:00:00.000Z"
+    Received: true
+
+      224 |
+      225 |       const insertCallValues = mockQuery.mock.calls[4][1];
+    > 226 |       expect(insertCallValues[16]).toBe(agora.toISOString());
+          |                                    ^
+      227 |     });
+      228 |
+      229 |     it('deve incluir parcela_confirmada_em no INSERT SQL (coluna $17)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:226:36)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 1/4 ÔåÆ mes_pagamento = abril/2026 (base)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-04-01"
+    Received: 4
+
+      395 |       const insertValues = mockQuery.mock.calls[4][1];
+      396 |       // $14 = mes_pagamento (├¡ndice 13)
+    > 397 |       expect(insertValues[13]).toBe('2026-04-01');
+          |                                ^
+      398 |     });
+      399 |
+      400 |     it('parcela 2/4 ÔåÆ mes_pagamento = maio/2026 (base + 1 m├¬s)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:397:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 2/4 ÔåÆ mes_pagamento = maio/2026 (base + 1 m├¬s)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-05-01"
+    Received: 4
+
+      408 |
+      409 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 410 |       expect(insertValues[13]).toBe('2026-05-01');
+          |                                ^
+      411 |     });
+      412 |
+      413 |     it('parcela 3/4 ÔåÆ mes_pagamento = junho/2026 (base + 2 meses)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:410:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 3/4 ÔåÆ mes_pagamento = junho/2026 (base + 2 meses)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-06-01"
+    Received: 4
+
+      421 |
+      422 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 423 |       expect(insertValues[13]).toBe('2026-06-01');
+          |                                ^
+      424 |     });
+      425 |
+      426 |     it('parcela 4/4 ÔåÆ mes_pagamento = julho/2026 (base + 3 meses)', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:423:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 4/4 ÔåÆ mes_pagamento = julho/2026 (base + 3 meses)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-07-01"
+    Received: 4
+
+      434 |
+      435 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 436 |       expect(insertValues[13]).toBe('2026-07-01');
+          |                                ^
+      437 |     });
+      438 |
+      439 |     it('├á vista (parcela 1/1) ÔåÆ mes_pagamento = pr├│ximo m├¬s sem deslocamento', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:436:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ ├á vista (parcela 1/1) ÔåÆ mes_pagamento = pr├│ximo m├¬s sem deslocamento
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2026-04-01"
+    Received: 1
+
+      447 |
+      448 |       const insertValues = mockQuery.mock.calls[4][1];
+    > 449 |       expect(insertValues[13]).toBe('2026-04-01');
+          |                                ^
+      450 |     });
+      451 |
+      452 |     it('parcela 3/3 em dezembro ÔåÆ atravessa virada de ano corretamente', async () => {
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:449:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ mes_pagamento por n├║mero de parcela ÔÇ║ parcela 3/3 em dezembro ÔåÆ atravessa virada de ano corretamente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "2027-03-01"
+    Received: 3
+
+      462 |       const insertValues = mockQuery.mock.calls[4][1];
+      463 |       // base = jan/2027, + 2 meses = mar/2027
+    > 464 |       expect(insertValues[13]).toBe('2027-03-01');
+          |                                ^
+      465 |     });
+      466 |   });
+      467 |
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:464:32)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ fallback percComercialVinculo = 40 ÔêÆ rep% quando comercial zerado ÔÇ║ deve derivar percComercialVinculo = 30 quando rep=10% e v├¡nculo tem comercial=0
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 30
+    Received: "paga"
+
+      479 |       const insertValues = mockQuery.mock.calls[4][1];
+      480 |       // $10 = percComercialVinculo efetivo (├¡ndice 9) ÔåÆ deve ser 30 (40 ÔêÆ 10)
+    > 481 |       expect(insertValues[9]).toBe(30);
+          |                               ^
+      482 |       // $11 = valorComissaoComercial (├¡ndice 10) ÔåÆ deve ser > 0
+      483 |       expect(Number(insertValues[10])).toBeGreaterThan(0);
+      484 |     });
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:481:31)
+
+  ÔùÅ criarComissaoAdmin ÔÇ║ fallback percComercialVinculo = 40 ÔêÆ rep% quando comercial zerado ÔÇ║ deve manter percComercialVinculo do v├¡nculo quando j├í for > 0
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 25
+    Received: "retida"
+
+      524 |       const insertValues = mockQuery.mock.calls[4][1];
+      525 |       // v├¡nculo j├í tinha 25% ÔåÆ sem fallback, deve ser 25
+    > 526 |       expect(insertValues[9]).toBe(25);
+          |                               ^
+      527 |     });
+      528 |   });
+      529 | });
+
+      at Object.toBe (__tests__/lib/comissionamento-criar-admin.test.ts:526:31)
+
+FAIL __tests__/lib/comissoes-calculos.test.ts
+  ÔùÅ calcularValoresComissao ÔÇ║ calcula comiss├úo comercial quando percentual comercial > 0 sobre a base l├¡quida
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 5
+    Received: undefined
+
+      100 |
+      101 |     if ('resultado' in result) {
+    > 102 |       expect(result.resultado.percComercialVinculo).toBe(5);
+          |                                                     ^
+      103 |       expect(result.resultado.valorComissaoComercial).toBe(4.5);
+      104 |     }
+      105 |   });
+
+      at Object.toBe (__tests__/lib/comissoes-calculos.test.ts:102:53)
+
+FAIL __tests__/lib/importacao-dinamica.test.ts
+  ÔùÅ getCamposQWork ÔÇ║ inclui cnpj_empresa, nome, data_nascimento, funcao como obrigat├│rios
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "funcao"
+    Received array: ["cnpj_empresa", "cpf", "nome", "data_nascimento", "nivel_cargo"]
+
+      57 |     expect(obrigatorios).toContain('nome');
+      58 |     expect(obrigatorios).toContain('data_nascimento');
+    > 59 |     expect(obrigatorios).toContain('funcao');
+         |                          ^
+      60 |   });
+      61 |
+      62 |   it('N├âO inclui nome_empresa como obrigat├│rio (campo auxiliar)', () => {
+
+      at Object.toContain (__tests__/lib/importacao-dinamica.test.ts:59:26)
+
+  ÔùÅ verificarCamposObrigatorios ÔÇ║ retorna array vazio quando todos obrigat├│rios presentes
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  ["nivel_cargo"]
+
+      147 |     ];
+      148 |     const faltando = verificarCamposObrigatorios(mapeados);
+    > 149 |     expect(faltando).toHaveLength(0);
+          |                      ^
+      150 |   });
+      151 |
+      152 |   it('retorna campos faltando quando ausentes', () => {
+
+      at Object.toHaveLength (__tests__/lib/importacao-dinamica.test.ts:149:22)
+
+  ÔùÅ verificarCamposObrigatorios ÔÇ║ retorna campos faltando quando ausentes
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "funcao"
+    Received array: ["cnpj_empresa", "cpf", "data_nascimento", "nivel_cargo"]
+
+      155 |     expect(faltando).toContain('cnpj_empresa');
+      156 |     expect(faltando).toContain('data_nascimento');
+    > 157 |     expect(faltando).toContain('funcao');
+          |                      ^
+      158 |   });
+      159 |
+      160 |   it('nome_empresa mapeado n├úo ├® considerado obrigat├│rio', () => {
+
+      at Object.toContain (__tests__/lib/importacao-dinamica.test.ts:157:22)
+
+  ÔùÅ verificarCamposObrigatorios ÔÇ║ nome_empresa mapeado n├úo ├® considerado obrigat├│rio
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  ["nivel_cargo"]
+
+      169 |     ];
+      170 |     const faltando = verificarCamposObrigatorios(mapeados);
+    > 171 |     expect(faltando).toHaveLength(0);
+          |                      ^
+      172 |   });
+      173 | });
+      174 |
+
+      at Object.toHaveLength (__tests__/lib/importacao-dinamica.test.ts:171:22)
+
+  ÔùÅ validarDadosImportacao ÔÇ║ valida linhas corretas sem erros
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 0
+    Received length: 1
+    Received array:  [{"campo": "nivel_cargo", "linha": 2, "mensagem": "N├¡vel de Cargo ├® obrigat├│rio", "severidade": "erro", "valor": ""}]
+
+      188 |   it('valida linhas corretas sem erros', () => {
+      189 |     const result = validarDadosImportacao([validRow]);
+    > 190 |     expect(result.erros).toHaveLength(0);
+          |                          ^
+      191 |     expect(result.resumo.linhasValidas).toBe(1);
+      192 |   });
+      193 |
+
+      at Object.toHaveLength (__tests__/lib/importacao-dinamica.test.ts:190:26)
+
+  ÔùÅ validarDadosImportacao ÔÇ║ gera erro para funcao ausente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      242 |     const row: MappedRow = { ...validRow, funcao: '' };
+      243 |     const result = validarDadosImportacao([row]);
+    > 244 |     expect(result.erros.some((e) => e.campo === 'funcao')).toBe(true);
+          |                                                            ^
+      245 |   });
+      246 |
+      247 |   it('gera aviso para CPFs duplicados no arquivo', () => {
+
+      at Object.toBe (__tests__/lib/importacao-dinamica.test.ts:244:60)
+
+FAIL __tests__/lib/comissao-split-leads-config.test.ts
+  ÔùÅ calcularRequerAprovacao ÔÇ║ rep 40% ÔÇö entidade R$20: requer (QWork = R$12 >= R$12 - ajustado custo)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      43 |
+      44 |   test('rep 40% ÔÇö entidade R$20: requer (QWork = R$12 >= R$12 - ajustado custo)', () => {
+    > 45 |     expect(calcularRequerAprovacao(14, 40, 0, 'entidade')).toBe(true);
+         |                                                            ^
+      46 |   });
+      47 |
+      48 |   test('rep 10% ÔÇö clinica R$10: n├úo requer (QWork = R$9 > R$5)', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:45:60)
+
+  ÔùÅ calcularRequerAprovacao ÔÇ║ rep 40% ÔÇö clinica R$5: requer (QWork = R$3 < R$5)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      51 |
+      52 |   test('rep 40% ÔÇö clinica R$5: requer (QWork = R$3 < R$5)', () => {
+    > 53 |     expect(calcularRequerAprovacao(5, 40, 0, 'clinica')).toBe(true);
+         |                                                          ^
+      54 |   });
+      55 |
+      56 |   test('valor_negociado 0 nunca requer aprova├º├úo', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:53:58)
+
+  ÔùÅ calcularValoresComissao ÔÇö abaixo do custo (below-cost) ÔÇ║ R$20, rep 40%, entidade ÔåÆ abaixoCusto=true, pool=8
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 8
+    Received: NaN
+
+      104 |     const r = calcularValoresComissao(20, 40, 0, 'entidade');
+      105 |     expect(r.abaixoCusto).toBe(false);
+    > 106 |     expect(r.poolDisponivel).toBe(8);
+          |                              ^
+      107 |     expect(r.valorRep).toBe(8);
+      108 |     expect(r.valorQWork).toBe(12);
+      109 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:106:30)
+
+  ÔùÅ calcularValoresComissao ÔÇö abaixo do custo (below-cost) ÔÇ║ R$14, rep 40%, entidade ÔÇö valorQWork < custo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      111 |   test('R$14, rep 40%, entidade ÔÇö valorQWork < custo', () => {
+      112 |     const r = calcularValoresComissao(14, 40, 0, 'entidade');
+    > 113 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      114 |     expect(r.poolDisponivel).toBe(2);
+      115 |     expect(r.valorRep).toBe(5.6);
+      116 |     expect(r.valorQWork).toBeCloseTo(8.4, 2);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:113:27)
+
+  ÔùÅ calcularValoresComissao ÔÇö abaixo do custo (below-cost) ÔÇ║ R$7, rep 40%, clinica ÔåÆ below-cost (custo=5)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      119 |   test('R$7, rep 40%, clinica ÔåÆ below-cost (custo=5)', () => {
+      120 |     const r = calcularValoresComissao(7, 40, 0, 'clinica');
+    > 121 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      122 |     expect(r.poolDisponivel).toBe(2);
+      123 |     expect(r.valorRep).toBeCloseTo(2.8, 2);
+      124 |     expect(r.valorQWork).toBeCloseTo(4.2, 1);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:121:27)
+
+  ÔùÅ ValoresComissao ÔÇö shape da interface ÔÇ║ percentualTotal inclui percComercial quando > 0
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 20
+    Received: 15
+
+      177 |   test('percentualTotal inclui percComercial quando > 0', () => {
+      178 |     const r = calcularValoresComissao(100, 15, 5, 'entidade');
+    > 179 |     expect(r.percentualTotal).toBe(20);
+          |                               ^
+      180 |     expect(r.valorComercial).toBe(5);
+      181 |   });
+      182 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:179:31)
+
+  ÔùÅ calcularValoresComissao ÔÇö f├│rmula direta (sem redistribui├º├úo) ÔÇ║ R$7, rep 40%, cl├¡nica ÔåÆ QWork=4,20, abaixoCusto=true
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      203 |     expect(r.valorRep).toBeCloseTo(2.8, 2);
+      204 |     expect(r.valorQWork).toBeCloseTo(4.2, 2);
+    > 205 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      206 |   });
+      207 |
+      208 |   test('R$9, rep 40%, cl├¡nica ÔåÆ QWork=5,40, abaixoCusto=false', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:205:27)
+
+  ÔùÅ calcularValoresComissao ÔÇö f├│rmula direta (sem redistribui├º├úo) ÔÇ║ percComercial reduz valorQWork ÔÇö R$100, rep 20%, com 10%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 10
+    Received: undefined
+
+      245 |     const r = calcularValoresComissao(100, 20, 10, 'entidade');
+      246 |     expect(r.valorRep).toBe(20);
+    > 247 |     expect(r.valorComercial).toBe(10);
+          |                              ^
+      248 |     expect(r.valorQWork).toBe(70);
+      249 |     expect(r.percentualTotal).toBe(30);
+      250 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:247:30)
+
+  ÔùÅ calcularValoresComissao ÔÇö f├│rmula direta (sem redistribui├º├úo) ÔÇ║ percComercial + percRep alto pode causar abaixoCusto ÔÇö R$20, rep 35%, com 5%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      255 |     const r = calcularValoresComissao(20, 35, 5, 'entidade');
+      256 |     expect(r.valorRep).toBe(7);
+    > 257 |     expect(r.valorComercial).toBe(1);
+          |                              ^
+      258 |     expect(r.valorQWork).toBe(12);
+      259 |     expect(r.abaixoCusto).toBe(false);
+      260 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:257:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ caso normal ÔÇö margem ├® valorNeg - custoFixo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      270 |     expect(r.valorRep).toBe(88); // margem = 100 - 12
+      271 |     expect(r.valorQWork).toBe(88); // margem - 0 comercial
+    > 272 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      273 |     expect(r.abaixoMinimo).toBe(false);
+      274 |   });
+      275 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:272:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ valorNeg === custoFixo ÔÇö margem zero
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      278 |     expect(r.valorRep).toBe(0);
+      279 |     expect(r.valorQWork).toBe(0);
+    > 280 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      281 |     expect(r.abaixoMinimo).toBe(false);
+      282 |   });
+      283 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:280:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ abaixoMinimo quando valorNeg < custoFixo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      287 |     expect(r.valorRep).toBe(0);
+      288 |     expect(r.valorQWork).toBe(0);
+    > 289 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      290 |   });
+      291 |
+      292 |   test('sem comercial: valorQWork === margem (valorNeg - custoFixo)', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:289:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ clinica ÔÇö custo fixo 10, valor 50
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      307 |     expect(r.valorRep).toBe(40); // margem = 40
+      308 |     expect(r.valorQWork).toBe(40); // margem - 0
+    > 309 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      310 |     expect(r.abaixoMinimo).toBe(false);
+      311 |   });
+      312 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:309:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ com percComercial 10%: comercial recebe % da margem
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      315 |     const r = calcularComissaoCustoFixo(25, 15, 10);
+      316 |     expect(r.valorRep).toBe(10); // margem = 25 - 15
+    > 317 |     expect(r.valorComercial).toBe(1); // 10% da margem R$10
+          |                              ^
+      318 |     expect(r.valorQWork).toBe(9); // margem - comercial
+      319 |     expect(r.abaixoMinimo).toBe(false);
+      320 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:317:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ com percComercial = 40% ÔÇö m├íximo permitido
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 32
+    Received: undefined
+
+      324 |     const r = calcularComissaoCustoFixo(100, 20, 40);
+      325 |     expect(r.valorRep).toBe(80); // margem = 80
+    > 326 |     expect(r.valorComercial).toBe(32); // 40% de 80
+          |                              ^
+      327 |     expect(r.valorQWork).toBe(48); // 80 - 32
+      328 |     expect(r.abaixoMinimo).toBe(false);
+      329 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:326:30)
+
+  ÔùÅ calcularComissaoCustoFixo ÔÇ║ percComercial ├® capped a 40% no m├íximo (regra de neg├│cio)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 15.2
+    Received: undefined
+
+      332 |     // valorNeg=50, custo=12, margem=38, percComercial=100 ÔåÆ capped 40%
+      333 |     const r = calcularComissaoCustoFixo(50, 12, 100);
+    > 334 |     expect(r.valorComercial).toBe(15.2); // 40% de 38
+          |                              ^
+      335 |     expect(r.valorQWork).toBe(22.8); // 38 - 15.2
+      336 |     expect(r.abaixoMinimo).toBe(false);
+      337 |   });
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:334:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc: R$100, rep 10%, percComercial auto=30%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 30
+    Received: undefined
+
+      368 |     const r = calcularValoresComissao(100, 10, percComercial, 'entidade');
+      369 |     expect(r.valorRep).toBe(10);
+    > 370 |     expect(r.valorComercial).toBe(30);
+          |                              ^
+      371 |     expect(r.valorQWork).toBe(60);
+      372 |     expect(r.percentualTotal).toBe(40);
+      373 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:370:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc: R$100, rep 20%, percComercial auto=20%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 20
+    Received: undefined
+
+      378 |     const r = calcularValoresComissao(100, 20, percComercial, 'entidade');
+      379 |     expect(r.valorRep).toBe(20);
+    > 380 |     expect(r.valorComercial).toBe(20);
+          |                              ^
+      381 |     expect(r.valorQWork).toBe(60);
+      382 |     expect(r.percentualTotal).toBe(40);
+      383 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:380:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc: R$100, rep 40%, percComercial auto=0%, entidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: undefined
+
+      388 |     const r = calcularValoresComissao(100, 40, percComercial, 'entidade');
+      389 |     expect(r.valorRep).toBe(40);
+    > 390 |     expect(r.valorComercial).toBe(0);
+          |                              ^
+      391 |     expect(r.valorQWork).toBe(60);
+      392 |     expect(r.percentualTotal).toBe(40);
+      393 |     expect(r.abaixoCusto).toBe(false);
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:390:30)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc below-cost: R$14, rep 40%, entidade ÔåÆ abaixoCusto=true
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      397 |     const percComercial = calcPercComercialAuto(40); // 0%
+      398 |     const r = calcularValoresComissao(14, 40, percComercial, 'entidade');
+    > 399 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      400 |   });
+      401 |
+      402 |   test('auto-calc below-cost: R$7, rep 40%, clinica ÔåÆ abaixoCusto=true', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:399:27)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ auto-calc below-cost: R$7, rep 40%, clinica ÔåÆ abaixoCusto=true
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      403 |     const percComercial = calcPercComercialAuto(40); // 0%
+      404 |     const r = calcularValoresComissao(7, 40, percComercial, 'clinica');
+    > 405 |     expect(r.abaixoCusto).toBe(true);
+          |                           ^
+      406 |   });
+      407 |
+      408 |   test('auto-calc soma preservada: rep=20%, R$100, entidade', () => {
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:405:27)
+
+  ÔùÅ Auto-calc percentual_comissao_comercial = MAX - percRep ÔÇ║ notificacao-trigger: abaixoCusto=true deve acionar aprova├º├úo admin
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      431 |
+      432 |     // Custo m├¡nimo entidade ├® R$12, valorNegociado R$10 < R$12 ÔåÆ requer notifica├º├úo
+    > 433 |     expect(requerAprovacao).toBe(true);
+          |                             ^
+      434 |   });
+      435 | });
+      436 |
+
+      at Object.toBe (__tests__/lib/comissao-split-leads-config.test.ts:433:29)
+
+
+Test Suites: 7 failed, 1 skipped, 65 passed, 72 of 101 total
+Tests:       57 failed, 23 skipped, 858 passed, 938 total
+Snapshots:   0 total
+Time:        51.085 s, estimated 144 s
+Ran all test suites matching __tests__/unit|__tests__/lib.

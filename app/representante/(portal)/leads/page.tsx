@@ -34,7 +34,6 @@ export default function LeadsRepresentante() {
     handleEmailChange,
     handleTipoClienteChange,
     percRep,
-    percComercial,
     modeloComissionamento,
     valorCustoFixoEntidade,
     valorCustoFixoClinica,
@@ -105,7 +104,6 @@ export default function LeadsRepresentante() {
           handleTipoClienteChange={handleTipoClienteChange}
           criarLead={criarLead}
           percRep={percRep}
-          percComercial={percComercial}
           modeloComissionamento={modeloComissionamento}
           valorCustoFixoEntidade={valorCustoFixoEntidade}
           valorCustoFixoClinica={valorCustoFixoClinica}

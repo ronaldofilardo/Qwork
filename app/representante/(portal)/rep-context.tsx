@@ -40,7 +40,6 @@ export interface RepresentanteSession {
   // Comissionamento
   modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
   percentual_comissao?: number | null;
-  percentual_comissao_comercial?: number | null;
   valor_custo_fixo_clinica?: number | null;
   valor_custo_fixo_entidade?: number | null;
 }

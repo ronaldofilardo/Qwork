@@ -35,7 +35,6 @@ export interface Solicitacao {
   representante_nome: string | null;
   representante_tipo_pessoa: string | null;
   representante_percentual_comissao: number | null;
-  representante_percentual_comissao_comercial: number | null;
   comissao_gerada: boolean;
   /** Quantas comissões já foram geradas para este lote (inclui provisionadas futuras). */
   comissoes_geradas_count: number;
@@ -55,13 +54,10 @@ export interface Solicitacao {
   tipo_cobranca?: 'laudo' | 'manutencao' | null;
   // Comissionamento enriquecido — cadeia: vínculo > lead snapshot > global do representante
   vinculo_percentual_rep?: number | null;
-  vinculo_percentual_comercial?: number | null;
   lead_modelo_comissionamento?: string | null;
   lead_percentual_rep?: number | null;
-  lead_percentual_comercial?: number | null;
   lead_valor_custo_fixo_snapshot?: number | null;
   rep_modelo_comissionamento?: string | null;
-  rep_percentual_comissao_comercial?: number | null;
   rep_valor_custo_fixo_entidade?: number | null;
   rep_valor_custo_fixo_clinica?: number | null;
 }

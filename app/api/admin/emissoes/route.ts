@@ -16,15 +16,12 @@ export async function GET() {
         COALESCE(av.num_avaliacoes_cobradas, 0)::int AS num_avaliacoes_cobradas,
         -- Percentuais negociados especificamente para este vínculo/tomador
         vc_ext.percentual_comissao_representante  AS vinculo_percentual_rep,
-        vc_ext.percentual_comissao_comercial       AS vinculo_percentual_comercial,
         -- Snapshot do lead: modelo e valores no momento da negociação
         lr_ext.modelo_comissionamento              AS lead_modelo_comissionamento,
         lr_ext.percentual_comissao_representante   AS lead_percentual_rep,
-        lr_ext.percentual_comissao_comercial       AS lead_percentual_comercial,
         lr_ext.valor_custo_fixo_snapshot           AS lead_valor_custo_fixo_snapshot,
         -- Representante: dados globais de fallback
         r_ext.modelo_comissionamento               AS rep_modelo_comissionamento,
-        r_ext.percentual_comissao_comercial        AS rep_percentual_comissao_comercial,
         r_ext.valor_custo_fixo_entidade            AS rep_valor_custo_fixo_entidade,
         r_ext.valor_custo_fixo_clinica             AS rep_valor_custo_fixo_clinica
       FROM v_solicitacoes_emissao vs

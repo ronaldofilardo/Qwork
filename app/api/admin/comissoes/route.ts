@@ -96,8 +96,7 @@ export async function GET(request: NextRequest) {
          (c.valor_laudo / c.total_parcelas) AS valor_parcela,
          la.pagamento_metodo           AS lote_pagamento_metodo,
          la.pagamento_parcelas         AS lote_pagamento_parcelas,
-         r.percentual_comissao         AS representante_percentual,
-         vc.percentual_comissao_comercial AS vinculo_percentual_comercial
+         r.percentual_comissao         AS representante_percentual
        FROM comissoes_laudo c
        JOIN  representantes r  ON r.id  = c.representante_id
        LEFT JOIN entidades e   ON e.id  = c.entidade_id

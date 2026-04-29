@@ -13,8 +13,6 @@ interface MinhaComissao {
   total_parcelas: number;
   valor_laudo: string;
   valor_parcela: string;
-  percentual_comissao_comercial: string;
-  valor_comissao_comercial: string;
   mes_emissao: string;
   data_aprovacao: string | null;
   data_pagamento: string | null;
@@ -170,8 +168,6 @@ export function MinhasComissoesComercial() {
                   <th className="px-3 py-3 text-center">Parcela</th>
                   <th className="px-3 py-3 text-right">Valor Laudo</th>
                   <th className="px-3 py-3 text-right">Valor Parcela</th>
-                  <th className="px-3 py-3 text-center">%</th>
-                  <th className="px-3 py-3 text-right">Comissão</th>
                   <th className="px-3 py-3 text-left">Data Pagamento</th>
                   <th className="px-3 py-3 text-left">Asaas ID</th>
                 </tr>
@@ -201,12 +197,6 @@ export function MinhasComissoesComercial() {
                     </td>
                     <td className="px-3 py-3 text-right text-gray-700">
                       {fmt(c.valor_parcela)}
-                    </td>
-                    <td className="px-3 py-3 text-center text-xs text-gray-600">
-                      {parseFloat(c.percentual_comissao_comercial || '0')}%
-                    </td>
-                    <td className="px-3 py-3 text-right font-semibold text-green-700">
-                      {fmt(c.valor_comissao_comercial)}
                     </td>
                     <td className="px-3 py-3 text-gray-500 text-xs">
                       {fmtDate(c.data_pagamento)}

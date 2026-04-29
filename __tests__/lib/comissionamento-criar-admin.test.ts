@@ -10,8 +10,7 @@
  *   - forcar_retida=true → status sempre 'retida' mesmo com rep apto + parcela paga
  *   - parcela_confirmada_em=$17: NULL para futuras, Date para pagas
  * - Adições 15/04/2026 (migration 1209):
- *   - percentual_comissao_comercial=$10 e valor_comissao_comercial=$11 no INSERT
- *   - status_comissao moveu de $10 para $12
+ *   - status_comissao no INSERT
  * - Adições 2026 (Plano v2):
  *   - base de cálculo líquida: bruto → impostos → taxa gateway → comissão
  *   - status 'paga' direto quando rep apto + parcela confirmada + !forcar_retida
@@ -56,7 +55,6 @@ function mockFluxoCompleto({
         {
           percentual_comissao_representante: percentual,
           valor_negociado: null,
-          percentual_comissao_comercial: 0,
         },
       ],
       rowCount: 1,
@@ -105,19 +103,19 @@ describe('criarComissaoAdmin', () => {
       const insertCallArgs = mockQuery.mock.calls[4];
       const sql: string = insertCallArgs[0];
 
-      // Verifica que $12 é castado para o enum
-      expect(sql).toMatch(/\$12::status_comissao/);
+      // Verifica que $10 é castado para o enum
+      expect(sql).toMatch(/\$10::status_comissao/);
     });
 
-    it('o valor passado para $12 deve ser string do enum (retida por default sem parcela_confirmada_em)', async () => {
+    it('o valor passado para $10 deve ser string do enum (retida por default sem parcela_confirmada_em)', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
       await criarComissaoAdmin(BASE_PARAMS);
 
       const insertCallValues = mockQuery.mock.calls[4][1];
       // Sem parcela_confirmada_em → parcelaEfetivamentePaga=false → status='retida'
-      expect(insertCallValues[11]).toBe('retida');
-      expect(typeof insertCallValues[11]).toBe('string');
+      expect(insertCallValues[9]).toBe('retida');
+      expect(typeof insertCallValues[9]).toBe('string');
     });
   });
 
@@ -130,7 +128,7 @@ describe('criarComissaoAdmin', () => {
 
       const insertCallValues = mockQuery.mock.calls[4][1];
       // parcela_confirmada_em não fornecido → parcelaEfetivamentePaga=false → 'retida'
-      expect(insertCallValues[11]).toBe('retida');
+      expect(insertCallValues[9]).toBe('retida');
     });
 
     it('deve usar status "paga" quando rep apto + parcela_confirmada_em preenchida + forcar_retida=false', async () => {
@@ -145,7 +143,7 @@ describe('criarComissaoAdmin', () => {
 
       const insertCallValues = mockQuery.mock.calls[4][1];
       // rep apto + parcela confirmada + não forçado → 'paga'
-      expect(insertCallValues[11]).toBe('paga');
+      expect(insertCallValues[9]).toBe('paga');
     });
 
     it('deve usar status "retida" quando representante.status = "suspenso"', async () => {
@@ -154,7 +152,7 @@ describe('criarComissaoAdmin', () => {
       await criarComissaoAdmin(BASE_PARAMS);
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      expect(insertCallValues[11]).toBe('retida');
+      expect(insertCallValues[9]).toBe('retida');
     });
 
     it('deve usar status "retida" quando representante.status = "inativo"', async () => {
@@ -163,7 +161,7 @@ describe('criarComissaoAdmin', () => {
       await criarComissaoAdmin(BASE_PARAMS);
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      expect(insertCallValues[11]).toBe('retida');
+      expect(insertCallValues[9]).toBe('retida');
     });
 
     // ── forcar_retida (migration 532) ──────────────────────────────────────
@@ -178,7 +176,7 @@ describe('criarComissaoAdmin', () => {
       });
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      expect(insertCallValues[11]).toBe('retida');
+      expect(insertCallValues[9]).toBe('retida');
     });
 
     it('deve usar status "retida" quando forcar_retida=false e rep apto mas sem parcela_confirmada_em', async () => {
@@ -188,7 +186,7 @@ describe('criarComissaoAdmin', () => {
 
       const insertCallValues = mockQuery.mock.calls[4][1];
       // Sem parcela_confirmada_em → parcelaEfetivamentePaga=false → 'retida'
-      expect(insertCallValues[11]).toBe('retida');
+      expect(insertCallValues[9]).toBe('retida');
     });
   });
 
@@ -201,7 +199,8 @@ describe('criarComissaoAdmin', () => {
 
       const insertCallValues = mockQuery.mock.calls[4][1];
       // $17 é o 17º parâmetro (índice 16)
-      expect(insertCallValues[16]).toBeNull();
+      // Novo índice após remoção de campos comercial: $15 (índice 14)
+      expect(insertCallValues[14]).toBeNull();
     });
 
     it('deve passar null como $17 quando parcela_confirmada_em=null (parcela futura)', async () => {
@@ -210,7 +209,7 @@ describe('criarComissaoAdmin', () => {
       await criarComissaoAdmin({ ...BASE_PARAMS, parcela_confirmada_em: null });
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      expect(insertCallValues[16]).toBeNull();
+      expect(insertCallValues[14]).toBeNull();
     });
 
     it('deve passar ISO string como $17 quando parcela_confirmada_em=Date (parcela paga)', async () => {
@@ -223,7 +222,7 @@ describe('criarComissaoAdmin', () => {
       });
 
       const insertCallValues = mockQuery.mock.calls[4][1];
-      expect(insertCallValues[16]).toBe(agora.toISOString());
+      expect(insertCallValues[14]).toBe(agora.toISOString());
     });
 
     it('deve incluir parcela_confirmada_em no INSERT SQL (coluna $17)', async () => {
@@ -393,8 +392,8 @@ describe('criarComissaoAdmin', () => {
       });
 
       const insertValues = mockQuery.mock.calls[4][1];
-      // $14 = mes_pagamento (índice 13)
-      expect(insertValues[13]).toBe('2026-04-01');
+      // $12 = mes_pagamento (índice 11)
+      expect(insertValues[11]).toBe('2026-04-01');
     });
 
     it('parcela 2/4 → mes_pagamento = maio/2026 (base + 1 mês)', async () => {
@@ -407,7 +406,7 @@ describe('criarComissaoAdmin', () => {
       });
 
       const insertValues = mockQuery.mock.calls[4][1];
-      expect(insertValues[13]).toBe('2026-05-01');
+      expect(insertValues[11]).toBe('2026-05-01');
     });
 
     it('parcela 3/4 → mes_pagamento = junho/2026 (base + 2 meses)', async () => {
@@ -420,7 +419,7 @@ describe('criarComissaoAdmin', () => {
       });
 
       const insertValues = mockQuery.mock.calls[4][1];
-      expect(insertValues[13]).toBe('2026-06-01');
+      expect(insertValues[11]).toBe('2026-06-01');
     });
 
     it('parcela 4/4 → mes_pagamento = julho/2026 (base + 3 meses)', async () => {
@@ -433,7 +432,7 @@ describe('criarComissaoAdmin', () => {
       });
 
       const insertValues = mockQuery.mock.calls[4][1];
-      expect(insertValues[13]).toBe('2026-07-01');
+      expect(insertValues[11]).toBe('2026-07-01');
     });
 
     it('à vista (parcela 1/1) → mes_pagamento = próximo mês sem deslocamento', async () => {
@@ -446,7 +445,7 @@ describe('criarComissaoAdmin', () => {
       });
 
       const insertValues = mockQuery.mock.calls[4][1];
-      expect(insertValues[13]).toBe('2026-04-01');
+      expect(insertValues[11]).toBe('2026-04-01');
     });
 
     it('parcela 3/3 em dezembro → atravessa virada de ano corretamente', async () => {
@@ -461,69 +460,7 @@ describe('criarComissaoAdmin', () => {
 
       const insertValues = mockQuery.mock.calls[4][1];
       // base = jan/2027, + 2 meses = mar/2027
-      expect(insertValues[13]).toBe('2027-03-01');
-    });
-  });
-
-  // ── Fallback 40 − rep% (regra QWork — cenário lote 8 / rep 115) ──────────
-  describe('fallback percComercialVinculo = 40 − rep% quando comercial zerado', () => {
-    it('deve derivar percComercialVinculo = 30 quando rep=10% e vínculo tem comercial=0', async () => {
-      // mockFluxoCompleto usa percentual_comissao_comercial: 0 no vínculo (padrão)
-      mockFluxoCompleto({ repStatus: 'apto', percentual: '10.00' });
-
-      await criarComissaoAdmin({
-        ...BASE_PARAMS,
-        parcela_confirmada_em: new Date('2026-01-10T10:00:00.000Z'),
-      });
-
-      const insertValues = mockQuery.mock.calls[4][1];
-      // $10 = percComercialVinculo efetivo (índice 9) → deve ser 30 (40 − 10)
-      expect(insertValues[9]).toBe(30);
-      // $11 = valorComissaoComercial (índice 10) → deve ser > 0
-      expect(Number(insertValues[10])).toBeGreaterThan(0);
-    });
-
-    it('deve manter percComercialVinculo do vínculo quando já for > 0', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({
-          rows: [{ id: 4, status: 'ativo', data_expiracao: null }],
-          rowCount: 1,
-        } as any)
-        .mockResolvedValueOnce({
-          rows: [{ id: 6, status: 'apto', percentual_comissao: '10.00' }],
-          rowCount: 1,
-        } as any)
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              percentual_comissao_representante: '10.00',
-              valor_negociado: null,
-              // vínculo já tem 25% → não deve derivar
-              percentual_comissao_comercial: 25,
-            },
-          ],
-          rowCount: 1,
-        } as any)
-        .mockResolvedValueOnce({
-          rows: [
-            {
-              id: 99,
-              status: 'retida',
-              valor_comissao: '2.00',
-              percentual_comissao: '10',
-            },
-          ],
-          rowCount: 1,
-        } as any)
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any)
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-
-      await criarComissaoAdmin(BASE_PARAMS);
-
-      const insertValues = mockQuery.mock.calls[4][1];
-      // vínculo já tinha 25% → sem fallback, deve ser 25
-      expect(insertValues[9]).toBe(25);
+      expect(insertValues[11]).toBe('2027-03-01');
     });
   });
 });

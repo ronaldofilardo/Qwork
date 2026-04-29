@@ -94,7 +94,6 @@ export async function GET(request: NextRequest) {
          c.total_parcelas,
          c.lote_pagamento_id,
          c.parcela_confirmada_em,
-         c.percentual_comissao_comercial,
          COALESCE(e.nome, cl.nome) AS entidade_nome
        FROM comissoes_laudo c
        LEFT JOIN entidades e  ON e.id  = c.entidade_id

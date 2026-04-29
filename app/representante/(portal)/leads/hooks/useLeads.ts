@@ -17,7 +17,6 @@ import type { Lead, NovoLeadForm, ErrosCampos } from '../types';
 interface RepMe {
   representante?: {
     percentual_comissao?: number | null;
-    percentual_comissao_comercial?: number | null;
     modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
     valor_custo_fixo_entidade?: number | null;
     valor_custo_fixo_clinica?: number | null;
@@ -83,7 +82,6 @@ export function useLeads() {
     'recente' | 'antigo' | 'expirando'
   >('recente');
   const [percRep, setPercRep] = useState(0);
-  const [percComercial, setPercComercial] = useState(0);
   const [modeloComissionamento, setModeloComissionamento] = useState<
     'percentual' | 'custo_fixo' | null
   >(null);
@@ -121,9 +119,6 @@ export function useLeads() {
       .then((r) => r.json())
       .then((d: RepMe) => {
         setPercRep(Number(d.representante?.percentual_comissao ?? 0));
-        setPercComercial(
-          Number(d.representante?.percentual_comissao_comercial ?? 0)
-        );
         setModeloComissionamento(
           d.representante?.modelo_comissionamento ?? null
         );
@@ -302,7 +297,6 @@ export function useLeads() {
     handleEmailChange,
     handleTipoClienteChange,
     percRep,
-    percComercial,
     modeloComissionamento,
     valorCustoFixoEntidade,
     valorCustoFixoClinica,

@@ -54,13 +54,8 @@ describe('GET /api/admin/emissoes — Campos de comissão do vínculo (negociado
     expect(src).toMatch(/vinculo_percentual_rep/);
   });
 
-  it('inclui vinculo_percentual_comercial via alias', () => {
-    expect(src).toMatch(/vinculo_percentual_comercial/);
-  });
-
   it('lê percentuais do vínculo a partir de vc_ext (vinculos_comissao)', () => {
     expect(src).toMatch(/vc_ext\.percentual_comissao_representante/);
-    expect(src).toMatch(/vc_ext\.percentual_comissao_comercial/);
   });
 });
 
@@ -75,10 +70,6 @@ describe('GET /api/admin/emissoes — Campos de comissão do lead (snapshot de n
     expect(src).toMatch(/lead_percentual_rep/);
   });
 
-  it('inclui lead_percentual_comercial via alias', () => {
-    expect(src).toMatch(/lead_percentual_comercial/);
-  });
-
   it('inclui lead_valor_custo_fixo_snapshot via alias', () => {
     expect(src).toMatch(/lead_valor_custo_fixo_snapshot/);
   });
@@ -86,7 +77,6 @@ describe('GET /api/admin/emissoes — Campos de comissão do lead (snapshot de n
   it('lê dados do lead a partir de lr_ext (leads_representante)', () => {
     expect(src).toMatch(/lr_ext\.modelo_comissionamento/);
     expect(src).toMatch(/lr_ext\.percentual_comissao_representante/);
-    expect(src).toMatch(/lr_ext\.percentual_comissao_comercial/);
   });
 });
 
@@ -95,10 +85,6 @@ describe('GET /api/admin/emissoes — Campos de comissão do lead (snapshot de n
 describe('GET /api/admin/emissoes — Campos de comissão do representante (fallback)', () => {
   it('inclui rep_modelo_comissionamento via alias', () => {
     expect(src).toMatch(/rep_modelo_comissionamento/);
-  });
-
-  it('inclui rep_percentual_comissao_comercial via alias', () => {
-    expect(src).toMatch(/rep_percentual_comissao_comercial/);
   });
 
   it('inclui rep_valor_custo_fixo_entidade via alias', () => {
@@ -111,7 +97,6 @@ describe('GET /api/admin/emissoes — Campos de comissão do representante (fall
 
   it('lê dados do representante a partir de r_ext (representantes)', () => {
     expect(src).toMatch(/r_ext\.modelo_comissionamento/);
-    expect(src).toMatch(/r_ext\.percentual_comissao_comercial/);
     expect(src).toMatch(/r_ext\.valor_custo_fixo_entidade/);
     expect(src).toMatch(/r_ext\.valor_custo_fixo_clinica/);
   });
