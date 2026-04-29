@@ -47,7 +47,6 @@ function setupEmptyFetch() {
           Promise.resolve({
             representante: {
               percentual_comissao: 10,
-              percentual_comissao_comercial: 0,
               modelo_comissionamento: 'percentual',
               valor_custo_fixo_entidade: 12,
               valor_custo_fixo_clinica: 5,

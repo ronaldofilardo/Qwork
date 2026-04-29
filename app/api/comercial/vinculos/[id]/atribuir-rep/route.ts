@@ -13,12 +13,6 @@ export const dynamic = 'force-dynamic';
 const AtribuirRepSchema = z.object({
   representante_id: z.number().int().positive(),
   percentual_comissao: z.number().min(0).max(40).optional().nullable(),
-  percentual_comissao_comercial: z
-    .number()
-    .min(0)
-    .max(40)
-    .optional()
-    .nullable(),
   obs: z.string().max(500).optional(),
 });
 
@@ -119,29 +113,11 @@ export async function PATCH(
     );
 
     // Atualizar percentuais, se fornecidos
-    if (
-      data.percentual_comissao !== undefined ||
-      data.percentual_comissao_comercial !== undefined
-    ) {
-      const fields: string[] = [];
-      const vals: unknown[] = [];
-      let idx = 1;
-      if (data.percentual_comissao !== undefined) {
-        fields.push(`percentual_comissao = $${idx++}`);
-        vals.push(data.percentual_comissao);
-      }
-      if (data.percentual_comissao_comercial !== undefined) {
-        fields.push(`percentual_comissao_comercial = $${idx++}`);
-        vals.push(data.percentual_comissao_comercial);
-      }
-      if (fields.length > 0) {
-        fields.push(`atualizado_em = NOW()`);
-        vals.push(data.representante_id);
-        await query(
-          `UPDATE representantes SET ${fields.join(', ')} WHERE id = $${idx}`,
-          vals
-        );
-      }
+    if (data.percentual_comissao !== undefined) {
+      await query(
+        `UPDATE representantes SET percentual_comissao = $1, atualizado_em = NOW() WHERE id = $2`,
+        [data.percentual_comissao, data.representante_id]
+      );
     }
 
     // Auditoria

@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import {
   CUSTO_POR_AVALIACAO,
-  MAX_PERCENTUAL_COMISSAO,
   TIPO_CLIENTE_LABEL,
   calcularValoresComissao,
 } from '@/lib/leads-config';
@@ -28,15 +27,14 @@ interface LeadAprovacao {
   valor_negociado: number | null;
   percentual_comissao: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_comercial: number | null;
   modelo_comissionamento: string | null;
   vendedor_nome: string | null;
   num_vidas_estimado: number | null;
   requer_aprovacao_comercial: boolean;
   status: string;
   criado_em: string;
-  representante_id: number;
-  representante_nome: string;
+  representante_id: number | null;
+  representante_nome: string | null;
 }
 
 interface VinculoSemRep {
@@ -158,28 +156,12 @@ export default function ComercialLeadsAprovacaoPage() {
 
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
 
-  const getPercComercial = (lead: LeadAprovacao) => {
-    const percRep = Number(
-      lead.percentual_comissao_representante ?? lead.percentual_comissao ?? 0
-    );
-    if (lead.modelo_comissionamento === 'percentual') {
-      return MAX_PERCENTUAL_COMISSAO - percRep;
-    }
-    return Number(lead.percentual_comissao_comercial ?? 0);
-  };
-
   const getBreakdown = (lead: LeadAprovacao) => {
     const valor = Number(lead.valor_negociado ?? 0);
     const percRep = Number(
       lead.percentual_comissao_representante ?? lead.percentual_comissao ?? 0
     );
-    const percComercial = getPercComercial(lead);
-    return calcularValoresComissao(
-      valor,
-      percRep,
-      percComercial,
-      lead.tipo_cliente
-    );
+    return calcularValoresComissao(valor, percRep, lead.tipo_cliente);
   };
 
   const totalPages = Math.ceil(total / 30);
@@ -334,9 +316,6 @@ export default function ComercialLeadsAprovacaoPage() {
                     <th className="px-4 py-3 text-right font-medium">Valor</th>
                     <th className="px-4 py-3 text-center font-medium">Vidas</th>
                     <th className="px-4 py-3 text-center font-medium">% Rep</th>
-                    <th className="px-4 py-3 text-center font-medium">
-                      % Comercial
-                    </th>
                     <th className="px-4 py-3 text-right font-medium">
                       QWork recebe
                     </th>
@@ -408,14 +387,6 @@ export default function ComercialLeadsAprovacaoPage() {
                               </span>{' '}
                               ({fmtBRL(bd.valorRep)})
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <div className="text-xs text-gray-700">
-                            <span className="font-semibold">
-                              {getPercComercial(lead).toFixed(1)}%
-                            </span>{' '}
-                            ({fmtBRL(bd.valorComercial)})
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right">
@@ -620,7 +591,6 @@ export default function ComercialLeadsAprovacaoPage() {
                     modal.lead.percentual_comissao ??
                     0
                 );
-                const percComercial = getPercComercial(modal.lead);
                 return (
                   <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-1.5 text-xs">
                     <div className="flex justify-between">
@@ -637,16 +607,6 @@ export default function ComercialLeadsAprovacaoPage() {
                         {fmtBRL(bd.valorRep)}
                       </span>
                     </div>
-                    {percComercial > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">
-                          Comissão comercial ({percComercial.toFixed(1)}%)
-                        </span>
-                        <span className="text-gray-700">
-                          {fmtBRL(bd.valorComercial)}
-                        </span>
-                      </div>
-                    )}
                     <div className="flex justify-between border-t pt-1.5">
                       <span
                         className={

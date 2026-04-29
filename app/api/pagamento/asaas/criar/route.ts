@@ -323,12 +323,10 @@ export async function POST(request: NextRequest) {
         const vinculoRes = await query(
           `SELECT vc.id AS vinculo_id,
                   vc.representante_id,
-                  vc.percentual_comissao_comercial,
                   r.asaas_wallet_id,
                   r.modelo_comissionamento,
                   r.percentual_comissao,
                   vc.percentual_comissao_representante,
-                  vc.percentual_comissao_comercial,
                   r.status AS rep_status,
                   r.valor_custo_fixo_clinica,
                   r.valor_custo_fixo_entidade
@@ -352,7 +350,6 @@ export async function POST(request: NextRequest) {
             modelo_comissionamento: 'percentual' | 'custo_fixo';
             percentual_comissao?: number | null;
             percentual_comissao_representante?: number | null;
-            percentual_comissao_comercial?: number | null;
             valor_custo_fixo_entidade?: number | null;
             valor_custo_fixo_clinica?: number | null;
             rep_status: string;
@@ -366,8 +363,6 @@ export async function POST(request: NextRequest) {
             v.percentual_comissao_representante ??
             v.percentual_comissao ??
             undefined;
-          const percComercialFinal =
-            v.percentual_comissao_comercial ?? undefined;
           const valorCustoFixoRep =
             tipoProduto === 'clinica'
               ? (v.valor_custo_fixo_clinica ?? undefined)
@@ -381,9 +376,7 @@ export async function POST(request: NextRequest) {
             valorParcela,
             tipoProduto,
             percRepFinal !== undefined ? Number(percRepFinal) : undefined,
-            percComercialFinal !== undefined
-              ? Number(percComercialFinal)
-              : undefined,
+
             valorCustoFixoRep !== undefined
               ? Number(valorCustoFixoRep)
               : undefined,
@@ -397,18 +390,6 @@ export async function POST(request: NextRequest) {
           );
 
           if (splitResult.viavel) {
-            // Buscar walletId do comercial (gestor_comercial) do DB
-            const comercialRes = await query(
-              `SELECT u.asaas_wallet_id
-               FROM usuarios u
-               WHERE u.perfil = 'gestor_comercial'
-                 AND u.asaas_wallet_id IS NOT NULL
-                 AND u.ativo = true
-               LIMIT 1`
-            );
-            const comercialWalletId =
-              comercialRes.rows[0]?.asaas_wallet_id ?? null;
-
             // Buscar wallets dos beneficiários societários (impostos QWork + sócios)
             const sociedadeRes = await query(
               `SELECT codigo, asaas_wallet_id, percentual_participacao
@@ -444,7 +425,6 @@ export async function POST(request: NextRequest) {
             const splits = montarSplitAsaas(
               v.asaas_wallet_id,
               splitResult,
-              comercialWalletId,
               opcoesCompleto
             );
             if (splits) {
@@ -483,10 +463,10 @@ export async function POST(request: NextRequest) {
                      (pagamento_id, asaas_payment_id, tomador_id, lote_id,
                       modo_operacao, status,
                       valor_bruto, valor_impostos, valor_representante,
-                      valor_comercial, valor_socio_ronaldo, valor_socio_antonio,
+                      valor_socio_ronaldo, valor_socio_antonio,
                       detalhes)
                    VALUES ($1, $2, $3, $4, 'split', 'executado',
-                           $5, $6, $7, $8, $9, $10, $11)`,
+                           $5, $6, $7, $8, $9, $10)`,
                   [
                     pagamentoId,
                     payment.id,
@@ -495,12 +475,12 @@ export async function POST(request: NextRequest) {
                     valorParcela,
                     splitResult.valorImpostos ?? 0,
                     splitResult.valorRepresentante,
-                    splitResult.valorComercial,
                     valorSocioRonaldo,
                     valorSocioAntonio,
                     JSON.stringify({
                       modelo: splitResult.modelo,
-                      percentualAplicado: splitResult.percentualAplicado ?? null,
+                      percentualAplicado:
+                        splitResult.percentualAplicado ?? null,
                       baseLiquida: splitResult.baseLiquida ?? null,
                       valorGateway: splitResult.valorGateway ?? null,
                       valorQWork: splitResult.valorQWork,
@@ -522,7 +502,6 @@ export async function POST(request: NextRequest) {
               console.log('[ASAAS] ✅ Split configurado:', {
                 parcela: valorParcela,
                 rep: splitResult.valorRepresentante,
-                comercial: splitResult.valorComercial,
                 impostos: splitResult.valorImpostos ?? 0,
                 socioRonaldo: valorSocioRonaldo,
                 socioAntonio: valorSocioAntonio,

@@ -44,13 +44,12 @@ export async function PATCH(
       requer_aprovacao_comercial: boolean;
       valor_negociado: string | null;
       percentual_comissao_representante: string | null;
-      percentual_comissao_comercial: string | null;
       tipo_cliente: TipoCliente;
       modelo_comissionamento: string | null;
     }>(
       `SELECT lr.id, lr.status, lr.requer_aprovacao_comercial,
               lr.valor_negociado, lr.percentual_comissao_representante,
-              lr.percentual_comissao_comercial, lr.tipo_cliente,
+              lr.tipo_cliente,
               r.modelo_comissionamento
        FROM public.leads_representante lr
        JOIN public.representantes r ON r.id = lr.representante_id
@@ -96,12 +95,10 @@ export async function PATCH(
       const leadRow = existing.rows[0];
       const valorNegociado = Number(leadRow.valor_negociado ?? 0);
       const percRep = Number(leadRow.percentual_comissao_representante ?? 0);
-      const percComercial = Number(leadRow.percentual_comissao_comercial ?? 0);
 
       const bd = calcularValoresComissao(
         valorNegociado,
         percRep,
-        percComercial,
         leadRow.tipo_cliente
       );
 
@@ -122,7 +119,6 @@ export async function PATCH(
               tipo_cliente: leadRow.tipo_cliente,
               valor_negociado: valorNegociado,
               perc_rep: percRep,
-              perc_comercial: percComercial,
               valor_qwork: bd.valorQWork,
               aprovado_por: session.cpf,
             }),

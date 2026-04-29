@@ -160,12 +160,6 @@ export function ComissoesTab({
                     c.representante_percentual ?? c.percentual_comissao ?? '0'
                   )
                 );
-                const rawComPct = parseFloat(
-                  String(c.vinculo_percentual_comercial ?? '0')
-                );
-                // Fallback de exibição: se comercial zerado e rep > 0, derivar 40−rep%
-                const comPct =
-                  rawComPct === 0 && repPct > 0 ? 40 - repPct : rawComPct;
                 return (
                   <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3">
@@ -209,12 +203,6 @@ export function ComissoesTab({
                           </div>
                           <div className="text-green-700">
                             {fmt(c.valor_comissao)}
-                          </div>
-                          <div className="text-blue-600 font-semibold mt-1">
-                            {comPct}% Com
-                          </div>
-                          <div className="text-blue-600">
-                            {fmt(c.valor_comissao_comercial ?? 0)}
                           </div>
                         </div>
                       )}

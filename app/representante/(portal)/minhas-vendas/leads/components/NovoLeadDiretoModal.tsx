@@ -85,7 +85,6 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
   const [percRep, setPercRep] = useState(0);
-  const [percComercial, setPercComercial] = useState(0);
   const [modeloComissionamento, setModeloComissionamento] = useState<
     string | null
   >(null);
@@ -104,16 +103,12 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
         (d: {
           representante?: {
             percentual_comissao?: number | null;
-            percentual_comissao_comercial?: number | null;
             modelo_comissionamento?: string | null;
             valor_custo_fixo_entidade?: number | null;
             valor_custo_fixo_clinica?: number | null;
           };
         }) => {
           setPercRep(Number(d.representante?.percentual_comissao ?? 0));
-          setPercComercial(
-            Number(d.representante?.percentual_comissao_comercial ?? 0)
-          );
           setModeloComissionamento(
             d.representante?.modelo_comissionamento ?? null
           );
@@ -190,24 +185,13 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     modeloComissionamento === 'custo_fixo' &&
     custoFixoRep !== null &&
     valorNegociadoNum > 0
-      ? calcularComissaoCustoFixo(
-          valorNegociadoNum,
-          custoFixoRep,
-          percComercial
-        )
+      ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
       : null;
 
   const breakdown =
     modeloComissionamento !== 'custo_fixo' && valorNegociadoNum > 0
-      ? calcularValoresComissao(
-          valorNegociadoNum,
-          percRep,
-          percComercial,
-          form.tipo_cliente
-        )
+      ? calcularValoresComissao(valorNegociadoNum, percRep, form.tipo_cliente)
       : null;
-
-  const percentualTotal = percRep + percComercial;
 
   const custoFixoInvalido =
     modeloComissionamento === 'custo_fixo' &&
@@ -483,20 +467,18 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
           )}
 
           {/* CASO B: percentual zerado */}
-          {modeloComissionamento === 'percentual' &&
-            percRep === 0 &&
-            percComercial === 0 && (
-              <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-                <AlertTriangle
-                  size={12}
-                  className="text-blue-500 shrink-0 mt-0.5"
-                />
-                <p className="text-blue-700 text-xs">
-                  Percentual de comissão zerado. O lead será registrado sem
-                  simulação de valores.
-                </p>
-              </div>
-            )}
+          {modeloComissionamento === 'percentual' && percRep === 0 && (
+            <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle
+                size={12}
+                className="text-blue-500 shrink-0 mt-0.5"
+              />
+              <p className="text-blue-700 text-xs">
+                Percentual de comissão zerado. O lead será registrado sem
+                simulação de valores.
+              </p>
+            </div>
+          )}
 
           {/* CASO C: percentual model — breakdown padrão */}
           {breakdown && modeloComissionamento !== 'custo_fixo' && (
@@ -536,18 +518,6 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
                   </p>
                 </div>
               )}
-              {!breakdown.abaixoCusto && percentualTotal > 40 && (
-                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
-                  <AlertTriangle
-                    size={12}
-                    className="text-amber-600 shrink-0 mt-0.5"
-                  />
-                  <p className="text-amber-800 text-xs">
-                    Comissão combinada ({percentualTotal.toFixed(1)}%) excede
-                    40%. Lead precisará de aprovação do comercial.
-                  </p>
-                </div>
-              )}
             </div>
           )}
 
@@ -577,18 +547,6 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
                     {fmtBRL(custoFixoRep)}
                   </span>
                 </div>
-                {breakdownCustoFixo && percComercial > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">
-                      Comissão comercial ({percComercial.toFixed(1)}% do custo
-                      fixo)
-                    </span>
-                    <span className="text-blue-700 font-medium">
-                      {fmtBRL(breakdownCustoFixo.valorComercial)}
-                    </span>
-                  </div>
-                )}
-
                 {custoFixoInvalido && (
                   <div className="flex items-start gap-1.5 bg-red-100 border border-red-300 rounded px-2 py-1.5 mt-1">
                     <AlertTriangle

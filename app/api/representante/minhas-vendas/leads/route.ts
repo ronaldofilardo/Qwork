@@ -173,12 +173,11 @@ export async function POST(request: NextRequest) {
     // Busca os percentuais de comissão cadastrados do representante
     const repResult = await query<{
       percentual_comissao: string | null;
-      percentual_comissao_comercial: string | null;
       modelo_comissionamento: string | null;
       valor_custo_fixo_entidade: string | null;
       valor_custo_fixo_clinica: string | null;
     }>(
-      `SELECT percentual_comissao, percentual_comissao_comercial,
+      `SELECT percentual_comissao,
               modelo_comissionamento, valor_custo_fixo_entidade, valor_custo_fixo_clinica
        FROM representantes WHERE id = $1`,
       [sess.representante_id]
@@ -186,11 +185,6 @@ export async function POST(request: NextRequest) {
     const comissaoNum = Number(repResult.rows[0]?.percentual_comissao ?? 0);
     const modeloComissionamento =
       repResult.rows[0]?.modelo_comissionamento ?? null;
-    // Usar percentual_comissao_comercial explícito do representante (nunca auto-calcular)
-    const percComercial =
-      modeloComissionamento === 'percentual'
-        ? Number(repResult.rows[0]?.percentual_comissao_comercial ?? 0)
-        : 0;
 
     if (
       typeof contato_email === 'string' &&
@@ -275,7 +269,6 @@ export async function POST(request: NextRequest) {
       const calc = calcularComissaoCustoFixo(
         valorNum,
         valorCustoFixo,
-        percComercial,
         CUSTO_POR_AVALIACAO[tipoCliente]
       );
       if (calc.abaixoMinimo) {
@@ -292,7 +285,6 @@ export async function POST(request: NextRequest) {
       requerAprovacao = calcularRequerAprovacao(
         valorNum,
         comissaoNum,
-        percComercial,
         tipoCliente
       );
     }
@@ -302,7 +294,7 @@ export async function POST(request: NextRequest) {
       modeloComissionamento === 'custo_fixo'
         ? valorNum -
           (valorCustoFixoSnapshot ?? CUSTO_POR_AVALIACAO[tipoCliente])
-        : valorNum * (1 - (comissaoNum + percComercial) / 100);
+        : valorNum * (1 - comissaoNum / 100);
     const requerAprovacaoSuporteCalc =
       requerAprovacao && valorQWork < CUSTO_POR_AVALIACAO[tipoCliente];
 
@@ -311,10 +303,10 @@ export async function POST(request: NextRequest) {
       `INSERT INTO leads_representante
          (representante_id, vendedor_id, cnpj, razao_social, contato_nome, contato_email,
           contato_telefone, valor_negociado, percentual_comissao,
-          percentual_comissao_representante, percentual_comissao_comercial,
+          percentual_comissao_representante,
           tipo_cliente, requer_aprovacao_comercial, requer_aprovacao_suporte,
           num_vidas_estimado, valor_custo_fixo_snapshot)
-       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         sess.representante_id,
@@ -326,7 +318,6 @@ export async function POST(request: NextRequest) {
         valorNum,
         comissaoNum,
         comissaoNum, // percentual_comissao_representante
-        percComercial,
         tipoCliente,
         requerAprovacao,
         requerAprovacaoSuporteCalc,

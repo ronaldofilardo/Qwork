@@ -2031,7 +2031,6 @@ CREATE TABLE public.vinculos_comissao (
     valor_negociado numeric(12,2) DEFAULT NULL::numeric,
     clinica_id integer,
     percentual_comissao_representante numeric(5,2),
-    percentual_comissao_comercial numeric(5,2) DEFAULT 0 NOT NULL,
     num_vidas_estimado integer,
     CONSTRAINT vinculo_datas_validas CHECK ((data_expiracao > data_inicio)),
     CONSTRAINT vinculo_entidade_ou_clinica CHECK (
@@ -2041,8 +2040,7 @@ CREATE TABLE public.vinculos_comissao (
     ),
     CONSTRAINT vinculo_valor_negociado_positivo CHECK (((valor_negociado IS NULL) OR (valor_negociado >= (0)::numeric))),
     CONSTRAINT chk_vinculos_num_vidas_positivo CHECK ((num_vidas_estimado IS NULL OR num_vidas_estimado > 0)),
-    CONSTRAINT chk_vinculos_perc_rep_range CHECK ((percentual_comissao_representante >= 0 AND percentual_comissao_representante <= 100)),
-    CONSTRAINT vinculos_perc_comercial_range CHECK ((percentual_comissao_comercial >= 0 AND percentual_comissao_comercial <= 40))
+    CONSTRAINT chk_vinculos_perc_rep_range CHECK ((percentual_comissao_representante >= 0 AND percentual_comissao_representante <= 100))
 );
 
 

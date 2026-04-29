@@ -317,9 +317,6 @@ function StatusActions({
               solicitacao.representante_percentual_comissao != null
                 ? `Rep ${solicitacao.representante_percentual_comissao}%`
                 : null,
-              solicitacao.representante_percentual_comissao_comercial != null
-                ? `Com. ${solicitacao.representante_percentual_comissao_comercial}%`
-                : null,
             ]
               .filter(Boolean)
               .join(' · ')}
@@ -412,12 +409,6 @@ function StatusActions({
                   ? 'lead'
                   : 'global'
               : null;
-            const percComEfetivo = !isCustoFixo
-              ? (solicitacao.vinculo_percentual_comercial ??
-                solicitacao.lead_percentual_comercial ??
-                solicitacao.representante_percentual_comissao_comercial)
-              : null;
-
             const minVenda =
               baseQWork != null && custoFixoEfetivo != null
                 ? baseQWork + Number(custoFixoEfetivo)
@@ -493,16 +484,6 @@ function StatusActions({
                           </span>
                           <span className="text-sm font-bold text-blue-700">
                             {percRepEfetivo}%
-                          </span>
-                        </div>
-                      )}
-                      {percComEfetivo != null && percComEfetivo > 0 && (
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-                            Comercial
-                          </span>
-                          <span className="text-sm font-bold text-indigo-600">
-                            {percComEfetivo}%
                           </span>
                         </div>
                       )}
@@ -856,8 +837,6 @@ function ComissaoSection({
                 if (!modelo) return null;
                 const isCF = modelo === 'custo_fixo';
                 const percRep = solicitacao.representante_percentual_comissao;
-                const percCom =
-                  solicitacao.representante_percentual_comissao_comercial;
                 return (
                   <span
                     className={`mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
@@ -868,10 +847,7 @@ function ComissaoSection({
                   >
                     {isCF
                       ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` · R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
-                      : [
-                          percRep != null ? `Rep ${percRep}%` : '% Percentual',
-                          percCom != null ? `Com. ${percCom}%` : null,
-                        ]
+                      : [percRep != null ? `Rep ${percRep}%` : '% Percentual']
                           .filter(Boolean)
                           .join(' · ')}
                   </span>

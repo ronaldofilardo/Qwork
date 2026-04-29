@@ -44,13 +44,12 @@ describe('NovoLeadModal — mudanças de UI (20/04/2026)', () => {
     criarLead: jest.fn(),
     onClose: jest.fn(),
     percRep: 10,
-    percComercial: 5,
     valorCustoFixoEntidade: 12,
     valorCustoFixoClinica: 5,
   };
 
   describe('Modelo PERCENTUAL — remover "Comissão comercial" e "QWork recebe"', () => {
-    it('modelo percentual NÃO exibe "Comissão comercial" quando percComercial > 0', () => {
+    it('modelo percentual NÃO exibe "Comissão comercial"', () => {
       const { container } = render(
         <NovoLeadModal {...mockProps} modeloComissionamento="percentual" />
       );
@@ -104,37 +103,32 @@ describe('NovoLeadModal — mudanças de UI (20/04/2026)', () => {
       expect(screen.getByText(/Custo fixo \(bruto\)/i)).toBeInTheDocument();
     });
 
-    it('modelo custo_fixo exibe "Comissão comercial" quando percComercial > 0', () => {
+    it('modelo custo_fixo NÃO exibe "Comissão comercial"', () => {
       render(
-        <NovoLeadModal
-          {...mockProps}
-          modeloComissionamento="custo_fixo"
-          percComercial={5}
-        />
+        <NovoLeadModal {...mockProps} modeloComissionamento="custo_fixo" />
       );
 
-      // Em CUSTO_FIXO, "Comissão comercial" com "% do custo fixo" é esperado
-      expect(
-        screen.getByText(/Comissão comercial.*do custo fixo/i)
-      ).toBeInTheDocument();
+      const { container } = render(
+        <NovoLeadModal {...mockProps} modeloComissionamento="custo_fixo" />
+      );
+      const text = container.textContent ?? '';
+      expect(text).not.toMatch(/Comissão comercial/i);
     });
   });
 
   describe('Cálculos de comissionamento não foram afetados', () => {
     it('calcularValoresComissao continua funcionando (percentual)', () => {
-      const result = calcularValoresComissao(150, 10, 5, 'entidade');
+      const result = calcularValoresComissao(150, 10, 'entidade');
 
       expect(result.valorRep).toBe(15); // 10% de 150
-      expect(result.valorComercial).toBe(7.5); // 5% de 150
-      expect(result.valorQWork).toBe(127.5); // 150 - 15 - 7.5
+      expect(result.valorQWork).toBe(135); // 150 - 15
     });
 
     it('calcularComissaoCustoFixo continua funcionando (custo_fixo)', () => {
-      const result = calcularComissaoCustoFixo(150, 100, 5);
+      const result = calcularComissaoCustoFixo(150, 100);
 
       expect(result.valorRep).toBe(50); // 150 - 100 (margem)
-      expect(result.valorComercial).toBe(2.5); // 5% de margem(50)
-      expect(result.valorQWork).toBe(47.5); // 50 - 2.5
+      expect(result.valorQWork).toBe(50); // margem - 0
     });
   });
 });

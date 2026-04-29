@@ -154,7 +154,6 @@ export interface LeadComissaoGeral {
   tipo_cliente: string;
   valor_negociado: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_comercial: number | null;
   valor_custo_fixo_snapshot: number | null;
   requer_aprovacao_comercial: boolean;
   status: string;
@@ -173,7 +172,6 @@ export interface LeadAbaixoMinimo {
   valor_negociado: number | null;
   percentual_comissao: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_comercial: number | null;
   num_vidas_estimado: number | null;
   requer_aprovacao_comercial: boolean;
   status: string;

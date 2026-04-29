@@ -85,7 +85,6 @@ describe('GET /api/vendedor/meu-representante', () => {
         rows: [
           {
             percentual_comissao: 15,
-            percentual_comissao_comercial: 5,
             modelo_comissionamento: 'percentual',
             valor_custo_fixo_entidade: null,
             valor_custo_fixo_clinica: null,
@@ -102,7 +101,6 @@ describe('GET /api/vendedor/meu-representante', () => {
     const data = await res.json();
     expect(data.representante).not.toBeNull();
     expect(data.representante.percentual_comissao).toBe(15);
-    expect(data.representante.percentual_comissao_comercial).toBe(5);
     expect(data.representante.modelo_comissionamento).toBe('percentual');
   });
 
@@ -119,7 +117,6 @@ describe('GET /api/vendedor/meu-representante', () => {
         rows: [
           {
             percentual_comissao: 0,
-            percentual_comissao_comercial: 0,
             modelo_comissionamento: 'custo_fixo',
             valor_custo_fixo_entidade: 12.0,
             valor_custo_fixo_clinica: 10.0,
@@ -152,7 +149,6 @@ describe('GET /api/vendedor/meu-representante', () => {
         rows: [
           {
             percentual_comissao: 10,
-            percentual_comissao_comercial: 2,
             modelo_comissionamento: 'percentual',
             valor_custo_fixo_entidade: null,
             valor_custo_fixo_clinica: null,
@@ -218,7 +214,6 @@ describe('GET /api/vendedor/meu-representante — estrutura', () => {
 
     it('retorna dados de comissionamento do representante', () => {
       expect(src).toMatch(/percentual_comissao/);
-      expect(src).toMatch(/percentual_comissao_comercial/);
       expect(src).toMatch(/modelo_comissionamento/);
       expect(src).toMatch(/valor_custo_fixo_entidade/);
       expect(src).toMatch(/valor_custo_fixo_clinica/);

@@ -11,7 +11,6 @@ import {
   type TipoCliente,
 } from '../../leads-config';
 import { PERCENTUAL_IMPOSTOS_PADRAO } from '../../financeiro/sociedade';
-import { derivarPercentualComercial } from '../../financeiro/calculos-centrais';
 import type { StatusComissao } from '../../types/comissionamento';
 import { calcularPrevisaoPagamento } from './utils';
 
@@ -27,14 +26,11 @@ export interface DadosRepresentante {
 export interface DadosVinculoCalculo {
   percentual_comissao_representante: string | number | null;
   valor_negociado: string | number | null;
-  percentual_comissao_comercial: string | number | null;
 }
 
 export interface ResultadoCalculoComissao {
   valorComissao: number;
   percentualRep: number;
-  percComercialVinculo: number;
-  valorComissaoComercial: number;
   baseCalculoFinal: number;
 }
 
@@ -70,10 +66,6 @@ export function calcularValoresComissao(params: {
     vinculoPerc.valor_negociado != null
       ? parseFloat(String(vinculoPerc.valor_negociado))
       : null;
-  const percComercialVinculo: number =
-    vinculoPerc.percentual_comissao_comercial != null
-      ? parseFloat(String(vinculoPerc.percentual_comissao_comercial))
-      : 0;
 
   const brutoPerParcel = valorLaudo / totalParcelas;
   const valorLiquidoGateway =
@@ -110,7 +102,6 @@ export function calcularValoresComissao(params: {
     const { valorRep, abaixoMinimo } = calcularComissaoCustoFixo(
       negociado,
       custoFixoRep,
-      percComercialVinculo,
       CUSTO_POR_AVALIACAO[tipoCliente]
     );
     if (abaixoMinimo) {
@@ -141,24 +132,10 @@ export function calcularValoresComissao(params: {
   }
 
   // Derivar percentual do comercial via regra central QWork (40 − rep% se zerado)
-  const percComercialEfetivo = derivarPercentualComercial(
-    percentualRep,
-    percComercialVinculo,
-    modeloRep
-  );
-
-  const valorComissaoComercial: number =
-    percComercialEfetivo > 0
-      ? Math.round(((baseCalculoFinal * percComercialEfetivo) / 100) * 100) /
-        100
-      : 0;
-
   return {
     resultado: {
       valorComissao,
       percentualRep,
-      percComercialVinculo: percComercialEfetivo,
-      valorComissaoComercial,
       baseCalculoFinal,
     },
   };

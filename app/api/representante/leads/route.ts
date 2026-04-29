@@ -168,12 +168,11 @@ export async function POST(request: NextRequest) {
     // Buscar percentuais e modelo do representante
     const repResult = await query<{
       percentual_comissao: string | null;
-      percentual_comissao_comercial: string | null;
       modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
       valor_custo_fixo_entidade: string | null;
       valor_custo_fixo_clinica: string | null;
     }>(
-      `SELECT percentual_comissao, percentual_comissao_comercial,
+      `SELECT percentual_comissao,
               modelo_comissionamento, valor_custo_fixo_entidade, valor_custo_fixo_clinica
        FROM representantes WHERE id = $1 LIMIT 1`,
       [sess.representante_id]
@@ -187,16 +186,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Cadastro de leads indisponível. Aguarde a definição do modelo de comissionamento pelo Comercial.',
+            'Cadastro de leads indisponível. Aguarde a definição do modelo de comissionamento pelo admin.',
           code: 'COMISSIONAMENTO_NAO_DEFINIDO',
         },
         { status: 403 }
       );
     }
-
-    const percComercial = Number(
-      repResult.rows[0]?.percentual_comissao_comercial ?? 0
-    );
 
     // ── Lógica de custo_fixo ──────────────────────────────────────────────
     let requerAprovacao = false;
@@ -214,7 +209,6 @@ export async function POST(request: NextRequest) {
       const calc = calcularComissaoCustoFixo(
         valorNum,
         valorCustoFixo,
-        percComercial,
         CUSTO_POR_AVALIACAO[tipoCliente]
       );
       if (calc.abaixoMinimo) {
@@ -228,12 +222,7 @@ export async function POST(request: NextRequest) {
       requerAprovacao = false;
       valorCustoFixoSnapshot = valorCustoFixo;
     } else {
-      requerAprovacao = calcularRequerAprovacao(
-        valorNum,
-        percRep,
-        percComercial,
-        tipoCliente
-      );
+      requerAprovacao = calcularRequerAprovacao(valorNum, percRep, tipoCliente);
     }
 
     // Verificar se já existe lead ativo para esse CNPJ
@@ -288,10 +277,10 @@ export async function POST(request: NextRequest) {
       `INSERT INTO leads_representante (
          representante_id, cnpj, razao_social, contato_nome, contato_email,
          contato_telefone, valor_negociado, percentual_comissao,
-         percentual_comissao_representante, percentual_comissao_comercial,
+         percentual_comissao_representante,
          tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado,
          valor_custo_fixo_snapshot, modelo_comissionamento
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING *`,
       [
         sess.representante_id,
@@ -303,7 +292,6 @@ export async function POST(request: NextRequest) {
         valorNum,
         percRep,
         percRep,
-        percComercial,
         tipoCliente,
         requerAprovacao,
         numVidas,

@@ -49,7 +49,6 @@ interface RepAutoFill {
   nome: string;
   modelo: 'percentual' | 'custo_fixo';
   percRep: number | null;
-  percComercial: number | null;
 }
 
 interface TomadorDetailModalProps {
@@ -277,11 +276,6 @@ export default function TomadorDetailModal({
                           {repAutoFill.percRep != null && (
                             <span className="px-2 py-1 rounded bg-blue-50 border border-blue-200 text-xs font-semibold text-blue-800">
                               Representante: {repAutoFill.percRep}%
-                            </span>
-                          )}
-                          {repAutoFill.percComercial != null && (
-                            <span className="px-2 py-1 rounded bg-indigo-50 border border-indigo-200 text-xs font-semibold text-indigo-800">
-                              Comercial: {repAutoFill.percComercial}%
                             </span>
                           )}
                         </div>

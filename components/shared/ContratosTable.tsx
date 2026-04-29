@@ -35,8 +35,6 @@ interface ContratoRow {
   avaliacoes_concluidas: string;
   valor_avaliacao: string | null;
   valor_total: string | null;
-  perc_comercial: string | null;
-  valor_comercial: string | null;
   perc_rep: string | null;
   valor_rep: string | null;
   valor_qwork?: string | null;
@@ -383,9 +381,6 @@ export function ContratosTable({
           <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
             <div className="md:hidden space-y-3 p-3 bg-gray-50/60">
               {visibleRows.map((row, idx) => {
-                const percComercial = row.perc_comercial
-                  ? parseFloat(row.perc_comercial).toFixed(1)
-                  : null;
                 const percRep = row.perc_rep
                   ? parseFloat(row.perc_rep).toFixed(1)
                   : null;
@@ -475,12 +470,6 @@ export function ContratosTable({
                           {comercial ? (
                             isPercentual ? (
                               <>
-                                {row.perc_comercial ? (
-                                  <p className="font-semibold text-indigo-700">
-                                    Com.{' '}
-                                    {parseFloat(row.perc_comercial).toFixed(1)}%
-                                  </p>
-                                ) : null}
                                 {row.perc_rep !== null &&
                                 row.perc_rep !== undefined ? (
                                   <p className="font-semibold text-blue-700">
@@ -495,11 +484,9 @@ export function ContratosTable({
                                     %
                                   </p>
                                 ) : null}
-                                {!row.perc_comercial &&
-                                  !row.perc_rep &&
-                                  !row.percentual_comissao && (
-                                    <span className="text-gray-300">—</span>
-                                  )}
+                                {!row.perc_rep && !row.percentual_comissao && (
+                                  <span className="text-gray-300">—</span>
+                                )}
                               </>
                             ) : (
                               <span className="font-semibold text-amber-700">
@@ -510,12 +497,6 @@ export function ContratosTable({
                             )
                           ) : (
                             <>
-                              <p className="text-blue-700">
-                                Comercial:{' '}
-                                {percComercial
-                                  ? `${percComercial}% • ${fmtBRL(row.valor_comercial)}`
-                                  : '—'}
-                              </p>
                               <p className="text-green-700">
                                 Representante:{' '}
                                 {percRep !== null
@@ -676,9 +657,6 @@ export function ContratosTable({
                 <tbody>
                   {visibleRows.map((row, idx) => {
                     const visibleData = visibleRows;
-                    const percComercial = row.perc_comercial
-                      ? parseFloat(row.perc_comercial).toFixed(1)
-                      : null;
                     const percRep = row.perc_rep
                       ? parseFloat(row.perc_rep).toFixed(1)
                       : null;
@@ -873,15 +851,6 @@ export function ContratosTable({
                             <td className="text-center px-3 py-3 text-xs">
                               {isPercentual ? (
                                 <div className="space-y-0.5">
-                                  {row.perc_comercial ? (
-                                    <p className="font-semibold text-indigo-700">
-                                      Com.{' '}
-                                      {parseFloat(row.perc_comercial).toFixed(
-                                        1
-                                      )}
-                                      %
-                                    </p>
-                                  ) : null}
                                   {row.perc_rep !== null &&
                                   row.perc_rep !== undefined ? (
                                     <p className="font-semibold text-blue-700">
@@ -897,8 +866,7 @@ export function ContratosTable({
                                       %
                                     </p>
                                   ) : null}
-                                  {!row.perc_comercial &&
-                                    !row.perc_rep &&
+                                  {!row.perc_rep &&
                                     !row.percentual_comissao && (
                                       <span className="text-gray-300">—</span>
                                     )}
@@ -958,23 +926,6 @@ export function ContratosTable({
                                     )}
                                   </span>
                                 )}
-                              </td>
-
-                              <td className="text-right px-3 py-3 text-xs">
-                                <div className="space-y-0.5">
-                                  {percComercial ? (
-                                    <>
-                                      <p className="font-semibold text-blue-700">
-                                        {percComercial}%
-                                      </p>
-                                      <p className="text-blue-500">
-                                        {fmtBRL(row.valor_comercial)}
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <span className="text-gray-300">—</span>
-                                  )}
-                                </div>
                               </td>
 
                               <td className="text-right px-3 py-3 text-xs">

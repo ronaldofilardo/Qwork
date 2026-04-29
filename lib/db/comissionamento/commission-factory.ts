@@ -26,8 +26,6 @@ export interface ComissaoBaseParams {
   forcar_retida?: boolean;
   parcela_confirmada_em?: Date | null;
   admin_cpf?: string;
-  /** % de comissão do comercial (copiado do vínculo no momento da geração) */
-  percentual_comissao_comercial?: number | null;
 }
 
 /** Resultado da normalização + cálculos compartilhados */
@@ -38,7 +36,6 @@ export interface ComissaoCalculada {
   clinId: number | null;
   baseCalculo: number;
   valorComissao: number;
-  valorComissaoComercial: number;
   statusInicial: StatusComissao;
   mesEmissao: string;
   mes_pagamento: string;
@@ -71,12 +68,6 @@ export function calcularComissao(
   const valorComissao =
     Math.round(((baseCalculo * percentual) / 100) * 100) / 100;
 
-  const percComercial = params.percentual_comissao_comercial ?? 0;
-  const valorComissaoComercial =
-    percComercial > 0
-      ? Math.round(((baseCalculo * percComercial) / 100) * 100) / 100
-      : 0;
-
   const statusInicial: StatusComissao = 'retida';
 
   const agora = new Date();
@@ -98,7 +89,6 @@ export function calcularComissao(
     clinId,
     baseCalculo,
     valorComissao,
-    valorComissaoComercial,
     statusInicial,
     mesEmissao,
     mes_pagamento,

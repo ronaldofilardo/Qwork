@@ -33,7 +33,6 @@ const fakeReps = [
     cpf: '12345678901',
     modelo_comissionamento: 'percentual',
     percentual_comissao: '10.00',
-    percentual_comissao_comercial: '5.00',
     status: 'ativo',
   },
   {
@@ -43,7 +42,6 @@ const fakeReps = [
     cpf: '98765432100',
     modelo_comissionamento: 'custo_fixo',
     percentual_comissao: null,
-    percentual_comissao_comercial: null,
     status: 'ativo',
   },
 ];
@@ -78,10 +76,9 @@ describe('GET /api/comercial/representantes/busca', () => {
     expect(body.representantes[0].nome).toBe('João Silva');
     expect(mockQuery).toHaveBeenCalledTimes(1);
     // Verifica que o termo é passado como %Jo%
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('ILIKE'),
-      ['%Jo%']
-    );
+    expect(mockQuery).toHaveBeenCalledWith(expect.stringContaining('ILIKE'), [
+      '%Jo%',
+    ]);
   });
 
   it('retorna array vazio quando nenhum representante encontrado', async () => {
@@ -109,7 +106,9 @@ describe('GET /api/comercial/representantes/busca', () => {
 
   it('retorna 403 quando sem permissão', async () => {
     const { requireRole } = await import('@/lib/session');
-    (requireRole as jest.Mock).mockRejectedValueOnce(new Error('Sem permissão'));
+    (requireRole as jest.Mock).mockRejectedValueOnce(
+      new Error('Sem permissão')
+    );
 
     const res = await GET(makeReq('Jo'));
     const body = await res.json();

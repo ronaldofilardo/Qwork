@@ -16,7 +16,6 @@ interface RepBusca {
   cpf: string | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: string | null;
-  percentual_comissao_comercial: string | null;
   valor_custo_fixo_entidade: string | null;
   valor_custo_fixo_clinica: string | null;
   status: string;
@@ -43,7 +42,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          r.cpf,
          r.modelo_comissionamento,
          r.percentual_comissao,
-         r.percentual_comissao_comercial,
          r.valor_custo_fixo_entidade,
          r.valor_custo_fixo_clinica,
          r.status

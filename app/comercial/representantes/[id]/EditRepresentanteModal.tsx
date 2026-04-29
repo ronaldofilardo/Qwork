@@ -40,7 +40,6 @@ interface RepresentanteData {
   tipo_pessoa: 'pf' | 'pj';
   status: string;
   percentual_comissao?: number | null;
-  percentual_comissao_comercial?: number | null;
   modelo_comissionamento?: string | null;
   valor_custo_fixo_entidade?: number | null;
   valor_custo_fixo_clinica?: number | null;
@@ -80,11 +79,6 @@ export default function EditRepresentanteModal({
   const [status, setStatus] = useState(rep.status ?? 'ativo');
   const [percentual, setPercentual] = useState(
     rep.percentual_comissao != null ? String(rep.percentual_comissao) : ''
-  );
-  const [percentualComercial, setPercentualComercial] = useState(
-    rep.percentual_comissao_comercial != null
-      ? String(rep.percentual_comissao_comercial)
-      : ''
   );
   const [modelo, setModelo] = useState(rep.modelo_comissionamento ?? '');
   const [valorCFEntidade, setValorCFEntidade] = useState(
@@ -129,42 +123,6 @@ export default function EditRepresentanteModal({
         body.percentual_comissao = percentual.trim()
           ? parseFloat(percentual)
           : null;
-      }
-      // No modelo percentual, % comercial é derivado automaticamente como 40 − rep%
-      const effectivePercComercial =
-        modelo === 'percentual' && percentual.trim()
-          ? String(Math.max(0, 40 - parseFloat(percentual || '0')))
-          : percentualComercial;
-
-      if (
-        effectivePercComercial.trim() !==
-        (rep.percentual_comissao_comercial != null
-          ? String(rep.percentual_comissao_comercial)
-          : '')
-      ) {
-        body.percentual_comissao_comercial = effectivePercComercial.trim()
-          ? parseFloat(effectivePercComercial)
-          : null;
-      }
-      // Validar soma — aplica APENAS ao modelo percentual
-      // No modelo custo_fixo, percComercial é % sobre o custo fixo (dimensão independente)
-      const totalPerc =
-        parseFloat(percentual || '0') + parseFloat(effectivePercComercial || '0');
-      if (modelo !== 'custo_fixo' && modelo !== 'percentual' && totalPerc > 40) {
-        setErro(
-          `A soma dos percentuais (rep + comercial) não pode ultrapassar 40%. Atual: ${totalPerc.toFixed(1)}%.`
-        );
-        return;
-      }
-      // Para custo_fixo: validar que % comercial está em 0–40
-      if (modelo === 'custo_fixo') {
-        const percCom = parseFloat(percentualComercial || '0');
-        if (isNaN(percCom) || percCom < 0 || percCom > 40) {
-          setErro(
-            '% Comissão Comercial deve estar entre 0% e 40% (incide sobre o custo fixo).'
-          );
-          return;
-        }
       }
       if (rep.tipo_pessoa === 'pf' && cpf.trim() !== (rep.cpf ?? ''))
         body.cpf = cpf.trim() || null;
@@ -382,39 +340,6 @@ export default function EditRepresentanteModal({
                     onChange={(e) => setPercentual(e.target.value)}
                     placeholder="Ex: 5.0"
                   />
-                </div>
-                <div>
-                  <label className={labelCls}>Comissão Comercial (%)</label>
-                  {modelo === 'percentual' ? (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-xl text-sm">
-                      <span className="text-blue-700 font-bold">
-                        {!isNaN(parseFloat(percentual)) && parseFloat(percentual) > 0
-                          ? (40 - parseFloat(percentual)).toFixed(2)
-                          : '—'}%
-                      </span>
-                      <span className="text-xs text-blue-500">
-                        40% − {percentual || '?'}% Rep
-                      </span>
-                    </div>
-                  ) : (
-                    <input
-                      type="number"
-                      min="0"
-                      max="40"
-                      step="0.01"
-                      className={inputCls}
-                      value={percentualComercial}
-                      onChange={(e) => setPercentualComercial(e.target.value)}
-                      placeholder="Ex: 2.0"
-                    />
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">
-                    {modelo === 'custo_fixo'
-                      ? '% sobre o custo fixo (não sobre o valor negociado)'
-                      : modelo === 'percentual'
-                        ? 'Calculado automaticamente'
-                        : 'Soma rep + comercial ≤ 40%'}
-                  </p>
                 </div>
                 <div className="col-span-2">
                   <label className={labelCls}>Modelo de Comissionamento</label>

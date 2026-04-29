@@ -32,7 +32,6 @@ interface PagamentoSociedadeRow {
   representante_nome: string | null;
   representante_id: number | null;
   valor_representante: string | number | null;
-  valor_comercial: string | number | null;
   tipo_cobranca: string | null;
 }
 
@@ -52,7 +51,6 @@ interface EventoSociedade {
   valorGateway: number;
   valorCustoOperacional: number;
   valorRepresentante: number;
-  valorComercial: number;
   valorSocioRonaldo: number;
   valorSocioAntonio: number;
   representanteNome: string | null;
@@ -64,7 +62,6 @@ interface ResumoPeriodo {
   gateway: number;
   custoOperacional: number;
   representantes: number;
-  comercial: number;
   ronaldo: number;
   antonio: number;
   totalEventos: number;
@@ -214,7 +211,6 @@ function aggregateResumo(
       acc.gateway += evento.valorGateway;
       acc.custoOperacional += evento.valorCustoOperacional;
       acc.representantes += evento.valorRepresentante;
-      acc.comercial += evento.valorComercial;
       acc.ronaldo += evento.valorSocioRonaldo;
       acc.antonio += evento.valorSocioAntonio;
       acc.totalEventos += 1;
@@ -226,7 +222,6 @@ function aggregateResumo(
       gateway: 0,
       custoOperacional: 0,
       representantes: 0,
-      comercial: 0,
       ronaldo: 0,
       antonio: 0,
       totalEventos: 0,
@@ -243,14 +238,6 @@ function buildMensagensSimuladas(eventos: EventoSociedade[]) {
         mensagem: `Pagamento de R$ ${evento.valorBruto.toFixed(2)} de ${evento.tomador} auditado com sucesso.`,
       },
     ];
-
-    if (evento.valorComercial > 0) {
-      mensagens.push({
-        perfil: 'comercial',
-        titulo: 'Comissão comercial simulada',
-        mensagem: `Há R$ ${evento.valorComercial.toFixed(2)} simulados para o comercial no pagamento ${evento.pagamentoId ?? evento.id}.`,
-      });
-    }
 
     if (evento.valorRepresentante > 0) {
       mensagens.push({
@@ -289,7 +276,6 @@ async function getPagamentosSociedade(
          r.nome AS representante_nome,
          cl_agg.first_rep_id AS representante_id,
          COALESCE(cl_agg.valor_representante, 0) AS valor_representante,
-         COALESCE(cl_agg.valor_comercial, 0) AS valor_comercial,
          'laudo'::text AS tipo_cobranca
        FROM lotes_avaliacao la
        LEFT JOIN tomadores t ON t.id = COALESCE(la.entidade_id, la.clinica_id)
@@ -308,7 +294,6 @@ async function getPagamentosSociedade(
          SELECT
            MIN(c.representante_id) AS first_rep_id,
            COALESCE(SUM(c.valor_comissao), 0) AS valor_representante,
-           COALESCE(SUM(c.valor_comissao_comercial), 0) AS valor_comercial,
            MAX(c.valor_laudo) AS valor_laudo
          FROM comissoes_laudo c
          WHERE c.lote_pagamento_id = la.id
@@ -355,7 +340,6 @@ async function getPagamentosManutencao(
          NULL::text AS representante_nome,
          NULL::int AS representante_id,
          0 AS valor_representante,
-         0 AS valor_comercial,
          'manutencao'::text AS tipo_cobranca
        FROM pagamentos p
        WHERE p.tipo_cobranca = 'manutencao'
@@ -601,7 +585,6 @@ export async function GET(request: NextRequest) {
       .flatMap((row) => {
         const valorBrutoTotal = toNumber(row.valor);
         const valorRepresentanteTotal = toNumber(row.valor_representante);
-        const valorComercialTotal = toNumber(row.valor_comercial);
         const valorLiquidoGatewayTotal = toNumber(row.asaas_net_value);
         const valorGatewayTotal =
           valorLiquidoGatewayTotal > 0 &&
@@ -637,7 +620,6 @@ export async function GET(request: NextRequest) {
           const valorRepresentante = toNumber(
             valorRepresentanteTotal * proporcao
           );
-          const valorComercial = toNumber(valorComercialTotal * proporcao);
 
           // Custo operacional = taxa do método (boleto/pix/cartão) — proporcional ao valor da parcela
           // Taxa de transação = taxa fixa por transação do gateway — rateada proporcionalmente
@@ -651,14 +633,10 @@ export async function GET(request: NextRequest) {
                 )
               : 0;
           const taxaTransacaoTotal =
-            configuracoes.length > 0
-              ? calcularTaxaTransacao(configuracoes)
-              : 0;
+            configuracoes.length > 0 ? calcularTaxaTransacao(configuracoes) : 0;
 
           const valorCustoOperacional =
-            custoMetodoTotal > 0
-              ? toNumber(custoMetodoTotal * proporcao)
-              : 0;
+            custoMetodoTotal > 0 ? toNumber(custoMetodoTotal * proporcao) : 0;
           const valorTaxaTransacao =
             taxaTransacaoTotal > 0
               ? toNumber(taxaTransacaoTotal * proporcao)
@@ -684,14 +662,8 @@ export async function GET(request: NextRequest) {
             metodoPagamento: row.metodo,
             modeloRepresentante: 'custo_fixo',
             valorRepresentanteFixo: valorRepresentante,
-            percentualComercial: 0,
             percentualImpostos,
           });
-
-          const percentualComercial =
-            distribuicaoBase.margemLivre > 0
-              ? (valorComercial / distribuicaoBase.margemLivre) * 100
-              : 0;
 
           const distribuicao = calcularDistribuicaoSociedade({
             valorBruto,
@@ -699,7 +671,6 @@ export async function GET(request: NextRequest) {
             metodoPagamento: row.metodo,
             modeloRepresentante: 'custo_fixo',
             valorRepresentanteFixo: valorRepresentante,
-            percentualComercial,
             percentualImpostos,
           });
 
@@ -722,7 +693,6 @@ export async function GET(request: NextRequest) {
             valorGateway: valorTaxaTransacao,
             valorCustoOperacional,
             valorRepresentante,
-            valorComercial,
             valorSocioRonaldo: distribuicao.valorSocioRonaldo,
             valorSocioAntonio: distribuicao.valorSocioAntonio,
             representanteNome: row.representante_nome ?? null,

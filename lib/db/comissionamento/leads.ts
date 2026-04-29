@@ -279,12 +279,11 @@ export async function autoConvertirLeadPorCnpj(
       valor_negociado: number | null;
       percentual_comissao_representante: number | null;
       percentual_comissao: number | null;
-      percentual_comissao_comercial: number;
       num_vidas_estimado: number | null;
     }>(
       `SELECT id, representante_id, valor_negociado,
               percentual_comissao_representante, percentual_comissao,
-              percentual_comissao_comercial, num_vidas_estimado
+              num_vidas_estimado
        FROM leads_representante
        WHERE cnpj = $1
          AND status = 'pendente'
@@ -315,16 +314,15 @@ export async function autoConvertirLeadPorCnpj(
           lead.percentual_comissao ??
           0;
         const numVidas = lead.num_vidas_estimado ?? null;
-        const percComercial = lead.percentual_comissao_comercial ?? 0;
         const valorNegociado = lead.valor_negociado ?? null;
         const insertFields = entidadeId
-          ? 'representante_id, entidade_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado, percentual_comissao_comercial, valor_negociado'
-          : 'representante_id, clinica_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado, percentual_comissao_comercial, valor_negociado';
+          ? 'representante_id, entidade_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado, valor_negociado'
+          : 'representante_id, clinica_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, num_vidas_estimado, valor_negociado';
         const targetId = entidadeId ?? clinicaId;
 
         const vinculoResult = await query<{ id: number }>(
           `INSERT INTO vinculos_comissao (${insertFields})
-           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7, $8, $9)
+           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7, $8)
            RETURNING id`,
           [
             lead.representante_id,
@@ -334,7 +332,6 @@ export async function autoConvertirLeadPorCnpj(
             dataExpiracao,
             percRep,
             numVidas,
-            percComercial,
             valorNegociado,
           ]
         );

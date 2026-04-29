@@ -17,7 +17,6 @@ interface RepResultado {
   cpf: string | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: string | null;
-  percentual_comissao_comercial: string | null;
   status: string;
 }
 

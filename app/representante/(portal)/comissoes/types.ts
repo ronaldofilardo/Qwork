@@ -20,7 +20,6 @@ export interface Comissao {
   parcela_numero: number | null;
   total_parcelas: number | null;
   parcela_confirmada_em: string | null;
-  percentual_comissao_comercial?: string | null;
 }
 
 export interface Resumo {

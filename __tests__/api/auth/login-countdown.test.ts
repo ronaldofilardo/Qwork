@@ -25,7 +25,9 @@ beforeAll(() => {
 
 describe('Login page — Countdown de rate limit', () => {
   it('importa useEffect do react', () => {
-    expect(src).toMatch(/import\s*\{[^}]*useEffect[^}]*\}\s*from\s*['"]react['"]/);
+    expect(src).toMatch(
+      /import\s*\{[^}]*useEffect[^}]*\}\s*from\s*['"]react['"]/
+    );
   });
 
   it('declara estado rateLimitUntil', () => {
@@ -59,7 +61,9 @@ describe('Login page — Countdown de rate limit', () => {
   });
 
   it('handler 429 chama setRateLimitUntil com Date.now() + seconds * 1000', () => {
-    expect(src).toMatch(/setRateLimitUntil\s*\(\s*Date\.now\(\)\s*\+\s*seconds\s*\*\s*1000\s*\)/);
+    expect(src).toMatch(
+      /setRateLimitUntil\s*\(\s*Date\.now\(\)\s*\+\s*seconds\s*\*\s*1000\s*\)/
+    );
   });
 
   it('handler 429 limpa o erro principal (setError(""))', () => {
@@ -79,7 +83,9 @@ describe('Login page — Countdown de rate limit', () => {
   });
 
   it('botão submit fica disabled quando rateLimitUntil !== null e há segundos restantes', () => {
-    expect(src).toMatch(/rateLimitUntil\s*!==\s*null[\s\S]{0,100}rateLimitSecondsLeft\s*>\s*0/);
+    expect(src).toMatch(
+      /rateLimitUntil\s*!==\s*null[\s\S]{0,100}rateLimitSecondsLeft\s*>\s*0/
+    );
   });
 
   it('exibe bloco de countdown quando rateLimitUntil !== null', () => {

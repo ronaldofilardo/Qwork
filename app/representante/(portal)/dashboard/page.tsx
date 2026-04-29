@@ -371,34 +371,12 @@ export default function DashboardRepresentante() {
                     </p>
                   </div>
                 )}
-                {session.percentual_comissao_comercial != null && (
-                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                      % Comercial
-                    </p>
-                    <p className="font-black text-purple-700 text-lg">
-                      {session.percentual_comissao_comercial}
-                      <span className="text-sm font-bold ml-0.5">%</span>
-                    </p>
-                  </div>
-                )}
               </>
             )}
 
-            {/* Custo fixo: Comissão Comercial ao lado do Modelo, depois Clínica | Entidade */}
+            {/* Custo fixo: Clínica | Entidade */}
             {session.modelo_comissionamento === 'custo_fixo' && (
               <>
-                {session.percentual_comissao_comercial != null && (
-                  <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                      % Comercial
-                    </p>
-                    <p className="font-black text-purple-700 text-lg">
-                      {Number(session.percentual_comissao_comercial).toFixed(2)}
-                      <span className="text-sm font-bold ml-0.5">%</span>
-                    </p>
-                  </div>
-                )}
                 {session.valor_custo_fixo_clinica != null && (
                   <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">

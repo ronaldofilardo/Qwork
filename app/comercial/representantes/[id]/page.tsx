@@ -18,7 +18,6 @@ import {
   DollarSign,
 } from 'lucide-react';
 import EditRepresentanteModal from './EditRepresentanteModal';
-import AprovarComissaoModal from './AprovarComissaoModal';
 import KPICard from './KPICard';
 import { ContratosTable } from '@/components/shared/ContratosTable';
 import { fmtBRL, fmtDoc, fmtCpf, fmtCnpj } from './format-utils';
@@ -142,7 +141,6 @@ export default function ComercialRepresentanteDetalhePage() {
     cnpj?: string | null;
     cpf_responsavel_pj?: string | null;
     percentual_comissao?: number | null;
-    percentual_comissao_comercial?: number | null;
     modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
     valor_custo_fixo_entidade?: number | null;
     valor_custo_fixo_clinica?: number | null;
@@ -160,7 +158,6 @@ export default function ComercialRepresentanteDetalhePage() {
   const [loadingVend, setLoadingVend] = useState(false);
   const [erro, setErro] = useState('');
   const [showEdit, setShowEdit] = useState(false);
-  const [showComissao, setShowComissao] = useState(false);
   const [painel, setPainel] = useState<PainelTipo>(null);
   const [painelLoading, setPainelLoading] = useState(false);
   const [leadsDetalhe, setLeadsDetalhe] = useState<LeadDetalhe[]>([]);
@@ -461,25 +458,13 @@ export default function ComercialRepresentanteDetalhePage() {
               <Pencil size={15} />
               Editar Dados
             </button>
-            {!['rejeitado', 'desativado', 'suspenso'].includes(rep.status) && (
-              <>
-                {repFull?.modelo_comissionamento ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl">
-                    <BadgeCheck size={13} />
-                    Comissão: {repFull.modelo_comissionamento}
-                  </span>
-                ) : (
-                  <button
-                    onClick={() => setShowComissao(true)}
-                    disabled={!repFull}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-colors"
-                  >
-                    <BadgeCheck size={15} />
-                    Definir Comissão
-                  </button>
-                )}
-              </>
-            )}
+            {!['rejeitado', 'desativado', 'suspenso'].includes(rep.status) &&
+              repFull?.modelo_comissionamento && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl">
+                  <BadgeCheck size={13} />
+                  Comissão: {repFull.modelo_comissionamento}
+                </span>
+              )}
             {rep.status !== 'desativado' && (
               <button
                 onClick={() => {
@@ -680,36 +665,12 @@ export default function ComercialRepresentanteDetalhePage() {
                         </p>
                       </div>
                     )}
-                    {repFull.percentual_comissao_comercial != null && (
-                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                          Comissão Comercial
-                        </p>
-                        <p className="font-black text-purple-700 text-lg">
-                          {repFull.percentual_comissao_comercial}
-                          <span className="text-sm font-bold ml-0.5">%</span>
-                        </p>
-                      </div>
-                    )}
                   </>
                 )}
 
-                {/* Se CUSTO FIXO: Comissão Comercial ao lado do Modelo, depois Clínica | Entidade */}
+                {/* Se CUSTO FIXO: Clínica | Entidade */}
                 {repFull.modelo_comissionamento === 'custo_fixo' && (
                   <>
-                    {repFull.percentual_comissao_comercial != null && (
-                      <div className="bg-purple-50 rounded-xl p-3 border border-purple-100">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                          Comissão Comercial
-                        </p>
-                        <p className="font-black text-purple-700 text-lg">
-                          {Number(
-                            repFull.percentual_comissao_comercial
-                          ).toFixed(2)}
-                          <span className="text-sm font-bold ml-0.5">%</span>
-                        </p>
-                      </div>
-                    )}
                     {repFull.valor_custo_fixo_clinica != null && (
                       <div className="bg-blue-50 rounded-xl p-3 border border-blue-100">
                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
@@ -815,16 +776,6 @@ export default function ComercialRepresentanteDetalhePage() {
                 <p className="text-sm font-medium">
                   Modelo de comissionamento não definido
                 </p>
-                {(rep.status === 'apto' ||
-                  rep.status === 'apto_pendente' ||
-                  rep.status === 'aprovacao_comercial') && (
-                  <button
-                    onClick={() => setShowComissao(true)}
-                    className="mt-3 px-4 py-2 text-sm bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition-colors"
-                  >
-                    Definir Comissionamento
-                  </button>
-                )}
               </div>
             )}
           </div>
@@ -1103,7 +1054,6 @@ export default function ComercialRepresentanteDetalhePage() {
                   </div>
                 ))}
 
-
               {painel === 'comissoes' &&
                 (painelLoading ? (
                   <div className="flex justify-center items-center py-16">
@@ -1161,27 +1111,6 @@ export default function ComercialRepresentanteDetalhePage() {
           onClose={() => setShowEdit(false)}
           onSuccess={() => {
             setShowEdit(false);
-            carregarDados();
-            carregarRepFull();
-          }}
-        />
-      )}
-
-      {showComissao && repFull && (
-        <AprovarComissaoModal
-          repId={repFull.id}
-          repNome={repFull.nome}
-          modeloAtual={repFull.modelo_comissionamento ?? null}
-          percentualAtual={repFull.percentual_comissao ?? null}
-          percentualComercialAtual={
-            repFull.percentual_comissao_comercial ?? null
-          }
-          walletIdAtual={repFull.asaas_wallet_id ?? null}
-          valorCFEntidadeAtual={repFull.valor_custo_fixo_entidade ?? null}
-          valorCFClinicaAtual={repFull.valor_custo_fixo_clinica ?? null}
-          onClose={() => setShowComissao(false)}
-          onSuccess={() => {
-            setShowComissao(false);
             carregarDados();
             carregarRepFull();
           }}

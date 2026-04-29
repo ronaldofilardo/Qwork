@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
     const limit = 50;
     const offset = (page - 1) * limit;
-    const apenasAprovacaoSuporte = searchParams.get('requer_aprovacao_suporte') === 'true';
+    const apenasAprovacaoSuporte =
+      searchParams.get('requer_aprovacao_suporte') === 'true';
 
     const baseWhere = apenasAprovacaoSuporte
       ? `WHERE l.requer_aprovacao_suporte = true AND l.status = 'pendente'`
@@ -37,7 +38,6 @@ export async function GET(request: NextRequest) {
            l.tipo_cliente,
            l.valor_negociado,
            l.percentual_comissao_representante,
-           l.percentual_comissao_comercial,
            l.valor_custo_fixo_snapshot,
            l.requer_aprovacao_comercial,
            l.requer_aprovacao_suporte,

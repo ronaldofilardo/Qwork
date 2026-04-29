@@ -154,13 +154,18 @@ export default function LoginPage() {
 
       // Verificar rate limit (429) — exibir cronômetro de bloqueio
       if (response.status === 429) {
-        let data429: { message?: string; retryAfter?: number; retryAfterMinutes?: number } = {};
+        let data429: {
+          message?: string;
+          retryAfter?: number;
+          retryAfterMinutes?: number;
+        } = {};
         try {
           data429 = await response.json();
         } catch {
           // ignora erro de parse
         }
-        const seconds = data429.retryAfter ?? (data429.retryAfterMinutes ?? 5) * 60;
+        const seconds =
+          data429.retryAfter ?? (data429.retryAfterMinutes ?? 5) * 60;
         setRateLimitUntil(Date.now() + seconds * 1000);
         setRateLimitSecondsLeft(seconds);
         setError('');
@@ -729,24 +734,32 @@ export default function LoginPage() {
             <div className="text-red-700 text-sm bg-red-50 border border-red-200 p-3 rounded-md text-center">
               {rateLimitSecondsLeft > 0 ? (
                 <>
-                  <span className="font-semibold">Você expirou todas as suas tentativas.</span>
+                  <span className="font-semibold">
+                    Você expirou todas as suas tentativas.
+                  </span>
                   <br />
                   <span className="block mt-1 text-xs text-red-600">
                     Verifique suas credenciais e tente novamente em{' '}
                     <span className="font-mono font-bold">
-                      {String(Math.floor(rateLimitSecondsLeft / 60)).padStart(2, '0')}:
-                      {String(rateLimitSecondsLeft % 60).padStart(2, '0')}
+                      {String(Math.floor(rateLimitSecondsLeft / 60)).padStart(
+                        2,
+                        '0'
+                      )}
+                      :{String(rateLimitSecondsLeft % 60).padStart(2, '0')}
                     </span>
                   </span>
                   <span className="block mt-2 text-xs text-red-600">
-                    Se o problema persistir, entre em contato com seu gestor ou suporte.
+                    Se o problema persistir, entre em contato com seu gestor ou
+                    suporte.
                   </span>
                 </>
               ) : (
                 <>
                   <span className="font-semibold">Bloqueio expirado.</span>
                   <br />
-                  <span className="block mt-1 text-xs">Você já pode tentar novamente.</span>
+                  <span className="block mt-1 text-xs">
+                    Você já pode tentar novamente.
+                  </span>
                 </>
               )}
             </div>
@@ -760,7 +773,11 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading || showConfirmacaoModal || (rateLimitUntil !== null && rateLimitSecondsLeft > 0)}
+            disabled={
+              loading ||
+              showConfirmacaoModal ||
+              (rateLimitUntil !== null && rateLimitSecondsLeft > 0)
+            }
             className="w-full bg-primary text-white py-3 px-4 rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base font-medium"
           >
             {loading ? 'Entrando...' : 'Entrar'}

@@ -20,13 +20,19 @@ export async function DELETE(
     );
 
     if (loteResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Lote não encontrado' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Lote não encontrado' },
+        { status: 404 }
+      );
     }
 
     const lote = loteResult.rows[0];
     if (lote.status_pagamento !== 'aguardando_cobranca') {
       return NextResponse.json(
-        { error: 'Só é possível cancelar cobrança de lotes com status "aguardando_cobranca"' },
+        {
+          error:
+            'Só é possível cancelar cobrança de lotes com status "aguardando_cobranca"',
+        },
         { status: 400 }
       );
     }

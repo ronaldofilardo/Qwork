@@ -9,34 +9,7 @@
  * Evita duplicação de fórmulas e garante consistência na derivação de comissões.
  */
 
-export {
-  PERCENTUAL_IMPOSTOS_PADRAO,
-  PERCENTUAL_MAXIMO_COMERCIAL,
-} from './sociedade';
-
-/**
- * Deriva o percentual do comercial quando o vínculo não tem um valor explícito.
- *
- * Regra de negócio QWork:
- * - Modelo percentual: comercial = 40 − percentualRep (se explícito = 0 ou null)
- * - Modelo custo_fixo: usa o percentual explícito do vínculo (sem fallback)
- *
- * @param percentualRep Percentual do representante
- * @param percentualComercialExplicito Percentual armazenado no vínculo (pode ser 0 ou null)
- * @param modelo 'percentual' | 'custo_fixo'
- * @returns percentual efetivo do comercial
- */
-export function derivarPercentualComercial(
-  percentualRep: number,
-  percentualComercialExplicito: number | null | undefined,
-  modelo: string
-): number {
-  const explicito = Number(percentualComercialExplicito ?? 0);
-  if (modelo === 'percentual' && explicito === 0 && percentualRep > 0) {
-    return Math.max(0, 40 - percentualRep);
-  }
-  return Math.max(0, explicito);
-}
+export { PERCENTUAL_IMPOSTOS_PADRAO } from './sociedade';
 
 /**
  * Calcula a base líquida após deduções de impostos e gateway.

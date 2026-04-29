@@ -5,7 +5,7 @@
  * via tabela hierarquia_comercial.
  *
  * Response:
- *  - representante: { percentual_comissao, percentual_comissao_comercial, modelo_comissionamento, valor_custo_fixo_entidade, valor_custo_fixo_clinica }
+ *  - representante: { percentual_comissao, modelo_comissionamento, valor_custo_fixo_entidade, valor_custo_fixo_clinica }
  *  - representante: null se vendedor não tiver vínculo ativo
  */
 import { NextResponse } from 'next/server';
@@ -34,14 +34,12 @@ export async function GET(): Promise<NextResponse> {
 
     const repResult = await query<{
       percentual_comissao: number | null;
-      percentual_comissao_comercial: number | null;
       modelo_comissionamento: string | null;
       valor_custo_fixo_entidade: number | null;
       valor_custo_fixo_clinica: number | null;
     }>(
       `SELECT
          r.percentual_comissao,
-         r.percentual_comissao_comercial,
          r.modelo_comissionamento,
          r.valor_custo_fixo_entidade,
          r.valor_custo_fixo_clinica

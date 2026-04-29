@@ -5,7 +5,6 @@ export interface CalcularDistribuicaoSociedadeInput {
   modeloRepresentante: ModeloRepresentanteSociedade;
   percentualRepresentante?: number | null;
   valorRepresentanteFixo?: number | null;
-  percentualComercial?: number | null;
   percentualImpostos?: number;
   percentualGateway?: number | null;
   valorTaxaGateway?: number | null;
@@ -25,7 +24,6 @@ export interface DistribuicaoSociedade {
   baseLiquida: number;
   valorRepresentante: number;
   margemLivre: number;
-  valorComercial: number;
   valorParaSocios: number;
   valorSocioRonaldo: number;
   valorSocioAntonio: number;
@@ -63,7 +61,6 @@ export interface ConfiguracaoGateway {
 }
 
 export const PERCENTUAL_IMPOSTOS_PADRAO = 7;
-export const PERCENTUAL_MAXIMO_COMERCIAL = 40;
 
 function round2(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
@@ -248,11 +245,6 @@ export function calcularDistribuicaoSociedade(
     0,
     100
   );
-  const percentualComercial = clamp(
-    Number(input.percentualComercial ?? 0),
-    0,
-    PERCENTUAL_MAXIMO_COMERCIAL
-  );
 
   const percentualSocioRonaldo = Math.max(
     0,
@@ -296,7 +288,6 @@ export function calcularDistribuicaoSociedade(
       baseLiquida,
       valorRepresentante,
       margemLivre,
-      valorComercial: 0,
       valorParaSocios: 0,
       valorSocioRonaldo: 0,
       valorSocioAntonio: 0,
@@ -306,13 +297,7 @@ export function calcularDistribuicaoSociedade(
     };
   }
 
-  // Modelo percentual: comercial incide sobre baseLiquida (mesma base do representante)
-  // Modelo custo_fixo: comercial incide sobre margemLivre (o que sobra do custo fixo)
-  const valorComercial =
-    input.modeloRepresentante === 'percentual'
-      ? round2(baseLiquida * (percentualComercial / 100))
-      : round2(margemLivre * (percentualComercial / 100));
-  const valorParaSocios = round2(margemLivre - valorComercial);
+  const valorParaSocios = round2(margemLivre);
   const somaParticipacao = percentualSocioRonaldo + percentualSocioAntonio;
 
   const valorSocioRonaldo =
@@ -324,7 +309,6 @@ export function calcularDistribuicaoSociedade(
     valorImpostos +
       valorGateway +
       valorRepresentante +
-      valorComercial +
       valorSocioRonaldo +
       valorSocioAntonio
   );
@@ -337,7 +321,6 @@ export function calcularDistribuicaoSociedade(
     baseLiquida,
     valorRepresentante,
     margemLivre,
-    valorComercial,
     valorParaSocios,
     valorSocioRonaldo,
     valorSocioAntonio,

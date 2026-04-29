@@ -84,7 +84,6 @@ export function TomadoresContent({
     nome: string;
     modelo: 'percentual' | 'custo_fixo';
     percRep: number | null;
-    percComercial: number | null;
   }
   const [repAutoFill, setRepAutoFill] = useState<RepAutoFill | null>(null);
   const [buscandoRep, setBuscandoRep] = useState(false);
@@ -113,7 +112,6 @@ export function TomadoresContent({
           nome: string;
           modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
           percentual_comissao: string | null;
-          percentual_comissao_comercial: string | null;
           valor_custo_fixo_entidade: string | null;
           valor_custo_fixo_clinica: string | null;
         }> = data.representantes ?? [];
@@ -127,10 +125,6 @@ export function TomadoresContent({
             percRep:
               rep.percentual_comissao != null
                 ? Number(rep.percentual_comissao)
-                : null,
-            percComercial:
-              rep.percentual_comissao_comercial != null
-                ? Number(rep.percentual_comissao_comercial)
                 : null,
           });
           if (rep.modelo_comissionamento === 'percentual') {

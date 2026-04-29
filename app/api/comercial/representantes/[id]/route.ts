@@ -35,7 +35,6 @@ export async function GET(
          r.dados_bancarios_solicitado_em,
          r.dados_bancarios_confirmado_em,
          r.percentual_comissao,
-         r.percentual_comissao_comercial,
          r.modelo_comissionamento,
          r.valor_custo_fixo_entidade,
          r.valor_custo_fixo_clinica,
@@ -104,12 +103,6 @@ const PatchSchema = z.object({
     .optional(),
   motivo: z.string().min(5).max(500).optional(),
   percentual_comissao: z.number().min(0).max(100).optional().nullable(),
-  percentual_comissao_comercial: z
-    .number()
-    .min(0)
-    .max(40)
-    .optional()
-    .nullable(),
   banco_codigo: z.string().max(10).optional().nullable(),
   agencia: z.string().max(20).optional().nullable(),
   conta: z.string().max(30).optional().nullable(),
@@ -267,11 +260,6 @@ export async function PATCH(
     if (data.status !== undefined) addField('status', data.status);
     if (data.percentual_comissao !== undefined)
       addField('percentual_comissao', data.percentual_comissao);
-    if (data.percentual_comissao_comercial !== undefined)
-      addField(
-        'percentual_comissao_comercial',
-        data.percentual_comissao_comercial
-      );
     if (data.banco_codigo !== undefined)
       addField('banco_codigo', data.banco_codigo);
     if (data.agencia !== undefined) addField('agencia', data.agencia);

@@ -189,8 +189,6 @@ export interface VinculoComissao {
   data_expiracao: string;
   // Status
   status: StatusVinculo;
-  // Comissão comercial
-  percentual_comissao_comercial?: number | null;
   // Controle de inatividade
   ultimo_laudo_em?: string | null;
   // Auditoria
@@ -215,8 +213,6 @@ export interface ComissaoLaudo {
   valor_laudo: number;
   percentual_comissao: number; // % individual do representante (copiado no momento da geração)
   valor_comissao: number; // valor_laudo × percentual_comissao / 100
-  percentual_comissao_comercial?: number | null;
-  valor_comissao_comercial?: number | null;
   // Status
   status: StatusComissao;
   motivo_congelamento?: MotivoCongelamento | null;
@@ -330,7 +326,6 @@ export interface ComissaoComDetalhes extends ComissaoLaudo {
   representante_nome: string;
   representante_email: string;
   representante_tipo_pessoa: TipoPessoaRepresentante;
-  representante_percentual_comissao_comercial?: number | null;
   entidade_nome: string;
   numero_laudo?: string | null;
 }

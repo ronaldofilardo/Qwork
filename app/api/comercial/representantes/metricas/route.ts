@@ -33,7 +33,6 @@ export async function GET(request: Request): Promise<NextResponse> {
       vendedores_count: string;
       modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
       percentual_comissao: string | null;
-      percentual_comissao_comercial: string | null;
       valor_custo_fixo_entidade: string | null;
       valor_custo_fixo_clinica: string | null;
       asaas_wallet_id: string | null;
@@ -48,7 +47,6 @@ export async function GET(request: Request): Promise<NextResponse> {
          r.aceite_disclaimer_nv_em                                  AS aceite_contrato_em,
          r.modelo_comissionamento,
          r.percentual_comissao,
-         r.percentual_comissao_comercial,
          r.valor_custo_fixo_entidade,
          r.valor_custo_fixo_clinica,
          r.asaas_wallet_id,
@@ -80,7 +78,7 @@ export async function GET(request: Request): Promise<NextResponse> {
        LEFT JOIN public.vinculos_comissao vc ON vc.representante_id = r.id
        LEFT JOIN public.comissoes_laudo cl ON cl.vinculo_id = vc.id
        WHERE r.ativo = ${soDesativados ? 'false' : 'true'}
-       GROUP BY r.id, r.ativo, r.criado_em, r.aceite_disclaimer_nv_em, r.modelo_comissionamento, r.percentual_comissao, r.percentual_comissao_comercial, r.valor_custo_fixo_entidade, r.valor_custo_fixo_clinica, r.asaas_wallet_id
+       GROUP BY r.id, r.ativo, r.criado_em, r.aceite_disclaimer_nv_em, r.modelo_comissionamento, r.percentual_comissao, r.valor_custo_fixo_entidade, r.valor_custo_fixo_clinica, r.asaas_wallet_id
        ORDER BY leads_ativos DESC, r.nome`
     );
 
@@ -103,10 +101,6 @@ export async function GET(request: Request): Promise<NextResponse> {
         percentual_comissao:
           r.percentual_comissao != null
             ? parseFloat(r.percentual_comissao)
-            : null,
-        percentual_comissao_comercial:
-          r.percentual_comissao_comercial != null
-            ? parseFloat(r.percentual_comissao_comercial)
             : null,
         valor_custo_fixo_entidade:
           r.valor_custo_fixo_entidade != null
