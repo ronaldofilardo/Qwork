@@ -13,6 +13,7 @@ import NivelCargoStep, {
   type FuncaoNivelInfo,
 } from '@/components/importacao/NivelCargoStep';
 import ImportProgressModal from '@/components/importacao/ImportProgressModal';
+import ErrorConfirmationModal from '@/components/importacao/ErrorConfirmationModal';
 import {
   TemplatePicker,
   SaveTemplateForm,
@@ -154,6 +155,9 @@ export default function ImportacaoPage() {
   // Modal de progresso de importação
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [importConcluido, setImportConcluido] = useState(false);
+
+  // Modal de confirmação de erros (step validacao)
+  const [showErrorConfirmModal, setShowErrorConfirmModal] = useState(false);
 
   // Step 1: Upload + Analyze
   const handleFileSelect = useCallback(async (file: File) => {
@@ -488,7 +492,13 @@ export default function ImportacaoPage() {
                 validateData.resumo.funcionariosAReadmitir ?? 0,
             }}
             funcoesComMudancaRole={validateData.funcoesComMudancaRole}
-            onConfirm={() => setStep('nivel-cargo')}
+            onConfirm={() => {
+              if (validateData.erros.length > 0) {
+                setShowErrorConfirmModal(true);
+              } else {
+                setStep('nivel-cargo');
+              }
+            }}
             onBack={() => {
               setStep('mapeamento');
               setError(null);
@@ -543,6 +553,21 @@ export default function ImportacaoPage() {
           totalLinhas={executeData.resumo.totalLinhasProcessadas}
           funcoesAlteradas={executeData.resumo.funcoesAlteradas ?? []}
           onNovaImportacao={handleNovaImportacao}
+        />
+      )}
+
+      {/* Modal de confirmação de erros — exibido ao tentar continuar com erros na validação */}
+      {showErrorConfirmModal && validateData && (
+        <ErrorConfirmationModal
+          totalErros={validateData.erros.length}
+          onCancel={() => {
+            setShowErrorConfirmModal(false);
+            handleNovaImportacao();
+          }}
+          onConfirm={() => {
+            setShowErrorConfirmModal(false);
+            setStep('nivel-cargo');
+          }}
         />
       )}
 
