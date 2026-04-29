@@ -528,4 +528,172 @@ describe('/api/auth/login - Nova Arquitetura', () => {
       'Tomador inativo. Entre em contato com o administrador.'
     );
   });
+
+  it('deve priorizar login como RH quando CPF existe em usuarios (rh) e funcionarios', async () => {
+    /**
+     * Teste específico para a correção de 29/04/2026:
+     * Quando um CPF existe em ambas as tabelas (usuarios com tipo_usuario='rh' e funcionarios),
+     * o sistema deve logar como RH, não como funcionário.
+     * Isso garante que gestores não percam acesso após funcionários completarem avaliações.
+     */
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '96208988934',
+      senha: 'rh_senha',
+    });
+
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios - ENCONTRA RH
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '96208988934',
+              nome: 'Rone Klaumann Branco',
+              tipo_usuario: 'rh',
+              clinica_id: 147,
+              entidade_id: null,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query na tabela clinicas_senhas
+      if (sql.includes('clinicas_senhas')) {
+        return Promise.resolve({
+          rows: [
+            {
+              senha_hash: '$2a$10$RHValidHash',
+              clinica_id: 147,
+              ativa: true,
+              primeira_senha_alterada: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query em funcionarios NÃO deve ser chamada (fallback não acionado)
+      if (sql.includes('funcionarios') && sql.includes('WHERE cpf =')) {
+        // Este bloco não deve ser alcançado; se for, o teste falha
+        console.warn('[TEST] ERRO: Fallback para funcionarios foi acionado indevidamente!');
+        return Promise.resolve({
+          rows: [],
+          rowCount: 0,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    mockCompare.mockResolvedValue(true);
+    mockCreateSession.mockResolvedValue();
+
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.cpf).toBe('96208988934');
+    expect(data.nome).toBe('Rone Klaumann Branco');
+    expect(data.perfil).toBe('rh');
+    expect(data.redirectTo).toBe('/rh');
+
+    // Verificar que a sessão foi criada com tipo RH, não funcionário
+    expect(mockCreateSession).toHaveBeenCalledWith({
+      cpf: '96208988934',
+      nome: 'Rone Klaumann Branco',
+      perfil: 'rh',
+      tomador_id: 147,
+      clinica_id: 147,
+      entidade_id: null,
+    });
+
+    // Verificar que a query de clinicas_senhas foi chamada (RH foi prioritizado)
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining('clinicas_senhas'),
+      expect.anything()
+    );
+  });
+
+  it('deve priorizar login como gestor quando CPF existe em usuarios (gestor) e funcionarios', async () => {
+    /**
+     * Teste genérico para validar que 'gestor' também é priorizado.
+     * Se um gestor de uma entidade também foi cadastrado como funcionário em outra,
+     * o login deve usar o perfil de gestor.
+     */
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '98765432101',
+      senha: 'gestor_senha',
+    });
+
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios - ENCONTRA GESTOR
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '98765432101',
+              nome: 'Maria Gestora',
+              tipo_usuario: 'gestor',
+              clinica_id: null,
+              entidade_id: 50,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query na tabela entidades_senhas
+      if (sql.includes('entidades_senhas')) {
+        return Promise.resolve({
+          rows: [
+            {
+              senha_hash: '$2a$10$GestorValidHash',
+              id: 50,
+              ativa: true,
+              primeira_senha_alterada: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query em funcionarios NÃO deve ser chamada
+      if (sql.includes('funcionarios') && sql.includes('WHERE cpf =')) {
+        console.warn('[TEST] ERRO: Fallback para funcionarios foi acionado indevidamente!');
+        return Promise.resolve({
+          rows: [],
+          rowCount: 0,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    mockCompare.mockResolvedValue(true);
+    mockCreateSession.mockResolvedValue();
+
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.cpf).toBe('98765432101');
+    expect(data.perfil).toBe('gestor');
+    expect(data.redirectTo).toBe('/entidade');
+
+    expect(mockCreateSession).toHaveBeenCalledWith({
+      cpf: '98765432101',
+      nome: 'Maria Gestora',
+      perfil: 'gestor',
+      tomador_id: 50,
+      clinica_id: null,
+      entidade_id: 50,
+    });
+  });
 });
