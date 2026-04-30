@@ -17,8 +17,9 @@ jest.mock('bcryptjs', () => ({
   hash: jest.fn().mockResolvedValue('$2b$12$hashed_senha'),
 }));
 
-import { query } from '@/lib/db';
+import { query, transaction } from '@/lib/db';
 const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockTransaction = transaction as jest.MockedFunction<typeof transaction>;
 
 const TOKEN_VALIDO = 'c'.repeat(64);
 const SENHA_VALIDA = 'SenhaForte123';
@@ -36,6 +37,10 @@ function makeRequest(body: unknown): NextRequest {
 describe('POST /api/admin/reset-senha/confirmar', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Simula transaction executando o callback com tx que delega para mockQuery
+    mockTransaction.mockImplementation(async (cb: any) =>
+      cb({ query: mockQuery })
+    );
   });
 
   describe('Validações de entrada', () => {

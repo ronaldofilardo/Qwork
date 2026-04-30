@@ -401,7 +401,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       /** CPFs cujo nivel_cargo está vazio/inválido na planilha (rastreado quando temNivelCargoDirecto=true) */
       semNivelNaPlanilha: Set<string>;
       /** Detalhes dos funcionários sem nível (para agrupamento visual por empresa no step 4) */
-      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string; cpf: string }>;
+      semNivelNaPlanilhaDetalhes: Array<{
+        nome: string;
+        empresa: string;
+        cpf: string;
+      }>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -536,7 +540,9 @@ export async function POST(request: Request): Promise<NextResponse> {
           // Um CPF já cadastrado em outro CNPJ ainda é considerado novo para a empresa importada.
           funcionariosNovos: (() => {
             const novasCombinacoes = new Set<string>();
-            const linhasComErroSet = new Set(validacao.erros.map((e) => e.linha));
+            const linhasComErroSet = new Set(
+              validacao.erros.map((e) => e.linha)
+            );
             for (let i = 0; i < parsed.data.length; i++) {
               if (linhasComErroSet.has(i + 2)) continue;
               const row = parsed.data[i];

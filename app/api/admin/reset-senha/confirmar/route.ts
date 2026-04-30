@@ -1,4 +1,4 @@
-/**
+﻿/**
  * POST /api/admin/reset-senha/confirmar
  *
  * Rota PÚBLICA — o usuário confirma sua nova senha usando o token recebido.
@@ -15,7 +15,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { query } from '@/lib/db';
+import { query, transaction } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
@@ -114,40 +114,42 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       const senhaHash = await bcrypt.hash(senha, 12);
 
-      await query(
-        `UPDATE usuarios
-         SET senha_hash              = $1,
-             ativo                   = true,
-             reset_token             = NULL,
-             reset_token_expira_em   = NULL,
-             reset_usado_em          = NOW(),
-             reset_tentativas_falhas = 0
-         WHERE cpf = $2`,
-        [senhaHash, u.cpf]
-      );
+      await transaction(async (tx) => {
+        await tx.query(
+          `UPDATE usuarios
+           SET senha_hash              = $1,
+               ativo                   = true,
+               reset_token             = NULL,
+               reset_token_expira_em   = NULL,
+               reset_usado_em          = NOW(),
+               reset_tentativas_falhas = 0
+           WHERE cpf = $2`,
+          [senhaHash, u.cpf]
+        );
 
-      // ── Sincronizar senha na tabela de autenticação dedicada ─────────────
-      // Gestores e RH autenticam via tabelas separadas (entidades_senhas /
-      // clinicas_senhas). A senha precisa ser gravada lá também, caso contrário
-      // o login falha porque a rota de login ignora usuarios.senha_hash para
-      // esses perfis.
-      if (u.tipo_usuario === 'gestor' && u.entidade_id) {
-        await query(
-          `INSERT INTO entidades_senhas (entidade_id, cpf, senha_hash, primeira_senha_alterada)
-           VALUES ($1, $2, $3, TRUE)
-           ON CONFLICT (cpf, entidade_id)
-           DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
-          [u.entidade_id, u.cpf, senhaHash]
-        );
-      } else if (u.tipo_usuario === 'rh' && u.clinica_id) {
-        await query(
-          `INSERT INTO clinicas_senhas (clinica_id, cpf, senha_hash, primeira_senha_alterada)
-           VALUES ($1, $2, $3, TRUE)
-           ON CONFLICT (cpf, clinica_id)
-           DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
-          [u.clinica_id, u.cpf, senhaHash]
-        );
-      }
+        // ── Sincronizar senha na tabela de autenticação dedicada ─────────────
+        // Gestores e RH autenticam via tabelas separadas (entidades_senhas /
+        // clinicas_senhas). A senha precisa ser gravada lá também, caso contrário
+        // o login falha porque a rota de login ignora usuarios.senha_hash para
+        // esses perfis.
+        if (u.tipo_usuario === 'gestor' && u.entidade_id) {
+          await tx.query(
+            `INSERT INTO entidades_senhas (entidade_id, cpf, senha_hash, primeira_senha_alterada)
+             VALUES ($1, $2, $3, TRUE)
+             ON CONFLICT (cpf, entidade_id)
+             DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
+            [u.entidade_id, u.cpf, senhaHash]
+          );
+        } else if (u.tipo_usuario === 'rh' && u.clinica_id) {
+          await tx.query(
+            `INSERT INTO clinicas_senhas (clinica_id, cpf, senha_hash, primeira_senha_alterada)
+             VALUES ($1, $2, $3, TRUE)
+             ON CONFLICT (cpf, clinica_id)
+             DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
+            [u.clinica_id, u.cpf, senhaHash]
+          );
+        }
+      });
 
       return NextResponse.json({ success: true });
     }
@@ -217,6 +219,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 400 }
     );
   } catch (error) {
+    // Conflito de CPF bloqueado pelo trigger de unicidade cross-perfil (tg_usuario_cpf_unico)
+    if (
+      (error as any)?.code === '23505' &&
+      (error as any)?.constraint === 'cpf_unico_sistema'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Não foi possível reativar a conta: este CPF possui conflito de cadastro no sistema. Contate o administrador para resolver o vínculo antes de gerar um novo link de reset.',
+        },
+        { status: 409 }
+      );
+    }
     console.error('[POST /api/admin/reset-senha/confirmar]', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

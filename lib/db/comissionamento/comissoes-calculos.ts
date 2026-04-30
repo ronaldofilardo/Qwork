@@ -5,11 +5,7 @@
  * da lógica de persistência (queries DB, auditoria).
  */
 
-import {
-  CUSTO_POR_AVALIACAO,
-  calcularComissaoCustoFixo,
-  type TipoCliente,
-} from '../../leads-config';
+import { CUSTO_POR_AVALIACAO, type TipoCliente } from '../../leads-config';
 import { PERCENTUAL_IMPOSTOS_PADRAO } from '../../financeiro/sociedade';
 import type { StatusComissao } from '../../types/comissionamento';
 import { calcularPrevisaoPagamento } from './utils';
@@ -47,6 +43,13 @@ export function calcularValoresComissao(params: {
   totalParcelas: number;
   valorParcela?: number | null;
   percentualImpostos?: number | null;
+  /**
+   * Número real de avaliações liberadas no lote.
+   * Obrigatório para modelo custo_fixo: comissão = custoFixo × numAvaliacoes / totalParcelas.
+   * Para modelo percentual é ignorado.
+   * Fallback: 1 (se não informado).
+   */
+  numAvaliacoes?: number | null;
 }): { resultado: ResultadoCalculoComissao } | { erro: string } {
   const {
     rep,
@@ -56,16 +59,13 @@ export function calcularValoresComissao(params: {
     totalParcelas,
     valorParcela = null,
     percentualImpostos = PERCENTUAL_IMPOSTOS_PADRAO,
+    numAvaliacoes = null,
   } = params;
 
   const modeloRep: string = rep.modelo_comissionamento ?? 'percentual';
   const isCustoFixo = modeloRep === 'custo_fixo';
 
   const percVinculo = vinculoPerc.percentual_comissao_representante;
-  const valorNegociadoVinculo: number | null =
-    vinculoPerc.valor_negociado != null
-      ? parseFloat(String(vinculoPerc.valor_negociado))
-      : null;
 
   const brutoPerParcel = valorLaudo / totalParcelas;
   const valorLiquidoGateway =
@@ -98,19 +98,30 @@ export function calcularValoresComissao(params: {
           ? parseFloat(String(rep.valor_custo_fixo_clinica))
           : null) ?? CUSTO_POR_AVALIACAO[tipoCliente];
 
-    const negociado = valorNegociadoVinculo ?? valorLaudo;
-    const { valorRep, abaixoMinimo } = calcularComissaoCustoFixo(
-      negociado,
-      custoFixoRep,
-      CUSTO_POR_AVALIACAO[tipoCliente]
-    );
-    if (abaixoMinimo) {
-      return {
-        erro: `Valor negociado (R$ ${negociado.toFixed(2)}) é inferior ao mínimo para ${tipoCliente} (R$ ${(custoFixoRep + CUSTO_POR_AVALIACAO[tipoCliente]).toFixed(2)}).`,
-      };
+    // Comissão custo_fixo = custoFixo × numAvaliacoes / totalParcelas
+    // Ex: R$5 × 10 avaliações / 1 parcela = R$50
+    // Ex: R$5 × 10 avaliações / 3 parcelas = R$16.67 por parcela
+    const numAval =
+      numAvaliacoes != null && numAvaliacoes > 0 ? numAvaliacoes : 1;
+    const totalParc = totalParcelas > 0 ? totalParcelas : 1;
+    const totalCustoFixoLote = custoFixoRep * numAval;
+    valorComissao = Math.round((totalCustoFixoLote / totalParc) * 100) / 100;
+
+    // Verificar viabilidade: QWork deve receber pelo menos CUSTO_MINIMO por avaliação
+    // baseRecebidaLiquida já é o total da parcela após impostos e gateway
+    const margemQWork = baseRecebidaLiquida - valorComissao;
+    const minimoQWorkParcela =
+      (CUSTO_POR_AVALIACAO[tipoCliente] * numAval) / totalParc;
+    if (
+      margemQWork < 0 ||
+      (minimoQWorkParcela > 0 && margemQWork < minimoQWorkParcela * 0.5)
+    ) {
+      // Aviso apenas — não bloqueia comissão se custo_fixo foi aprovado pelo comercial
+      console.warn(
+        `[Comissionamento] custo_fixo: margem QWork (R$${margemQWork.toFixed(2)}) abaixo do mínimo esperado (R$${minimoQWorkParcela.toFixed(2)}) — lote com ${numAval} avaliações, parcela ${totalParc}`
+      );
     }
-    const ratioRep = negociado > 0 ? valorRep / negociado : 0;
-    valorComissao = Math.round(ratioRep * baseRecebidaLiquida * 100) / 100;
+
     percentualRep = 0;
     baseCalculoFinal = baseRecebidaLiquida;
   } else {

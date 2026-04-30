@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import { CUSTO_POR_AVALIACAO } from '@/lib/leads-config';
 import {
   calcularDistribuicaoSociedade,
   getBeneficiariosSociedadePadrao,
@@ -33,6 +34,10 @@ interface PagamentoSociedadeRow {
   representante_id: number | null;
   valor_representante: string | number | null;
   tipo_cobranca: string | null;
+  /** Número de avaliações liberadas do lote (status != rascunho). */
+  num_avaliacoes: string | number | null;
+  /** tipo de clínica ou entidade para determinar custo mínimo por avaliação */
+  tipo_tomador: string | null;
 }
 
 interface EventoSociedade {
@@ -54,6 +59,14 @@ interface EventoSociedade {
   valorSocioRonaldo: number;
   valorSocioAntonio: number;
   representanteNome: string | null;
+  /** Número de avaliações liberadas do lote */
+  numAvaliacoes: number;
+  /** Margem líquida QWork por avaliação = (baseLiquida - valorRep) / numAvaliacoes */
+  valorQWorkLivre: number;
+  /** true se valorQWorkLivre >= custo mínimo QWork (R$5 clínica / R$12 entidade) */
+  cmpOk: boolean;
+  /** tipo de tomador: clinica | entidade */
+  tipoTomador: string | null;
 }
 
 interface ResumoPeriodo {
@@ -276,7 +289,9 @@ async function getPagamentosSociedade(
          r.nome AS representante_nome,
          cl_agg.first_rep_id AS representante_id,
          COALESCE(cl_agg.valor_representante, 0) AS valor_representante,
-         'laudo'::text AS tipo_cobranca
+         'laudo'::text AS tipo_cobranca,
+         COALESCE(aval_agg.num_avaliacoes, 0) AS num_avaliacoes,
+         CASE WHEN la.clinica_id IS NOT NULL THEN 'clinica' ELSE 'entidade' END AS tipo_tomador
        FROM lotes_avaliacao la
        LEFT JOIN tomadores t ON t.id = COALESCE(la.entidade_id, la.clinica_id)
        LEFT JOIN pagamentos p ON p.status = 'pago'
@@ -298,6 +313,11 @@ async function getPagamentosSociedade(
          FROM comissoes_laudo c
          WHERE c.lote_pagamento_id = la.id
        ) cl_agg ON TRUE
+       LEFT JOIN LATERAL (
+         SELECT COUNT(a.id)::int AS num_avaliacoes
+         FROM avaliacoes a
+         WHERE a.lote_id = la.id AND a.status != 'rascunho'
+       ) aval_agg ON TRUE
        LEFT JOIN representantes r ON r.id = cl_agg.first_rep_id
        WHERE la.status_pagamento = 'pago'
          AND la.pago_em >= NOW() - ($1::text || ' days')::interval
@@ -640,6 +660,30 @@ export async function GET(request: NextRequest) {
             percentualImpostos,
           });
 
+          const numAval = Math.max(
+            1,
+            parseInt(String(row.num_avaliacoes ?? '1'), 10)
+          );
+          const totalParcelasEvento = Math.max(
+            1,
+            Number(row.numero_parcelas ?? 1)
+          );
+          // margemLivre é a margem da parcela; para obter por avaliação dividimos
+          // pelo número de avaliações por parcela = numAval / totalParcelas
+          const margemParcela = distribuicao.margemLivre;
+          const avalPorParcela = numAval / totalParcelasEvento;
+          const valorQWorkLivre =
+            avalPorParcela > 0
+              ? toNumber(margemParcela / avalPorParcela)
+              : margemParcela;
+          const tipoTomadorEvento =
+            row.tipo_tomador === 'clinica' ? 'clinica' : 'entidade';
+          const custoMinimo =
+            CUSTO_POR_AVALIACAO[
+              tipoTomadorEvento as keyof typeof CUSTO_POR_AVALIACAO
+            ] ?? 5;
+          const cmpOk = valorQWorkLivre >= custoMinimo;
+
           return {
             id: `${row.id}-${parcela.numero}`,
             loteId: row.id,
@@ -662,6 +706,10 @@ export async function GET(request: NextRequest) {
             valorSocioRonaldo: distribuicao.valorSocioRonaldo,
             valorSocioAntonio: distribuicao.valorSocioAntonio,
             representanteNome: row.representante_nome ?? null,
+            numAvaliacoes: numAval,
+            valorQWorkLivre,
+            cmpOk,
+            tipoTomador: row.tipo_tomador ?? null,
           } satisfies EventoSociedade;
         });
       })

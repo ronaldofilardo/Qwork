@@ -23,6 +23,13 @@ jest.mock('@/lib/reset-senha/gerar-token', () => ({
   gerarTokenResetUsuario: jest.fn(),
   logEmailResetSenha: jest.fn(),
 }));
+jest.mock('@/lib/validators/cpf-unico', () => ({
+  checkCpfUnicoSistema: jest.fn().mockResolvedValue({
+    disponivel: true,
+    perfil: null,
+    message: null,
+  }),
+}));
 
 import { query, transaction } from '@/lib/db';
 import { requireRole } from '@/lib/session';

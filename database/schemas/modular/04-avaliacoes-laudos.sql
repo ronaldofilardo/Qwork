@@ -3134,7 +3134,7 @@ CREATE VIEW public.vw_funcionarios_por_lote AS
     f.funcao,
     f.turno,
     f.escala,
-    f.nivel_cargo,
+    COALESCE(fc.nivel_cargo, f.nivel_cargo) AS nivel_cargo,
     f.ativo,
     COALESCE(fe.entidade_id, fc.clinica_id) AS source_id,
         CASE

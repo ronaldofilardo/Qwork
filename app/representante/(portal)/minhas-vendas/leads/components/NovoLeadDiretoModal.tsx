@@ -14,6 +14,7 @@ import {
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
   valorMinimoCustoFixoTotal,
+  calcularValorMinimoPercentual,
   type TipoCliente,
 } from '@/lib/leads-config';
 
@@ -192,6 +193,13 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     valorNegociadoNum <
       valorMinimoCustoFixoTotal(form.tipo_cliente, custoFixoRep);
 
+  const valorAbaixoMinimoPercentual =
+    modeloComissionamento === 'percentual' &&
+    percRep > 0 &&
+    valorNegociadoNum > 0 &&
+    valorNegociadoNum <
+      calcularValorMinimoPercentual(form.tipo_cliente, percRep);
+
   const custoMinimo = CUSTO_POR_AVALIACAO[form.tipo_cliente];
 
   const fmtBRL = (v: number) =>
@@ -204,7 +212,8 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     !erros.cnpj &&
     numVidasNum >= 1 &&
     !erros.num_vidas_estimado &&
-    !custoFixoInvalido;
+    !custoFixoInvalido &&
+    !valorAbaixoMinimoPercentual;
 
   const salvar = useCallback(async () => {
     if (!form.contato_nome.trim()) {
@@ -419,25 +428,26 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
             {/* Dica de valor mínimo */}
             {modeloComissionamento === 'custo_fixo' ? (
               <p className="mt-1 text-xs text-gray-400">
-                Custo fixo:{' '}
+                Mínimo de venda:{' '}
                 <span className="font-medium text-gray-600">
-                  R${' '}
-                  {(form.tipo_cliente === 'entidade'
-                    ? (valorCustoFixoEntidade ?? CUSTO_POR_AVALIACAO.entidade)
-                    : (valorCustoFixoClinica ?? CUSTO_POR_AVALIACAO.clinica)
-                  ).toFixed(2)}
+                  {fmtBRL(
+                    custoFixoRep !== null
+                      ? valorMinimoCustoFixoTotal(
+                          form.tipo_cliente,
+                          custoFixoRep
+                        )
+                      : CUSTO_POR_AVALIACAO[form.tipo_cliente]
+                  )}
                   /avaliação
-                </span>{' '}
-                — negocie acima deste valor.
+                </span>
               </p>
             ) : (
               <p className="mt-1 text-xs text-gray-400">
-                Mínimo recomendado:{' '}
+                Mínimo obrigatório:{' '}
                 <span className="font-medium text-gray-600">
-                  R${' '}
-                  {form.tipo_cliente === 'entidade'
-                    ? CUSTO_POR_AVALIACAO.entidade.toFixed(2)
-                    : CUSTO_POR_AVALIACAO.clinica.toFixed(2)}
+                  {fmtBRL(
+                    calcularValorMinimoPercentual(form.tipo_cliente, percRep)
+                  )}
                   /avaliação
                 </span>
               </p>

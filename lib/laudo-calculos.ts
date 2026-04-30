@@ -89,6 +89,7 @@ export async function gerarDadosGeraisEmpresa(
     SELECT
       la.descricao,
       la.liberado_em,
+      la.empresa_id,
       COALESCE(e.nome, ec.nome) as empresa_nome,
       COALESCE(e.cnpj, ec.cnpj) as cnpj,
       COALESCE(e.endereco, ec.endereco) as endereco,
@@ -106,7 +107,7 @@ export async function gerarDadosGeraisEmpresa(
     LEFT JOIN clinicas c ON la.clinica_id = c.id
     LEFT JOIN avaliacoes a ON la.id = a.lote_id
     WHERE la.id = $1
-    GROUP BY la.id, la.descricao, la.liberado_em,
+    GROUP BY la.id, la.descricao, la.liberado_em, la.empresa_id,
              e.nome, e.cnpj, e.endereco, e.cidade, e.estado, e.cep,
              ec.nome, ec.cnpj, ec.endereco, ec.cidade, ec.estado, ec.cep,
              c.nome
@@ -128,18 +129,21 @@ export async function gerarDadosGeraisEmpresa(
     );
   }
 
-  // Buscar contagem de funcionários por nível
+  // Buscar contagem de funcionários por nível — usa nivel_cargo do VÍNCULO (fc), não da tabela global
+  // Segrega nível de cargo por empresa para prevenir 'bleeding' entre empresas que compartilham CPF
+  const empresaId = (lote.empresa_id as number | null) || undefined;
   const funcionariosResult = await query(
     `
     SELECT
       COUNT(*) as total,
-      SUM(CASE WHEN nivel_cargo = 'operacional' THEN 1 ELSE 0 END) as operacional,
-      SUM(CASE WHEN nivel_cargo = 'gestao' THEN 1 ELSE 0 END) as gestao
+      SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'operacional' THEN 1 ELSE 0 END) as operacional,
+      SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'gestao' THEN 1 ELSE 0 END) as gestao
     FROM funcionarios f
+    LEFT JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id AND fc.empresa_id = $2
     JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
     WHERE a.lote_id = $1 AND a.status = 'concluida'
   `,
-    [loteId],
+    empresaId ? [loteId, empresaId] : [loteId],
     session
   );
 

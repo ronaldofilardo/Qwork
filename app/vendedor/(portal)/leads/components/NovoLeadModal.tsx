@@ -15,6 +15,7 @@ import {
   calcularValoresComissao,
   calcularComissaoCustoFixo,
   valorMinimoCustoFixoTotal,
+  calcularValorMinimoPercentual,
   type TipoCliente,
 } from '@/lib/leads-config';
 
@@ -230,7 +231,7 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
       ? custoFixoRep !== null
         ? valorMinimoCustoFixoTotal(form.tipo_cliente, custoFixoRep)
         : custoMinimo
-      : custoMinimo;
+      : calcularValorMinimoPercentual(form.tipo_cliente, percRep);
 
   const valorAbaixoMinimo =
     valorNegociadoNum > 0 && valorNegociadoNum < valorMinimoObrigatorio;
@@ -484,25 +485,18 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
           {/* Dica de valor mínimo */}
           {modeloComissionamento === 'custo_fixo' ? (
             <p className="mt-1 text-xs text-gray-400">
-              Custo fixo:{' '}
+              Mínimo de venda:{' '}
               <span className="font-medium text-gray-600">
-                R${' '}
-                {(form.tipo_cliente === 'entidade'
-                  ? (valorCustoFixoEntidade ?? CUSTO_POR_AVALIACAO.entidade)
-                  : (valorCustoFixoClinica ?? CUSTO_POR_AVALIACAO.clinica)
-                ).toFixed(2)}
-                /avaliação
-              </span>{' '}
-              — negocie acima deste valor.
+                {fmtBRL(valorMinimoObrigatorio)}/avaliação
+              </span>
             </p>
           ) : (
             <p className="mt-1 text-xs text-gray-400">
-              Mínimo recomendado:{' '}
+              Mínimo obrigatório:{' '}
               <span className="font-medium text-gray-600">
-                R${' '}
-                {form.tipo_cliente === 'entidade'
-                  ? CUSTO_POR_AVALIACAO.entidade.toFixed(2)
-                  : CUSTO_POR_AVALIACAO.clinica.toFixed(2)}
+                {fmtBRL(
+                  calcularValorMinimoPercentual(form.tipo_cliente, percRep)
+                )}
                 /avaliação
               </span>
             </p>
@@ -592,10 +586,14 @@ export default function NovoLeadVendedorModal({ onClose, onSuccess }: Props) {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Custo fixo rep.</span>
+                <span className="text-gray-500">Sua comissão (custo fixo)</span>
                 <span className="text-green-700 font-medium">
                   {fmtBRL(custoFixoRep ?? 0)}
                 </span>
+              </div>
+              <div className="flex justify-between font-medium">
+                <span className="text-gray-600">Mínimo de venda (total)</span>
+                <span>{fmtBRL(valorMinimoObrigatorio)}</span>
               </div>
               {breakdownCustoFixo.abaixoMinimo && (
                 <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">

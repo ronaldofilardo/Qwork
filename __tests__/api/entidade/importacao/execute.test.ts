@@ -26,10 +26,12 @@ jest.mock('@/lib/importacao/data-validator', () => ({
 }));
 
 jest.mock('@/lib/db-transaction', () => ({
-  withTransactionAsGestor: jest.fn(async (fn: (client: unknown) => Promise<unknown>) => {
-    const { mockClient } = require('./execute.test');
-    return fn(mockClient);
-  }),
+  withTransactionAsGestor: jest.fn(
+    async (fn: (client: unknown) => Promise<unknown>) => {
+      const { mockClient } = require('./execute.test');
+      return fn(mockClient);
+    }
+  ),
 }));
 
 jest.mock('@/lib/cpf-utils', () => ({
@@ -110,9 +112,7 @@ describe('POST /api/entidade/importacao/execute', () => {
   let POST: (req: Request) => Promise<Response>;
 
   beforeAll(async () => {
-    const mod = await import(
-      '@/app/api/entidade/importacao/execute/route'
-    );
+    const mod = await import('@/app/api/entidade/importacao/execute/route');
     POST = mod.POST;
   });
 
@@ -128,13 +128,23 @@ describe('POST /api/entidade/importacao/execute', () => {
     parseSpreadsheetAllRows.mockReturnValue({
       success: true,
       data: [
-        { cpf: '52998224725', nome: 'João Silva', funcao: 'Analista', data_nascimento: '1990-01-01' },
+        {
+          cpf: '52998224725',
+          nome: 'João Silva',
+          funcao: 'Analista',
+          data_nascimento: '1990-01-01',
+        },
       ],
     });
 
     validarDadosImportacao.mockReturnValue({
       valido: true,
-      resumo: { totalLinhas: 1, linhasValidas: 1, linhasComErros: 0, cpfsUnicos: 1 },
+      resumo: {
+        totalLinhas: 1,
+        linhasValidas: 1,
+        linhasComErros: 0,
+        cpfsUnicos: 1,
+      },
       erros: [],
       avisos: [],
     });
@@ -142,11 +152,19 @@ describe('POST /api/entidade/importacao/execute', () => {
     // Configurar mock do client transacional
     mockClient.query.mockImplementation(async (sql: string) => {
       // SAVEPOINT operações
-      if (typeof sql === 'string' && (sql.startsWith('SAVEPOINT') || sql.startsWith('RELEASE') || sql.startsWith('ROLLBACK'))) {
+      if (
+        typeof sql === 'string' &&
+        (sql.startsWith('SAVEPOINT') ||
+          sql.startsWith('RELEASE') ||
+          sql.startsWith('ROLLBACK'))
+      ) {
         return { rows: [] };
       }
       // SELECT de funcionário existente — retorna vazio (novo funcionário)
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios WHERE cpf')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios WHERE cpf')
+      ) {
         return { rows: [] };
       }
       // INSERT funcionario
@@ -154,11 +172,17 @@ describe('POST /api/entidade/importacao/execute', () => {
         return { rows: [{ id: 99 }] };
       }
       // SELECT vínculo entidade — retorna vazio (novo vínculo)
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios_entidades')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios_entidades')
+      ) {
         return { rows: [] };
       }
       // INSERT vínculo
-      if (typeof sql === 'string' && sql.includes('INSERT INTO funcionarios_entidades')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('INSERT INTO funcionarios_entidades')
+      ) {
         return { rows: [] };
       }
       return { rows: [] };
@@ -182,7 +206,12 @@ describe('POST /api/entidade/importacao/execute', () => {
     const fd = new FormData();
     fd.append('mapeamento', JSON.stringify(MOCK_MAPEAMENTO));
     const req = {
-      headers: { get: (h: string) => h === 'content-type' ? 'multipart/form-data; boundary=----jest' : null },
+      headers: {
+        get: (h: string) =>
+          h === 'content-type'
+            ? 'multipart/form-data; boundary=----jest'
+            : null,
+      },
       formData: () => Promise.resolve(fd),
     } as unknown as Request;
     const res = await POST(req);
@@ -196,7 +225,12 @@ describe('POST /api/entidade/importacao/execute', () => {
     const fd = new FormData();
     fd.append('file', makeXlsxFile());
     const req = {
-      headers: { get: (h: string) => h === 'content-type' ? 'multipart/form-data; boundary=----jest' : null },
+      headers: {
+        get: (h: string) =>
+          h === 'content-type'
+            ? 'multipart/form-data; boundary=----jest'
+            : null,
+      },
       formData: () => Promise.resolve(fd),
     } as unknown as Request;
     const res = await POST(req);
@@ -209,8 +243,20 @@ describe('POST /api/entidade/importacao/execute', () => {
   it('retorna 400 quando nenhuma linha válida para importar', async () => {
     validarDadosImportacao.mockReturnValue({
       valido: false,
-      resumo: { totalLinhas: 1, linhasValidas: 0, linhasComErros: 1, cpfsUnicos: 1 },
-      erros: [{ linha: 2, campo: 'cpf', mensagem: 'CPF inválido', severidade: 'erro' }],
+      resumo: {
+        totalLinhas: 1,
+        linhasValidas: 0,
+        linhasComErros: 1,
+        cpfsUnicos: 1,
+      },
+      erros: [
+        {
+          linha: 2,
+          campo: 'cpf',
+          mensagem: 'CPF inválido',
+          severidade: 'erro',
+        },
+      ],
       avisos: [],
     });
 
@@ -249,8 +295,7 @@ describe('POST /api/entidade/importacao/execute', () => {
     // Verificar que NÃO foi feita nenhuma query à tabela de empresas
     const empresasCall = mockClient.query.mock.calls.find(
       (call: unknown[]) =>
-        typeof call[0] === 'string' &&
-        call[0].includes('empresas_clientes')
+        typeof call[0] === 'string' && call[0].includes('empresas_clientes')
     );
     expect(empresasCall).toBeUndefined();
   });
@@ -258,13 +303,26 @@ describe('POST /api/entidade/importacao/execute', () => {
   it('atualiza funcionário existente sem criar duplicata', async () => {
     // Simular funcionário já existente
     mockClient.query.mockImplementation(async (sql: string) => {
-      if (typeof sql === 'string' && (sql.startsWith('SAVEPOINT') || sql.startsWith('RELEASE') || sql.startsWith('ROLLBACK'))) {
+      if (
+        typeof sql === 'string' &&
+        (sql.startsWith('SAVEPOINT') ||
+          sql.startsWith('RELEASE') ||
+          sql.startsWith('ROLLBACK'))
+      ) {
         return { rows: [] };
       }
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios WHERE cpf')) {
-        return { rows: [{ id: 55, nivel_cargo: 'operacional', funcao: 'Analista' }] };
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios WHERE cpf')
+      ) {
+        return {
+          rows: [{ id: 55, nivel_cargo: 'operacional', funcao: 'Analista' }],
+        };
       }
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios_entidades')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios_entidades')
+      ) {
         return { rows: [{ id: 1, ativo: true, data_desvinculo: null }] };
       }
       if (typeof sql === 'string' && sql.includes('UPDATE funcionarios')) {
@@ -296,16 +354,30 @@ describe('POST /api/entidade/importacao/execute', () => {
     });
 
     mockClient.query.mockImplementation(async (sql: string) => {
-      if (typeof sql === 'string' && (sql.startsWith('SAVEPOINT') || sql.startsWith('RELEASE') || sql.startsWith('ROLLBACK'))) {
+      if (
+        typeof sql === 'string' &&
+        (sql.startsWith('SAVEPOINT') ||
+          sql.startsWith('RELEASE') ||
+          sql.startsWith('ROLLBACK'))
+      ) {
         return { rows: [] };
       }
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios WHERE cpf')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios WHERE cpf')
+      ) {
         return { rows: [{ id: 55, nivel_cargo: null, funcao: 'Analista' }] };
       }
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios_entidades')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios_entidades')
+      ) {
         return { rows: [{ id: 1, ativo: true, data_desvinculo: null }] };
       }
-      if (typeof sql === 'string' && sql.includes('UPDATE funcionarios_entidades')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('UPDATE funcionarios_entidades')
+      ) {
         return { rows: [] };
       }
       return { rows: [] };
@@ -354,17 +426,30 @@ describe('POST /api/entidade/importacao/execute', () => {
 
     validarDadosImportacao.mockReturnValue({
       valido: true,
-      resumo: { totalLinhas: 2, linhasValidas: 2, linhasComErros: 0, cpfsUnicos: 2 },
+      resumo: {
+        totalLinhas: 2,
+        linhasValidas: 2,
+        linhasComErros: 0,
+        cpfsUnicos: 2,
+      },
       erros: [],
       avisos: [],
     });
 
     let callCount = 0;
     mockClient.query.mockImplementation(async (sql: string) => {
-      if (typeof sql === 'string' && (sql.startsWith('SAVEPOINT') || sql.startsWith('RELEASE') || sql.startsWith('ROLLBACK'))) {
+      if (
+        typeof sql === 'string' &&
+        (sql.startsWith('SAVEPOINT') ||
+          sql.startsWith('RELEASE') ||
+          sql.startsWith('ROLLBACK'))
+      ) {
         return { rows: [] };
       }
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios WHERE cpf')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios WHERE cpf')
+      ) {
         return { rows: [] };
       }
       if (typeof sql === 'string' && sql.includes('INSERT INTO funcionarios')) {
@@ -373,7 +458,10 @@ describe('POST /api/entidade/importacao/execute', () => {
         if (callCount === 2) throw new Error('Constraint violation');
         return { rows: [{ id: callCount * 10 }] };
       }
-      if (typeof sql === 'string' && sql.includes('FROM funcionarios_entidades')) {
+      if (
+        typeof sql === 'string' &&
+        sql.includes('FROM funcionarios_entidades')
+      ) {
         return { rows: [] };
       }
       return { rows: [] };

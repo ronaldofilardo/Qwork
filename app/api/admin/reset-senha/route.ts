@@ -24,6 +24,7 @@ import {
   gerarTokenResetUsuario,
   logEmailResetSenha,
 } from '@/lib/reset-senha/gerar-token';
+import { checkCpfUnicoSistema } from '@/lib/validators/cpf-unico';
 
 // reqId não está na assinatura de extractRequestInfo — usar apenas ipAddress/userAgent
 
@@ -59,13 +60,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // 1. Verificar se é usuário na tabela `usuarios` com perfil permitido
     const usuarioRes = await query<{
+      id: number;
       cpf: string;
       nome: string;
       tipo_usuario: string;
       email: string | null;
       ativo: boolean;
     }>(
-      `SELECT cpf, nome, tipo_usuario, email, ativo
+      `SELECT id, cpf, nome, tipo_usuario, email, ativo
        FROM usuarios
        WHERE cpf = $1 AND tipo_usuario = ANY($2::usuario_tipo_enum[])
        LIMIT 1`,
@@ -75,6 +77,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (usuarioRes.rows.length > 0) {
       const usuario = usuarioRes.rows[0];
+
+      // Verificar antecipadamente se há conflito cross-perfil que impediria a reativação.
+      // O trigger tg_usuario_cpf_unico bloquearia o UPDATE ativo=true no confirmar/route.ts
+      // caso o CPF exista em representantes, leads ativos ou outro usuario bloqueante.
+      const conflito = await checkCpfUnicoSistema(cpf, {
+        ignorarUsuarioId: usuario.id,
+      });
+      if (!conflito.disponivel) {
+        return NextResponse.json(
+          {
+            error: `Não é possível gerar o link de reset: ${conflito.message}. Resolva o conflito de cadastro antes de prosseguir.`,
+          },
+          { status: 409 }
+        );
+      }
 
       const resultado = await transaction(async (tx) => {
         return gerarTokenResetUsuario(cpf, tx);

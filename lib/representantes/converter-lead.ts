@@ -123,6 +123,7 @@ export async function converterLeadEmRepresentante(
     // 5. Inserir representante
     // Status 'aguardando_senha': representante deve criar sua senha via link de convite
     // gestor_comercial_cpf = adminCpf (CPF do comercial que converteu o lead)
+    // Modelo padrão: percentual com 20%
     const insertResult = await client.query<{
       id: number;
       nome: string;
@@ -133,12 +134,14 @@ export async function converterLeadEmRepresentante(
         cpf, cnpj, cpf_responsavel_pj,
         asaas_wallet_id,
         gestor_comercial_cpf,
+        modelo_comissionamento, percentual_comissao,
         status, aprovado_em, aprovado_por_cpf
       ) VALUES (
         $1, $2, $3, $4,
         $5, $6, $7,
         $8,
         $9,
+        'percentual', 20,
         'aguardando_senha', NOW(), $10
       ) RETURNING id, nome, email`,
       [

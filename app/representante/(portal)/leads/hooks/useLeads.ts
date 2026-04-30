@@ -11,6 +11,7 @@ import {
 import {
   type TipoCliente,
   valorMinimoCustoFixoTotal,
+  calcularValorMinimoPercentual,
 } from '@/lib/leads-config';
 import type { Lead, NovoLeadForm, ErrosCampos } from '../types';
 
@@ -203,6 +204,13 @@ export function useLeads() {
     valorNegociadoNum <
       valorMinimoCustoFixoTotal(novoForm.tipo_cliente, custoFixoRep);
 
+  const valorAbaixoMinimoPercentual =
+    modeloComissionamento === 'percentual' &&
+    percRep > 0 &&
+    valorNegociadoNum > 0 &&
+    valorNegociadoNum <
+      calcularValorMinimoPercentual(novoForm.tipo_cliente, percRep);
+
   const formValido =
     normalizeCNPJ(novoForm.cnpj).length === 14 &&
     validarCNPJ(normalizeCNPJ(novoForm.cnpj)) &&
@@ -210,7 +218,8 @@ export function useLeads() {
     !errosCampos.contato_telefone &&
     valorNegociadoNum > 0 &&
     numVidasEstimadoNum > 0 &&
-    !custoFixoInvalido;
+    !custoFixoInvalido &&
+    !valorAbaixoMinimoPercentual;
 
   const criarLead = async (e: React.FormEvent) => {
     e.preventDefault();
