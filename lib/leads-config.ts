@@ -153,3 +153,20 @@ export function valorMinimoCustoFixoTotal(
 ): number {
   return custoFixoRep + CUSTO_POR_AVALIACAO[tipo];
 }
+
+/**
+ * Valor mínimo que o tomador deve pagar por avaliação no modelo percentual,
+ * de modo que o QWork receba ao menos CUSTO_POR_AVALIACAO[tipo] após pagar o representante.
+ *
+ * Fórmula: CUSTO_POR_AVALIACAO[tipo] / (1 − percRep / 100)
+ * Exemplo: clínica 20% → R$5 / 0,80 = R$6,25; entidade 40% → R$12 / 0,60 = R$20,00
+ */
+export function calcularValorMinimoPercentual(
+  tipo: TipoCliente,
+  percRep: number
+): number {
+  const cmp = CUSTO_POR_AVALIACAO[tipo];
+  if (percRep <= 0) return cmp;
+  if (percRep >= 100) return Infinity;
+  return Math.ceil((cmp / (1 - percRep / 100)) * 100) / 100;
+}

@@ -144,7 +144,10 @@ export async function POST(request: Request): Promise<NextResponse> {
           const cpfTrim = (vinculo.cpf as string).trim();
           cpfsVinculadosNaEntidade.add(cpfTrim);
           // Registrar nivel_cargo per-entidade (não global)
-          perEntidadeNivelMap.set(cpfTrim, (vinculo.nivel_cargo as string | null) || null);
+          perEntidadeNivelMap.set(
+            cpfTrim,
+            (vinculo.nivel_cargo as string | null) || null
+          );
           for (let i = 0; i < parsed.data.length; i++) {
             const row = parsed.data[i];
             if (limparCPF(row.cpf ?? '') === cpfTrim) {
@@ -350,7 +353,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       existentesCpfs: Set<string>;
       niveisSet: Set<NivelCargoValue>;
       semNivelNaPlanilha: Set<string>;
-      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string; cpf: string }>;
+      semNivelNaPlanilhaDetalhes: Array<{
+        nome: string;
+        empresa: string;
+        cpf: string;
+      }>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -439,7 +446,9 @@ export async function POST(request: Request): Promise<NextResponse> {
           // Funcionários novos = CPFs sem vínculo com esta entidade. Um CPF em outra entidade ainda é novo aqui.
           funcionariosNovos: (() => {
             const novosCpfs = new Set<string>();
-            const linhasComErroSet = new Set(validacao.erros.map((e) => e.linha));
+            const linhasComErroSet = new Set(
+              validacao.erros.map((e) => e.linha)
+            );
             for (let i = 0; i < parsed.data.length; i++) {
               if (linhasComErroSet.has(i + 2)) continue;
               const cpf = limparCPF(parsed.data[i].cpf ?? '');

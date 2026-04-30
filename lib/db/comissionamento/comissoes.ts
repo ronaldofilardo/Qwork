@@ -170,6 +170,12 @@ export async function criarComissaoAdmin(params: {
   parcela_confirmada_em?: Date | null;
   /** ID do pagamento Asaas que originou esta comissão (para rastreio de split). */
   asaas_payment_id?: string | null;
+  /**
+   * Número real de avaliações liberadas no lote (status != 'rascunho').
+   * Obrigatório para cálculo correto no modelo custo_fixo.
+   * Fallback: 1 (se não informado).
+   */
+  num_avaliacoes?: number | null;
 }): Promise<{ comissao: Record<string, unknown> | null; erro?: string }> {
   const {
     lote_pagamento_id,
@@ -186,6 +192,7 @@ export async function criarComissaoAdmin(params: {
     forcar_retida = false,
     parcela_confirmada_em = undefined,
     asaas_payment_id = undefined,
+    num_avaliacoes = null,
   } = params;
 
   const parcelaNum = Math.max(1, Math.min(parcela_numero, total_parcelas));
@@ -265,6 +272,7 @@ export async function criarComissaoAdmin(params: {
     valorLaudo: valor_laudo,
     totalParcelas: totalParc,
     valorParcela: _valor_parcela,
+    numAvaliacoes: num_avaliacoes,
   });
 
   if ('erro' in calculoResult) {
@@ -594,11 +602,29 @@ export async function criarComissaoAutomatica(params: {
     );
     const existingCount = parseInt(existingResult.rows[0]?.total ?? '0', 10);
 
+    // Contar avaliações liberadas do lote — usado no cálculo custo_fixo
+    let numAvaliacoesLote = 1;
+    try {
+      const avalCountResult = await query<{ count: string }>(
+        `SELECT COUNT(a.id)::int AS count
+         FROM avaliacoes a
+         WHERE a.lote_id = $1 AND a.status != 'rascunho'`,
+        [lote_id]
+      );
+      const counted = parseInt(avalCountResult.rows[0]?.count ?? '0', 10);
+      if (counted > 0) numAvaliacoesLote = counted;
+    } catch (err) {
+      console.warn(
+        `[Comissionamento] Erro ao contar avaliações do lote ${lote_id}:`,
+        err
+      );
+    }
+
     if (existingCount === 0) {
       if (total_parcelas > 1) {
         // PARCELADO: primeira chamada — provisionar TODAS as N parcelas como retida
         console.log(
-          `[Comissionamento] Lote ${lote_id}: provisionando ${total_parcelas} comissões antecipadamente`
+          `[Comissionamento] Lote ${lote_id}: provisionando ${total_parcelas} comissões antecipadamente (${numAvaliacoesLote} avaliações)`
         );
         for (let p = 1; p <= total_parcelas; p++) {
           const res = await criarComissaoAdmin({
@@ -616,6 +642,7 @@ export async function criarComissaoAutomatica(params: {
             forcar_retida: true,
             parcela_confirmada_em: null,
             asaas_payment_id: asaas_payment_id ?? null,
+            num_avaliacoes: numAvaliacoesLote,
           });
           if (res.erro && !res.erro.includes('já gerada')) {
             console.warn(
@@ -642,6 +669,7 @@ export async function criarComissaoAutomatica(params: {
           admin_cpf: 'WEBHOOK',
           parcela_confirmada_em: new Date(),
           asaas_payment_id: asaas_payment_id ?? null,
+          num_avaliacoes: numAvaliacoesLote,
         });
 
         if (result.erro) {

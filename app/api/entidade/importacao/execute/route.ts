@@ -109,7 +109,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Validação de formato — CNPJ ignorado para fluxo de Entidade
-    const validacao = validarDadosImportacao(parsed.data, { ignorarCnpj: true });
+    const validacao = validarDadosImportacao(parsed.data, {
+      ignorarCnpj: true,
+    });
 
     // Validação de self-assignment: gestor não pode se cadastrar como funcionário
     const gestorCpfLimpo = limparCPF(session.cpf ?? '');
@@ -337,8 +339,7 @@ export async function POST(request: Request): Promise<NextResponse> {
               avisosProcessamento.push({
                 linha: linhaNum,
                 cpf,
-                mensagem:
-                  'Funcionário inativo — não reativado automaticamente',
+                mensagem: 'Funcionário inativo — não reativado automaticamente',
               });
             } else {
               // Vínculo ativo sem demissão — atualizar nivel_cargo se fornecido
@@ -378,8 +379,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           // Rollback parcial — desfaz só este funcionário
           await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
           await client.query(`RELEASE SAVEPOINT ${savepointName}`);
-          const msg =
-            err instanceof Error ? err.message : 'Erro desconhecido';
+          const msg = err instanceof Error ? err.message : 'Erro desconhecido';
           errosProcessamento.push({ linha: linhaNum, cpf, mensagem: msg });
         }
       }

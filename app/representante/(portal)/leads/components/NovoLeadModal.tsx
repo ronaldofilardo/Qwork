@@ -7,6 +7,7 @@ import {
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
   valorMinimoCustoFixoTotal,
+  calcularValorMinimoPercentual,
 } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 import type { NovoLeadForm, ErrosCampos } from '../types';
@@ -262,6 +263,34 @@ export default function NovoLeadModal({
               className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
               required
             />
+            {/* Dica de valor mínimo */}
+            {modeloComissionamento === 'custo_fixo' && custoFixoRep !== null ? (
+              <p className="mt-1 text-xs text-gray-400">
+                Mínimo de venda:{' '}
+                <span className="font-medium text-gray-600">
+                  {fmtBRL(
+                    valorMinimoCustoFixoTotal(
+                      novoForm.tipo_cliente,
+                      custoFixoRep
+                    )
+                  )}
+                  /avaliação
+                </span>
+              </p>
+            ) : modeloComissionamento === 'percentual' && percRep > 0 ? (
+              <p className="mt-1 text-xs text-gray-400">
+                Mínimo obrigatório:{' '}
+                <span className="font-medium text-gray-600">
+                  {fmtBRL(
+                    calcularValorMinimoPercentual(
+                      novoForm.tipo_cliente,
+                      percRep
+                    )
+                  )}
+                  /avaliação
+                </span>
+              </p>
+            ) : null}
           </div>
 
           {/* Nº de Vidas Estimado */}

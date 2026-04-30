@@ -63,6 +63,13 @@ interface EventoSociedade {
   representanteNome: string | null;
   representanteId: number | null;
   loteId: number;
+  /** Número de avaliações liberadas do lote */
+  numAvaliacoes?: number;
+  /** Margem líquida QWork por avaliação */
+  valorQWorkLivre?: number;
+  /** true se valorQWorkLivre >= custo mínimo QWork */
+  cmpOk?: boolean;
+  tipoTomador?: string | null;
 }
 
 interface ConfiguracaoGateway {
@@ -614,6 +621,8 @@ export default function SociedadeContent() {
                   <th className="px-3 py-2">Custo Oper.</th>
                   <th className="px-3 py-2">Ronaldo</th>
                   <th className="px-3 py-2">Antonio</th>
+                  <th className="px-3 py-2 whitespace-nowrap">Limpo/Aval</th>
+                  <th className="px-3 py-2">CMP</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -712,6 +721,30 @@ export default function SociedadeContent() {
                             ).toFixed(1) + '%'
                           : '—'}
                       </div>
+                    </td>
+                    <td className="px-3 py-2 tabular-nums text-sm text-gray-700">
+                      {evento.valorQWorkLivre != null
+                        ? formatCurrency(evento.valorQWorkLivre)
+                        : '—'}
+                      {evento.numAvaliacoes != null &&
+                        evento.numAvaliacoes > 1 && (
+                          <div className="mt-0.5 text-xs text-gray-400">
+                            {evento.numAvaliacoes} aval.
+                          </div>
+                        )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {evento.cmpOk == null ? (
+                        <span className="text-gray-300 text-xs">—</span>
+                      ) : evento.cmpOk ? (
+                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-green-600/20">
+                          ok
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-600/20">
+                          abaixo
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

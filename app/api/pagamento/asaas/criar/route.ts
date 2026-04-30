@@ -368,6 +368,38 @@ export async function POST(request: NextRequest) {
               ? (v.valor_custo_fixo_clinica ?? undefined)
               : (v.valor_custo_fixo_entidade ?? undefined);
 
+          // Para modelo custo_fixo, o fixedValue Asaas deve ser o total do rep
+          // por parcela = custoFixo × numAvaliacoes / numeroParcelas.
+          // Ex: R$5 × 10 avaliações / 1 parcela = R$50 (por parcela Asaas).
+          let custoFixoParaSplit: number | undefined = undefined;
+          let numAvaliacoesLote = 1;
+          if (
+            v.modelo_comissionamento === 'custo_fixo' &&
+            valorCustoFixoRep !== undefined
+          ) {
+            // Buscar avaliações liberadas do lote (status != rascunho)
+            if (lote_id && lote_id > 0) {
+              try {
+                const avalCountRes = await query<{ count: string }>(
+                  `SELECT COUNT(a.id)::int AS count
+                   FROM avaliacoes a
+                   WHERE a.lote_id = $1 AND a.status != 'rascunho'`,
+                  [lote_id]
+                );
+                const counted = parseInt(
+                  avalCountRes.rows[0]?.count ?? '0',
+                  10
+                );
+                if (counted > 0) numAvaliacoesLote = counted;
+              } catch {
+                // fallback: numAvaliacoesLote = 1
+              }
+            }
+            const totalCustoFixo =
+              Number(valorCustoFixoRep) * numAvaliacoesLote;
+            custoFixoParaSplit = totalCustoFixo / numeroParcelas;
+          }
+
           // L3 fix: split deve ser calculado sobre o valor POR PARCELA, não o total.
           // O Asaas aplica fixedValue a cada parcela individualmente, portanto se
           // usar valorTotal o rep receria N × valorCorreto.
@@ -376,14 +408,15 @@ export async function POST(request: NextRequest) {
             valorParcela,
             tipoProduto,
             percRepFinal !== undefined ? Number(percRepFinal) : undefined,
-
-            valorCustoFixoRep !== undefined
-              ? Number(valorCustoFixoRep)
-              : undefined,
+            custoFixoParaSplit !== undefined
+              ? custoFixoParaSplit
+              : valorCustoFixoRep !== undefined
+                ? Number(valorCustoFixoRep)
+                : undefined,
             {
               metodoPagamento: metodo,
-              // Configura\u00e7\u00f5es do gateway lidas do banco (taxa_transacao, boleto, pix, cart\u00e3o)
-              // Garante que tx/transa\u00e7\u00e3o configurada pelo admin seja usada no c\u00e1lculo
+              // Configurações do gateway lidas do banco (taxa_transacao, boleto, pix, cartão)
+              // Garante que tx/transação configurada pelo admin seja usada no cálculo
               configuracoes: configuracoesGateway,
               numeroParcelas,
             }
