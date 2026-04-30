@@ -113,7 +113,7 @@ describe('POST /api/entidade/importacao/validate', () => {
 
     requireEntity.mockResolvedValue({
       entidade_id: 42,
-      cpf: '52998224725',
+      cpf: '99988877766',
       perfil: 'gestor',
     });
 

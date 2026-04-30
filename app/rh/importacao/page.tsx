@@ -153,6 +153,11 @@ export default function ImportacaoPage() {
     Record<string, NivelCargo>
   >({});
 
+  // Classificação individual por CPF (prioridade sobre por função no execute)
+  const [nivelCargoCpfMap, setNivelCargoCpfMap] = useState<
+    Record<string, NivelCargo>
+  >({});
+
   // Modal de progresso de importação
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [importConcluido, setImportConcluido] = useState(false);
@@ -222,6 +227,7 @@ export default function ImportacaoPage() {
       setValidateData(json.data);
       setShowSaveTemplate(true);
       setNivelCargoMap({}); // Reset classificação para a etapa de níveis
+      setNivelCargoCpfMap({});
       setStep('validacao');
     } catch {
       setError('Erro de conexão ao validar dados');
@@ -232,7 +238,7 @@ export default function ImportacaoPage() {
 
   // Step 3: Execute Import
   const handleExecute = useCallback(
-    async (nivelMap: Record<string, NivelCargo> | null) => {
+    async (nivelMap: Record<string, NivelCargo> | null, cpfMap: Record<string, NivelCargo> | null = null) => {
       const file = fileRef.current;
       if (!file || !mapeamento) return;
 
@@ -248,6 +254,9 @@ export default function ImportacaoPage() {
         formData.append('mapeamento', JSON.stringify(mapeamento));
         if (nivelMap) {
           formData.append('nivelCargoMap', JSON.stringify(nivelMap));
+        }
+        if (cpfMap && Object.keys(cpfMap).length > 0) {
+          formData.append('nivelCargoCpfMap', JSON.stringify(cpfMap));
         }
 
         const res = await fetch('/api/rh/importacao/execute', {
@@ -327,9 +336,10 @@ export default function ImportacaoPage() {
       }
     }
     void handleExecute(
-      Object.keys(nivelCargoMap).length > 0 ? nivelCargoMap : null
+      Object.keys(nivelCargoMap).length > 0 ? nivelCargoMap : null,
+      Object.keys(nivelCargoCpfMap).length > 0 ? nivelCargoCpfMap : null,
     );
-  }, [appliedTemplate, lastSavedTemplateId, nivelCargoMap, handleExecute]);
+  }, [appliedTemplate, lastSavedTemplateId, nivelCargoMap, nivelCargoCpfMap, handleExecute]);
 
   // Reset
   const handleNovaImportacao = useCallback(() => {
@@ -344,6 +354,7 @@ export default function ImportacaoPage() {
 
     setShowSaveTemplate(false);
     setNivelCargoMap({});
+    setNivelCargoCpfMap({});
     setAppliedTemplate(null);
     setLastSavedTemplateId(null);
     setShowProgressModal(false);
@@ -498,9 +509,10 @@ export default function ImportacaoPage() {
             }}
             funcoesComMudancaRole={validateData.funcoesComMudancaRole}
             onConfirm={() => {
-              const semNivel = validateData.avisos.filter(
-                (a) => a.campo === 'nivel_cargo'
-              ).length;
+              const semNivel =
+                validateData.temNivelCargoDirecto
+                  ? validateData.avisos.filter((a) => a.campo === 'nivel_cargo').length
+                  : 0;
               if (semNivel > 0) {
                 setShowNivelCargoWarningModal(true);
               } else if (validateData.erros.length > 0) {
@@ -524,6 +536,10 @@ export default function ImportacaoPage() {
           nivelCargoMap={nivelCargoMap}
           onChange={(funcao, nivel) =>
             setNivelCargoMap((prev) => ({ ...prev, [funcao]: nivel }))
+          }
+          nivelCargoCpfMap={nivelCargoCpfMap}
+          onChangeCpf={(cpf, nivel) =>
+            setNivelCargoCpfMap((prev) => ({ ...prev, [cpf]: nivel }))
           }
           onConfirm={handleNivelCargoConfirm}
           onBack={() => {

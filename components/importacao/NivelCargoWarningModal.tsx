@@ -1,6 +1,6 @@
 'use client';
 
-import { Info } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 
 interface NivelCargoWarningModalProps {
   count: number;
@@ -23,7 +23,7 @@ export default function NivelCargoWarningModal({
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-start gap-3 mb-4">
           <div className="flex-shrink-0 mt-0.5 w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center">
-            <Info size={18} className="text-amber-600" />
+            <AlertTriangle size={18} className="text-amber-600" />
           </div>
           <div>
             <h2
@@ -32,15 +32,29 @@ export default function NivelCargoWarningModal({
             >
               {count} funcionário{count !== 1 ? 's' : ''} sem nível de cargo
             </h2>
-            <p className="mt-1 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-gray-700">
+              A coluna <strong>nivel_cargo</strong> está mapeada, mas{' '}
               {count !== 1
-                ? 'Esses funcionários estão'
-                : 'Esse funcionário está'}{' '}
-              sem nível de cargo na planilha. Você poderá classificá-
-              {count !== 1 ? 'los' : 'lo'} manualmente no próximo passo.
+                ? `${count} funcionários estão`
+                : 'um funcionário está'}{' '}
+              com o campo em branco na planilha.
+            </p>
+            <p className="mt-2 text-sm text-gray-700">
+              Você poderá definir o nível de cada um no próximo passo. Os dois
+              valores aceitos são:{' '}
+              <span className="font-mono font-semibold text-gray-900">
+                gestao
+              </span>{' '}
+              ou{' '}
+              <span className="font-mono font-semibold text-gray-900">
+                operacional
+              </span>
+              .
             </p>
             <p className="mt-2 text-sm text-gray-600">
-              Deseja continuar ou voltar para corrigir a planilha?
+              Prefere corrigir na planilha antes de importar? Clique em{' '}
+              <strong>Cancelar importação</strong> e reenvie o arquivo
+              preenchido.
             </p>
           </div>
         </div>
@@ -50,13 +64,13 @@ export default function NivelCargoWarningModal({
             onClick={onCancel}
             className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           >
-            Voltar
+            Cancelar importação
           </button>
           <button
             onClick={onConfirm}
             className="px-4 py-2 text-sm font-medium text-white bg-amber-600 rounded-lg hover:bg-amber-700 transition-colors"
           >
-            Continuar assim mesmo
+            Continuar e classificar
           </button>
         </div>
       </div>

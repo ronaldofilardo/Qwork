@@ -5,7 +5,7 @@
  *
  * Comportamento esperado:
  * - Aparece quando validateData.avisos contém entradas com campo='nivel_cargo'
- * - Não bloqueia a importação — usuário escolhe Voltar ou Continuar
+ * - Bloqueia a importação até o usuário decidir: classificar ou cancelar
  * - Exibe contagem correta (singular/plural)
  * - Callbacks onCancel e onConfirm são chamados corretamente
  */
@@ -90,7 +90,7 @@ describe('NivelCargoWarningModal', () => {
       );
 
       expect(
-        screen.getByText(/Esses funcionários estão sem nível de cargo na planilha/i)
+        screen.getByText(/funcionários estão.*campo em branco na planilha/i)
       ).toBeInTheDocument();
     });
 
@@ -104,7 +104,7 @@ describe('NivelCargoWarningModal', () => {
       );
 
       expect(
-        screen.getByText(/Esse funcionário está sem nível de cargo na planilha/i)
+        screen.getByText(/um funcionário está.*campo em branco na planilha/i)
       ).toBeInTheDocument();
     });
 
@@ -118,7 +118,10 @@ describe('NivelCargoWarningModal', () => {
       );
 
       expect(
-        screen.getByText(/classificá-los manualmente no próximo passo/i)
+        screen.getByText('gestao')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('operacional')
       ).toBeInTheDocument();
     });
 
@@ -132,7 +135,7 @@ describe('NivelCargoWarningModal', () => {
       );
 
       expect(
-        screen.getByText(/Deseja continuar ou voltar para corrigir a planilha/i)
+        screen.getByText(/reenvie o arquivo preenchido/i)
       ).toBeInTheDocument();
     });
   });
@@ -150,7 +153,7 @@ describe('NivelCargoWarningModal', () => {
         />
       );
 
-      expect(screen.getByRole('button', { name: /voltar/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancelar importação/i })).toBeInTheDocument();
     });
 
     it('renderiza botão "Continuar assim mesmo"', () => {
@@ -163,7 +166,7 @@ describe('NivelCargoWarningModal', () => {
       );
 
       expect(
-        screen.getByRole('button', { name: /continuar assim mesmo/i })
+        screen.getByRole('button', { name: /continuar e classificar/i })
       ).toBeInTheDocument();
     });
 
@@ -176,7 +179,7 @@ describe('NivelCargoWarningModal', () => {
         />
       );
 
-      fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
+      fireEvent.click(screen.getByRole('button', { name: /cancelar importação/i }));
       expect(mockOnCancel).toHaveBeenCalledTimes(1);
       expect(mockOnConfirm).not.toHaveBeenCalled();
     });
@@ -191,7 +194,7 @@ describe('NivelCargoWarningModal', () => {
       );
 
       fireEvent.click(
-        screen.getByRole('button', { name: /continuar assim mesmo/i })
+        screen.getByRole('button', { name: /continuar e classificar/i })
       );
       expect(mockOnConfirm).toHaveBeenCalledTimes(1);
       expect(mockOnCancel).not.toHaveBeenCalled();
@@ -261,7 +264,7 @@ describe('NivelCargoWarningModal', () => {
       );
 
       const confirmBtn = screen.getByRole('button', {
-        name: /continuar assim mesmo/i,
+        name: /continuar e classificar/i,
       });
       expect(confirmBtn).toHaveClass('bg-amber-600');
     });
@@ -275,7 +278,7 @@ describe('NivelCargoWarningModal', () => {
         />
       );
 
-      const cancelBtn = screen.getByRole('button', { name: /voltar/i });
+      const cancelBtn = screen.getByRole('button', { name: /cancelar importação/i });
       expect(cancelBtn).toHaveClass('border-gray-300');
     });
 

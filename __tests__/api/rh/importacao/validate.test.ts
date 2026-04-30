@@ -114,7 +114,7 @@ describe('POST /api/rh/importacao/validate', () => {
 
     requireClinica.mockResolvedValue({
       clinica_id: 10,
-      cpf: '52998224725',
+      cpf: '99988877766',
       perfil: 'rh',
     });
 
@@ -231,8 +231,10 @@ describe('POST /api/rh/importacao/validate', () => {
           empresa_id: 5,
           ativo: true,
           data_desvinculo: null,
+          nivel_cargo: 'operacional',
           cpf: '52998224725',
           empresa_nome: 'Empresa X',
+          empresa_cnpj: '',
         },
       ],
     });

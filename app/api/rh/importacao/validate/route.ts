@@ -103,17 +103,17 @@ export async function POST(request: Request): Promise<NextResponse> {
     let funcionariosAReadmitir = 0;
     const avisosDb: typeof validacao.avisos = [];
     const existingFuncaoMap = new Map<string, string | null>();
-    const existingNivelCargoMap = new Map<string, string | null>();
     const existingNomeMap = new Map<string, string>();
     // CPF → nome da empresa (vínculo ativo mais recente)
     const existingEmpresaMap = new Map<string, string>();
     // CPFs com vínculo nesta clínica (ativo ou inativo) — escopa detecção de mudanças de função/nível
     const cpfsVinculadosNaClinica = new Set<string>();
+    const perCnpjNivelMap = new Map<string, string | null>();
 
     if (cpfsUnicos.length > 0) {
-      // Buscar funcionários existentes (inclui funcao, nivel_cargo e nome para detectar mudanças e sugerir classificação)
+      // Buscar funcionários existentes (inclui funcao e nome para detectar mudanças e sugerir classificação)
       const existResult = await query(
-        'SELECT id, cpf, nome, funcao, nivel_cargo FROM funcionarios WHERE cpf = ANY($1)',
+        'SELECT id, cpf, nome, funcao FROM funcionarios WHERE cpf = ANY($1)',
         [cpfsUnicos]
       );
       const existingCpfs = new Set<string>();
@@ -121,26 +121,34 @@ export async function POST(request: Request): Promise<NextResponse> {
         cpf: string;
         nome: string | null;
         funcao: string | null;
-        nivel_cargo: string | null;
       }[]) {
         existingCpfs.add(r.cpf.trim());
         existingFuncaoMap.set(r.cpf.trim(), r.funcao);
-        existingNivelCargoMap.set(r.cpf.trim(), r.nivel_cargo);
         if (r.nome) existingNomeMap.set(r.cpf.trim(), r.nome);
       }
       funcionariosExistentes = existingCpfs.size;
 
-      // Buscar vínculos existentes na clínica
+      // Buscar vínculos existentes na clínica (com nivel_cargo do vínculo para segregação por empresa)
       if (funcionariosExistentes > 0) {
         const cpfArray = [...existingCpfs];
         const vinculosResult = await query(
-          `SELECT fc.funcionario_id, fc.empresa_id, fc.ativo, fc.data_desvinculo, f.cpf, ec.nome as empresa_nome
+          `SELECT fc.funcionario_id, fc.empresa_id, fc.ativo, fc.data_desvinculo, fc.nivel_cargo,
+                  f.cpf, ec.nome as empresa_nome, ec.cnpj as empresa_cnpj
            FROM funcionarios_clinicas fc
            JOIN funcionarios f ON f.id = fc.funcionario_id
            JOIN empresas_clientes ec ON ec.id = fc.empresa_id
            WHERE f.cpf = ANY($1) AND fc.clinica_id = $2`,
           [cpfArray, clinicaId]
         );
+
+        // Preencher mapa por-CNPJ de nivel_cargo: chave="CPF|CNPJ_normalizado", valor=fc.nivel_cargo
+        for (const v of vinculosResult.rows) {
+          const cnpjNorm = normalizeCNPJ(v.empresa_cnpj as string);
+          perCnpjNivelMap.set(
+            `${(v.cpf as string).trim()}|${cnpjNorm}`,
+            (v.nivel_cargo as string | null) || null
+          );
+        }
 
         for (const vinculo of vinculosResult.rows) {
           const cpfTrim = (vinculo.cpf as string).trim();
@@ -270,7 +278,9 @@ export async function POST(request: Request): Promise<NextResponse> {
           : pareceIniciaisMudancaRole
             ? nomeDb || nomePlanilha
             : nomePlanilha;
-        const nivelRaw = existingNivelCargoMap.get(cpf) ?? null;
+        // Lookup por-CNPJ: se funcionário já tem vínculo nesta empresa, usa nivel_cargo do vínculo; senão null
+        const cnpjRow = normalizeCNPJ(row.cnpj_empresa ?? '');
+        const nivelRaw = perCnpjNivelMap.get(`${cpf}|${cnpjRow}`) ?? null;
         const nivelAtual: NivelCargoValue =
           nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
         if (!mudancaRoleDetalhesMap.has(novaFuncao)) {
@@ -324,7 +334,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
         if (funcaoAtual !== funcao) continue;
 
-        const nivelBancoRaw = existingNivelCargoMap.get(cpf) ?? null;
+        // Lookup por-CNPJ para nivel_cargo do vínculo
+        const cnpjRow = normalizeCNPJ(row.cnpj_empresa ?? '');
+        const nivelBancoRaw = perCnpjNivelMap.get(`${cpf}|${cnpjRow}`) ?? null;
         const nivelBanco: NivelCargoValue =
           nivelBancoRaw === 'gestao' || nivelBancoRaw === 'operacional'
             ? nivelBancoRaw
@@ -389,7 +401,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       /** CPFs cujo nivel_cargo está vazio/inválido na planilha (rastreado quando temNivelCargoDirecto=true) */
       semNivelNaPlanilha: Set<string>;
       /** Detalhes dos funcionários sem nível (para agrupamento visual por empresa no step 4) */
-      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string }>;
+      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string; cpf: string }>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -413,7 +425,9 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       if (cpfsVinculadosNaClinica.has(cpfRow)) {
         info.existentesCpfs.add(cpfRow);
-        const nivelRaw = existingNivelCargoMap.get(cpfRow) ?? null;
+        // Lookup por-CNPJ para nivel_cargo do vínculo
+        const cnpjRow = normalizeCNPJ(row.cnpj_empresa ?? '');
+        const nivelRaw = perCnpjNivelMap.get(`${cpfRow}|${cnpjRow}`) ?? null;
         const nivelNorm: NivelCargoValue =
           nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
         info.niveisSet.add(nivelNorm);
@@ -445,6 +459,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             info.semNivelNaPlanilhaDetalhes.push({
               nome: nomeRow,
               empresa: empresaRow,
+              cpf: cpfRow,
             });
           }
           info.semNivelNaPlanilha.add(cpfRow);
@@ -517,8 +532,24 @@ export async function POST(request: Request): Promise<NextResponse> {
           empresasNovas,
           empresasExistentes,
           funcionariosExistentes,
-          funcionariosNovos:
-            validacao.resumo.cpfsUnicos - funcionariosExistentes,
+          // Funcionários novos = pares (CPF, empresa) sem vínculo existente nesta clínica.
+          // Um CPF já cadastrado em outro CNPJ ainda é considerado novo para a empresa importada.
+          funcionariosNovos: (() => {
+            const novasCombinacoes = new Set<string>();
+            const linhasComErroSet = new Set(validacao.erros.map((e) => e.linha));
+            for (let i = 0; i < parsed.data.length; i++) {
+              if (linhasComErroSet.has(i + 2)) continue;
+              const row = parsed.data[i];
+              const cpf = limparCPF(row.cpf ?? '');
+              const cnpj = normalizeCNPJ(row.cnpj_empresa ?? '');
+              if (!cpf) continue;
+              const key = `${cpf}|${cnpj}`;
+              if (!perCnpjNivelMap.has(key)) {
+                novasCombinacoes.add(key);
+              }
+            }
+            return novasCombinacoes.size;
+          })(),
           funcionariosParaInativar,
           funcionariosJaInativos,
           funcionariosAReadmitir,

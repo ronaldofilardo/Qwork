@@ -167,7 +167,7 @@ describe('POST /api/rh/importacao/execute', () => {
 
     requireClinica.mockResolvedValue({
       clinica_id: 10,
-      cpf: '52998224725',
+      cpf: '99988877766',
       perfil: 'rh',
     });
 
