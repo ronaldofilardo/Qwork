@@ -62,12 +62,10 @@ export default function MinhasVendasComissoesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-gray-900">
-          Comissões — Vendas Diretas
-        </h1>
+        <h1 className="text-xl font-bold text-gray-900">Minhas Comissões</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Comissões geradas a partir dos seus leads diretos (sem intermediação
-          de vendedores).
+          Todas as comissões atribuídas a você (leads diretos e clientes via
+          vendedor).
         </p>
       </div>
 

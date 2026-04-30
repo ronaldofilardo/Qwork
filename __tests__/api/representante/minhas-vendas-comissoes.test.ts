@@ -1,6 +1,7 @@
 /**
  * @fileoverview Testes da API GET /api/representante/minhas-vendas/comissoes
- * @description Lista comissões de leads diretos/orfãos do representante.
+ * @description Lista TODAS as comissões do representante (diretas e via vendedor).
+ * O filtro EXISTS foi removido: rep vê todas as comissões atribuídas a ele.
  * valor_pendente inclui retida + congelada_aguardando_admin.
  */
 jest.mock('@/lib/db');
@@ -191,7 +192,7 @@ describe('GET /api/representante/minhas-vendas/comissoes', () => {
     expect(resumoSQL).toContain('valor_pendente');
   });
 
-  it('SQL de resumo deve usar EXISTS com leads_representante para filtrar leads diretos', async () => {
+  it('SQL de resumo deve filtrar apenas por representante_id (sem EXISTS, todas as comissões visíveis)', async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [emptyResumo], rowCount: 1 } as any)
       .mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 1 } as any)
@@ -200,10 +201,14 @@ describe('GET /api/representante/minhas-vendas/comissoes', () => {
     await GET(makeReq());
 
     const resumoSQL = mockQuery.mock.calls[0][0] as string;
-    expect(resumoSQL).toContain('EXISTS');
-    expect(resumoSQL).toContain('vinculos_comissao vc');
-    expect(resumoSQL).toContain('leads_representante lr');
-    expect(resumoSQL).toContain('lr.vendedor_id IS NULL');
+    // Filtro: apenas representante_id — sem EXISTS que excluía leads via vendedor
+    expect(resumoSQL).toContain('c.representante_id = $1');
+    // Não deve mais ter o EXISTS que escondia comissões de leads originados por vendedores
+    expect(resumoSQL).not.toContain('lr.vendedor_id IS NULL');
+    // Totais ainda corretos
+    expect(resumoSQL).toContain("'retida'");
+    expect(resumoSQL).toContain("'congelada_aguardando_admin'");
+    expect(resumoSQL).toContain('valor_pendente');
   });
 
   it('deve filtrar por status quando informado', async () => {
