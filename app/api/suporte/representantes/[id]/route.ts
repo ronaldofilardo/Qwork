@@ -121,8 +121,20 @@ export async function PATCH(
     const body = await request.json();
     const parsed = PatchSchema.safeParse(body);
     if (!parsed.success) {
+      const fieldErrors = parsed.error.flatten().fieldErrors;
+      const firstField = Object.keys(fieldErrors)[0];
+      const fieldLabel: Record<string, string> = {
+        nome: 'Nome',
+        email: 'E-mail',
+        telefone: 'Telefone',
+        status: 'Status',
+      };
+      const firstMsg =
+        firstField && fieldErrors[firstField]?.[0]
+          ? `${fieldLabel[firstField] ?? firstField}: ${fieldErrors[firstField]![0]}`
+          : 'Dados inv\u00e1lidos';
       return NextResponse.json(
-        { error: 'Dados inválidos', details: parsed.error.flatten() },
+        { error: firstMsg, details: parsed.error.flatten() },
         { status: 400 }
       );
     }
@@ -151,7 +163,7 @@ export async function PATCH(
       `UPDATE representantes
        SET ${setClauses}, atualizado_em = NOW()
        WHERE id = $${keys.length + 1}
-       RETURNING id, nome, email, status, codigo, atualizado_em`,
+       RETURNING id, nome, email, status, atualizado_em`,
       [...values, id]
     );
 

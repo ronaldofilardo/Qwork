@@ -295,6 +295,12 @@ describe('6. POST /api/admin/representantes-leads/[id]/converter — ownership c
     expect(src).toMatch(/import.*query.*@\/lib\/db/);
   });
 
+  it('aceita perfis comercial e suporte', () => {
+    expect(src).toMatch(
+      /requireRole\s*\(\s*\[.*comercial.*suporte|suporte.*comercial/i
+    );
+  });
+
   it('busca comercial_cpf antes de converter', () => {
     expect(src).toMatch(/comercial_cpf/);
   });

@@ -99,6 +99,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Validação de formato — CNPJ ignorado para fluxo de Entidade
     const validacao = validarDadosImportacao(parsed.data, { ignorarCnpj: true });
 
+    // Validação de self-assignment: gestor não pode se cadastrar como funcionário
+    const gestorCpfLimpo = limparCPF(session.cpf ?? '');
+    for (let i = 0; i < parsed.data.length; i++) {
+      const row = parsed.data[i];
+      const cpfLimpo = limparCPF(row.cpf ?? '');
+      if (cpfLimpo === gestorCpfLimpo && cpfLimpo.length === 11) {
+        validacao.erros.push({
+          linha: i + 2,
+          campo: 'cpf',
+          valor: row.cpf ?? '',
+          mensagem:
+            'Você não pode se cadastrar como funcionário da própria entidade',
+          severidade: 'erro',
+        });
+      }
+    }
+
     // Filtrar apenas linhas sem erros críticos
     const linhasComErroSet = new Set(validacao.erros.map((e) => e.linha));
     const linhasValidas = parsed.data.filter(
