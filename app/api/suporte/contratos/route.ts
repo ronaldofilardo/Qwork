@@ -37,6 +37,7 @@ export async function GET(): Promise<NextResponse> {
       perc_rep: string | null;
       valor_rep: string | null;
       isento_pagamento: boolean;
+      responsavel_cpf: string | null;
     }>(
       `WITH tomadores_base AS (
          SELECT
@@ -100,7 +101,8 @@ export async function GET(): Promise<NextResponse> {
          fin.valor_total,
          r.percentual_comissao AS perc_rep,
          fin.valor_rep,
-         tb.isento_pagamento
+         tb.isento_pagamento,
+         resp.responsavel_cpf
        FROM tomadores_base tb
        LEFT JOIN LATERAL (
          SELECT v.*
@@ -139,6 +141,17 @@ export async function GET(): Promise<NextResponse> {
          FROM public.comissoes_laudo cl
          WHERE cl.vinculo_id = vc.id
        ) fin ON true
+       LEFT JOIN LATERAL (
+         SELECT u.cpf AS responsavel_cpf
+         FROM public.usuarios u
+         WHERE (
+           (tb.tipo_contratante = 'entidade' AND u.tipo_usuario = 'gestor' AND u.entidade_id = tb.id)
+           OR
+           (tb.tipo_contratante = 'clinica' AND u.tipo_usuario = 'rh' AND u.clinica_id = tb.id)
+         ) AND u.ativo = true
+         ORDER BY u.id ASC
+         LIMIT 1
+       ) resp ON true
        ORDER BY
          COALESCE(ct.contrato_data, vc.data_inicio::timestamp, tb.criado_em) DESC,
          tb.contratante_nome ASC`,

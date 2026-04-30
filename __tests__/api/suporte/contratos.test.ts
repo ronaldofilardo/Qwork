@@ -214,4 +214,42 @@ describe('GET /api/suporte/contratos', () => {
     expect(sql).toContain('from contratos c');
     expect(sql).toContain('c.tomador_id = tb.id');
   });
+
+  it('inclui campo responsavel_cpf na query via lateral join em usuarios', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] } as never);
+    await GET();
+    const sql = (mockQuery.mock.calls[0][0] as string).toLowerCase();
+    expect(sql).toContain('responsavel_cpf');
+    expect(sql).toContain("tipo_usuario = 'gestor'");
+    expect(sql).toContain("tipo_usuario = 'rh'");
+    expect(sql).toContain('u.cpf as responsavel_cpf');
+  });
+
+  it('retorna responsavel_cpf quando presente na linha', async () => {
+    const contratoComResponsavel = {
+      ...vinculoComLaudo,
+      responsavel_cpf: '12345678900',
+    };
+    mockQuery.mockResolvedValueOnce({
+      rows: [contratoComResponsavel],
+    } as never);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.contratos[0].responsavel_cpf).toBe('12345678900');
+  });
+
+  it('retorna responsavel_cpf null quando nao ha usuario gestor/rh ativo', async () => {
+    const contratoSemResponsavel = {
+      ...vinculoSemLaudo,
+      responsavel_cpf: null,
+    };
+    mockQuery.mockResolvedValueOnce({
+      rows: [contratoSemResponsavel],
+    } as never);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.contratos[0].responsavel_cpf).toBeNull();
+  });
 });

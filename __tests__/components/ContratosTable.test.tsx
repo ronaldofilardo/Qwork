@@ -213,4 +213,122 @@ describe('ContratosTable', () => {
       0
     );
   });
+
+  it('modo suporte: exibe coluna Responsavel e omite Representante, Tempo e Com. Rep.', async () => {
+    jest.restoreAllMocks();
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        contratos: [
+          {
+            contratante_nome: 'Entidade Suporte',
+            contratante_cnpj: '22333444000155',
+            contratante_id: 20,
+            vinculo_id: 3,
+            tipo_contratante: 'entidade',
+            rep_nome: 'Joao Rep',
+            rep_codigo: 'JR01',
+            rep_cpf: '99988877766',
+            lead_data: '2026-03-01T00:00:00.000Z',
+            contrato_data: '2026-03-10',
+            tempo_dias: '9',
+            tipo_comissionamento: 'percentual',
+            percentual_comissao: '12.00',
+            valor_custo_fixo: null,
+            valor_negociado: null,
+            total_laudos: '3',
+            total_lotes: '2',
+            avaliacoes_concluidas: '6',
+            valor_avaliacao: '30.00',
+            valor_total: '180.00',
+            perc_rep: '12.00',
+            valor_rep: '21.60',
+            isento_pagamento: false,
+            responsavel_cpf: '11122233344',
+          },
+        ],
+      }),
+    } as Response);
+
+    render(
+      <ContratosTable
+        endpoint="/api/suporte/contratos"
+        allowGerarContrato
+        allowExpandClinicaEmpresas
+        suporte
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Entidade Suporte').length).toBeGreaterThan(0);
+    });
+
+    // Coluna Responsavel deve existir (pode aparecer no header e no mobile card)
+    expect(screen.getAllByText('Responsável').length).toBeGreaterThan(0);
+
+    // Header da tabela desktop nao deve conter "Representante", "Com. Rep.", "Tempo"
+    const headers = screen.getAllByRole('columnheader');
+    const headerTexts = headers.map((h) => h.textContent ?? '');
+    expect(headerTexts.some((t) => t.includes('Representante'))).toBe(false);
+    expect(headerTexts.some((t) => t.includes('Com. Rep.'))).toBe(false);
+    expect(headerTexts.some((t) => t.includes('Tempo'))).toBe(false);
+
+    // Tipo deve ser o nome completo
+    expect(screen.getAllByText('Percentual').length).toBeGreaterThan(0);
+  });
+
+  it('modo suporte: exibe CPF do responsavel formatado', async () => {
+    jest.restoreAllMocks();
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        contratos: [
+          {
+            contratante_nome: 'Clinica RH Test',
+            contratante_cnpj: '55666777000188',
+            contratante_id: 30,
+            vinculo_id: null,
+            tipo_contratante: 'clinica',
+            rep_nome: null,
+            rep_codigo: null,
+            rep_cpf: null,
+            lead_data: null,
+            contrato_data: null,
+            tempo_dias: null,
+            tipo_comissionamento: 'custo_fixo',
+            percentual_comissao: null,
+            valor_custo_fixo: '40.00',
+            valor_negociado: '50.00',
+            total_laudos: '0',
+            total_lotes: '0',
+            avaliacoes_concluidas: '0',
+            valor_avaliacao: null,
+            valor_total: null,
+            perc_rep: null,
+            valor_rep: null,
+            isento_pagamento: false,
+            responsavel_cpf: '98765432100',
+          },
+        ],
+      }),
+    } as Response);
+
+    render(
+      <ContratosTable
+        endpoint="/api/suporte/contratos"
+        allowGerarContrato
+        suporte
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Clinica RH Test').length).toBeGreaterThan(0);
+    });
+
+    // CPF formatado do responsavel deve aparecer (mobile e desktop)
+    expect(screen.getAllByText('987.654.321-00').length).toBeGreaterThan(0);
+
+    // Tipo custo_fixo deve ser nome completo
+    expect(screen.getAllByText('Custo Fixo').length).toBeGreaterThan(0);
+  });
 });
