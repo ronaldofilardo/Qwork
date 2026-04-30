@@ -74,6 +74,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Validação de formato
     const validacao = validarDadosImportacao(parsed.data);
 
+    // Validação de self-assignment: responsável não pode se cadastrar como funcionário
+    const responsavelCpfLimpo = limparCPF(session.cpf ?? '');
+    for (let i = 0; i < parsed.data.length; i++) {
+      const row = parsed.data[i];
+      const cpfLimpo = limparCPF(row.cpf ?? '');
+      if (cpfLimpo === responsavelCpfLimpo && cpfLimpo.length === 11) {
+        validacao.erros.push({
+          linha: i + 2,
+          campo: 'cpf',
+          valor: row.cpf ?? '',
+          mensagem:
+            'Você não pode se cadastrar como funcionário da própria clínica',
+          severidade: 'erro',
+        });
+      }
+    }
+
     // Consultar banco para duplicidades
     const cpfs = parsed.data
       .map((r) => limparCPF(r.cpf ?? ''))

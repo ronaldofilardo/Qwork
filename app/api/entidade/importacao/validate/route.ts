@@ -76,6 +76,23 @@ export async function POST(request: Request): Promise<NextResponse> {
       ignorarCnpj: true,
     });
 
+    // Validação de self-assignment: gestor não pode se cadastrar como funcionário
+    const gestorCpfLimpo = limparCPF(session.cpf ?? '');
+    for (let i = 0; i < parsed.data.length; i++) {
+      const row = parsed.data[i];
+      const cpfLimpo = limparCPF(row.cpf ?? '');
+      if (cpfLimpo === gestorCpfLimpo && cpfLimpo.length === 11) {
+        validacao.erros.push({
+          linha: i + 2,
+          campo: 'cpf',
+          valor: row.cpf ?? '',
+          mensagem:
+            'Você não pode se cadastrar como funcionário da própria entidade',
+          severidade: 'erro',
+        });
+      }
+    }
+
     // Consultar banco para duplicidades
     const cpfs = parsed.data
       .map((r) => limparCPF(r.cpf ?? ''))

@@ -181,6 +181,18 @@ describe('Bug fix — total_vendedores usa JOIN usuarios (suporte API)', () => {
   it('usa requireRole com perfil suporte', () => {
     expect(src).toMatch(/requireRole.*suporte|suporte.*requireRole/);
   });
+
+  it('inclui telefone no SELECT', () => {
+    expect(src).toMatch(/r\.telefone/);
+  });
+
+  it('inclui valor_custo_fixo_entidade no SELECT', () => {
+    expect(src).toMatch(/r\.valor_custo_fixo_entidade/);
+  });
+
+  it('inclui valor_custo_fixo_clinica no SELECT', () => {
+    expect(src).toMatch(/r\.valor_custo_fixo_clinica/);
+  });
 });
 
 // ===========================================================================

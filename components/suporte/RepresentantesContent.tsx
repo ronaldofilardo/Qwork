@@ -55,12 +55,12 @@ export function RepresentantesContent({
 
   if (tabAtiva === 'representantes') {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
             Representantes Comerciais
           </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-gray-500 mt-1">
             Lista de todos os representantes e seus vendedores vinculados.
           </p>
         </div>

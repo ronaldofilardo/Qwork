@@ -290,6 +290,75 @@ describe('5. POST /api/suporte/representantes/[id]/ativar', () => {
 // [Seções 6-7 REMOVIDAS] — Endpoints eliminados na migration 1212
 
 // ---------------------------------------------------------------------------
+// 5b. POST /api/suporte/representantes/[id]/aprovar-comissao
+// ---------------------------------------------------------------------------
+
+describe('5b. POST /api/suporte/representantes/[id]/aprovar-comissao — suporte define modelo', () => {
+  const routePath = path.join(
+    ROOT,
+    'app',
+    'api',
+    'suporte',
+    'representantes',
+    '[id]',
+    'aprovar-comissao',
+    'route.ts'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(routePath, 'utf-8');
+  });
+
+  it('arquivo deve existir', () => {
+    expect(fs.existsSync(routePath)).toBe(true);
+  });
+
+  it('deve ter export const dynamic force-dynamic', () => {
+    expect(src).toContain("export const dynamic = 'force-dynamic'");
+  });
+
+  it('deve exigir perfil suporte', () => {
+    expect(src).toMatch(/requireRole\s*\(\s*'suporte'/);
+  });
+
+  it('deve validar modelo com z.enum', () => {
+    expect(src).toContain("z.enum(['percentual', 'custo_fixo'])");
+  });
+
+  it('deve rejeitar percentual > 40', () => {
+    expect(src).toContain('.max(40)');
+  });
+
+  it('deve verificar blocklist de status (STATUS_INVALIDO)', () => {
+    expect(src).toContain("['rejeitado', 'desativado', 'suspenso']");
+    expect(src).toContain('STATUS_INVALIDO');
+  });
+
+  it('deve atualizar modelo_comissionamento no DB', () => {
+    expect(src).toMatch(/modelo_comissionamento\s*=\s*\$1/);
+  });
+
+  it('deve ativar representante para status apto', () => {
+    expect(src).toContain("'apto'");
+  });
+
+  it('deve retornar 422 se dados inválidos', () => {
+    expect(src).toContain('{ status: 422 }');
+  });
+
+  it('deve retornar 409 com STATUS_INVALIDO se status bloqueado', () => {
+    expect(src).toContain('{ status: 409 }');
+  });
+
+  it('deve logar evento de definição de modelo', () => {
+    expect(src).toContain('suporte_definiu_modelo_comissao');
+  });
+});
+
+// [Seções 6-7 REMOVIDAS] — Endpoints eliminados na migration 1212
+
+// ---------------------------------------------------------------------------
 // 8. POST /api/suporte/comissionamento/representantes/[id]/desbloquear — Fase 5
 // ---------------------------------------------------------------------------
 

@@ -57,12 +57,16 @@ export async function GET(request: NextRequest) {
       id: number;
       nome: string;
       email: string | null;
+      telefone: string | null;
       status: string;
       tipo_pessoa: string | null;
       cpf: string | null;
+      cpf_responsavel_pj: string | null;
       cnpj: string | null;
       percentual_comissao: number | null;
       modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+      valor_custo_fixo_entidade: number | null;
+      valor_custo_fixo_clinica: number | null;
       asaas_wallet_id: string | null;
       criado_em: string;
       total_vendedores: number;
@@ -71,12 +75,16 @@ export async function GET(request: NextRequest) {
          r.id,
          r.nome,
          r.email,
+         r.telefone,
          r.status,
          r.tipo_pessoa,
          r.cpf,
+         r.cpf_responsavel_pj,
          r.cnpj,
          r.percentual_comissao,
          r.modelo_comissionamento,
+         r.valor_custo_fixo_entidade,
+         r.valor_custo_fixo_clinica,
          r.asaas_wallet_id,
          r.criado_em,
          (

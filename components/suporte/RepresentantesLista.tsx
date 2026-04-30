@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { validarEmail, validarTelefone } from '@/lib/validators';
 import {
   Users,
   User,
@@ -15,6 +16,8 @@ import {
   Loader2,
   AlertCircle,
   KeyRound,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -39,9 +42,12 @@ interface Representante {
   status: string;
   tipo_pessoa: string | null;
   cpf: string | null;
+  cpf_responsavel_pj: string | null;
   cnpj: string | null;
   percentual_comissao: number | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+  valor_custo_fixo_entidade: number | null;
+  valor_custo_fixo_clinica: number | null;
   asaas_wallet_id: string | null;
   telefone: string | null;
   criado_em: string;
@@ -138,19 +144,19 @@ function RepresentanteCard({
       }}
       role="button"
       tabIndex={0}
-      className="w-full text-left bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:shadow-md transition-all duration-150 p-5 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/30"
+      className="w-full text-left bg-white rounded-xl border border-gray-200 hover:border-green-400 hover:shadow-lg transition-all duration-200 p-5 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/30"
     >
       <div className="flex items-start gap-4">
-        <div className="w-11 h-11 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-base flex-shrink-0 group-hover:bg-green-200 transition-colors">
+        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-black text-[15px] flex-shrink-0 group-hover:bg-green-200 transition-colors">
           {initials}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-gray-900 text-sm truncate">
+            <p className="font-bold text-gray-900 text-[15px] truncate">
               {rep.nome}
             </p>
             <ChevronRight
-              size={15}
+              size={16}
               className="text-gray-300 group-hover:text-green-500 flex-shrink-0 transition-colors"
             />
           </div>
@@ -159,35 +165,60 @@ function RepresentanteCard({
           )}
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${st.cls}`}
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${st.cls}`}
             >
               {st.label}
             </span>
-            <span className="text-[10px] font-mono font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+            <span className="text-xs font-mono font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
               #{rep.id}
             </span>
           </div>
         </div>
       </div>
-      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+      <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600 font-medium">
         <div className="flex items-center gap-1.5">
-          <Users size={12} />
+          <Users size={12} className="text-gray-400" />
           <span>
             {rep.total_vendedores} vendedor
             {rep.total_vendedores !== 1 ? 'es' : ''}
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Wallet size={12} />
-          <span>
-            {rep.modelo_comissionamento === 'custo_fixo'
-              ? 'Custo Fixo'
-              : rep.percentual_comissao != null
-                ? `${rep.percentual_comissao}% comissao`
-                : 'Sem comissao'}
-          </span>
+          {rep.modelo_comissionamento === 'custo_fixo' ? (
+            <div className="flex flex-col items-start gap-0.5">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                <Wallet size={11} />
+                Custo Fixo
+              </span>
+              <div className="flex gap-2 text-[10px] text-blue-600 font-medium pl-0.5">
+                <span>
+                  Ent. R$
+                  {rep.valor_custo_fixo_entidade != null
+                    ? Number(rep.valor_custo_fixo_entidade).toFixed(2)
+                    : '12,00'}
+                </span>
+                <span>·</span>
+                <span>
+                  Clín. R$
+                  {rep.valor_custo_fixo_clinica != null
+                    ? Number(rep.valor_custo_fixo_clinica).toFixed(2)
+                    : '5,00'}
+                </span>
+              </div>
+            </div>
+          ) : rep.percentual_comissao != null ? (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+              <Wallet size={11} />
+              {rep.percentual_comissao}% comissão
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium text-gray-400 border border-dashed border-gray-300">
+              <Wallet size={11} />
+              Sem comissão
+            </span>
+          )}
           {rep.modelo_comissionamento && !rep.asaas_wallet_id && (
-            <span className="ml-1 text-[9px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5 uppercase tracking-wide">
+            <span className="text-[9px] font-bold text-orange-600 bg-orange-100 rounded-full px-1.5 py-0.5 uppercase tracking-wide">
               Wallet
             </span>
           )}
@@ -206,6 +237,133 @@ function RepresentanteCard({
           Resetar senha
         </button>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Row do Representante (modo lista)
+// ---------------------------------------------------------------------------
+
+function RepresentanteRow({
+  rep,
+  onClick,
+  abrirReset,
+}: {
+  rep: Representante;
+  onClick: () => void;
+  abrirReset: (rep: Representante) => void;
+}) {
+  const st = STATUS_LABEL[rep.status] ?? {
+    label: rep.status,
+    cls: 'bg-gray-100 text-gray-500',
+  };
+  const initials = rep.nome
+    .split(' ')
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      className="w-full flex items-center gap-4 bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-green-400 hover:shadow-md transition-all duration-200 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/30"
+    >
+      {/* Avatar */}
+      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-black text-sm flex-shrink-0 group-hover:bg-green-200 transition-colors">
+        {initials}
+      </div>
+
+      {/* Nome + e-mail */}
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-gray-900 text-[15px] truncate">
+          {rep.nome}
+        </p>
+        {rep.email && (
+          <p className="text-xs text-gray-400 truncate">{rep.email}</p>
+        )}
+      </div>
+
+      {/* Badges status + ID */}
+      <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+        <span
+          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide ${st.cls}`}
+        >
+          {st.label}
+        </span>
+        <span className="text-xs font-mono font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded">
+          #{rep.id}
+        </span>
+      </div>
+
+      {/* Comissão */}
+      <div className="hidden md:flex items-center flex-shrink-0 w-44 justify-end">
+        {rep.modelo_comissionamento === 'custo_fixo' ? (
+          <div className="flex flex-col items-end gap-0.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              <Wallet size={11} />
+              Custo Fixo
+            </span>
+            <div className="flex gap-2 text-[10px] text-blue-600 font-medium">
+              <span>
+                Ent. R$
+                {rep.valor_custo_fixo_entidade != null
+                  ? Number(rep.valor_custo_fixo_entidade).toFixed(2)
+                  : '12,00'}
+              </span>
+              <span>·</span>
+              <span>
+                Clín. R$
+                {rep.valor_custo_fixo_clinica != null
+                  ? Number(rep.valor_custo_fixo_clinica).toFixed(2)
+                  : '5,00'}
+              </span>
+            </div>
+          </div>
+        ) : rep.percentual_comissao != null ? (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-bold bg-green-50 text-green-700 border border-green-200">
+            <Wallet size={11} />
+            {rep.percentual_comissao}% comissão
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium text-gray-400 border border-dashed border-gray-300">
+            <Wallet size={11} />
+            Sem comissão
+          </span>
+        )}
+      </div>
+
+      {/* Vendedores */}
+      <div className="hidden lg:flex items-center gap-1.5 text-xs text-gray-500 flex-shrink-0 w-24 justify-end">
+        <Users size={12} className="text-gray-400" />
+        <span>{rep.total_vendedores} vend.</span>
+      </div>
+
+      {/* Reset senha */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          abrirReset(rep);
+        }}
+        className="ml-1 flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition-all duration-150"
+      >
+        <KeyRound size={12} />
+        <span className="hidden sm:inline">Resetar senha</span>
+      </button>
+
+      <ChevronRight
+        size={16}
+        className="text-gray-300 group-hover:text-green-500 flex-shrink-0 transition-colors"
+      />
     </div>
   );
 }
@@ -230,6 +388,24 @@ function RepresentanteDrawer({
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
+  const [editandoComissao, setEditandoComissao] = useState(false);
+  const [salvandoComissao, setSalvandoComissao] = useState(false);
+  const [erroComissao, setErroComissao] = useState<string | null>(null);
+  const [sucessoComissao, setSucessoComissao] = useState<string | null>(null);
+  const [formComissao, setFormComissao] = useState<{
+    modelo: 'percentual' | 'custo_fixo';
+    percentual: string;
+    valor_custo_fixo_entidade: string;
+    valor_custo_fixo_clinica: string;
+    asaas_wallet_id: string;
+  }>({
+    modelo: 'percentual',
+    percentual: '',
+    valor_custo_fixo_entidade: '',
+    valor_custo_fixo_clinica: '',
+    asaas_wallet_id: '',
+  });
+
   const [form, setForm] = useState({
     nome: '',
     email: '',
@@ -237,6 +413,46 @@ function RepresentanteDrawer({
     status: '',
     percentual_comissao: '',
   });
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    telefone?: string;
+  }>({});
+
+  const maskTelefone = (v: string) => {
+    const d = v.replace(/\D/g, '').slice(0, 11);
+    if (d.length <= 2) return d.length ? `(${d}` : '';
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10)
+      return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
+
+  const handleEmailChange = (v: string) => {
+    // Rejeita espaços e caracteres claramente inválidos em e-mails
+    const filtered = v.replace(/[\s<>,;:"\\[\]()]/g, '');
+    setForm((f) => ({ ...f, email: filtered }));
+    if (filtered && !validarEmail(filtered)) {
+      setFieldErrors((e) => ({ ...e, email: 'E-mail inválido' }));
+    } else {
+      setFieldErrors((e) => ({ ...e, email: undefined }));
+    }
+  };
+
+  const handleTelefoneChange = (v: string) => {
+    const masked = maskTelefone(v);
+    setForm((f) => ({ ...f, telefone: masked }));
+    const digits = masked.replace(/\D/g, '');
+    if (digits.length > 0 && digits.length < 10) {
+      setFieldErrors((e) => ({
+        ...e,
+        telefone: 'Telefone incompleto (mínimo 10 dígitos com DDD)',
+      }));
+    } else if (digits.length > 11) {
+      setFieldErrors((e) => ({ ...e, telefone: 'Telefone inválido' }));
+    } else {
+      setFieldErrors((e) => ({ ...e, telefone: undefined }));
+    }
+  };
 
   const [vendedorBancario, setVendedorBancario] = useState<number | null>(null);
   const [dadosBancarios, setDadosBancarios] = useState<DadosBancarios | null>(
@@ -260,6 +476,7 @@ function RepresentanteDrawer({
     setTab('dados');
     setEditando(false);
     setErroSalvar(null);
+    setFieldErrors({});
     setVendedorBancario(null);
     setDadosBancarios(null);
     setForm({
@@ -269,6 +486,16 @@ function RepresentanteDrawer({
       status: rep.status ?? '',
       percentual_comissao: rep.percentual_comissao?.toString() ?? '',
     });
+    setEditandoComissao(false);
+    setErroComissao(null);
+    setSucessoComissao(null);
+    setFormComissao({
+      modelo: rep.modelo_comissionamento ?? 'percentual',
+      percentual: rep.percentual_comissao?.toString() ?? '',
+      valor_custo_fixo_entidade: '',
+      valor_custo_fixo_clinica: '',
+      asaas_wallet_id: rep.asaas_wallet_id ?? '',
+    });
   }, [rep]);
 
   // Suppress unused dadosBancarios lint
@@ -276,13 +503,27 @@ function RepresentanteDrawer({
 
   const salvarRepresentante = async () => {
     if (!rep) return;
+    const emailTrimmed = form.email.trim();
+    const telefoneTrimmed = form.telefone.trim();
+    if (fieldErrors.email || fieldErrors.telefone) {
+      setErroSalvar('Corrija os campos com erro antes de salvar.');
+      return;
+    }
+    if (emailTrimmed && !validarEmail(emailTrimmed)) {
+      setErroSalvar('E-mail inválido.');
+      return;
+    }
+    if (telefoneTrimmed && !validarTelefone(telefoneTrimmed)) {
+      setErroSalvar('Telefone inválido. Use 10 ou 11 dígitos com DDD.');
+      return;
+    }
     setSalvando(true);
     setErroSalvar(null);
     try {
       const body: Record<string, unknown> = {};
       if (form.nome.trim()) body.nome = form.nome.trim();
-      if (form.email.trim()) body.email = form.email.trim();
-      if (form.telefone.trim()) body.telefone = form.telefone.trim();
+      if (emailTrimmed) body.email = emailTrimmed;
+      if (telefoneTrimmed) body.telefone = telefoneTrimmed;
       if (form.status) body.status = form.status;
       if (form.percentual_comissao)
         body.percentual_comissao = parseFloat(form.percentual_comissao);
@@ -302,6 +543,52 @@ function RepresentanteDrawer({
       setErroSalvar(e instanceof Error ? e.message : 'Erro desconhecido');
     } finally {
       setSalvando(false);
+    }
+  };
+
+  const aprovarComissao = async () => {
+    if (!rep) return;
+    setSalvandoComissao(true);
+    setErroComissao(null);
+    setSucessoComissao(null);
+    try {
+      const body: Record<string, unknown> = { modelo: formComissao.modelo };
+      if (formComissao.modelo === 'percentual') {
+        body.percentual = parseFloat(formComissao.percentual);
+      } else {
+        if (formComissao.valor_custo_fixo_entidade)
+          body.valor_custo_fixo_entidade = parseFloat(
+            formComissao.valor_custo_fixo_entidade
+          );
+        if (formComissao.valor_custo_fixo_clinica)
+          body.valor_custo_fixo_clinica = parseFloat(
+            formComissao.valor_custo_fixo_clinica
+          );
+      }
+      if (formComissao.asaas_wallet_id.trim())
+        body.asaas_wallet_id = formComissao.asaas_wallet_id.trim();
+      const res = await fetch(
+        `/api/suporte/representantes/${rep.id}/aprovar-comissao`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        }
+      );
+      const d = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+      };
+      if (!res.ok) throw new Error(d.error ?? 'Erro ao aprovar comissao');
+      setSucessoComissao(
+        d.message ?? 'Modelo aprovado. Representante ativado.'
+      );
+      setEditandoComissao(false);
+      onUpdated();
+    } catch (e: unknown) {
+      setErroComissao(e instanceof Error ? e.message : 'Erro desconhecido');
+    } finally {
+      setSalvandoComissao(false);
     }
   };
 
@@ -377,23 +664,23 @@ function RepresentanteDrawer({
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-40 transition-opacity"
+          className="fixed inset-0 bg-black/40 z-[1001] transition-opacity"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white shadow-2xl z-50 flex flex-col transform transition-transform duration-300 ${
+        className={`fixed top-0 right-0 h-full w-full max-w-lg bg-white shadow-2xl z-[1002] flex flex-col transform transition-transform duration-300 ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         role="dialog"
         aria-modal="true"
       >
         {/* Cabecalho */}
-        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold">
+            <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold text-sm">
               {rep?.nome
                 .split(' ')
                 .map((w) => w[0])
@@ -425,7 +712,7 @@ function RepresentanteDrawer({
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
                 tab === t
                   ? 'text-green-700 border-b-2 border-green-600'
                   : 'text-gray-500 hover:text-gray-700'
@@ -445,54 +732,40 @@ function RepresentanteDrawer({
         </div>
 
         {/* Conteudo */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 overflow-y-auto px-5 py-3">
           {tab === 'dados' && rep && (
-            <div className="space-y-5">
-              {(() => {
-                const st = STATUS_LABEL[rep.status] ?? {
-                  label: rep.status,
-                  cls: 'bg-gray-100 text-gray-500',
-                };
-                return (
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase ${st.cls}`}
-                  >
-                    {st.label}
-                  </span>
-                );
-              })()}
-
-              <div className="bg-gray-50 rounded-lg divide-y text-sm">
-                {(
-                  [
-                    [
-                      'Documento',
-                      rep.tipo_pessoa === 'pj'
-                        ? fmtCNPJ(rep.cnpj)
-                        : fmtCPF(rep.cpf),
-                    ],
-                    [
-                      'Tipo',
-                      rep.tipo_pessoa === 'pj'
-                        ? 'Pessoa Juridica'
-                        : 'Pessoa Fisica',
-                    ],
-                    [
-                      'Cadastro',
-                      new Date(rep.criado_em).toLocaleDateString('pt-BR'),
-                    ],
-                  ] as [string, string][]
-                ).map(([label, val]) => (
-                  <div key={label} className="flex justify-between px-4 py-2.5">
-                    <span className="text-gray-500">{label}</span>
-                    <span className="text-gray-900 font-mono text-xs">
-                      {val}
+            <div className="space-y-3">
+              {/* Status + info basica */}
+              <div className="flex items-center justify-between">
+                {(() => {
+                  const st = STATUS_LABEL[rep.status] ?? {
+                    label: rep.status,
+                    cls: 'bg-gray-100 text-gray-500',
+                  };
+                  return (
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase ${st.cls}`}
+                    >
+                      {st.label}
                     </span>
-                  </div>
-                ))}
+                  );
+                })()}
+                <div className="flex items-center gap-3 text-xs text-gray-500">
+                  <span className="font-mono">
+                    {rep.tipo_pessoa === 'pj'
+                      ? `${fmtCNPJ(rep.cnpj)} / ${fmtCPF(rep.cpf_responsavel_pj)}`
+                      : fmtCPF(rep.cpf)}
+                  </span>
+                  <span className="text-gray-300">|</span>
+                  <span>{rep.tipo_pessoa === 'pj' ? 'PJ' : 'PF'}</span>
+                  <span className="text-gray-300">|</span>
+                  <span>
+                    {new Date(rep.criado_em).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                     Editar Representante
@@ -508,39 +781,75 @@ function RepresentanteDrawer({
                 </div>
 
                 {erroSalvar && (
-                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-                    <AlertCircle size={14} className="shrink-0" />
+                  <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs">
+                    <AlertCircle size={13} className="shrink-0" />
                     {erroSalvar}
                   </div>
                 )}
 
-                <div className="space-y-2.5">
-                  {[
-                    { key: 'nome', label: 'Nome', type: 'text' },
-                    { key: 'email', label: 'E-mail', type: 'email' },
-                    { key: 'telefone', label: 'Telefone', type: 'text' },
-                    {
-                      key: 'percentual_comissao',
-                      label: '% Comissao',
-                      type: 'number',
-                    },
-                  ].map(({ key, label, type }) => (
-                    <div key={key}>
+                <div className="space-y-2">
+                  {/* Nome */}
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">
+                      Nome
+                    </label>
+                    <input
+                      type="text"
+                      disabled={!editando}
+                      value={form.nome}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, nome: e.target.value }))
+                      }
+                      className="w-full px-3 py-1.5 text-sm border rounded-lg disabled:bg-gray-50 disabled:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                    />
+                  </div>
+                  {/* E-mail + Telefone na mesma linha */}
+                  <div className="grid grid-cols-2 gap-2 items-start">
+                    <div>
                       <label className="block text-xs text-gray-500 mb-1">
-                        {label}
+                        E-mail
                       </label>
                       <input
-                        type={type}
+                        type="email"
                         disabled={!editando}
-                        value={form[key as keyof typeof form]}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, [key]: e.target.value }))
-                        }
-                        className="w-full px-3 py-2 text-sm border rounded-lg disabled:bg-gray-50 disabled:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                        value={form.email}
+                        onChange={(e) => handleEmailChange(e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm border rounded-lg disabled:bg-gray-50 disabled:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 ${
+                          fieldErrors.email
+                            ? 'border-red-400 focus:ring-red-400/30 focus:border-red-400'
+                            : ''
+                        }`}
                       />
+                      {fieldErrors.email && (
+                        <p className="text-[11px] text-red-500 mt-0.5">
+                          {fieldErrors.email}
+                        </p>
+                      )}
                     </div>
-                  ))}
-
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Telefone
+                      </label>
+                      <input
+                        type="text"
+                        disabled={!editando}
+                        value={form.telefone}
+                        placeholder={editando ? '(11) 99999-9999' : ''}
+                        onChange={(e) => handleTelefoneChange(e.target.value)}
+                        className={`w-full px-3 py-1.5 text-sm border rounded-lg disabled:bg-gray-50 disabled:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 ${
+                          fieldErrors.telefone
+                            ? 'border-red-400 focus:ring-red-400/30 focus:border-red-400'
+                            : ''
+                        }`}
+                      />
+                      {fieldErrors.telefone && (
+                        <p className="text-[11px] text-red-500 mt-0.5">
+                          {fieldErrors.telefone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {/* Status */}
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">
                       Status
@@ -551,7 +860,7 @@ function RepresentanteDrawer({
                       onChange={(e) =>
                         setForm((f) => ({ ...f, status: e.target.value }))
                       }
-                      className="w-full px-3 py-2 text-sm border rounded-lg disabled:bg-gray-50 disabled:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 bg-white"
+                      className="w-full px-3 py-1.5 text-sm border rounded-lg disabled:bg-gray-50 disabled:text-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 bg-white"
                     >
                       {STATUS_OPTIONS.filter((o) => o.value).map((o) => (
                         <option key={o.value} value={o.value}>
@@ -563,21 +872,22 @@ function RepresentanteDrawer({
                 </div>
 
                 {editando && (
-                  <div className="flex gap-3 pt-1">
+                  <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => {
                         setEditando(false);
                         setErroSalvar(null);
+                        setFieldErrors({});
                       }}
                       disabled={salvando}
-                      className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+                      className="flex-1 px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
                     >
                       Cancelar
                     </button>
                     <button
                       onClick={salvarRepresentante}
                       disabled={salvando}
-                      className="flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                      className="flex-1 px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
                     >
                       {salvando ? (
                         <Loader2 size={14} className="animate-spin" />
@@ -586,6 +896,209 @@ function RepresentanteDrawer({
                       )}
                       {salvando ? 'Salvando...' : 'Salvar'}
                     </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Modelo de Comissionamento */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    Modelo de Comissionamento
+                  </p>
+                  {!editandoComissao &&
+                    !['rejeitado', 'desativado', 'suspenso'].includes(
+                      rep.status
+                    ) && (
+                      <button
+                        onClick={() => setEditandoComissao(true)}
+                        className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700"
+                      >
+                        <Pencil size={12} />{' '}
+                        {rep.modelo_comissionamento ? 'Editar' : 'Definir'}
+                      </button>
+                    )}
+                </div>
+
+                {!editandoComissao && (
+                  <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
+                    {rep.modelo_comissionamento ? (
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-gray-500">Modelo</span>
+                          <span className="font-medium text-gray-800">
+                            {rep.modelo_comissionamento === 'percentual'
+                              ? 'Percentual'
+                              : 'Custo Fixo'}
+                          </span>
+                        </div>
+                        {rep.modelo_comissionamento === 'percentual' &&
+                          rep.percentual_comissao != null && (
+                            <div className="flex justify-between text-xs">
+                              <span className="text-gray-500">Percentual</span>
+                              <span className="font-medium text-gray-800">
+                                {rep.percentual_comissao}%
+                              </span>
+                            </div>
+                          )}
+                        {rep.asaas_wallet_id ? (
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">Wallet Asaas</span>
+                            <span className="font-mono text-[10px] text-gray-600 truncate max-w-[140px]">
+                              {rep.asaas_wallet_id}
+                            </span>
+                          </div>
+                        ) : (
+                          <p className="text-[10px] text-orange-600 font-medium mt-1">
+                            Wallet Asaas nao configurada
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 text-center py-1">
+                        Nenhum modelo definido
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {editandoComissao && (
+                  <div className="space-y-2.5">
+                    {erroComissao && (
+                      <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+                        <AlertCircle size={14} className="shrink-0" />
+                        {erroComissao}
+                      </div>
+                    )}
+                    {sucessoComissao && (
+                      <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 rounded-lg px-4 py-3 text-sm">
+                        <Check size={14} className="shrink-0" />
+                        {sucessoComissao}
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Modelo
+                      </label>
+                      <select
+                        value={formComissao.modelo}
+                        onChange={(e) =>
+                          setFormComissao((f) => ({
+                            ...f,
+                            modelo: e.target.value as
+                              | 'percentual'
+                              | 'custo_fixo',
+                          }))
+                        }
+                        className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 bg-white"
+                      >
+                        <option value="percentual">Percentual</option>
+                        <option value="custo_fixo">Custo Fixo</option>
+                      </select>
+                    </div>
+                    {formComissao.modelo === 'percentual' && (
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">
+                          Percentual (0.01 – 40%)
+                        </label>
+                        <input
+                          type="number"
+                          min="0.01"
+                          max="40"
+                          step="0.01"
+                          value={formComissao.percentual}
+                          onChange={(e) =>
+                            setFormComissao((f) => ({
+                              ...f,
+                              percentual: e.target.value,
+                            }))
+                          }
+                          className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                        />
+                      </div>
+                    )}
+                    {formComissao.modelo === 'custo_fixo' && (
+                      <>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Custo Fixo Entidade (R$)
+                          </label>
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={formComissao.valor_custo_fixo_entidade}
+                            onChange={(e) =>
+                              setFormComissao((f) => ({
+                                ...f,
+                                valor_custo_fixo_entidade: e.target.value,
+                              }))
+                            }
+                            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            Custo Fixo Clinica (R$)
+                          </label>
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={formComissao.valor_custo_fixo_clinica}
+                            onChange={(e) =>
+                              setFormComissao((f) => ({
+                                ...f,
+                                valor_custo_fixo_clinica: e.target.value,
+                              }))
+                            }
+                            className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                          />
+                        </div>
+                      </>
+                    )}
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">
+                        Wallet Asaas (opcional)
+                      </label>
+                      <input
+                        type="text"
+                        value={formComissao.asaas_wallet_id}
+                        onChange={(e) =>
+                          setFormComissao((f) => ({
+                            ...f,
+                            asaas_wallet_id: e.target.value,
+                          }))
+                        }
+                        placeholder="ID da subconta Asaas"
+                        className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-1">
+                      <button
+                        onClick={() => {
+                          setEditandoComissao(false);
+                          setErroComissao(null);
+                          setSucessoComissao(null);
+                        }}
+                        disabled={salvandoComissao}
+                        className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => void aprovarComissao()}
+                        disabled={salvandoComissao}
+                        className="flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+                      >
+                        {salvandoComissao ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Check size={14} />
+                        )}
+                        {salvandoComissao ? 'Aprovando...' : 'Aprovar Comissao'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -802,6 +1315,7 @@ export function RepresentantesLista() {
   const [submittingReset, setSubmittingReset] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -898,14 +1412,14 @@ export function RepresentantesLista() {
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Abas Ativos / Inativos */}
       <div className="flex border-b border-gray-200">
         {(['ativos', 'inativos'] as const).map((g) => (
           <button
             key={g}
             onClick={() => handleGrupo(g)}
-            className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`px-6 py-3 text-sm font-semibold transition-colors border-b-[3px] -mb-px ${
               grupo === g
                 ? 'border-green-600 text-green-700'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -920,20 +1434,20 @@ export function RepresentantesLista() {
         <form onSubmit={handleBuscaSubmit} className="flex gap-2 flex-1">
           <div className="relative flex-1">
             <Search
-              size={14}
+              size={15}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
             <input
               type="text"
-              placeholder="Buscar nome, e-mail ou codigo..."
+              placeholder="Buscar nome, e-mail ou código..."
               value={buscaInput}
               onChange={(e) => setBuscaInput(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
+              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
             />
           </div>
           <button
             type="submit"
-            className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 font-medium transition-colors"
+            className="px-5 py-2.5 text-sm bg-gray-900 hover:bg-gray-800 rounded-lg text-white font-semibold transition-colors"
           >
             Buscar
           </button>
@@ -951,9 +1465,35 @@ export function RepresentantesLista() {
             ))}
           </select>
         )}
+        {/* Toggle grid / lista */}
+        <div className="flex border border-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`p-2.5 transition-colors ${
+              viewMode === 'grid'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+            }`}
+            title="Visualizar em grade"
+          >
+            <LayoutGrid size={15} />
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`p-2.5 border-l border-gray-200 transition-colors ${
+              viewMode === 'list'
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+            }`}
+            title="Visualizar em lista"
+          >
+            <List size={15} />
+          </button>
+        </div>
+
         <button
           onClick={() => carregar()}
-          className="p-2 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+          className="p-2.5 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           title="Atualizar"
         >
           <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
@@ -961,7 +1501,7 @@ export function RepresentantesLista() {
       </div>
 
       {!loading && representantes.length > 0 && (
-        <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+        <p className="text-sm font-bold text-gray-700 uppercase tracking-widest">
           {total} representante{total !== 1 ? 's' : ''}
         </p>
       )}
@@ -977,10 +1517,21 @@ export function RepresentantesLista() {
             Nenhum representante encontrado.
           </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {representantes.map((rep) => (
             <RepresentanteCard
+              key={rep.id}
+              rep={rep}
+              onClick={() => setDrawerRep(rep)}
+              abrirReset={abrirResetSenha}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {representantes.map((rep) => (
+            <RepresentanteRow
               key={rep.id}
               rep={rep}
               onClick={() => setDrawerRep(rep)}
