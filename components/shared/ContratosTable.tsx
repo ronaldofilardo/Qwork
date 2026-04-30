@@ -23,6 +23,7 @@ interface ContratoRow {
   rep_nome: string | null;
   rep_codigo: string | null;
   rep_cpf: string | null;
+  rep_id?: number | null;
   lead_data: string | null;
   contrato_data: string | null;
   tempo_dias: string | null;
@@ -428,7 +429,11 @@ export function ContratosTable({
                     <div className="mt-4 grid grid-cols-1 gap-3">
                       <div>
                         <div className="qw-mobile-card-label">
-                          {comercial ? 'Entidade/Clínica' : suporte ? 'Responsável' : 'Representante'}
+                          {comercial
+                            ? 'Entidade/Clínica'
+                            : suporte
+                              ? 'Responsável'
+                              : 'Representante'}
                         </div>
                         <div className="qw-mobile-card-value break-words">
                           {comercial
@@ -474,7 +479,9 @@ export function ContratosTable({
                       </div>
 
                       <div>
-                        <div className="qw-mobile-card-label">{suporte ? 'Valor/%' : 'Comissão'}</div>
+                        <div className="qw-mobile-card-label">
+                          {suporte ? 'Valor/%' : 'Comissão'}
+                        </div>
                         <div className="qw-mobile-card-value text-sm space-y-1">
                           {comercial ? (
                             isPercentual ? (
@@ -513,8 +520,13 @@ export function ContratosTable({
                               </span>
                             ) : (
                               <span className="font-semibold text-gray-900">
-                                {fmtBRL(row.valor_negociado ?? row.valor_custo_fixo)}
-                                <span className="text-gray-400 font-normal"> /avaliação</span>
+                                {fmtBRL(
+                                  row.valor_negociado ?? row.valor_custo_fixo
+                                )}
+                                <span className="text-gray-400 font-normal">
+                                  {' '}
+                                  /avaliação
+                                </span>
                               </span>
                             )
                           ) : (
@@ -659,6 +671,11 @@ export function ContratosTable({
                         <th className="text-center px-3 py-3 font-semibold text-gray-600">
                           Lead
                         </th>
+                        {suporte && (
+                          <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                            Rep. ID
+                          </th>
+                        )}
                         <th className="text-center px-3 py-3 font-semibold text-gray-600">
                           Contrato
                         </th>
@@ -702,7 +719,13 @@ export function ContratosTable({
                       allowExpandClinicaEmpresas && isClinica;
                     const isExpandedClinica =
                       !!expandedClinicas[row.contratante_id];
-                    const desktopColspan = comercial ? 7 : suporte ? 6 : showQWork ? 9 : 8;
+                    const desktopColspan = comercial
+                      ? 7
+                      : suporte
+                        ? 7
+                        : showQWork
+                          ? 9
+                          : 8;
 
                     const tdRep = (
                       <td className="px-4 py-3">
@@ -834,7 +857,9 @@ export function ContratosTable({
                                     {fmtCpf(row.responsavel_cpf)}
                                   </p>
                                 ) : (
-                                  <span className="text-gray-300 text-xs">—</span>
+                                  <span className="text-gray-300 text-xs">
+                                    —
+                                  </span>
                                 )}
                               </td>
                             </>
@@ -848,6 +873,14 @@ export function ContratosTable({
                           <td className="text-center px-3 py-3 text-xs text-gray-600">
                             {fmtDate(row.lead_data)}
                           </td>
+
+                          {suporte && (
+                            <td className="text-center px-3 py-3 text-xs font-mono text-gray-700">
+                              {row.rep_id ?? (
+                                <span className="text-gray-300">—</span>
+                              )}
+                            </td>
+                          )}
 
                           <td className="text-center px-3 py-3 text-xs text-gray-600">
                             <div className="inline-flex items-center gap-1">

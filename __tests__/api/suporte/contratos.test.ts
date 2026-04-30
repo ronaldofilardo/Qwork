@@ -31,6 +31,7 @@ const vinculoComLaudo = {
   tipo_contratante: 'entidade',
   rep_nome: 'Maria Rep',
   rep_cpf: '98765432100',
+  rep_id: 42,
   rep_codigo: 'XYZ789',
   lead_data: '2026-01-10T00:00:00.000Z',
   contrato_data: '2026-02-05',
@@ -125,6 +126,7 @@ describe('GET /api/suporte/contratos', () => {
     expect(c.tipo_contratante).toBe('entidade');
     expect(c.rep_nome).toBe('Maria Rep');
     expect(c.rep_cpf).toBe('98765432100');
+    expect(c.rep_id).toBe(42);
     expect(c.total_laudos).toBe('1');
     expect(c.valor_custo_fixo).toBe('50.00');
   });
@@ -156,6 +158,16 @@ describe('GET /api/suporte/contratos', () => {
     expect(sql).toContain('from public.vinculos_comissao v');
     expect(sql).toContain('left join public.representantes');
     expect(sql).toContain('cpf_responsavel_pj');
+    expect(sql).toContain('r.id as rep_id');
+  });
+
+  it('inclui campo rep_id na resposta quando representante vinculado', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [vinculoComLaudo] } as never);
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.contratos[0]).toHaveProperty('rep_id');
+    expect(body.contratos[0].rep_id).toBe(42);
   });
 
   it('não inclui campo valor_qwork na query', async () => {

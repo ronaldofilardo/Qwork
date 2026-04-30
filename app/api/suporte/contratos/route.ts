@@ -22,6 +22,7 @@ export async function GET(): Promise<NextResponse> {
       tipo_contratante: string;
       rep_nome: string | null;
       rep_cpf: string | null;
+      rep_id: number | null;
       lead_data: string | null;
       contrato_data: string | null;
       tempo_dias: string | null;
@@ -82,6 +83,7 @@ export async function GET(): Promise<NextResponse> {
          tb.tipo_contratante,
          r.nome AS rep_nome,
          COALESCE(r.cpf, r.cpf_responsavel_pj) AS rep_cpf,
+         r.id AS rep_id,
 
          lr.criado_em AS lead_data,
          ct.contrato_data,
