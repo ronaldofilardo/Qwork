@@ -39,6 +39,7 @@ interface ContratoRow {
   valor_rep: string | null;
   valor_qwork?: string | null;
   isento_pagamento?: boolean;
+  responsavel_cpf?: string | null;
 }
 
 interface EmpresaClinica {
@@ -60,6 +61,7 @@ interface ContratosTableProps {
   allowGerarContrato?: boolean;
   allowIsentarParceiro?: boolean;
   allowExpandClinicaEmpresas?: boolean;
+  suporte?: boolean;
 }
 
 const fmtBRL = (v: string | number | null | undefined) => {
@@ -93,6 +95,7 @@ export function ContratosTable({
   allowGerarContrato = false,
   allowIsentarParceiro = false,
   allowExpandClinicaEmpresas = false,
+  suporte = false,
 }: ContratosTableProps) {
   const [data, setData] = useState<ContratoRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -425,18 +428,24 @@ export function ContratosTable({
                     <div className="mt-4 grid grid-cols-1 gap-3">
                       <div>
                         <div className="qw-mobile-card-label">
-                          {comercial ? 'Entidade/Clínica' : 'Representante'}
+                          {comercial ? 'Entidade/Clínica' : suporte ? 'Responsável' : 'Representante'}
                         </div>
                         <div className="qw-mobile-card-value break-words">
                           {comercial
                             ? row.contratante_nome || '—'
-                            : row.rep_nome || 'Sem representante'}
+                            : suporte
+                              ? row.responsavel_cpf
+                                ? fmtCpf(row.responsavel_cpf)
+                                : '—'
+                              : row.rep_nome || 'Sem representante'}
                         </div>
-                        <p className="text-sm text-gray-500 break-all">
-                          {comercial
-                            ? row.contratante_cnpj || '—'
-                            : fmtCpf(row.rep_cpf)}
-                        </p>
+                        {!suporte && (
+                          <p className="text-sm text-gray-500 break-all">
+                            {comercial
+                              ? row.contratante_cnpj || '—'
+                              : fmtCpf(row.rep_cpf)}
+                          </p>
+                        )}
                       </div>
 
                       <div>
@@ -459,13 +468,13 @@ export function ContratosTable({
                           {row.tipo_comissionamento
                             ? isPercentual
                               ? 'Percentual'
-                              : 'Custo fixo'
+                              : 'Custo Fixo'
                             : '—'}
                         </div>
                       </div>
 
                       <div>
-                        <div className="qw-mobile-card-label">Comissão</div>
+                        <div className="qw-mobile-card-label">{suporte ? 'Valor/%' : 'Comissão'}</div>
                         <div className="qw-mobile-card-value text-sm space-y-1">
                           {comercial ? (
                             isPercentual ? (
@@ -493,6 +502,19 @@ export function ContratosTable({
                                 {fmtBRL(
                                   row.valor_negociado ?? row.valor_custo_fixo
                                 )}
+                              </span>
+                            )
+                          ) : suporte ? (
+                            isPercentual ? (
+                              <span className="font-semibold text-gray-900">
+                                {row.percentual_comissao
+                                  ? `${parseFloat(row.percentual_comissao).toFixed(1)}%`
+                                  : '—'}
+                              </span>
+                            ) : (
+                              <span className="font-semibold text-gray-900">
+                                {fmtBRL(row.valor_negociado ?? row.valor_custo_fixo)}
+                                <span className="text-gray-400 font-normal"> /avaliação</span>
                               </span>
                             )
                           ) : (
@@ -617,31 +639,45 @@ export function ContratosTable({
                             CNPJ
                           </span>
                         </th>
-                        <th className="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                          Representante
-                          <br />
-                          <span className="font-normal text-xs text-gray-400">
-                            CPF
-                          </span>
-                        </th>
+                        {suporte ? (
+                          <th className="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                            Responsável
+                            <br />
+                            <span className="font-normal text-xs text-gray-400">
+                              CPF
+                            </span>
+                          </th>
+                        ) : (
+                          <th className="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                            Representante
+                            <br />
+                            <span className="font-normal text-xs text-gray-400">
+                              CPF
+                            </span>
+                          </th>
+                        )}
                         <th className="text-center px-3 py-3 font-semibold text-gray-600">
                           Lead
                         </th>
                         <th className="text-center px-3 py-3 font-semibold text-gray-600">
                           Contrato
                         </th>
-                        <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                          Tempo
-                        </th>
+                        {!suporte && (
+                          <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                            Tempo
+                          </th>
+                        )}
                         <th className="text-center px-3 py-3 font-semibold text-gray-600">
                           Tipo
                         </th>
                         <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
                           Valor/%
                         </th>
-                        <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
-                          Com. Rep.
-                        </th>
+                        {!suporte && (
+                          <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                            Com. Rep.
+                          </th>
+                        )}
                         {showQWork && (
                           <th className="text-right px-4 py-3 font-semibold text-gray-600">
                             QWork
@@ -666,7 +702,7 @@ export function ContratosTable({
                       allowExpandClinicaEmpresas && isClinica;
                     const isExpandedClinica =
                       !!expandedClinicas[row.contratante_id];
-                    const desktopColspan = comercial ? 7 : showQWork ? 9 : 8;
+                    const desktopColspan = comercial ? 7 : suporte ? 6 : showQWork ? 9 : 8;
 
                     const tdRep = (
                       <td className="px-4 py-3">
@@ -789,6 +825,19 @@ export function ContratosTable({
                               {tdRep}
                               {tdEntidade}
                             </>
+                          ) : suporte ? (
+                            <>
+                              {tdEntidade}
+                              <td className="px-3 py-3">
+                                {row.responsavel_cpf ? (
+                                  <p className="text-[11px] text-gray-700 font-mono">
+                                    {fmtCpf(row.responsavel_cpf)}
+                                  </p>
+                                ) : (
+                                  <span className="text-gray-300 text-xs">—</span>
+                                )}
+                              </td>
+                            </>
                           ) : (
                             <>
                               {tdEntidade}
@@ -818,15 +867,17 @@ export function ContratosTable({
                             </div>
                           </td>
 
-                          <td className="text-center px-3 py-3">
-                            {row.tempo_dias ? (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                {Math.round(parseFloat(row.tempo_dias))}d
-                              </span>
-                            ) : (
-                              <span className="text-gray-300">—</span>
-                            )}
-                          </td>
+                          {!suporte && (
+                            <td className="text-center px-3 py-3">
+                              {row.tempo_dias ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                  {Math.round(parseFloat(row.tempo_dias))}d
+                                </span>
+                              ) : (
+                                <span className="text-gray-300">—</span>
+                              )}
+                            </td>
+                          )}
 
                           <td className="text-center px-3 py-3">
                             {row.tipo_comissionamento ? (
@@ -837,7 +888,13 @@ export function ContratosTable({
                                     : 'bg-amber-50 text-amber-700'
                                 }`}
                               >
-                                {isPercentual ? '%' : 'Fixo'}
+                                {suporte
+                                  ? isPercentual
+                                    ? 'Percentual'
+                                    : 'Custo Fixo'
+                                  : isPercentual
+                                    ? '%'
+                                    : 'Fixo'}
                               </span>
                             ) : (
                               <span className="text-gray-300">—</span>
@@ -901,7 +958,8 @@ export function ContratosTable({
                                         /avaliação
                                       </span>
                                     </p>
-                                    {row.valor_custo_fixo &&
+                                    {!suporte &&
+                                      row.valor_custo_fixo &&
                                       row.valor_negociado && (
                                         <p className="text-[10px] text-amber-600">
                                           Custo: {fmtBRL(row.valor_custo_fixo)}
@@ -925,20 +983,22 @@ export function ContratosTable({
                                 )}
                               </td>
 
-                              <td className="text-right px-3 py-3 text-xs">
-                                {percRep !== null ? (
-                                  <div className="space-y-0.5">
-                                    <p className="font-semibold text-green-700">
-                                      {percRep}%
-                                    </p>
-                                    <p className="text-green-500">
-                                      {fmtBRL(row.valor_rep)}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <span className="text-gray-300">—</span>
-                                )}
-                              </td>
+                              {!suporte && (
+                                <td className="text-right px-3 py-3 text-xs">
+                                  {percRep !== null ? (
+                                    <div className="space-y-0.5">
+                                      <p className="font-semibold text-green-700">
+                                        {percRep}%
+                                      </p>
+                                      <p className="text-green-500">
+                                        {fmtBRL(row.valor_rep)}
+                                      </p>
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-300">—</span>
+                                  )}
+                                </td>
+                              )}
 
                               {showQWork && (
                                 <td className="text-right px-4 py-3 text-xs">
