@@ -262,15 +262,16 @@ export function validarDadosImportacao(
       }
     }
 
-    // === Nível de Cargo (obrigatório) ===
+    // === Nível de Cargo (aviso — não bloqueia a linha) ===
     const nivelCargo = row.nivel_cargo ?? '';
     if (!nivelCargo || nivelCargo.trim() === '') {
-      errosLinha.push({
+      avisos.push({
         linha,
         campo: 'nivel_cargo',
         valor: nivelCargo,
-        mensagem: 'Nível de Cargo é obrigatório',
-        severidade: 'erro',
+        mensagem:
+          'Nível de Cargo não informado — será classificado manualmente',
+        severidade: 'aviso',
       });
     }
 

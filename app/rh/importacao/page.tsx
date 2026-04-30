@@ -14,6 +14,7 @@ import NivelCargoStep, {
 } from '@/components/importacao/NivelCargoStep';
 import ImportProgressModal from '@/components/importacao/ImportProgressModal';
 import ErrorConfirmationModal from '@/components/importacao/ErrorConfirmationModal';
+import NivelCargoWarningModal from '@/components/importacao/NivelCargoWarningModal';
 import {
   TemplatePicker,
   SaveTemplateForm,
@@ -155,6 +156,10 @@ export default function ImportacaoPage() {
   // Modal de progresso de importação
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [importConcluido, setImportConcluido] = useState(false);
+
+  // Modal de aviso de nivel_cargo (step validacao)
+  const [showNivelCargoWarningModal, setShowNivelCargoWarningModal] =
+    useState(false);
 
   // Modal de confirmação de erros (step validacao)
   const [showErrorConfirmModal, setShowErrorConfirmModal] = useState(false);
@@ -493,7 +498,12 @@ export default function ImportacaoPage() {
             }}
             funcoesComMudancaRole={validateData.funcoesComMudancaRole}
             onConfirm={() => {
-              if (validateData.erros.length > 0) {
+              const semNivel = validateData.avisos.filter(
+                (a) => a.campo === 'nivel_cargo'
+              ).length;
+              if (semNivel > 0) {
+                setShowNivelCargoWarningModal(true);
+              } else if (validateData.erros.length > 0) {
                 setShowErrorConfirmModal(true);
               } else {
                 setStep('nivel-cargo');
@@ -535,7 +545,8 @@ export default function ImportacaoPage() {
             empresas_criadas: executeData.resumo.empresasCriadas,
             empresas_existentes: executeData.resumo.empresasExistentes,
             empresas_bloqueadas: executeData.resumo.empresasBloqueadas,
-            empresas_nome_atualizados: executeData.resumo.empresasNomeAtualizados,
+            empresas_nome_atualizados:
+              executeData.resumo.empresasNomeAtualizados,
             funcionarios_criados: executeData.resumo.funcionariosCriados,
             funcionarios_atualizados:
               executeData.resumo.funcionariosAtualizados,
@@ -553,6 +564,24 @@ export default function ImportacaoPage() {
           totalLinhas={executeData.resumo.totalLinhasProcessadas}
           funcoesAlteradas={executeData.resumo.funcoesAlteradas ?? []}
           onNovaImportacao={handleNovaImportacao}
+        />
+      )}
+
+      {/* Modal de aviso de nivel_cargo — exibido quando há funcionários sem nível na planilha */}
+      {showNivelCargoWarningModal && validateData && (
+        <NivelCargoWarningModal
+          count={
+            validateData.avisos.filter((a) => a.campo === 'nivel_cargo').length
+          }
+          onCancel={() => setShowNivelCargoWarningModal(false)}
+          onConfirm={() => {
+            setShowNivelCargoWarningModal(false);
+            if (validateData.erros.length > 0) {
+              setShowErrorConfirmModal(true);
+            } else {
+              setStep('nivel-cargo');
+            }
+          }}
         />
       )}
 

@@ -86,7 +86,10 @@ jest.mock('@/lib/xlsxParser', () => ({
 // Helper: cria um mock de Request com Content-Type multipart/form-data
 // jsdom não implementa File.prototype.arrayBuffer — polyfill obrigátorio
 // --------------------------------------------------------------------------
-function makeMockRequest(fields: Record<string, string>, fileContent = 'xlsx'): Request {
+function makeMockRequest(
+  fields: Record<string, string>,
+  fileContent = 'xlsx'
+): Request {
   const file = new File([fileContent], 'test.xlsx', {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
@@ -149,8 +152,7 @@ describe('Importação Entidade - Self-Assignment Validation', () => {
       expect(data.success).toBe(true);
       const selfAssignmentErrors = data.data.erros.filter(
         (e: { campo: string; mensagem: string }) =>
-          e.campo === 'cpf' &&
-          e.mensagem.includes('Você não pode se cadastrar')
+          e.campo === 'cpf' && e.mensagem.includes('Você não pode se cadastrar')
       );
       expect(selfAssignmentErrors).toHaveLength(1);
       expect(selfAssignmentErrors[0].valor).toBe('11111111111');
@@ -165,8 +167,7 @@ describe('Importação Entidade - Self-Assignment Validation', () => {
       expect(data.success).toBe(true);
       const selfAssignmentError = data.data.erros.find(
         (e: { campo: string; mensagem: string }) =>
-          e.campo === 'cpf' &&
-          e.mensagem.includes('Você não pode se cadastrar')
+          e.campo === 'cpf' && e.mensagem.includes('Você não pode se cadastrar')
       );
       expect(selfAssignmentError?.mensagem).toContain('entidade');
       expect(selfAssignmentError?.mensagem).not.toContain('clínica');
@@ -220,7 +221,9 @@ describe('Importação Entidade - Self-Assignment Validation', () => {
         data: DADOS_COM_SELF_ASSIGNMENT,
       });
 
-      const { withTransactionAsGestor } = jest.requireMock('@/lib/db-transaction');
+      const { withTransactionAsGestor } = jest.requireMock(
+        '@/lib/db-transaction'
+      );
 
       const request = makeMockRequest({ mapeamento: MAPEAMENTO_BASICO });
       await executePost(request);
