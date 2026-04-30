@@ -75,11 +75,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     // Optional: nivel_cargo map per funcao { funcao: 'gestao' | 'operacional' | '' }
+    // Optional: nivel_cargo map per funcao { funcao: 'gestao' | 'operacional' | '' }
     const nivelCargoMapRaw = formData.get('nivelCargoMap');
     let nivelCargoMap: Record<string, string> | null = null;
     if (nivelCargoMapRaw && typeof nivelCargoMapRaw === 'string') {
       try {
         nivelCargoMap = JSON.parse(nivelCargoMapRaw);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    // Optional: nivel_cargo map per CPF — classificação individual (prioridade sobre por função)
+    const nivelCargoCpfMapRaw = formData.get('nivelCargoCpfMap');
+    let nivelCargoCpfMap: Record<string, string> | null = null;
+    if (nivelCargoCpfMapRaw && typeof nivelCargoCpfMapRaw === 'string') {
+      try {
+        nivelCargoCpfMap = JSON.parse(nivelCargoCpfMapRaw);
       } catch {
         /* ignore */
       }
@@ -137,7 +149,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await withTransactionAsGestor(async (client) => {
       let funcionariosCriados = 0;
       let funcionariosAtualizados = 0;
-      let nivelCargoAlterados = 0;
+      const nivelCargoAlterados = 0;
       const funcoesAlteradasList: Array<{
         nome: string;
         funcaoAnterior: string | null;
@@ -164,12 +176,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         const nomeFunc = (row.nome ?? '').trim();
         const funcao = (row.funcao ?? 'Não informado').trim();
         const setor = (row.setor ?? 'Não informado').trim();
-        // Prioridade: coluna nivel_cargo mapeada > classificação do modal
+        // Prioridade: nivel por CPF (individual) > coluna nivel_cargo > classificação por função
         const nivelCargoFromRow = row.nivel_cargo
           ? normalizarNivelCargo(row.nivel_cargo)
           : null;
         const nivelCargo =
-          nivelCargoFromRow ?? ((nivelCargoMap?.[funcao] ?? '') || null);
+          ((nivelCargoCpfMap?.[cpf] ?? '') || null) ??
+          nivelCargoFromRow ??
+          ((nivelCargoMap?.[funcao] ?? '') || null);
         const dataNasc = row.data_nascimento
           ? (parseDateCell(row.data_nascimento) ?? null)
           : null;
@@ -189,7 +203,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
           // Verificar se CPF já existe na tabela funcionarios
           const existFunc = await client.query(
-            'SELECT id, nivel_cargo, funcao FROM funcionarios WHERE cpf = $1',
+            'SELECT id, funcao FROM funcionarios WHERE cpf = $1',
             [cpf]
           );
 
@@ -197,9 +211,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
           if (existFunc.rows.length > 0) {
             funcionarioId = existFunc.rows[0].id as number;
-            const oldNivelCargo = existFunc.rows[0].nivel_cargo as
-              | string
-              | null;
             const oldFuncao = existFunc.rows[0].funcao as string | null;
 
             // Atualizar dados se necessário
@@ -222,18 +233,9 @@ export async function POST(request: Request): Promise<NextResponse> {
               });
             }
 
-            if (nivelCargo) {
-              updates.push(`nivel_cargo = $${paramIdx++}`);
-              params.push(nivelCargo);
-              if (oldNivelCargo !== nivelCargo) {
-                nivelCargoAlterados++;
-                avisosProcessamento.push({
-                  linha: linhaNum,
-                  cpf,
-                  mensagem: `Nível de cargo atualizado: ${oldNivelCargo ?? 'não definido'} → ${nivelCargo}`,
-                });
-              }
-            }
+            // NOTA: nivel_cargo NÃO é mais atualizado na tabela global 'funcionarios' para funcionários existentes.
+            // A segregação por entidade ocorre via 'funcionarios_entidades.nivel_cargo', atualizado no vínculo abaixo.
+            // Isso previne bleeding de nivel_cargo entre entidades para o mesmo CPF.
 
             if (updates.length > 0) {
               updates.push(`atualizado_em = NOW()`);
@@ -309,9 +311,10 @@ export async function POST(request: Request): Promise<NextResponse> {
               if (isReadmissao) {
                 await client.query(
                   `UPDATE funcionarios_entidades
-                   SET ativo = true, data_vinculo = $1, data_desvinculo = NULL, atualizado_em = NOW()
+                   SET ativo = true, data_vinculo = $1, data_desvinculo = NULL,
+                       nivel_cargo = COALESCE($3, nivel_cargo), atualizado_em = NOW()
                    WHERE id = $2`,
-                  [dataAdm, vinculo.id]
+                  [dataAdm, vinculo.id, nivelCargo]
                 );
                 readmissoesRealizadas++;
                 vinculosAtualizados++;
@@ -337,20 +340,31 @@ export async function POST(request: Request): Promise<NextResponse> {
                 mensagem:
                   'Funcionário inativo — não reativado automaticamente',
               });
+            } else {
+              // Vínculo ativo sem demissão — atualizar nivel_cargo se fornecido
+              if (nivelCargo) {
+                await client.query(
+                  `UPDATE funcionarios_entidades
+                   SET nivel_cargo = COALESCE($1, nivel_cargo), atualizado_em = NOW()
+                   WHERE id = $2`,
+                  [nivelCargo, vinculo.id]
+                );
+                vinculosAtualizados++;
+              }
             }
-            // Vínculo ativo sem demissão — nenhuma ação no vínculo
           } else {
             // Novo vínculo com a entidade
             await client.query(
               `INSERT INTO funcionarios_entidades (
-                funcionario_id, entidade_id, ativo, data_vinculo, data_desvinculo
-              ) VALUES ($1, $2, $3, $4, $5)`,
+                funcionario_id, entidade_id, ativo, data_vinculo, data_desvinculo, nivel_cargo
+              ) VALUES ($1, $2, $3, $4, $5, $6)`,
               [
                 funcionarioId,
                 entidadeId,
                 !dataDem, // ativo = true se sem demissão
                 dataAdm ?? new Date().toISOString(),
                 dataDem,
+                nivelCargo,
               ]
             );
             vinculosCriados++;

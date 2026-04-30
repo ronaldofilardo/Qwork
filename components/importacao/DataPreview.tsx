@@ -29,8 +29,8 @@ interface ValidationSummary {
 
 interface DbStats {
   empresasNovas: number;
-  empresasExistentes: number;
-  funcionariosExistentes: number;
+  empresasExistentes?: number;
+  funcionariosExistentes?: number;
   funcionariosNovos: number;
   funcionariosParaInativar: number;
   funcionariosJaInativos: number;
@@ -129,24 +129,10 @@ export default function DataPreview({
               <span className="font-semibold">{dbStats.empresasNovas}</span>
             </div>
           )}
-          {!hideEmpresaStats && (
-            <div className="flex items-center gap-2">
-              <Building2 size={16} className="text-gray-400" />
-              <span className="text-gray-600">Empresas existentes:</span>
-              <span className="font-semibold">{dbStats.empresasExistentes}</span>
-            </div>
-          )}
           <div className="flex items-center gap-2">
             <Users size={16} className="text-green-500" />
             <span className="text-gray-600">Funcionários novos:</span>
             <span className="font-semibold">{dbStats.funcionariosNovos}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Users size={16} className="text-gray-400" />
-            <span className="text-gray-600">Funcionários existentes:</span>
-            <span className="font-semibold">
-              {dbStats.funcionariosExistentes}
-            </span>
           </div>
           <div className="flex items-center gap-2">
             <UserMinus size={16} className="text-orange-500" />
@@ -260,6 +246,7 @@ export default function DataPreview({
       {(() => {
         const outrosAvisos = validacao.avisos.filter(
           (a) =>
+            a.campo !== 'nivel_cargo' &&
             !(
               a.campo === 'data_demissao' ||
               (a.campo === 'cpf' &&

@@ -57,15 +57,33 @@ export const mockClient = {
   query: jest.fn(),
 };
 
+function makeXlsxFile(): File {
+  const buf = Buffer.from('PK fake xlsx content');
+  const file = new File([buf], 'dados.xlsx', {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  });
+  Object.defineProperty(file, 'arrayBuffer', {
+    configurable: true,
+    value: () =>
+      Promise.resolve(
+        buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength)
+      ),
+  });
+  return file;
+}
+
+/**
+ * Cria um objeto mock que satisfaz o contrato da API route.
+ * Abordagem necessária porque em jest+jsdom, new Request(url, { body: fd })
+ * NÃO propaga Content-Type automaticamente.
+ */
 function makeRequest(options?: {
   file?: File;
   mapeamento?: object;
   nivelCargoMap?: Record<string, string>;
 }): Request {
   const fd = new FormData();
-  const xlsxFile = options?.file ?? new File(['PK'], 'dados.xlsx', {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  });
+  const xlsxFile = options?.file ?? makeXlsxFile();
   fd.append('file', xlsxFile);
   if (options?.mapeamento !== undefined) {
     fd.append('mapeamento', JSON.stringify(options.mapeamento));
@@ -73,10 +91,13 @@ function makeRequest(options?: {
   if (options?.nivelCargoMap) {
     fd.append('nivelCargoMap', JSON.stringify(options.nivelCargoMap));
   }
-  return new Request('http://localhost/api/entidade/importacao/execute', {
-    method: 'POST',
-    body: fd,
-  });
+  return {
+    headers: {
+      get: (h: string) =>
+        h === 'content-type' ? 'multipart/form-data; boundary=----jest' : null,
+    },
+    formData: () => Promise.resolve(fd),
+  } as unknown as Request;
 }
 
 const MOCK_MAPEAMENTO = [
@@ -100,7 +121,7 @@ describe('POST /api/entidade/importacao/execute', () => {
 
     requireEntity.mockResolvedValue({
       entidade_id: 42,
-      cpf: '52998224725',
+      cpf: '99988877766',
       perfil: 'gestor',
     });
 
@@ -160,10 +181,10 @@ describe('POST /api/entidade/importacao/execute', () => {
   it('retorna 400 quando arquivo não enviado', async () => {
     const fd = new FormData();
     fd.append('mapeamento', JSON.stringify(MOCK_MAPEAMENTO));
-    const req = new Request(
-      'http://localhost/api/entidade/importacao/execute',
-      { method: 'POST', body: fd }
-    );
+    const req = {
+      headers: { get: (h: string) => h === 'content-type' ? 'multipart/form-data; boundary=----jest' : null },
+      formData: () => Promise.resolve(fd),
+    } as unknown as Request;
     const res = await POST(req);
     const body = await res.json();
 
@@ -173,11 +194,11 @@ describe('POST /api/entidade/importacao/execute', () => {
 
   it('retorna 400 quando mapeamento não enviado', async () => {
     const fd = new FormData();
-    fd.append('file', new File(['PK'], 'dados.xlsx'));
-    const req = new Request(
-      'http://localhost/api/entidade/importacao/execute',
-      { method: 'POST', body: fd }
-    );
+    fd.append('file', makeXlsxFile());
+    const req = {
+      headers: { get: (h: string) => h === 'content-type' ? 'multipart/form-data; boundary=----jest' : null },
+      formData: () => Promise.resolve(fd),
+    } as unknown as Request;
     const res = await POST(req);
     const body = await res.json();
 

@@ -43,13 +43,16 @@ export interface FuncaoNivelInfo {
     empresa?: string;
   }>;
   /** Detalhes dos funcionários sem nivel_cargo válido na planilha (agrupados por empresa no step 4) */
-  funcionariosSemNivel?: Array<{ nome: string; empresa: string }>;
+  funcionariosSemNivel?: Array<{ nome: string; empresa: string; cpf: string }>;
 }
 
 interface NivelCargoStepProps {
   funcoesNivelInfo: FuncaoNivelInfo[];
   nivelCargoMap: Record<string, NivelCargo>;
   onChange: (funcao: string, nivel: NivelCargo) => void;
+  /** Classificação individual por CPF (sobreposta à classificação por função) */
+  nivelCargoCpfMap: Record<string, NivelCargo>;
+  onChangeCpf: (cpf: string, nivel: NivelCargo) => void;
   onConfirm: () => void;
   onBack: () => void;
   temNivelCargoDirecto: boolean;
@@ -145,6 +148,8 @@ export default function NivelCargoStep({
   funcoesNivelInfo,
   nivelCargoMap,
   onChange,
+  nivelCargoCpfMap,
+  onChangeCpf,
   onConfirm,
   onBack,
   temNivelCargoDirecto,
@@ -186,8 +191,18 @@ export default function NivelCargoStep({
 
   // 'Não informado' é OPCIONAL — não bloqueia a importação
   const funcoesBloqueantes = useMemo(
-    () => funcoesVisiveis.filter((f) => f.funcao !== 'Não informado'),
-    [funcoesVisiveis]
+    () =>
+      funcoesVisiveis.filter((f) => {
+        // 'Não informado' é OPCIONAL — exceto quando temNivelCargoDirecto=true
+        // e há funcionários com nivel_cargo em branco na planilha: nesses casos
+        // o usuário DEVE classificar o nível para que a importação não crie
+        // vínculos com nivel_cargo=null silenciosamente.
+        if (f.funcao === 'Não informado') {
+          return temNivelCargoDirecto && (f.qtdSemNivelNaPlanilha ?? 0) > 0;
+        }
+        return true;
+      }),
+    [funcoesVisiveis, temNivelCargoDirecto]
   );
 
   const totalFuncoes = funcoesBloqueantes.length;
@@ -198,15 +213,25 @@ export default function NivelCargoStep({
   );
 
   const todasClassificadas = useMemo(() => {
-    // Quando temNivelCargoDirecto=true, apenas funções com células vazias precisam classificação manual.
-    // Funções onde todos têm nivel_cargo explícito na planilha não bloqueiam o avanço.
+    // Quando temNivelCargoDirecto=true, funções com células vazias exigem classificação manual.
+    // Se todos os funcionários de uma função estão listados individualmente (funcionariosSemNivel),
+    // cada CPF deve ter classificação própria no nivelCargoCpfMap.
     if (temNivelCargoDirecto) {
-      return funcoesSemNivelNaPlanilha.every((f) => !!nivelCargoMap[f.funcao]);
+      return funcoesSemNivelNaPlanilha.every((f) => {
+        const todos = f.funcionariosSemNivel ?? [];
+        if (todos.length > 0) {
+          // Todos os CPFs listados individualmente devem estar no nivelCargoCpfMap
+          return todos.every((emp) => !!nivelCargoCpfMap[emp.cpf]);
+        }
+        // Fallback para classificação por função
+        return !!nivelCargoMap[f.funcao];
+      });
     }
     return classificadas === totalFuncoes;
   }, [
     temNivelCargoDirecto,
     funcoesSemNivelNaPlanilha,
+    nivelCargoCpfMap,
     nivelCargoMap,
     classificadas,
     totalFuncoes,
@@ -490,6 +515,13 @@ export default function NivelCargoStep({
         <div className="divide-y divide-gray-50">
           {funcoesVisiveis.map((info) => {
             const nivel = nivelCargoMap[info.funcao] ?? '';
+            const todosIndividuais = (info.funcionariosSemNivel?.length ?? 0) > 0;
+            const todosCpfsClassificados =
+              todosIndividuais &&
+              info.funcionariosSemNivel!.every(
+                (emp) => !!nivelCargoCpfMap[emp.cpf]
+              );
+            const grupoOk = todosIndividuais ? todosCpfsClassificados : !!nivel;
 
             return (
               <div
@@ -498,7 +530,7 @@ export default function NivelCargoStep({
               >
                 {/* Status icon */}
                 <div className="flex-shrink-0 w-4">
-                  {nivel ? (
+                  {grupoOk ? (
                     <CheckCircle size={14} className="text-green-500" />
                   ) : (
                     <div className="w-3.5 h-3.5 rounded-full border-2 border-gray-300" />
@@ -543,29 +575,90 @@ export default function NivelCargoStep({
                       </span>
                     )}
                   </div>
+                  {/* Funcionários individuais com G/O próprios (funcionariosSemNivel) */}
+                  {(info.funcionariosSemNivel?.length ?? 0) > 0 && (
+                    <div className="mt-1 space-y-1">
+                      {info.funcionariosSemNivel!.map((emp) => {
+                        const nivelEmp = nivelCargoCpfMap[emp.cpf] ?? '';
+                        return (
+                          <div
+                            key={emp.cpf}
+                            className="flex items-center gap-2 rounded px-1.5 py-1 bg-amber-50 border border-amber-100"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[10px] font-medium text-amber-900 truncate block">
+                                {emp.nome || '(sem nome)'}
+                              </span>
+                              {emp.empresa && (
+                                <span className="text-[9px] text-amber-600 truncate block">
+                                  {emp.empresa}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-1 flex-shrink-0">
+                              <button
+                                onClick={() =>
+                                  onChangeCpf(
+                                    emp.cpf,
+                                    nivelEmp === 'gestao' ? '' : 'gestao'
+                                  )
+                                }
+                                className={`w-7 h-7 text-[10px] font-bold rounded border-2 transition-colors ${
+                                  nivelEmp === 'gestao'
+                                    ? 'bg-purple-600 text-white border-purple-600'
+                                    : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                                }`}
+                              >
+                                G
+                              </button>
+                              <button
+                                onClick={() =>
+                                  onChangeCpf(
+                                    emp.cpf,
+                                    nivelEmp === 'operacional'
+                                      ? ''
+                                      : 'operacional'
+                                  )
+                                }
+                                className={`w-7 h-7 text-[10px] font-bold rounded border-2 transition-colors ${
+                                  nivelEmp === 'operacional'
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                                }`}
+                              >
+                                O
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Campo nome: mostra nomes dos funcionários com mudança */}
-                  {(() => {
-                    const nomes = (
-                      info.funcionariosComMudanca?.length
-                        ? info.funcionariosComMudanca
-                        : (info.funcionariosComMudancaNivel ?? [])
-                    )
-                      .map((f) => f.nome)
-                      .filter(Boolean);
-                    return nomes.length > 0 ? (
-                      <div className="flex items-center gap-1 mt-0.5 min-w-0">
-                        <span className="text-[10px] text-gray-600 truncate">
-                          {nomes.slice(0, 2).join(', ')}
-                          {nomes.length > 2 && (
-                            <span className="text-gray-400">
-                              {' '}
-                              +{nomes.length - 2}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    ) : null;
-                  })()}
+                  {info.funcao !== 'Não informado' &&
+                    (() => {
+                      const nomes = (
+                        info.funcionariosComMudanca?.length
+                          ? info.funcionariosComMudanca
+                          : (info.funcionariosComMudancaNivel ?? [])
+                      )
+                        .map((f) => f.nome)
+                        .filter(Boolean);
+                      return nomes.length > 0 ? (
+                        <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                          <span className="text-[10px] text-gray-600 truncate">
+                            {nomes.slice(0, 2).join(', ')}
+                            {nomes.length > 2 && (
+                              <span className="text-gray-400">
+                                {' '}
+                                +{nomes.length - 2}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ) : null;
+                    })()}
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] text-gray-400">
                       {info.qtdFuncionarios} func.
@@ -575,29 +668,31 @@ export default function NivelCargoStep({
                   </div>
                 </div>
 
-                {/* G / O buttons */}
-                <div className="flex gap-1.5 flex-shrink-0">
-                  <button
-                    onClick={() => handleToggle(info.funcao, 'gestao')}
-                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
-                      nivel === 'gestao'
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-                    }`}
-                  >
-                    G
-                  </button>
-                  <button
-                    onClick={() => handleToggle(info.funcao, 'operacional')}
-                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
-                      nivel === 'operacional'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                    }`}
-                  >
-                    O
-                  </button>
-                </div>
+                {/* G / O buttons do grupo — ocultos quando todos listados individualmente */}
+                {(info.funcionariosSemNivel?.length ?? 0) === 0 && (
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => handleToggle(info.funcao, 'gestao')}
+                      className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                        nivel === 'gestao'
+                          ? 'bg-purple-600 text-white border-purple-600'
+                          : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                      }`}
+                    >
+                      G
+                    </button>
+                    <button
+                      onClick={() => handleToggle(info.funcao, 'operacional')}
+                      className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
+                        nivel === 'operacional'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      O
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

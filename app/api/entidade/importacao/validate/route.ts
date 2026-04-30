@@ -105,14 +105,16 @@ export async function POST(request: Request): Promise<NextResponse> {
     let funcionariosAReadmitir = 0;
     const avisosDb: typeof validacao.avisos = [];
     const existingFuncaoMap = new Map<string, string | null>();
-    const existingNivelCargoMap = new Map<string, string | null>();
+    // nivel_cargo é lido de funcionarios_entidades (per-entidade), não da tabela global funcionarios.
+    // Isso evita bleeding de nivel_cargo entre entidades diferentes para o mesmo CPF.
+    const perEntidadeNivelMap = new Map<string, string | null>();
     const existingNomeMap = new Map<string, string>();
     const cpfsVinculadosNaEntidade = new Set<string>();
 
     if (cpfsUnicos.length > 0) {
       // Buscar funcionários existentes (inclui funcao, nivel_cargo e nome para detectar mudanças)
       const existResult = await query(
-        'SELECT id, cpf, nome, funcao, nivel_cargo FROM funcionarios WHERE cpf = ANY($1)',
+        'SELECT id, cpf, nome, funcao FROM funcionarios WHERE cpf = ANY($1)',
         [cpfsUnicos]
       );
       const existingCpfs = new Set<string>();
@@ -120,11 +122,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         cpf: string;
         nome: string | null;
         funcao: string | null;
-        nivel_cargo: string | null;
       }[]) {
         existingCpfs.add(r.cpf.trim());
         existingFuncaoMap.set(r.cpf.trim(), r.funcao);
-        existingNivelCargoMap.set(r.cpf.trim(), r.nivel_cargo);
         if (r.nome) existingNomeMap.set(r.cpf.trim(), r.nome);
       }
       funcionariosExistentes = existingCpfs.size;
@@ -133,7 +133,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (funcionariosExistentes > 0) {
         const cpfArray = [...existingCpfs];
         const vinculosResult = await query(
-          `SELECT fe.funcionario_id, fe.ativo, fe.data_desvinculo, f.cpf
+          `SELECT fe.funcionario_id, fe.ativo, fe.data_desvinculo, fe.nivel_cargo, f.cpf
            FROM funcionarios_entidades fe
            JOIN funcionarios f ON f.id = fe.funcionario_id
            WHERE f.cpf = ANY($1) AND fe.entidade_id = $2`,
@@ -143,6 +143,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         for (const vinculo of vinculosResult.rows) {
           const cpfTrim = (vinculo.cpf as string).trim();
           cpfsVinculadosNaEntidade.add(cpfTrim);
+          // Registrar nivel_cargo per-entidade (não global)
+          perEntidadeNivelMap.set(cpfTrim, (vinculo.nivel_cargo as string | null) || null);
           for (let i = 0; i < parsed.data.length; i++) {
             const row = parsed.data[i];
             if (limparCPF(row.cpf ?? '') === cpfTrim) {
@@ -254,7 +256,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           : pareceIniciais
             ? nomeDb || nomePlanilha
             : nomePlanilha;
-        const nivelRaw = existingNivelCargoMap.get(cpf) ?? null;
+        const nivelRaw = perEntidadeNivelMap.get(cpf) ?? null;
         const nivelAtual: NivelCargoValue =
           nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
         if (!mudancaRoleDetalhesMap.has(novaFuncao)) {
@@ -296,7 +298,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
         if (funcaoAtual !== funcao) continue;
 
-        const nivelBancoRaw = existingNivelCargoMap.get(cpf) ?? null;
+        const nivelBancoRaw = perEntidadeNivelMap.get(cpf) ?? null;
         const nivelBanco: NivelCargoValue =
           nivelBancoRaw === 'gestao' || nivelBancoRaw === 'operacional'
             ? nivelBancoRaw
@@ -348,7 +350,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       existentesCpfs: Set<string>;
       niveisSet: Set<NivelCargoValue>;
       semNivelNaPlanilha: Set<string>;
-      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string }>;
+      semNivelNaPlanilhaDetalhes: Array<{ nome: string; empresa: string; cpf: string }>;
     }
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
@@ -382,6 +384,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             info.semNivelNaPlanilhaDetalhes.push({
               nome: nomeFunc,
               empresa: '',
+              cpf: cpfRow,
             });
           }
           info.semNivelNaPlanilha.add(cpfRow);
@@ -390,7 +393,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       if (cpfsVinculadosNaEntidade.has(cpfRow)) {
         info.existentesCpfs.add(cpfRow);
-        const nivelRaw = existingNivelCargoMap.get(cpfRow) ?? null;
+        const nivelRaw = perEntidadeNivelMap.get(cpfRow) ?? null;
         const nivelNorm: NivelCargoValue =
           nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
         info.niveisSet.add(nivelNorm);
@@ -433,8 +436,18 @@ export async function POST(request: Request): Promise<NextResponse> {
         resumo: {
           ...validacao.resumo,
           funcionariosExistentes,
-          funcionariosNovos:
-            validacao.resumo.cpfsUnicos - funcionariosExistentes,
+          // Funcionários novos = CPFs sem vínculo com esta entidade. Um CPF em outra entidade ainda é novo aqui.
+          funcionariosNovos: (() => {
+            const novosCpfs = new Set<string>();
+            const linhasComErroSet = new Set(validacao.erros.map((e) => e.linha));
+            for (let i = 0; i < parsed.data.length; i++) {
+              if (linhasComErroSet.has(i + 2)) continue;
+              const cpf = limparCPF(parsed.data[i].cpf ?? '');
+              if (!cpf) continue;
+              if (!cpfsVinculadosNaEntidade.has(cpf)) novosCpfs.add(cpf);
+            }
+            return novosCpfs.size;
+          })(),
           funcionariosParaInativar,
           funcionariosJaInativos,
           funcionariosAReadmitir,

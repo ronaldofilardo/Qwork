@@ -98,6 +98,17 @@ export async function POST(request: Request): Promise<NextResponse> {
       }
     }
 
+    // Optional: nivel_cargo map per CPF — classificação individual (prioridade sobre por função)
+    const nivelCargoCpfMapRaw = formData.get('nivelCargoCpfMap');
+    let nivelCargoCpfMap: Record<string, string> | null = null;
+    if (nivelCargoCpfMapRaw && typeof nivelCargoCpfMapRaw === 'string') {
+      try {
+        nivelCargoCpfMap = JSON.parse(nivelCargoCpfMapRaw);
+      } catch {
+        /* ignore */
+      }
+    }
+
     const buffer = Buffer.from(await file.arrayBuffer());
 
     // Parse com mapeamento
@@ -181,7 +192,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       let empresasNomeAtualizados = 0;
       let funcionariosCriados = 0;
       let funcionariosAtualizados = 0;
-      let nivelCargoAlterados = 0;
+      const nivelCargoAlterados = 0;
       const funcoesAlteradasList: Array<{
         nome: string;
         funcaoAnterior: string | null;
@@ -323,12 +334,14 @@ export async function POST(request: Request): Promise<NextResponse> {
           const nomeFunc = (row.nome ?? '').trim();
           const funcao = (row.funcao ?? 'Não informado').trim();
           const setor = (row.setor ?? 'Não informado').trim();
-          // Prioridade: coluna nivel_cargo mapeada diretamente > classificação do modal
+          // Prioridade: nivel por CPF (individual) > coluna nivel_cargo > classificação por função
           const nivelCargoFromRow = row.nivel_cargo
             ? normalizarNivelCargo(row.nivel_cargo)
             : null;
           const nivelCargo =
-            nivelCargoFromRow ?? ((nivelCargoMap?.[funcao] ?? '') || null);
+            ((nivelCargoCpfMap?.[cpf] ?? '') || null) ??
+            nivelCargoFromRow ??
+            ((nivelCargoMap?.[funcao] ?? '') || null);
           const dataNasc = row.data_nascimento
             ? (parseDateCell(row.data_nascimento) ?? null)
             : null;
@@ -348,7 +361,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
             // Check if CPF already exists
             const existFunc = await client.query(
-              'SELECT id, nivel_cargo, funcao FROM funcionarios WHERE cpf = $1',
+              'SELECT id, funcao FROM funcionarios WHERE cpf = $1',
               [cpf]
             );
 
@@ -356,9 +369,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
             if (existFunc.rows.length > 0) {
               funcionarioId = existFunc.rows[0].id as number;
-              const oldNivelCargo = existFunc.rows[0].nivel_cargo as
-                | string
-                | null;
               const oldFuncao = existFunc.rows[0].funcao as string | null;
 
               // Atualizar dados se necessário
@@ -382,19 +392,10 @@ export async function POST(request: Request): Promise<NextResponse> {
                 });
               }
 
-              // Atualizar nivel_cargo se classificado/mapeado; rastrear mudanças
-              if (nivelCargo) {
-                updates.push(`nivel_cargo = $${paramIdx++}`);
-                params.push(nivelCargo);
-                if (oldNivelCargo !== nivelCargo) {
-                  nivelCargoAlterados++;
-                  avisosProcessamento.push({
-                    linha: linhaNum,
-                    cpf,
-                    mensagem: `Nível de cargo atualizado: ${oldNivelCargo ?? 'não definido'} → ${nivelCargo}`,
-                  });
-                }
-              }
+              // NOTA: nivel_cargo NÃO é mais atualizado na tabela global 'funcionarios' para employees existentes.
+              // A segregação por empresa ocorre via 'funcionarios_clinicas.nivel_cargo', atualizado nos VÍNCULOs abaixo.
+              // Isso previne 'bleeding' de nivel_cargo entre empresas diferentes que compartilham o mesmo CPF.
+              // Monitoramento de mudanças de nivel_cargo agora ocorre por vínculo (fc.nivel_cargo), não globalmente.
 
               if (updates.length > 0) {
                 updates.push(`atualizado_em = NOW()`);
