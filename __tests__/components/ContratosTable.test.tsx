@@ -22,6 +22,7 @@ describe('ContratosTable', () => {
             rep_nome: 'Maria Rep',
             rep_codigo: 'REP123',
             rep_cpf: '11122233344',
+            rep_id: 42,
             lead_data: '2026-04-01T00:00:00.000Z',
             contrato_data: '2026-04-02',
             tempo_dias: '1',
@@ -84,6 +85,7 @@ describe('ContratosTable', () => {
                 rep_nome: null,
                 rep_codigo: null,
                 rep_cpf: null,
+                rep_id: null,
                 lead_data: null,
                 contrato_data: null,
                 tempo_dias: null,
@@ -143,6 +145,7 @@ describe('ContratosTable', () => {
                 rep_nome: null,
                 rep_codigo: null,
                 rep_cpf: null,
+                rep_id: null,
                 lead_data: null,
                 contrato_data: null,
                 tempo_dias: null,
@@ -292,6 +295,7 @@ describe('ContratosTable', () => {
             rep_nome: null,
             rep_codigo: null,
             rep_cpf: null,
+            rep_id: null,
             lead_data: null,
             contrato_data: null,
             tempo_dias: null,
@@ -330,5 +334,58 @@ describe('ContratosTable', () => {
 
     // Tipo custo_fixo deve ser nome completo
     expect(screen.getAllByText('Custo Fixo').length).toBeGreaterThan(0);
+  });
+
+  it('modo suporte: exibe coluna Rep. ID entre Lead e Contrato', async () => {
+    jest.restoreAllMocks();
+    jest.spyOn(global, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        contratos: [
+          {
+            contratante_nome: 'Entidade Com Rep ID',
+            contratante_cnpj: '11222333000100',
+            contratante_id: 50,
+            vinculo_id: 7,
+            tipo_contratante: 'entidade',
+            rep_nome: 'Carlos Rep',
+            rep_codigo: 'CR01',
+            rep_cpf: '55566677788',
+            rep_id: 42,
+            lead_data: '2026-04-15T00:00:00.000Z',
+            contrato_data: '2026-04-20',
+            tempo_dias: '5',
+            tipo_comissionamento: 'percentual',
+            percentual_comissao: '15.00',
+            valor_custo_fixo: null,
+            valor_negociado: null,
+            total_laudos: '5',
+            total_lotes: '3',
+            avaliacoes_concluidas: '10',
+            valor_avaliacao: '50.00',
+            valor_total: '500.00',
+            perc_rep: '15.00',
+            valor_rep: '75.00',
+            isento_pagamento: false,
+            responsavel_cpf: '11122233344',
+          },
+        ],
+      }),
+    } as Response);
+
+    render(
+      <ContratosTable
+        endpoint="/api/suporte/contratos"
+        suporte
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Entidade Com Rep ID').length).toBeGreaterThan(0);
+    });
+
+    // Rep. ID deve estar exibido
+    expect(screen.getByText('Rep. ID')).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
   });
 });
