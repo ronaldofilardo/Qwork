@@ -1,7 +1,8 @@
 /**
  * GET /api/representante/minhas-vendas/comissoes
- * Lista comissões de leads diretos do representante (leads onde vendedor_id IS NULL).
- * Reutiliza a mesma estrutura de /api/representante/comissoes com filtro adicional.
+ * Lista todas as comissões do representante (leads diretos e via vendedor).
+ * O representante deve ver todas as comissões que lhe foram atribuídas,
+ * independentemente da origem do lead (direto, vendedor ou admin).
  *
  * Upload de NF/RPA: reutiliza /api/representante/comissoes/[id]/nf (sem duplicação).
  */
@@ -24,15 +25,8 @@ export async function GET(request: NextRequest) {
     const limit = 30;
     const offset = (page - 1) * limit;
 
-    // Apenas comissões de leads diretos (vendedor_id IS NULL) OU orfãs (sem lead)
-    const wheres = [
-      `c.representante_id = $1`,
-      `EXISTS (
-        SELECT 1 FROM vinculos_comissao vc
-        LEFT JOIN leads_representante lr ON lr.id = vc.lead_id
-        WHERE vc.id = c.vinculo_id AND (vc.lead_id IS NULL OR lr.vendedor_id IS NULL)
-      )`,
-    ];
+    // Todas as comissões do representante (diretas e via vendedor)
+    const wheres = [`c.representante_id = $1`];
     const params: unknown[] = [sess.representante_id];
     let i = 2;
 
@@ -68,12 +62,8 @@ export async function GET(request: NextRequest) {
            COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'liberada'), 0)                               AS valor_liberado,
            COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status::text = 'paga'), 0)                                   AS valor_pago_total
          FROM comissoes_laudo c
-         WHERE c.representante_id = $1
-           AND EXISTS (
-             SELECT 1 FROM vinculos_comissao vc
-             LEFT JOIN leads_representante lr ON lr.id = vc.lead_id
-             WHERE vc.id = c.vinculo_id AND (vc.lead_id IS NULL OR lr.vendedor_id IS NULL)
-           )`,
+         WHERE c.representante_id = $1`,
+
         [sess.representante_id]
       ),
       query<{ total: string }>(

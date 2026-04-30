@@ -11,7 +11,7 @@
  * 5. GET /api/representante/minhas-vendas/leads — filtra vendedor_id IS NULL
  * 6. POST /api/representante/minhas-vendas/leads — insere com vendedor_id = NULL explícito
  * 7. GET /api/representante/minhas-vendas/vinculos — JOIN em lead_id + vendedor_id IS NULL
- * 8. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery com lead_id IS NULL check
+ * 8. GET /api/representante/minhas-vendas/comissoes — todas as comissões do rep (sem filtro EXISTS)
  * 9. Layout representante — nav item "Minhas Vendas"
  * 10. PATCH /api/comercial/representantes/[id] — suporta percentual_vendedor_direto
  * 11. PATCH /api/suporte/representantes/[id] — suporta percentual_vendedor_direto
@@ -220,15 +220,18 @@ describe('5. GET /api/representante/minhas-vendas/vinculos — JOIN correto', ()
     expect(src).toContain('lr.vendedor_id IS NULL');
   });
 
-  it('deve filtrar lr.representante_id pelo representante logado', () => {
-    expect(src).toContain('lr.representante_id = $1');
+  it('deve filtrar pelo representante logado via v.representante_id', () => {
+    // A rota usa v.representante_id = $1 (vínculo.representante_id) — não lr.representante_id
+    expect(src).toContain('v.representante_id = $1');
   });
 });
 
 // ---------------------------------------------------------------------------
-// 6. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery
+// 6. GET /api/representante/minhas-vendas/comissoes — todas as comissões do rep
+// Correção 30/04/2026: EXISTS removido — rep vê todas as comissões atribuídas a ele,
+// independentemente da origem do lead (direto, vendedor ou admin).
 // ---------------------------------------------------------------------------
-describe('6. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery', () => {
+describe('6. GET /api/representante/minhas-vendas/comissoes — todas as comissões', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -248,29 +251,25 @@ describe('6. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery'
     expect(fs.existsSync(routePath)).toBe(true);
   });
 
-  it('deve usar EXISTS com vinculos_comissao e leads_representante', () => {
-    expect(src).toContain('EXISTS');
-    expect(src).toContain('vinculos_comissao vc');
-    expect(src).toContain('leads_representante lr');
-  });
-
-  it('deve filtrar por vc.id = c.vinculo_id', () => {
-    expect(src).toContain('vc.id = c.vinculo_id');
-  });
-
-  it('deve verificar lr.vendedor_id IS NULL', () => {
-    expect(src).toContain('lr.vendedor_id IS NULL');
+  it('NÃO deve ter filtro EXISTS que excluía comissões de leads via vendedor', () => {
+    // Antes: EXISTS (SELECT 1 FROM vinculos_comissao vc JOIN leads_representante lr...)
+    // Depois: removido — rep vê todas as suas comissões
+    expect(src).not.toContain('lr.vendedor_id IS NULL');
   });
 
   it('deve filtrar c.representante_id pelo representante logado', () => {
     expect(src).toContain('c.representante_id = $1');
   });
 
-  it('deve incluir statusValidos com retida e paga (pendente_consolidacao removido)', () => {
+  it('deve incluir statusValidos com retida e paga', () => {
     expect(src).toContain("'retida'");
     expect(src).toContain("'paga'");
     expect(src).not.toContain('pendente_nf');
     expect(src).not.toContain('nf_em_analise');
+  });
+
+  it('deve ter force-dynamic para SSR correto', () => {
+    expect(src).toContain("export const dynamic = 'force-dynamic'");
   });
 });
 
@@ -419,12 +418,14 @@ describe('10. POST /api/comercial/representantes/[id]/aprovar-comissao — Fase 
     expect(src).toContain("'percentual', 'custo_fixo'");
   });
 
-  it('deve validar que rep está em apto_pendente', () => {
-    expect(src).toContain("'apto_pendente'");
+  it('deve mover rep para status apto diretamente (sem estado intermediário)', () => {
+    // Fluxo atual: modelo definido + rep vai direto para 'apto'
+    expect(src).toContain("'apto'");
   });
 
-  it('deve mover status para aprovacao_comercial', () => {
-    expect(src).toContain("'aprovacao_comercial'");
+  it('não usa mais apto_pendente/aprovacao_comercial (fluxo simplificado)', () => {
+    // Status intermediários removidos na refatoração do fluxo
+    expect(src).not.toContain("'aprovacao_comercial'");
   });
 
   it('deve atualizar modelo_comissionamento e percentual_comissao', () => {
