@@ -94,7 +94,10 @@ jest.mock('@/lib/validators', () => ({
 // (NextRequest com body: formData não define Content-Type em ambiente de teste)
 // jsdom não implementa File.prototype.arrayBuffer — polyfill obrigátorio
 // --------------------------------------------------------------------------
-function makeMockRequest(fields: Record<string, string>, fileContent = 'xlsx'): Request {
+function makeMockRequest(
+  fields: Record<string, string>,
+  fileContent = 'xlsx'
+): Request {
   const file = new File([fileContent], 'test.xlsx', {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
@@ -157,8 +160,7 @@ describe('Importação RH - Self-Assignment Validation', () => {
       expect(data.success).toBe(true);
       const selfAssignmentErrors = data.data.erros.filter(
         (e: { campo: string; mensagem: string }) =>
-          e.campo === 'cpf' &&
-          e.mensagem.includes('Você não pode se cadastrar')
+          e.campo === 'cpf' && e.mensagem.includes('Você não pode se cadastrar')
       );
       expect(selfAssignmentErrors).toHaveLength(1);
       expect(selfAssignmentErrors[0].valor).toBe('12345678901');
@@ -175,8 +177,7 @@ describe('Importação RH - Self-Assignment Validation', () => {
       expect(data.success).toBe(true);
       const selfAssignmentError = data.data.erros.find(
         (e: { campo: string; mensagem: string }) =>
-          e.campo === 'cpf' &&
-          e.mensagem.includes('Você não pode se cadastrar')
+          e.campo === 'cpf' && e.mensagem.includes('Você não pode se cadastrar')
       );
       expect(selfAssignmentError).toBeDefined();
     });

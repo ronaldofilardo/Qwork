@@ -13,6 +13,8 @@ import NivelCargoStep, {
   type FuncaoNivelInfo,
 } from '@/components/importacao/NivelCargoStep';
 import ImportProgressModal from '@/components/importacao/ImportProgressModal';
+import ErrorConfirmationModal from '@/components/importacao/ErrorConfirmationModal';
+import NivelCargoWarningModal from '@/components/importacao/NivelCargoWarningModal';
 import {
   TemplatePicker,
   SaveTemplateForm,
@@ -148,6 +150,13 @@ export default function ImportacaoEntidadePage() {
   // Modal de progresso de importação
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [importConcluido, setImportConcluido] = useState(false);
+
+  // Modal de aviso de nivel_cargo (step validacao)
+  const [showNivelCargoWarningModal, setShowNivelCargoWarningModal] =
+    useState(false);
+
+  // Modal de confirmação de erros (step validacao)
+  const [showErrorConfirmModal, setShowErrorConfirmModal] = useState(false);
 
   // Step 1: Upload + Analyze
   const handleFileSelect = useCallback(async (file: File) => {
@@ -475,7 +484,18 @@ export default function ImportacaoEntidadePage() {
             }}
             hideEmpresaStats
             funcoesComMudancaRole={validateData.funcoesComMudancaRole}
-            onConfirm={() => setStep('nivel-cargo')}
+            onConfirm={() => {
+              const semNivel = validateData.avisos.filter(
+                (a) => a.campo === 'nivel_cargo'
+              ).length;
+              if (semNivel > 0) {
+                setShowNivelCargoWarningModal(true);
+              } else if (validateData.erros.length > 0) {
+                setShowErrorConfirmModal(true);
+              } else {
+                setStep('nivel-cargo');
+              }
+            }}
             onBack={() => {
               setStep('mapeamento');
               setError(null);
@@ -527,6 +547,39 @@ export default function ImportacaoEntidadePage() {
           funcoesAlteradas={executeData.resumo.funcoesAlteradas ?? []}
           hideEmpresaStats
           onNovaImportacao={handleNovaImportacao}
+        />
+      )}
+
+      {/* Modal de aviso de nivel_cargo — exibido quando há funcionários sem nível na planilha */}
+      {showNivelCargoWarningModal && validateData && (
+        <NivelCargoWarningModal
+          count={
+            validateData.avisos.filter((a) => a.campo === 'nivel_cargo').length
+          }
+          onCancel={() => setShowNivelCargoWarningModal(false)}
+          onConfirm={() => {
+            setShowNivelCargoWarningModal(false);
+            if (validateData.erros.length > 0) {
+              setShowErrorConfirmModal(true);
+            } else {
+              setStep('nivel-cargo');
+            }
+          }}
+        />
+      )}
+
+      {/* Modal de confirmação de erros — exibido ao tentar continuar com erros na validação */}
+      {showErrorConfirmModal && validateData && (
+        <ErrorConfirmationModal
+          totalErros={validateData.erros.length}
+          onCancel={() => {
+            setShowErrorConfirmModal(false);
+            handleNovaImportacao();
+          }}
+          onConfirm={() => {
+            setShowErrorConfirmModal(false);
+            setStep('nivel-cargo');
+          }}
         />
       )}
 
