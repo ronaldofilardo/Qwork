@@ -93,12 +93,26 @@ export default function PagamentosEmAberto({
       currency: 'BRL',
     }).format(value);
 
-  const formatDate = (dateStr: string) =>
+  const _formatDate = (dateStr: string) =>
     new Date(dateStr).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
     });
+
+  const formatDateTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const dateFormatted = date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const timeFormatted = date.toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `${dateFormatted} às ${timeFormatted}`;
+  };
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -165,7 +179,7 @@ export default function PagamentosEmAberto({
 
             <div className="flex items-center justify-between">
               <span className="text-xs text-gray-400">
-                Disponibilizado em {formatDate(pag.disponibilizado_em)}
+                Disponibilizado em {formatDateTime(pag.disponibilizado_em)}
               </span>
               {pag.token && (
                 <a

@@ -16,6 +16,7 @@ import {
   foiExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
 import ModalSetorRelatorioPDF from '@/components/ModalSetorRelatorioPDF';
+import { ArrowLeft, AlertTriangle, SendHorizontal, ClipboardList, Download, Lock, Copy, CheckCircle2 } from 'lucide-react';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -936,29 +937,28 @@ export default function DetalhesLotePage() {
         <div className="mb-6">
           <button
             onClick={() => router.push(`/rh/empresa/${empresaId}`)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 text-sm"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
           >
-            ← Voltar para Dashboard
+            <ArrowLeft size={16} />
+            Voltar para Dashboard
           </button>
 
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div className="flex-1">
-                <div className="mb-1">
-                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Lote ID
-                  </span>
-                </div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                  {lote.id}
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-1.5">
+                  Detalhes do Lote
+                </p>
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">
+                  #{lote.id}
                 </h1>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
                   <div>
-                    <span className="text-gray-500">Empresa:</span>{' '}
-                    <span className="font-medium">{lote.empresa_nome}</span>
+                    <span className="text-gray-400">Empresa</span>{' '}
+                    <span className="font-medium text-gray-800">{lote.empresa_nome}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Tipo:</span>{' '}
+                    <span className="text-gray-400">Tipo</span>{' '}
                     <span className="font-medium">
                       {lote.tipo === 'completo'
                         ? 'Completo'
@@ -968,14 +968,14 @@ export default function DetalhesLotePage() {
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-500">Liberado em:</span>{' '}
+                    <span className="text-gray-400">Liberado em</span>{' '}
                     <span className="font-medium">
                       {formatarData(lote.liberado_em)}
                     </span>
                   </div>
                   {lote.liberado_por_nome && (
                     <div>
-                      <span className="text-gray-500">Liberado por:</span>{' '}
+                      <span className="text-gray-400">Liberado por</span>{' '}
                       <span className="font-medium">
                         {lote.liberado_por_nome}
                       </span>
@@ -983,17 +983,14 @@ export default function DetalhesLotePage() {
                   )}
                 </div>
                 {lote.descricao && (
-                  <p className="mt-3 text-sm text-gray-600 italic">
+                  <p className="mt-3 text-sm text-gray-500 italic border-l-2 border-gray-200 pl-3">
                     {lote.descricao}
                   </p>
                 )}
               </div>
 
-              <div className="w-full md:w-auto lg:w-72">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
-                  {/* Estatísticas removidas conforme solicitado */}
-
-                  <div className="w-full sm:w-44 md:w-48 flex-shrink-0 flex flex-col gap-2">
+            <div className="flex-shrink-0 flex flex-col gap-2 lg:items-end">
+              <div className="flex flex-col sm:flex-row gap-2">
                     <button
                       onClick={gerarRelatorioLote}
                       disabled={
@@ -1001,8 +998,7 @@ export default function DetalhesLotePage() {
                           lote.laudo_status ?? ''
                         )
                       }
-                      className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
-                      aria-label="Gerar Relatório PDF do Lote"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                       title={
                         !['emitido', 'enviado'].includes(
                           lote.laudo_status ?? ''
@@ -1012,8 +1008,8 @@ export default function DetalhesLotePage() {
                       }
                     >
                       {['emitido', 'enviado'].includes(lote.laudo_status ?? '')
-                        ? '📊 Gerar Relatório PDF'
-                        : '⏳ Aguardando emissão'}
+                        ? 'Gerar Relatório PDF'
+                        : 'Aguardando emissão'}
                     </button>
 
                     <button
@@ -1036,38 +1032,22 @@ export default function DetalhesLotePage() {
                       }
                     >
                       {['emitido', 'enviado'].includes(lote.laudo_status ?? '')
-                        ? '📊 Gerar Relatório por Setor'
-                        : '⏳ Aguardando laudo'}
+                        ? 'Por Setor'
+                        : 'Aguardando laudo'}
                     </button>
 
                     {estatisticas.avaliacoes_inativadas > 0 && (
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-                        <div className="flex items-start gap-2">
-                          <span className="text-amber-600 text-sm">⚠️</span>
-                          <div>
-                            <p className="font-medium mb-1">
-                              Avaliações inativadas
-                            </p>
-                            <p className="text-xs">
-                              {estatisticas.avaliacoes_inativadas} avaliação
-                              {estatisticas.avaliacoes_inativadas !== 1
-                                ? 'ões'
-                                : ''}{' '}
-                              inativada
-                              {estatisticas.avaliacoes_inativadas !== 1
-                                ? 's'
-                                : ''}
-                              . Contam no denominador dos 70% — o lote pode ser
-                              liberado sem que sejam concluídas.
-                            </p>
-                          </div>
-                        </div>
+                      <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 max-w-xs">
+                        <AlertTriangle size={13} className="text-amber-500 mt-0.5 shrink-0" />
+                        <p>
+                          <span className="font-semibold">{estatisticas.avaliacoes_inativadas}</span> removida
+                          {estatisticas.avaliacoes_inativadas !== 1 ? 's' : ''} — contam no denominador dos 70%.
+                        </p>
                       </div>
                     )}
-                  </div>
                 </div>
-              </div>
             </div>
+          </div>
 
             {/* Botão de Solicitação de Emissão - aparece quando lote atingiu 70% (status='concluido'), sem laudo e sem solicitação pendente */}
             {lote &&
@@ -1075,23 +1055,18 @@ export default function DetalhesLotePage() {
               !lote.emissao_solicitada &&
               !lote.tem_laudo && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <span className="text-2xl">✅</span>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900 mb-1">
-                          Lote Concluído — Pronto para Emissão
-                        </h4>
-                        <p className="text-sm text-gray-700">
-                          Pelo menos 70% das avaliações foram concluídas.
-                          Avaliações ainda em andamento serão inativadas
-                          automaticamente ao solicitar.
-                        </p>
-                      </div>
+                  <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-l-4 border-emerald-400 rounded-lg mb-3">
+                    <div className="flex-shrink-0 w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <button
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-0.5">Pronto para emissão</h4>
+                      <p className="text-sm text-gray-600">
+                        70% ou mais das avaliações foram concluídas. Solicite a emissão do laudo.
+                      </p>
+                    </div>
+                  </div>
+                  <button
                       onClick={async () => {
                         const confirmado = confirm(
                           `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nAvaliações ainda pendentes serão inativadas automaticamente.\nO laudo será gerado e enviado para o emissor responsável.`
@@ -1145,35 +1120,30 @@ export default function DetalhesLotePage() {
                           );
                         }
                       }}
-                      className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-semibold text-base flex items-center justify-center gap-2 shadow-md"
+                      className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
                     >
-                      <span className="text-xl">🚀</span>
-                      <span>Solicitar Emissão do Laudo</span>
+                      <SendHorizontal className="w-4 h-4" />
+                      Solicitar Emissão do Laudo
                     </button>
-                  </div>
                 </div>
               )}
 
             {/* Mensagem quando emissão já foi solicitada */}
             {lote && lote.emissao_solicitada && !lote.tem_laudo && (
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">📋</span>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-1">
-                        Emissão Solicitada
-                      </h4>
-                      <p className="text-sm text-gray-700">
-                        A emissão do laudo foi solicitada em{' '}
-                        {lote.emissao_solicitado_em
-                          ? formatDate(lote.emissao_solicitado_em)
-                          : 'data não disponível'}
-                        . O laudo está sendo processado pelo emissor.
-                      </p>
-                    </div>
+                <div className="flex items-start gap-3 p-4 bg-blue-50 border border-l-4 border-blue-400 rounded-lg">
+                  <div className="flex-shrink-0 w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center">
+                    <ClipboardList className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-0.5">Emissão Solicitada</h4>
+                    <p className="text-sm text-gray-600">
+                      Solicitado em{' '}
+                      {lote.emissao_solicitado_em
+                        ? formatDate(lote.emissao_solicitado_em)
+                        : 'data não disponível'}
+                      . O laudo está sendo processado pelo emissor.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1182,24 +1152,19 @@ export default function DetalhesLotePage() {
             {/* Mensagem quando laudo já foi emitido */}
             {lote && lote.tem_laudo && (
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="p-4 bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-300 rounded-lg">
-                  <div className="flex items-start gap-3 mb-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">✅</span>
+                <div>
+                  <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-l-4 border-emerald-400 rounded-lg mb-3">
+                    <div className="flex-shrink-0 w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                     </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-1">
-                        Laudo Emitido
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900 mb-0.5">
+                        Laudo Emitido{lote.laudo_status === 'enviado' ? ' e Enviado' : ''}
                       </h4>
-                      <p className="text-sm text-gray-700 mb-2">
-                        O laudo deste lote já foi emitido{' '}
-                        {lote.laudo_status === 'enviado' ? 'e enviado' : ''}.
-                        {lote.emitido_em &&
-                          ` Emitido em ${formatDate(lote.emitido_em)}`}
+                      <p className="text-sm text-gray-600">
+                        {lote.emitido_em ? <>Emitido em {formatDate(lote.emitido_em)}.</> : 'Laudo disponível.'}
+                        {lote.emissor_nome && <> Por {lote.emissor_nome}.</>}
                       </p>
-                      {lote.emissor_nome && (
-                        <p className="text-xs text-purple-700"></p>
-                      )}
                     </div>
                   </div>
 
@@ -1238,18 +1203,20 @@ export default function DetalhesLotePage() {
                           });
                         }
                       }}
-                      className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors mb-3"
                     >
-                      📄 Ver Laudo / Baixar PDF
+                      <Download className="w-4 h-4" />
+                      Ver Laudo / Baixar PDF
                     </button>
                   )}
 
                   {/* Hash de Integridade - apenas se arquivo está no bucket */}
                   {lote.hash_pdf && (
-                    <div className="bg-white p-3 rounded-lg border border-purple-200">
+                    <div className="bg-white p-3 rounded-lg border border-gray-200">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-purple-800 uppercase">
-                          🔒 Hash de Integridade (SHA-256)
+                        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                          <Lock className="w-3 h-3" />
+                          Verificação do PDF (SHA-256)
                         </span>
                         <button
                           onClick={(e) => {
@@ -1259,17 +1226,17 @@ export default function DetalhesLotePage() {
                               .then(() => toast.success('Hash copiado!'))
                               .catch(() => toast.error('Erro ao copiar hash'));
                           }}
-                          className="inline-flex items-center gap-1 bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                          className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs hover:bg-gray-200 transition-colors border border-gray-200"
                         >
-                          📋 Copiar
+                          <Copy className="w-3 h-3" />
+                          Copiar
                         </button>
                       </div>
-                      <code className="text-[10px] font-mono text-gray-700 break-all block">
+                      <code className="text-[10px] font-mono text-gray-600 break-all block">
                         {lote.hash_pdf}
                       </code>
-                      <p className="text-xs text-purple-600 mt-2">
-                        Use este hash para verificar a autenticidade e
-                        integridade do PDF
+                      <p className="text-xs text-gray-400 mt-1.5">
+                        Compare este hash para verificar a autenticidade do PDF.
                       </p>
                     </div>
                   )}
@@ -1280,12 +1247,12 @@ export default function DetalhesLotePage() {
         </div>
 
         {/* Filtros e Busca */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <input
                 type="text"
-                placeholder="Buscar por nome, CPF, setor, função, matrícula... (ignora acentos)"
+                placeholder="Buscar funcionário (nome, CPF, setor...)"
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
                 className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
@@ -1402,11 +1369,8 @@ export default function DetalhesLotePage() {
                       key={`${func.cpf}-${func.avaliacao.id ?? idx}`}
                       className={`hover:bg-gray-50 ${
                         func.avaliacao.status === 'inativada'
-                          ? 'bg-red-50 border-l-4 border-red-400'
-                          : func.avaliacao.status === 'concluida' ||
-                              func.avaliacao.status === 'concluido'
-                            ? 'bg-green-50'
-                            : ''
+                          ? 'border-l-4 border-red-400'
+                          : ''
                       }`}
                     >
                       <td className="px-3 py-2 text-sm text-gray-500 font-mono">
@@ -1415,11 +1379,11 @@ export default function DetalhesLotePage() {
                       <td className="px-3 py-2 text-sm text-gray-900">
                         <div className="flex items-center gap-2">
                           {func.avaliacao.status === 'inativada' && (
-                            <span
-                              className="text-red-500 text-xs"
-                              title="Avaliação inativada - não conta para prontidão do lote"
-                            >
-                              ⚠️
+                            <span title="Avaliação removida — não conta para prontidão do lote">
+                              <AlertTriangle
+                                size={13}
+                                className="text-red-400 shrink-0"
+                              />
                             </span>
                           )}
                           {func.nome}

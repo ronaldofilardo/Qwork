@@ -9,6 +9,13 @@ import {
   Clock,
   FileText,
   Filter,
+  SendHorizontal,
+  ClipboardList,
+  CheckCircle2,
+  Lock,
+  Copy,
+  Download,
+  CreditCard,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ModalInativarAvaliacao from '@/components/ModalInativarAvaliacao';
@@ -800,7 +807,8 @@ export default function DetalhesLotePage() {
                     </>
                   ) : (
                     <>
-                      <span>💳 Aguardando confirmação de pagamento</span>
+                      <CreditCard className="w-4 h-4 flex-shrink-0" />
+                      <span>Aguardando confirmação de pagamento</span>
                       <button
                         onClick={async () => {
                           setPagamentoSincronizando(true);
@@ -976,92 +984,85 @@ export default function DetalhesLotePage() {
             !lote.emissao_solicitada &&
             !lote.tem_laudo && (
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-2xl">✅</span>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-gray-900 mb-1">
-                        Lote Concluído — Pronto para Emissão
-                      </h4>
-                      <p className="text-sm text-gray-700">
-                        Pelo menos 70% das avaliações foram concluídas.
-                        Avaliações ainda em andamento serão inativadas
-                        automaticamente ao solicitar.
-                      </p>
-                    </div>
+                <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-l-4 border-emerald-400 rounded-lg mb-3">
+                  <div className="flex-shrink-0 w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                   </div>
-                  <button
-                    onClick={async () => {
-                      const confirmado = confirm(
-                        `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nAvaliações ainda pendentes serão inativadas automaticamente.\nO laudo será gerado e enviado para o emissor responsável.`
-                      );
-                      if (!confirmado) return;
-
-                      try {
-                        const response = await fetch(
-                          `/api/lotes/${lote.id}/solicitar-emissao`,
-                          {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                          }
-                        );
-                        const data = await response.json();
-                        if (!response.ok)
-                          throw new Error(
-                            data.error || 'Erro ao solicitar emissão'
-                          );
-                        toast.success('Emissão solicitada com sucesso!');
-
-                        // Exibir modal de confirmação (apenas uma vez por lote por sessão)
-                        if (!foiExibidaParaLote(lote.id)) {
-                          const contato = data.gestor_contato as
-                            | { email: string | null; celular: string | null }
-                            | undefined;
-                          setModalEmissao({
-                            loteId: lote.id,
-                            gestorEmail: contato?.email ?? null,
-                            gestorCelular: contato?.celular ?? null,
-                          });
-                        } else {
-                          setTimeout(() => window.location.reload(), 1500);
-                        }
-                      } catch (error: any) {
-                        toast.error(
-                          error.message || 'Erro ao solicitar emissão'
-                        );
-                      }
-                    }}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-semibold text-base flex items-center justify-center gap-2 shadow-md"
-                  >
-                    <span className="text-xl">🚀</span>
-                    <span>Solicitar Emissão do Laudo</span>
-                  </button>
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-900 mb-0.5">
+                      Pronto para emissão
+                    </h4>
+                    <p className="text-sm text-gray-600">
+                      70% ou mais das avaliações foram concluídas. Avaliações em
+                      andamento serão inativadas ao solicitar.
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={async () => {
+                    const confirmado = confirm(
+                      `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nAvaliações ainda pendentes serão inativadas automaticamente.\nO laudo será gerado e enviado para o emissor responsável.`
+                    );
+                    if (!confirmado) return;
+
+                    try {
+                      const response = await fetch(
+                        `/api/lotes/${lote.id}/solicitar-emissao`,
+                        {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                        }
+                      );
+                      const data = await response.json();
+                      if (!response.ok)
+                        throw new Error(
+                          data.error || 'Erro ao solicitar emissão'
+                        );
+                      toast.success('Emissão solicitada com sucesso!');
+
+                      // Exibir modal de confirmação (apenas uma vez por lote por sessão)
+                      if (!foiExibidaParaLote(lote.id)) {
+                        const contato = data.gestor_contato as
+                          | { email: string | null; celular: string | null }
+                          | undefined;
+                        setModalEmissao({
+                          loteId: lote.id,
+                          gestorEmail: contato?.email ?? null,
+                          gestorCelular: contato?.celular ?? null,
+                        });
+                      } else {
+                        setTimeout(() => window.location.reload(), 1500);
+                      }
+                    } catch (error: any) {
+                      toast.error(error.message || 'Erro ao solicitar emissão');
+                    }
+                  }}
+                  className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-semibold text-sm flex items-center justify-center gap-2"
+                >
+                  <SendHorizontal className="w-4 h-4" />
+                  Solicitar Emissão do Laudo
+                </button>
               </div>
             )}
 
           {/* Mensagem quando emissão já foi solicitada */}
           {lote && lote.emissao_solicitada && !lote.tem_laudo && (
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg">
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">📋</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">
-                      Emissão Solicitada
-                    </h4>
-                    <p className="text-sm text-gray-700">
-                      A emissão do laudo foi solicitada em{' '}
-                      {lote.emissao_solicitado_em
-                        ? formatDate(lote.emissao_solicitado_em)
-                        : 'data não disponível'}
-                      . O laudo está sendo processado pelo emissor.
-                    </p>
-                  </div>
+              <div className="flex items-start gap-3 p-4 bg-blue-50 border border-l-4 border-blue-400 rounded-lg">
+                <div className="flex-shrink-0 w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center">
+                  <ClipboardList className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-0.5">
+                    Emissão Solicitada
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Solicitado em{' '}
+                    {lote.emissao_solicitado_em
+                      ? formatDate(lote.emissao_solicitado_em)
+                      : 'data não disponível'}
+                    . O laudo está sendo processado pelo emissor.
+                  </p>
                 </div>
               </div>
             </div>
@@ -1070,70 +1071,70 @@ export default function DetalhesLotePage() {
           {/* Mensagem quando laudo já foi emitido */}
           {lote && lote.tem_laudo && (
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="p-4 bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-300 rounded-lg">
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">✅</span>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">
-                      Laudo Emitido
-                    </h4>
-                    <p className="text-sm text-gray-700 mb-2">
-                      O laudo deste lote já foi emitido{' '}
-                      {lote.laudo_status === 'enviado' ? 'e enviado' : ''}.
-                      {lote.emitido_em &&
-                        ` Emitido em ${formatDate(lote.emitido_em)}`}
-                    </p>
-                  </div>
+              <div className="flex items-start gap-3 p-4 bg-emerald-50 border border-l-4 border-emerald-400 rounded-lg mb-3">
+                <div className="flex-shrink-0 w-9 h-9 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                 </div>
-
-                {/* Botão Download Laudo - apenas se arquivo está no bucket */}
-                {lote.arquivo_remoto_url && (
-                  <button
-                    onClick={handleDownloadLaudo}
-                    className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
-                  >
-                    📄 Ver Laudo / Baixar PDF
-                  </button>
-                )}
-
-                {/* Hash de Integridade - apenas se arquivo está no bucket */}
-                {lote.hash_pdf && (
-                  <div className="bg-white p-3 rounded-lg border border-purple-200">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-purple-800 uppercase">
-                        🔒 Hash de Integridade (SHA-256)
-                      </span>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigator.clipboard
-                            .writeText(lote.hash_pdf!)
-                            .then(() => toast.success('Hash copiado!'))
-                            .catch(() => toast.error('Erro ao copiar hash'));
-                        }}
-                        className="inline-flex items-center gap-1 bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
-                      >
-                        📋 Copiar
-                      </button>
-                    </div>
-                    <code className="text-[10px] font-mono text-gray-700 break-all block">
-                      {lote.hash_pdf}
-                    </code>
-                    <p className="text-xs text-purple-600 mt-2">
-                      Use este hash para verificar a autenticidade e integridade
-                      do PDF
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-0.5">
+                    Laudo Emitido
+                    {lote.laudo_status === 'enviado' ? ' e Enviado' : ''}
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    {lote.emitido_em && (
+                      <>Emitido em {formatDate(lote.emitido_em)}.</>
+                    )}
+                  </p>
+                </div>
               </div>
+
+              {/* Botão Download Laudo - apenas se arquivo está no bucket */}
+              {lote.arquivo_remoto_url && (
+                <button
+                  onClick={handleDownloadLaudo}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors mb-3"
+                >
+                  <Download className="w-4 h-4" />
+                  Ver Laudo / Baixar PDF
+                </button>
+              )}
+
+              {/* Hash de Integridade - apenas se arquivo está no bucket */}
+              {lote.hash_pdf && (
+                <div className="bg-white p-3 rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Lock className="w-3 h-3" />
+                      Verificação do PDF (SHA-256)
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard
+                          .writeText(lote.hash_pdf!)
+                          .then(() => toast.success('Hash copiado!'))
+                          .catch(() => toast.error('Erro ao copiar hash'));
+                      }}
+                      className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs hover:bg-gray-200 transition-colors border border-gray-200"
+                    >
+                      <Copy className="w-3 h-3" />
+                      Copiar
+                    </button>
+                  </div>
+                  <code className="text-[10px] font-mono text-gray-600 break-all block">
+                    {lote.hash_pdf}
+                  </code>
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    Compare este hash para verificar a autenticidade do PDF.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* Filtros e Busca */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
+        <div className="bg-white rounded-xl shadow-sm p-5 mb-6 border border-gray-200">
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1179,7 +1180,7 @@ export default function DetalhesLotePage() {
                 className="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-sm hover:bg-gray-200 transition-colors"
                 title="Limpar todos os filtros por coluna"
               >
-                🧹 Limpar Filtros
+                � Limpar Filtros
               </button>
             </div>
           </div>
@@ -1374,7 +1375,7 @@ export default function DetalhesLotePage() {
                                 className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
                                 title="Inativar avaliação"
                               >
-                                🚫 Inativar
+                                Inativar
                               </button>
                             )}
                           {/* Show Reset for any evaluation that is NOT inativada — backend will enforce single-reset and lote constraints */}
