@@ -62,7 +62,7 @@ const MISSING_INDEXES = [
   { name: 'idx_comissoes_laudo_asaas_payment',       sql: "CREATE INDEX IF NOT EXISTS idx_comissoes_laudo_asaas_payment ON comissoes_laudo(asaas_payment_id) WHERE asaas_payment_id IS NOT NULL" },
   { name: 'idx_hierarquia_comercial_comercial_id',   sql: "CREATE INDEX IF NOT EXISTS idx_hierarquia_comercial_comercial_id ON hierarquia_comercial(comercial_id)" },
   { name: 'idx_laudos_zapsign_doc_token',            sql: "CREATE INDEX IF NOT EXISTS idx_laudos_zapsign_doc_token ON laudos(zapsign_doc_token) WHERE zapsign_doc_token IS NOT NULL" },
-  { name: 'idx_rate_limit_expires_at',               sql: "CREATE INDEX IF NOT EXISTS idx_rate_limit_expires_at ON rate_limit_store(expires_at)" },
+  { name: 'idx_rate_limit_expires_at',               sql: "CREATE INDEX IF NOT EXISTS idx_rate_limit_expires_at ON rate_limit_entries(expires_at)" },
   { name: 'idx_representantes_ativo',                sql: "CREATE INDEX IF NOT EXISTS idx_representantes_ativo ON representantes(ativo)" },
   { name: 'idx_representantes_gestor_comercial_cpf', sql: "CREATE INDEX IF NOT EXISTS idx_representantes_gestor_comercial_cpf ON representantes(gestor_comercial_cpf) WHERE gestor_comercial_cpf IS NOT NULL" },
   { name: 'idx_representantes_status_ativo',         sql: "CREATE INDEX IF NOT EXISTS idx_representantes_status_ativo ON representantes(status, ativo)" },
