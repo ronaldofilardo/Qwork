@@ -137,8 +137,7 @@ export const POST = async (req: Request) => {
     // Verificar permissões centralizadas (mantém política consistente com outras rotas RH)
     try {
       await requireRHWithEmpresaAccess(empresaId as number);
-    } catch (permError) {
-      console.log('[DEBUG] requireRHWithEmpresaAccess falhou:', permError);
+    } catch {
       return NextResponse.json(
         {
           error: 'Você não tem permissão para liberar avaliações nesta empresa',
@@ -157,8 +156,6 @@ export const POST = async (req: Request) => {
     );
     const numeroOrdem = numeroOrdemResult.rows[0].numero_ordem;
 
-    console.log(`[INFO] Gerando lote ${numeroOrdem} para empresa ${empresaId}`);
-
     // Usar função de elegibilidade para determinar quais funcionários devem ser incluídos (contexto do gestor)
     const elegibilidadeResult = await queryAsGestorRH<FuncionarioElegivel>(
       `SELECT * FROM calcular_elegibilidade_lote($1, $2)`,
@@ -166,18 +163,6 @@ export const POST = async (req: Request) => {
     );
 
     let funcionariosElegiveis = elegibilidadeResult.rows;
-
-    console.log(
-      `[INFO] ${funcionariosElegiveis.length} funcionários elegíveis encontrados pela função de índice`
-    );
-    console.log(
-      `[DEBUG] Funcionários elegíveis:`,
-      funcionariosElegiveis.map((f) => ({
-        cpf: f.funcionario_cpf,
-        nome: f.funcionario_nome,
-        motivo: f.motivo_inclusao,
-      }))
-    );
 
     // Aplicar filtros adicionais se fornecidos (retroativos ou por tipo)
     if (loteReferencia) {
@@ -213,19 +198,13 @@ export const POST = async (req: Request) => {
 
     const funcionarios = funcionariosElegiveis;
 
-    console.log(
-      `[DEBUG] Funcionários após todos os filtros: ${funcionarios.length}`
-    );
-    console.log(
-      `[DEBUG] DataFiltro: ${dataFiltro}, LoteReferencia: ${loteReferenciaId}`
-    );
-
     if (funcionarios.length === 0) {
       return NextResponse.json(
         {
           error:
             'Nenhum funcionário elegível encontrado para este tipo de lote',
           success: false,
+          detalhes: `Verifique se:\n1. Existem funcionários cadastrados e ativos na empresa\n2. Funcionários "nunca avaliados" (índice = 0) estão com status "Ativo" no vínculo\n3. A função de elegibilidade está retornando resultados corretos`,
         },
         { status: 400 }
       );

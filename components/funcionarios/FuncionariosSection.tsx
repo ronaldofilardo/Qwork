@@ -151,8 +151,8 @@ export default function FuncionariosSection({
         ativo: !currentStatus,
       };
 
-      // Para clínica, incluir empresa_id no body
-      if (contexto === 'clinica' && empresaId) {
+      // Para RH/Clínica, incluir empresa_id no body para escopar a inativação
+      if (contexto !== 'entidade' && empresaId) {
         body.empresa_id = empresaId;
       }
 
@@ -167,7 +167,12 @@ export default function FuncionariosSection({
         setFuncionarios((prev) =>
           prev.map((f) => (f.cpf === cpf ? { ...f, ativo: !currentStatus } : f))
         );
-        if (onRefresh) onRefresh();
+        // Recarregar dados do servidor para sincronizar (fallback se onRefresh não existir)
+        if (onRefresh) {
+          onRefresh();
+        } else {
+          loadFuncionarios();
+        }
       } else {
         const error = await res.json();
         alert(`Erro ao ${action}: ${error.error || 'Erro desconhecido'}`);
