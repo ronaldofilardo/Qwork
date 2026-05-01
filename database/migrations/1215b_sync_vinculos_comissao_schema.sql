@@ -34,9 +34,8 @@ ALTER TABLE public.vinculos_comissao
 ALTER TABLE public.vinculos_comissao
   ADD COLUMN IF NOT EXISTS percentual_comissao_representante NUMERIC(5,2);
 
-ALTER TABLE public.vinculos_comissao
-  ADD COLUMN IF NOT EXISTS percentual_comissao_comercial NUMERIC(5,2)
-    NOT NULL DEFAULT 0;
+-- percentual_comissao_comercial foi removida pela migration 1233 (remove_comercial_comissoes)
+-- Não adicionar aqui para evitar re-criação em ambientes onde 1233 já foi aplicada.
 
 ALTER TABLE public.vinculos_comissao
   ADD COLUMN IF NOT EXISTS num_vidas_estimado INTEGER;
@@ -56,9 +55,8 @@ ALTER TABLE public.vinculos_comissao
 
 ALTER TABLE public.vinculos_comissao
   DROP CONSTRAINT IF EXISTS vinculos_perc_comercial_range;
-ALTER TABLE public.vinculos_comissao
-  ADD CONSTRAINT vinculos_perc_comercial_range
-    CHECK (percentual_comissao_comercial >= 0 AND percentual_comissao_comercial <= 40);
+-- Nota: constraint vinculos_perc_comercial_range era para percentual_comissao_comercial,
+-- que foi removida pela 1233. Dropping IF EXISTS é seguro.
 
 -- 6. Índices parciais de unicidade (migration 504/505 — idempotentes)
 CREATE UNIQUE INDEX IF NOT EXISTS vinculo_unico_entidade
