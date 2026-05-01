@@ -1316,6 +1316,7 @@ export function RepresentantesLista() {
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [erro, setErro] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -1325,14 +1326,30 @@ export function RepresentantesLista() {
       if (status) params.set('status', status);
       params.set('grupo', grupo);
       const res = await fetch(`/api/suporte/representantes?${params}`);
-      if (res.ok) {
-        const d = (await res.json()) as {
-          representantes?: Representante[];
-          total?: number;
-        };
-        setRepresentantes(d.representantes ?? []);
-        setTotal(d.total ?? 0);
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Erro desconhecido' }));
+        console.error('[RepresentantesLista] Erro ao buscar representantes:', {
+          status: res.status,
+          statusText: res.statusText,
+          error: errorData,
+        });
+        setErro('Erro ao carregar representantes: ' + (errorData.error || 'Erro interno'));
+        setRepresentantes([]);
+        setTotal(0);
+        return;
       }
+      setErro(null);
+      const d = (await res.json()) as {
+        representantes?: Representante[];
+        total?: number;
+      };
+      setRepresentantes(d.representantes ?? []);
+      setTotal(d.total ?? 0);
+    } catch (err) {
+      console.error('[RepresentantesLista] Erro ao buscar:', err);
+      setErro('Erro ao carregar representantes: ' + (err instanceof Error ? err.message : 'Erro desconhecido'));
+      setRepresentantes([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
@@ -1413,6 +1430,17 @@ export function RepresentantesLista() {
 
   return (
     <div className="space-y-5">
+      {/* Mensagem de erro */}
+      {erro && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm flex items-start gap-3">
+          <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Erro ao carregar representantes</p>
+            <p className="mt-1 text-red-600">{erro}</p>
+          </div>
+        </div>
+      )}
+
       {/* Abas Ativos / Inativos */}
       <div className="flex border-b border-gray-200">
         {(['ativos', 'inativos'] as const).map((g) => (

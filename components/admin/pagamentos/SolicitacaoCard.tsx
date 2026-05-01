@@ -106,9 +106,21 @@ function PaymentInfo({
     return null;
   }
 
+  // Calcular valor pago a partir das parcelas
+  let valorPago = 0;
+  if (solicitacao.detalhes_parcelas) {
+    const parcelas =
+      typeof solicitacao.detalhes_parcelas === 'string'
+        ? JSON.parse(solicitacao.detalhes_parcelas)
+        : solicitacao.detalhes_parcelas;
+    valorPago = parcelas
+      .filter((p: any) => p.pago || p.status === 'pago')
+      .reduce((sum: number, p: any) => sum + (p.valor || 0), 0);
+  }
+
   return (
     <div className="bg-gray-50 rounded-lg p-4 mb-4">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
           <p className="text-xs text-gray-600 mb-1">Valor por Funcionário</p>
           <p className="text-lg font-bold text-gray-900">
@@ -132,6 +144,14 @@ function PaymentInfo({
             {formatCurrency(solicitacao.valor_total_calculado)}
           </p>
         </div>
+        {valorPago > 0 && (
+          <div>
+            <p className="text-xs text-gray-600 mb-1">Valor Pago</p>
+            <p className="text-lg font-bold text-green-600">
+              {formatCurrency(valorPago)}
+            </p>
+          </div>
+        )}
         {solicitacao.pago_em && (
           <div>
             <p className="text-xs text-gray-600 mb-1">Pago em</p>

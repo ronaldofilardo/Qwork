@@ -82,6 +82,11 @@ export function RepresentantesContent({
       </div>
 
       {/* Feedback de erro/sucesso */}
+      {ld.leadsError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+          Erro ao carregar dados: {ld.leadsError}
+        </div>
+      )}
       {actions.erro && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
           {actions.erro}

@@ -1085,11 +1085,6 @@ export default function DetalhesLotePage() {
                       {lote.emitido_em &&
                         ` Emitido em ${formatDate(lote.emitido_em)}`}
                     </p>
-                    {lote.emissor_cpf && (
-                      <p className="text-xs text-purple-700">
-                        Emissor: {lote.emissor_cpf}
-                      </p>
-                    )}
                   </div>
                 </div>
 

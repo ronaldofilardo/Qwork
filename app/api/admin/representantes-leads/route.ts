@@ -124,11 +124,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     });
   } catch (err: unknown) {
     const e = err as Error;
+    console.error('[GET /api/admin/representantes-leads] Erro completo:', {
+      message: e.message,
+      stack: e.stack,
+      name: e.name,
+    });
     if (e.message === 'Não autenticado')
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     if (e.message === 'Sem permissão')
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
-    console.error('[GET /api/admin/representantes-leads]', e);
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
+    return NextResponse.json({ error: e.message || 'Erro interno' }, { status: 500 });
   }
 }

@@ -132,20 +132,39 @@ export async function gerarDadosGeraisEmpresa(
   // Buscar contagem de funcionários por nível — usa nivel_cargo do VÍNCULO (fc), não da tabela global
   // Segrega nível de cargo por empresa para prevenir 'bleeding' entre empresas que compartilham CPF
   const empresaId = (lote.empresa_id as number | null) || undefined;
-  const funcionariosResult = await query(
-    `
-    SELECT
-      COUNT(*) as total,
-      SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'operacional' THEN 1 ELSE 0 END) as operacional,
-      SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'gestao' THEN 1 ELSE 0 END) as gestao
-    FROM funcionarios f
-    LEFT JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id AND fc.empresa_id = $2
-    JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
-    WHERE a.lote_id = $1 AND a.status = 'concluida'
-  `,
-    empresaId ? [loteId, empresaId] : [loteId],
-    session
-  );
+
+  let funcionariosResult;
+  if (empresaId) {
+    funcionariosResult = await query(
+      `
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'operacional' THEN 1 ELSE 0 END) as operacional,
+        SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'gestao' THEN 1 ELSE 0 END) as gestao
+      FROM funcionarios f
+      LEFT JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id AND fc.empresa_id = $2
+      JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
+      WHERE a.lote_id = $1 AND a.status = 'concluida'
+    `,
+      [loteId, empresaId],
+      session
+    );
+  } else {
+    funcionariosResult = await query(
+      `
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'operacional' THEN 1 ELSE 0 END) as operacional,
+        SUM(CASE WHEN COALESCE(fc.nivel_cargo, f.nivel_cargo) = 'gestao' THEN 1 ELSE 0 END) as gestao
+      FROM funcionarios f
+      LEFT JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
+      JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
+      WHERE a.lote_id = $1 AND a.status = 'concluida'
+    `,
+      [loteId],
+      session
+    );
+  }
 
   const funcs = funcionariosResult.rows[0] || {
     total: 0,

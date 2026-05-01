@@ -151,11 +151,6 @@ export default function EntidadeLoteActions({
                       <> Emitido em {formatDate(lote.emitido_em)}</>
                     )}
                   </p>
-                  {lote.emissor_cpf && (
-                    <p className="text-xs text-purple-700">
-                      Emissor: {lote.emissor_cpf}
-                    </p>
-                  )}
                 </div>
               </div>
 

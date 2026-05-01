@@ -70,7 +70,7 @@ export async function PATCH(request: NextRequest) {
          FROM lotes_avaliacao la
          WHERE a.lote_id = la.id
            AND a.funcionario_cpf = $1
-           AND la.tomador_id = $2
+           AND la.entidade_id = $2
            AND a.status NOT IN ('concluido', 'inativada')`,
         [cpf, entidadeId]
       );

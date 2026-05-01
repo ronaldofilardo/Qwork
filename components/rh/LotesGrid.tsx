@@ -367,9 +367,6 @@ export function LotesGrid({
                       : 'Data não disponível'}
                   </span>
                 </div>
-                <p className="text-xs text-blue-700 mb-2">
-                  Emissor: {laudoAssociado.emissor_nome}
-                </p>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
