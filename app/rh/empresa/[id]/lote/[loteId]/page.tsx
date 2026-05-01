@@ -16,7 +16,7 @@ import {
   foiExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
 import ModalSetorRelatorioPDF from '@/components/ModalSetorRelatorioPDF';
-import { ArrowLeft, AlertTriangle, SendHorizontal, ClipboardList, Download, Lock, Copy, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, SendHorizontal, ClipboardList, Download, Lock, Copy, CheckCircle2, ChevronDown, XCircle } from 'lucide-react';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -157,36 +157,11 @@ export default function DetalhesLotePage() {
   const [showSetorModal, setShowSetorModal] = useState(false);
 
   // Filtros por coluna
-  const [filtrosColuna, setFiltrosColuna] = useState<{
-    nome: string[];
-    cpf: string[];
-    nivel_cargo: string[];
-    status: string[];
-    g1: string[];
-    g2: string[];
-    g3: string[];
-    g4: string[];
-    g5: string[];
-    g6: string[];
-    g7: string[];
-    g8: string[];
-    g9: string[];
-    g10: string[];
-  }>({
+  const [filtrosColuna, setFiltrosColuna] = useState<Record<string, string[]>>({
     nome: [],
     cpf: [],
     nivel_cargo: [],
     status: [],
-    g1: [],
-    g2: [],
-    g3: [],
-    g4: [],
-    g5: [],
-    g6: [],
-    g7: [],
-    g8: [],
-    g9: [],
-    g10: [],
   });
 
   const loadLoteData = useCallback(async () => {
