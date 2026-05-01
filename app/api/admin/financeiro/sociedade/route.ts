@@ -280,7 +280,7 @@ async function getPagamentosSociedade(
          COALESCE(cl_agg.valor_laudo, p.valor, 0)::numeric(10,2) AS valor,
          COALESCE(p.asaas_net_value, (p.dados_adicionais->>'netValue')::numeric, 0)::numeric(10,2) AS asaas_net_value,
          la.pagamento_parcelas AS numero_parcelas,
-         NULL::jsonb AS detalhes_parcelas,
+         p.detalhes_parcelas AS detalhes_parcelas,
          'pago' AS status,
          la.pagamento_metodo AS metodo,
          la.criado_em::text,
@@ -576,6 +576,14 @@ export async function GET(request: NextRequest) {
 
     const todasLinhas = [...pagamentosRows, ...pagamentosManutencao];
 
+    // Percentuais dos sócios salvos no banco (fallback 50/50 se não configurados)
+    const percentualSocioRonaldo =
+      beneficiariosInfo.beneficiarios.find((b) => b.id === 'ronaldo')
+        ?.percentualParticipacao ?? 50;
+    const percentualSocioAntonio =
+      beneficiariosInfo.beneficiarios.find((b) => b.id === 'antonio')
+        ?.percentualParticipacao ?? 50;
+
     const eventosRecentes = todasLinhas
       .flatMap((row) => {
         const valorBrutoTotal = toNumber(row.valor);
@@ -616,26 +624,23 @@ export async function GET(request: NextRequest) {
             valorRepresentanteTotal * proporcao
           );
 
-          // Custo operacional = taxa do método (boleto/pix/cartão) — proporcional ao valor da parcela
-          // Taxa de transação = taxa fixa por transação do gateway — rateada proporcionalmente
-          const custoMetodoTotal =
+          // Custo operacional = taxa do método (boleto/pix/cartão).
+          // Taxa de transação = taxa fixa por transação do gateway.
+          //
+          // IMPORTANTE: taxas fixas (boleto R$2,90, taxa_transacao) são cobradas
+          // por boleto emitido/pago, nunca proporcionalmente ao valor da parcela.
+          // Taxas percentuais (PIX, cartão) recebem valorBruto (da parcela) diretamente.
+          const valorCustoOperacional =
             configuracoes.length > 0
               ? calcularCustoMetodo(
                   row.metodo,
                   Number(row.numero_parcelas ?? 1),
-                  valorBrutoTotal,
+                  valorBruto,
                   configuracoes
                 )
               : 0;
-          const taxaTransacaoTotal =
-            configuracoes.length > 0 ? calcularTaxaTransacao(configuracoes) : 0;
-
-          const valorCustoOperacional =
-            custoMetodoTotal > 0 ? toNumber(custoMetodoTotal * proporcao) : 0;
           const valorTaxaTransacao =
-            taxaTransacaoTotal > 0
-              ? toNumber(taxaTransacaoTotal * proporcao)
-              : 0;
+            configuracoes.length > 0 ? calcularTaxaTransacao(configuracoes) : 0;
 
           // Gateway total para a parcela: custo do método + taxa de transação
           // Se configs disponíveis, usa os valores calculados; senão usa asaas_net_value
@@ -658,6 +663,8 @@ export async function GET(request: NextRequest) {
             modeloRepresentante: 'custo_fixo',
             valorRepresentanteFixo: valorRepresentante,
             percentualImpostos,
+            percentualSocioRonaldo,
+            percentualSocioAntonio,
           });
 
           const numAval = Math.max(
