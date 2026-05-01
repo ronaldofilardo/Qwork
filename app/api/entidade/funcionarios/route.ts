@@ -32,7 +32,7 @@ export async function GET() {
         f.nivel_cargo,
         f.turno,
         f.escala,
-        f.ativo,
+        fe.ativo,
         f.criado_em,
         f.ultimo_motivo_inativacao,
         f.data_nascimento,
@@ -143,7 +143,7 @@ export async function GET() {
       ) a ON a.funcionario_cpf = f.cpf
       WHERE fe.entidade_id = $1
         AND f.perfil <> 'gestor'
-      GROUP BY f.id, f.cpf, f.nome, f.email, f.setor, f.funcao, f.matricula, f.nivel_cargo, f.turno, f.escala, f.ativo, f.criado_em,
+      GROUP BY f.id, f.cpf, f.nome, f.email, f.setor, f.funcao, f.matricula, f.nivel_cargo, f.turno, f.escala, fe.ativo, f.criado_em,
                f.ultimo_motivo_inativacao, f.indice_avaliacao
       ORDER BY f.nome
     `,
