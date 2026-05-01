@@ -106,8 +106,8 @@ describe('GET /api/representante/vinculos', () => {
 
     // A query de lista (2ª chamada) deve usar e.nome e nunca e.razao_social
     const listSQL = mockQuery.mock.calls[1][0] as string;
-    expect(listSQL).toMatch(/e\.nome\s+AS\s+entidade_nome/i);
-    expect(listSQL).toMatch(/e\.cnpj\s+AS\s+entidade_cnpj/i);
+    expect(listSQL).toMatch(/e\.nome\s+AS\s+tomador_nome/i);
+    expect(listSQL).toMatch(/e\.cnpj\s+AS\s+tomador_cnpj/i);
     expect(listSQL).not.toMatch(/e\.razao_social/i);
     // GROUP BY também deve usar e.nome
     expect(listSQL).toMatch(/GROUP BY\s+v\.id,\s*e\.nome,\s*e\.cnpj/i);
