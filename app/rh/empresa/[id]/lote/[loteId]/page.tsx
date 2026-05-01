@@ -16,7 +16,7 @@ import {
   foiExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
 import ModalSetorRelatorioPDF from '@/components/ModalSetorRelatorioPDF';
-import { ArrowLeft, AlertTriangle, SendHorizontal, ClipboardList, Download, Lock, Copy, CheckCircle2, ChevronDown, XCircle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, SendHorizontal, ClipboardList, Download, Lock, Copy, CheckCircle2 } from 'lucide-react';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -449,35 +449,9 @@ export default function DetalhesLotePage() {
     []
   );
 
-  // Função auxiliar para obter apenas o label da classificação (para filtros)
-  const getClassificacaoLabel = useCallback(
-    (media: number | undefined, numeroGrupo: number): string => {
-      if (media === undefined) return '';
-
-      const gruposPositivos = [2, 3, 5, 6];
-      const isPositivo = gruposPositivos.includes(numeroGrupo);
-
-      if (isPositivo) {
-        if (media > 66) return 'Excelente';
-        if (media >= 33) return 'Monitorar';
-        return 'Atenção';
-      } else {
-        if (media < 33) return 'Excelente';
-        if (media <= 66) return 'Monitorar';
-        return 'Atenção';
-      }
-    },
-    []
-  );
-
   // Obter valores únicos para filtros por coluna
   const getValoresUnicos = useCallback(
     (coluna: keyof typeof filtrosColuna) => {
-      // Para colunas de grupos, retornar as opções fixas
-      if (coluna.startsWith('g')) {
-        return ['Excelente', 'Monitorar', 'Atenção'];
-      }
-
       const valores = funcionarios
         .map((func) => {
           switch (coluna) {
@@ -590,67 +564,13 @@ export default function DetalhesLotePage() {
         filtrosColuna.status.length === 0 ||
         filtrosColuna.status.includes(func.avaliacao.status);
 
-      // Filtros de grupos (G1-G10) - usando getClassificacaoLabel para comparação
-      const matchG1 =
-        filtrosColuna.g1.length === 0 ||
-        (func.grupos?.g1 !== undefined &&
-          filtrosColuna.g1.includes(getClassificacaoLabel(func.grupos.g1, 1)));
-      const matchG2 =
-        filtrosColuna.g2.length === 0 ||
-        (func.grupos?.g2 !== undefined &&
-          filtrosColuna.g2.includes(getClassificacaoLabel(func.grupos.g2, 2)));
-      const matchG3 =
-        filtrosColuna.g3.length === 0 ||
-        (func.grupos?.g3 !== undefined &&
-          filtrosColuna.g3.includes(getClassificacaoLabel(func.grupos.g3, 3)));
-      const matchG4 =
-        filtrosColuna.g4.length === 0 ||
-        (func.grupos?.g4 !== undefined &&
-          filtrosColuna.g4.includes(getClassificacaoLabel(func.grupos.g4, 4)));
-      const matchG5 =
-        filtrosColuna.g5.length === 0 ||
-        (func.grupos?.g5 !== undefined &&
-          filtrosColuna.g5.includes(getClassificacaoLabel(func.grupos.g5, 5)));
-      const matchG6 =
-        filtrosColuna.g6.length === 0 ||
-        (func.grupos?.g6 !== undefined &&
-          filtrosColuna.g6.includes(getClassificacaoLabel(func.grupos.g6, 6)));
-      const matchG7 =
-        filtrosColuna.g7.length === 0 ||
-        (func.grupos?.g7 !== undefined &&
-          filtrosColuna.g7.includes(getClassificacaoLabel(func.grupos.g7, 7)));
-      const matchG8 =
-        filtrosColuna.g8.length === 0 ||
-        (func.grupos?.g8 !== undefined &&
-          filtrosColuna.g8.includes(getClassificacaoLabel(func.grupos.g8, 8)));
-      const matchG9 =
-        filtrosColuna.g9.length === 0 ||
-        (func.grupos?.g9 !== undefined &&
-          filtrosColuna.g9.includes(getClassificacaoLabel(func.grupos.g9, 9)));
-      const matchG10 =
-        filtrosColuna.g10.length === 0 ||
-        (func.grupos?.g10 !== undefined &&
-          filtrosColuna.g10.includes(
-            getClassificacaoLabel(func.grupos.g10, 10)
-          ));
-
       const matches =
         matchBusca &&
         matchStatus &&
         matchNome &&
         matchCpf &&
         matchNivel &&
-        matchStatusColuna &&
-        matchG1 &&
-        matchG2 &&
-        matchG3 &&
-        matchG4 &&
-        matchG5 &&
-        matchG6 &&
-        matchG7 &&
-        matchG8 &&
-        matchG9 &&
-        matchG10;
+        matchStatusColuna;
 
       return matches;
     });
@@ -681,7 +601,6 @@ export default function DetalhesLotePage() {
     buscaDebouncedValue,
     filtroStatus,
     filtrosColuna,
-    getClassificacaoLabel,
   ]);
 
   const setores = useMemo(() => {
@@ -709,23 +628,14 @@ export default function DetalhesLotePage() {
   }) => {
     const valores = getValoresUnicos(coluna);
     const hasFiltros = filtrosColuna[coluna].length > 0;
-    const isGrupoColumn = coluna.startsWith('g') && coluna.length <= 3;
 
     return (
       <div className="relative">
         <button
-          className={`flex items-center justify-center gap-1 rounded transition-colors ${
-            isGrupoColumn
-              ? `w-6 h-6 text-xs ${
-                  hasFiltros
-                    ? 'bg-blue-500 text-white hover:bg-blue-600'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-300'
-                }`
-              : `px-2 py-1 text-xs border ${
-                  hasFiltros
-                    ? 'border-blue-300 bg-blue-50 text-blue-700'
-                    : 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`
+          className={`flex items-center justify-center gap-1 rounded transition-colors px-2 py-1 text-xs border ${
+            hasFiltros
+              ? 'border-blue-300 bg-blue-50 text-blue-700'
+              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
           }`}
           onClick={() => {
             const dropdown = document.getElementById(`dropdown-${coluna}`);
@@ -733,34 +643,17 @@ export default function DetalhesLotePage() {
               dropdown.classList.toggle('hidden');
             }
           }}
-          title={
-            isGrupoColumn
-              ? hasFiltros
-                ? `${filtrosColuna[coluna].length} filtro(s) ativo(s)`
-                : 'Filtrar'
-              : ''
-          }
         >
-          {isGrupoColumn ? (
-            hasFiltros ? (
-              <span className="font-bold">{filtrosColuna[coluna].length}</span>
-            ) : (
-              <span>▼</span>
-            )
-          ) : (
-            <>
-              <span>🔽</span>
-              {titulo && <span>{titulo}</span>}
-              {hasFiltros && (
-                <span
-                  className={`${
-                    titulo ? 'ml-1' : ''
-                  } bg-blue-600 text-white rounded-full px-1 text-xs`}
-                >
-                  {filtrosColuna[coluna].length}
-                </span>
-              )}
-            </>
+          <span>🔽</span>
+          {titulo && <span>{titulo}</span>}
+          {hasFiltros && (
+            <span
+              className={`${
+                titulo ? 'ml-1' : ''
+              } bg-blue-600 text-white rounded-full px-1 text-xs`}
+            >
+              {filtrosColuna[coluna].length}
+            </span>
           )}
         </button>
 
