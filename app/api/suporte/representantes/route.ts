@@ -161,9 +161,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ representantes, total: representantes.length });
   } catch (err: unknown) {
     const e = err as Error;
-    if (e.message === 'Não autenticado' || e.message === 'Sem permissão')
-      return NextResponse.json({ error: e.message }, { status: 403 });
-    console.error('[GET /api/suporte/representantes]', e);
-    return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
+    console.error('[GET /api/suporte/representantes] Erro completo:', {
+      message: e.message,
+      stack: e.stack,
+      name: e.name,
+    });
+    if (e.message === 'Não autenticado')
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    if (e.message === 'Sem permissão')
+      return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
+    return NextResponse.json({ error: e.message || 'Erro interno' }, { status: 500 });
   }
 }
