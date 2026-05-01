@@ -136,6 +136,48 @@ async function patchMigration1217(client, sql) {
   await client.query(sql);
 }
 
+// Migration 1227: remove codigo de representantes/vendedores e recria v_solicitacoes_emissao
+// Em staging, 1233 já removeu r.percentual_comissao_comercial e recriou a view sem ela.
+// Se a coluna não existe, roda só os DROPs estruturais e pula o CREATE VIEW
+// (1233 já deixou a view no estado correto).
+async function patchMigration1227(client) {
+  const r = await client.query(`
+    SELECT COUNT(*) AS cnt
+    FROM information_schema.columns
+    WHERE table_name = 'representantes' AND column_name = 'percentual_comissao_comercial'
+  `);
+  const hasComercial = Number(r.rows[0].cnt) > 0;
+
+  // Sempre dropar o que existe (IF EXISTS = seguro)
+  await client.query('DROP VIEW IF EXISTS public.v_solicitacoes_emissao');
+  await client.query('DROP TRIGGER IF EXISTS trg_representante_codigo ON public.representantes');
+  await client.query('DROP FUNCTION IF EXISTS public.trg_gerar_codigo_representante() CASCADE');
+  await client.query('DROP FUNCTION IF EXISTS public.gerar_codigo_representante() CASCADE');
+  await client.query('DROP SEQUENCE IF EXISTS public.seq_representante_codigo');
+  await client.query('DROP SEQUENCE IF EXISTS public.seq_vendedor_codigo');
+  await client.query('ALTER TABLE public.representantes DROP COLUMN IF EXISTS codigo CASCADE');
+  await client.query('ALTER TABLE public.vendedores_perfil DROP COLUMN IF EXISTS codigo CASCADE');
+
+  if (hasComercial) {
+    // Coluna ainda existe: recriar a view do jeito normal (1227 original)
+    console.log('       (patch 1227: coluna percentual_comissao_comercial existe — recriando view com ela)');
+    const fs2 = require('fs');
+    const path2 = require('path');
+    const fullSql = fs2.readFileSync(path2.join(__dirname, '../database/migrations/1227_remove_codigo_representante_vendedor.sql'), 'utf8');
+    const sanitized = sanitizeSqlForNeon(fullSql);
+    // Extrair só o CREATE VIEW do SQL original
+    const createIdx = sanitized.indexOf('CREATE VIEW public.v_solicitacoes_emissao');
+    if (createIdx !== -1) {
+      const commitIdx = sanitized.lastIndexOf('COMMIT');
+      const viewSql = sanitized.substring(createIdx, commitIdx !== -1 ? commitIdx : undefined).trim();
+      await client.query(viewSql);
+    }
+  } else {
+    // Coluna já removida por 1233: view já está correta, não recriar
+    console.log('       (patch 1227: percentual_comissao_comercial já removida por 1233 — pulando CREATE VIEW)');
+  }
+}
+
 // ─── APLICADOR ───────────────────────────────────────────────────────────────
 
 async function applyMigrations(envName, url) {
@@ -208,9 +250,11 @@ async function applyMigrations(envName, url) {
       await client.connect();
       await client.query("SET app.current_user_cpf = '00000000000'");
 
-      // Migration 1217 tem RENAME especial — usar handler dedicado
+      // Migrations com patches especiais
       if (version === '1217') {
         await patchMigration1217(client, sql);
+      } else if (version === '1227') {
+        await patchMigration1227(client);
       } else {
         await client.query(sql);
       }
