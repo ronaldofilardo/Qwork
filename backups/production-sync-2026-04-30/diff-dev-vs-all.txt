@@ -1,0 +1,193 @@
+(node:30080) Warning: SECURITY WARNING: The SSL modes 'prefer', 'require', and 'verify-ca' are treated as aliases for 'verify-full'.
+In the next major version (pg-connection-string v3.0.0 and pg v9.0.0), these modes will adopt standard libpq semantics, which have weaker security guarantees.
+
+To prepare for this change:
+- If you want the current behavior, explicitly use 'sslmode=verify-full'
+- If you want libpq compatibility now, use 'uselibpqcompat=true&sslmode=require'
+
+See https://www.postgresql.org/docs/current/libpq-ssl.html for libpq SSL mode definitions.
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+============================================================
+  DEV (nr-bps_db) vs STAGING
+============================================================
+
+--- TABLES ---
+  ÔÜá´©Å  Extra em STAGING (n├úo em DEV) [1]: [ '_prisma_migrations' ]
+
+--- FUNCS ---
+  ÔÜá´©Å  Extra em STAGING (n├úo em DEV) [17]: [
+  'calcular_elegibilidade_lote_contratante',
+  'criar_conta_responsavel_personalizado',
+  'executar_corte_nf_manual',
+  'fn_audit_entidades_senhas',
+  'fn_limpar_tokens_expirados',
+  'fn_marcar_token_usado',
+  'fn_validar_status_avaliacao',
+  'fn_verificar_senha_gestor',
+  'fn_verificar_senha_rh',
+  'fn_verificar_senha_usuario',
+  'limpar_indice_ao_deletar_avaliacao',
+  'notificar_pre_cadastro_criado',
+  'notificar_valor_definido',
+  'sync_contratacao_status_to_contratante',
+  'tomadores_sync_status_ativa',
+  'trg_recalc_lote_on_avaliacao_change',
+  'validar_transicao_status_contratante'
+]
+
+--- COLS ---
+  ÔÜá´©Å  Extra em STAGING (n├úo em DEV) [8]: [
+  '_prisma_migrations.applied_steps_count',
+  '_prisma_migrations.checksum',
+  '_prisma_migrations.finished_at',
+  '_prisma_migrations.id',
+  '_prisma_migrations.logs',
+  '_prisma_migrations.migration_name',
+  '_prisma_migrations.rolled_back_at',
+  '_prisma_migrations.started_at'
+]
+
+--- INDEXES ---
+  ÔÜá´©Å  Extra em STAGING (n├úo em DEV) [1]: [ '_prisma_migrations_pkey' ]
+
+============================================================
+  DEV (nr-bps_db) vs PROD
+============================================================
+
+--- TABLES ---
+  ÔÜá´©Å  Extra em PROD (n├úo em DEV) [1]: [ 'ciclos_comissao' ]
+
+--- VIEWS ---
+  ÔÜá´©Å  Extra em PROD (n├úo em DEV) [1]: [ 'v_auditoria_emissoes' ]
+
+--- FUNCS ---
+  ÔÜá´©Å  Extra em PROD (n├úo em DEV) [21]: [
+  'calcular_elegibilidade_lote_contratante',
+  'criar_conta_responsavel_personalizado',
+  'detectar_anomalia_score',
+  'detectar_anomalias_indice',
+  'executar_corte_nf_manual',
+  'fn_audit_entidades_senhas',
+  'fn_limpar_tokens_expirados',
+  'fn_marcar_token_usado',
+  'fn_validar_status_avaliacao',
+  'fn_verificar_senha_gestor',
+  'fn_verificar_senha_rh',
+  'fn_verificar_senha_usuario',
+  'gerar_codigo_representante',
+  'limpar_indice_ao_deletar_avaliacao',
+  'notificar_pre_cadastro_criado',
+  'notificar_valor_definido',
+  'sync_contratacao_status_to_contratante',
+  'tomadores_sync_status_ativa',
+  'trg_gerar_codigo_representante',
+  'trg_recalc_lote_on_avaliacao_change',
+  'validar_transicao_status_contratante'
+]
+
+--- TRIGGERS ---
+  ÔÜá´©Å  Extra em PROD (n├úo em DEV) [1]: [ 'trg_representante_codigo@representantes' ]
+
+--- COLS ---
+  ÔÜá´©Å  Extra em PROD (n├úo em DEV) [62]: [
+  'analise_estatistica.anomalia_detectada',
+  'analise_estatistica.tipo_anomalia',
+  'ciclos_comissao.atualizado_em',
+  'ciclos_comissao.comprovante_pagamento_path',
+  'ciclos_comissao.criado_em',
+  'ciclos_comissao.data_pagamento',
+  'ciclos_comissao.fechado_em',
+  'ciclos_comissao.id',
+  'ciclos_comissao.mes_referencia',
+  'ciclos_comissao.nf_aprovada_em',
+  'ciclos_comissao.nf_enviada_em',
+  'ciclos_comissao.nf_motivo_rejeicao',
+  'ciclos_comissao.nf_nome_arquivo',
+  'ciclos_comissao.nf_path',
+  'ciclos_comissao.nf_rejeitada_em',
+  'ciclos_comissao.qtd_comissoes',
+  'ciclos_comissao.representante_id',
+  'ciclos_comissao.status',
+  'ciclos_comissao.tipo_beneficiario',
+  'ciclos_comissao.valor_total',
+  'ciclos_comissao.vendedor_id',
+  'comissoes_laudo.ciclo_id',
+  'comissoes_laudo.nf_nome_arquivo',
+  'comissoes_laudo.nf_path',
+  'comissoes_laudo.nf_rpa_aprovada_em',
+  'comissoes_laudo.nf_rpa_enviada_em',
+  'comissoes_laudo.nf_rpa_motivo_rejeicao',
+  'comissoes_laudo.nf_rpa_rejeitada_em',
+  'comissoes_laudo.percentual_comissao_comercial',
+  'comissoes_laudo.tipo_beneficiario',
+  'comissoes_laudo.valor_comissao_comercial',
+  'comissoes_laudo.vendedor_id',
+  'hierarquia_comercial.percentual_override',
+  'leads_representante.percentual_comissao_comercial',
+  'leads_representante.percentual_comissao_vendedor',
+  'representantes.codigo',
+  'representantes.percentual_comissao_comercial',
+  'representantes.percentual_vendedor_direto',
+  'v_auditoria_emissoes.clinica_id',
+  'v_auditoria_emissoes.criado_em',
+  'v_auditoria_emissoes.emissor_cpf',
+  'v_auditoria_emissoes.emitido_em',
+  'v_auditoria_emissoes.entidade_id',
+  'v_auditoria_emissoes.enviado_em',
+  'v_auditoria_emissoes.laudo_emitido_em',
+  'v_auditoria_emissoes.laudo_enviado_em',
+  'v_auditoria_emissoes.laudo_id',
+  'v_auditoria_emissoes.laudo_status',
+  'v_auditoria_emissoes.liberado_em',
+  'v_auditoria_emissoes.liberado_por',
+  'v_auditoria_emissoes.lote_id',
+  'v_auditoria_emissoes.lote_status',
+  'v_auditoria_emissoes.solicitacao_emissao_em',
+  'v_auditoria_emissoes.solicitante_cpf',
+  'v_auditoria_emissoes.solicitante_nome',
+  'v_auditoria_emissoes.tipo',
+  'v_auditoria_emissoes.tomador_nome',
+  'v_solicitacoes_emissao.representante_percentual_comissao_comercial',
+  'vendedores_perfil.codigo',
+  'vendedores_perfil.doc_nf_rpa_path',
+  'vinculos_comissao.percentual_comissao_comercial',
+  'vinculos_comissao.percentual_comissao_vendedor'
+]
+
+--- ENUMS ---
+  ÔØî Falta em PROD [4]: [
+  'status_aprovacao_enum:pendente,aprovado,rejeitado,em_reanalise,aguardando_pagamento,aguardando_contrato,contrato_gerado,pagamento_confirmado,inativa,analise,aguardando_aceite,aguardando_aceite_contrato',
+  'status_avaliacao:pendente,em_andamento,concluido,liberada,iniciada',
+  'status_laudo_enum:emitido,enviado,aguardando_assinatura,pdf_gerado',
+  'status_lote_enum:ativo,cancelado,finalizado,concluido'
+]
+  ÔÜá´©Å  Extra em PROD (n├úo em DEV) [4]: [
+  'status_aprovacao_enum:pendente,aprovado,rejeitado,em_reanalise,aguardando_pagamento,aguardando_contrato,contrato_gerado,pagamento_confirmado,inativa,analise,aguardando_aceite,aguardando_aceite_contrato,ativo,inativo,cancelado',
+  'status_avaliacao:pendente,em_andamento,concluida,liberada,iniciada',
+  'status_laudo_enum:emitido,enviado,rascunho,aguardando_assinatura,pdf_gerado',
+  'status_lote_enum:ativo,cancelado,finalizado,concluido,rascunho'
+]
+
+--- INDEXES ---
+  ÔØî Falta em PROD [7]: [
+  'idx_comissoes_laudo_asaas_payment',
+  'idx_hierarquia_comercial_comercial_id',
+  'idx_laudos_zapsign_doc_token',
+  'idx_rate_limit_expires_at',
+  'idx_representantes_ativo',
+  'idx_representantes_gestor_comercial_cpf',
+  'idx_representantes_status_ativo'
+]
+  ÔÜá´©Å  Extra em PROD (n├úo em DEV) [10]: [
+  'ciclos_comissao_pkey',
+  'idx_ciclos_comissao_rep_mes',
+  'idx_ciclos_comissao_vendedor_mes',
+  'idx_comissoes_laudo_lote_parcela_beneficiario',
+  'idx_hierarquia_comercial_vendedor_ativo_unico',
+  'idx_representantes_codigo',
+  'idx_vendedores_perfil_codigo',
+  'representantes_codigo_key',
+  'uq_ciclo_beneficiario_mes',
+  'vendedores_perfil_codigo_key'
+]
