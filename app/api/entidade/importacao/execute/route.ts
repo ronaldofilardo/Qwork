@@ -249,13 +249,23 @@ export async function POST(request: Request): Promise<NextResponse> {
               funcionariosAtualizados++;
             }
           } else {
-            // Gerar senha com data de nascimento ou default
+            // Gerar senha com data de nascimento
             let senhaHash: string;
             if (dataNasc) {
               const senhaPlaintext = gerarSenhaDeNascimento(dataNasc);
               senhaHash = await bcrypt.hash(senhaPlaintext, 10);
             } else {
-              senhaHash = await bcrypt.hash('12345678', 10);
+              // Nunca deve chegar aqui: validate route bloqueia importação sem data_nascimento
+              // Erro explícito para detectar desvios no fluxo de validação
+              console.error(
+                `[importacao/execute] CPF ${cpf}: data_nascimento ausente após validação — abortando linha`
+              );
+              errosProcessamento.push({
+                linha: linhaNum,
+                cpf,
+                mensagem: 'data_nascimento obrigatória para gerar senha. Corrija a planilha e reimporte.',
+              });
+              continue;
             }
 
             const insertFunc = await client.query(
