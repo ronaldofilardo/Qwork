@@ -122,12 +122,24 @@ export async function POST(request: Request): Promise<NextResponse> {
         cpf: string;
         nome: string | null;
         funcao: string | null;
-        data_nascimento: string | null;
+        data_nascimento: any;
       }[]) {
         existingCpfs.add(r.cpf.trim());
         existingFuncaoMap.set(r.cpf.trim(), r.funcao);
         if (r.nome) existingNomeMap.set(r.cpf.trim(), r.nome);
-        existingDataNascMap.set(r.cpf.trim(), r.data_nascimento ?? null);
+        // Converter data_nascimento para ISO string (pode vir como Date do driver PostgreSQL)
+        let dataNascStr: string | null = null;
+        if (r.data_nascimento) {
+          if (typeof r.data_nascimento === 'string') {
+            dataNascStr = r.data_nascimento;
+          } else if (r.data_nascimento instanceof Date) {
+            const y = r.data_nascimento.getUTCFullYear();
+            const m = String(r.data_nascimento.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(r.data_nascimento.getUTCDate()).padStart(2, '0');
+            dataNascStr = `${y}-${m}-${d}`;
+          }
+        }
+        existingDataNascMap.set(r.cpf.trim(), dataNascStr ?? null);
       }
       funcionariosExistentes = existingCpfs.size;
 

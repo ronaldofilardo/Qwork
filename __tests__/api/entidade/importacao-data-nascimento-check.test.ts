@@ -300,4 +300,95 @@ describe('Importação Entidade — Validação de data_nascimento', () => {
       expect(erroDob).toBeUndefined();
     });
   });
+
+  describe('Conversão de Date do PostgreSQL para ISO string (fix staging)', () => {
+    it('deve converter data_nascimento quando vem como Date do driver PostgreSQL', async () => {
+      const queryMock = mockQueryFn as jest.Mock;
+      // Simular data_nascimento como Date object (como vem do driver pg em staging/prod)
+      queryMock.mockImplementation(async (sql: string) => {
+        if (sql.includes('FROM funcionarios WHERE cpf = ANY')) {
+          return {
+            rows: [
+              {
+                id: 7,
+                cpf: CPF_EXISTENTE,
+                nome: 'Beltrana Existente',
+                funcao: 'Analista',
+                // Simular Date object como retornado pelo driver PostgreSQL
+                data_nascimento: new Date('1988-03-12T00:00:00Z'),
+              },
+            ],
+          };
+        }
+        if (sql.includes('funcionarios_entidades')) return { rows: [] };
+        return { rows: [] };
+      });
+
+      parseSpreadsheetAllRows.mockReturnValue({
+        success: true,
+        data: [
+          {
+            cpf: CPF_EXISTENTE,
+            nome: 'Beltrana Existente',
+            data_nascimento: DATA_PLANILHA_IGUAL, // 12/03/1988 == 1988-03-12
+          },
+        ],
+      });
+
+      const response = await validatePost(
+        makeMockRequest({ mapeamento: MAPEAMENTO })
+      );
+      const json = await response.json();
+
+      // Não deve gerar erro porque datas são iguais (1988-03-12)
+      const erroDob = json.data.erros.find(
+        (e: { campo: string }) => e.campo === 'data_nascimento'
+      );
+      expect(erroDob).toBeUndefined();
+    });
+
+    it('deve detectar divergência quando data_nascimento é Date e diferente da planilha', async () => {
+      const queryMock = mockQueryFn as jest.Mock;
+      queryMock.mockImplementation(async (sql: string) => {
+        if (sql.includes('FROM funcionarios WHERE cpf = ANY')) {
+          return {
+            rows: [
+              {
+                id: 7,
+                cpf: CPF_EXISTENTE,
+                nome: 'Beltrana Existente',
+                funcao: 'Analista',
+                // Data como Date object
+                data_nascimento: new Date('1988-03-12T00:00:00Z'),
+              },
+            ],
+          };
+        }
+        if (sql.includes('funcionarios_entidades')) return { rows: [] };
+        return { rows: [] };
+      });
+
+      parseSpreadsheetAllRows.mockReturnValue({
+        success: true,
+        data: [
+          {
+            cpf: CPF_EXISTENTE,
+            data_nascimento: DATA_PLANILHA_DIFERENTE, // 01/01/2001
+          },
+        ],
+      });
+
+      const response = await validatePost(
+        makeMockRequest({ mapeamento: MAPEAMENTO })
+      );
+      const json = await response.json();
+
+      const erroDob = json.data.erros.find(
+        (e: { campo: string }) => e.campo === 'data_nascimento'
+      );
+      expect(erroDob).toBeDefined();
+      expect(erroDob.mensagem).toContain('12/03/1988'); // banco convertido e formatado
+      expect(erroDob.mensagem).toContain('01/01/2001'); // planilha
+    });
+  });
 });

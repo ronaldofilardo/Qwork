@@ -361,4 +361,95 @@ describe('Importação RH — Validação de data_nascimento', () => {
       expect(erroDob).toBeUndefined();
     });
   });
+
+  describe('Conversão de Date do PostgreSQL para ISO string (fix staging)', () => {
+    it('deve converter data_nascimento quando vem como Date do driver PostgreSQL', async () => {
+      const queryMock = mockQueryFn as jest.Mock;
+      // Simular data_nascimento como Date object (como vem do driver pg em staging/prod)
+      queryMock.mockImplementation(async (sql: string) => {
+        if (sql.includes('FROM funcionarios WHERE cpf = ANY')) {
+          return {
+            rows: [
+              {
+                id: 7,
+                cpf: CPF_EXISTENTE,
+                nome: 'Joãozinho',
+                funcao: 'Gerente',
+                // Simular Date object como retornado pelo driver PostgreSQL
+                data_nascimento: new Date('1990-05-23T00:00:00Z'),
+              },
+            ],
+          };
+        }
+        if (sql.includes('funcionarios_clinicas')) return { rows: [] };
+        return { rows: [] };
+      });
+
+      parseSpreadsheetAllRows.mockReturnValue({
+        success: true,
+        data: [
+          {
+            cpf: CPF_EXISTENTE,
+            nome: 'Joãozinho',
+            data_nascimento: DATA_PLANILHA_IGUAL, // 23/05/1990 == 1990-05-23
+          },
+        ],
+      });
+
+      const response = await validatePost(
+        makeMockRequest({ mapeamento: MAPEAMENTO })
+      );
+      const json = await response.json();
+
+      // Não deve gerar erro porque datas são iguais (1990-05-23)
+      const erroDob = json.data.erros.find(
+        (e: { campo: string }) => e.campo === 'data_nascimento'
+      );
+      expect(erroDob).toBeUndefined();
+    });
+
+    it('deve detectar divergência quando data_nascimento é Date e diferente da planilha', async () => {
+      const queryMock = mockQueryFn as jest.Mock;
+      queryMock.mockImplementation(async (sql: string) => {
+        if (sql.includes('FROM funcionarios WHERE cpf = ANY')) {
+          return {
+            rows: [
+              {
+                id: 7,
+                cpf: CPF_EXISTENTE,
+                nome: 'Joãozinho',
+                funcao: 'Gerente',
+                // Data como Date object
+                data_nascimento: new Date('1990-05-23T00:00:00Z'),
+              },
+            ],
+          };
+        }
+        if (sql.includes('funcionarios_clinicas')) return { rows: [] };
+        return { rows: [] };
+      });
+
+      parseSpreadsheetAllRows.mockReturnValue({
+        success: true,
+        data: [
+          {
+            cpf: CPF_EXISTENTE,
+            data_nascimento: DATA_PLANILHA_DIFERENTE, // 01/01/2001
+          },
+        ],
+      });
+
+      const response = await validatePost(
+        makeMockRequest({ mapeamento: MAPEAMENTO })
+      );
+      const json = await response.json();
+
+      const erroDob = json.data.erros.find(
+        (e: { campo: string }) => e.campo === 'data_nascimento'
+      );
+      expect(erroDob).toBeDefined();
+      expect(erroDob.mensagem).toContain('23/05/1990'); // banco convertido e formatado
+      expect(erroDob.mensagem).toContain('01/01/2001'); // planilha
+    });
+  });
 });
