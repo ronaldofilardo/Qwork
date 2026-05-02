@@ -6,6 +6,7 @@ import type { AsaasWebhookPayload, AsaasWebhookEvent } from './types';
 import { mapAsaasStatusToLocal } from './mappers';
 import { transaction, query as dbQuery } from '@/lib/db';
 import { criarComissaoAutomatica } from '@/lib/db/comissionamento';
+import { dispararEmailLotePago } from '@/lib/email';
 
 /**
  * Validar se o webhook veio realmente do Asaas
@@ -540,6 +541,11 @@ export async function activateSubscription(
         errComissao
       );
     }
+
+    // Email #2: lote disponível para o emissor gerar o laudo
+    dispararEmailLotePago(loteId).catch((e) =>
+      console.error('[EMAIL] dispararEmailLotePago (webhook) falhou:', e)
+    );
   }
 }
 
