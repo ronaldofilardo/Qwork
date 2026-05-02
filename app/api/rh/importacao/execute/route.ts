@@ -379,6 +379,11 @@ export async function POST(request: Request): Promise<NextResponse> {
               if (dataNasc) {
                 updates.push(`data_nascimento = $${paramIdx++}`);
                 params.push(dataNasc);
+                // Regenerar senha_hash para manter sincronia com a nova data de nascimento
+                const senhaPlaintextUpdate = gerarSenhaDeNascimento(dataNasc);
+                const senhaHashUpdate = await bcrypt.hash(senhaPlaintextUpdate, 10);
+                updates.push(`senha_hash = $${paramIdx++}`);
+                params.push(senhaHashUpdate);
               }
 
               // Atualizar funcao quando fornecida e diferente (troca de função/promoção)
