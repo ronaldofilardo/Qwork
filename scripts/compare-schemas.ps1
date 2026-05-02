@@ -51,7 +51,7 @@ if (Test-Path $envFile) {
 # Configurações de banco
 $localDbName = "nr-bps_db"
 $localDbUser = "postgres"
-$localDbPassword = "123456"
+$localDbPassword = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $localDbHost = "localhost"
 $localDbPort = "5432"
 

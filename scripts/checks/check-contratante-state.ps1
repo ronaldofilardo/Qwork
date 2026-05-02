@@ -29,7 +29,7 @@ Write-Host "══════════════════════�
 Write-Host ""
 
 # Conectar ao banco
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $dbName = "nr-bps_db"
 $dbUser = "postgres"
 

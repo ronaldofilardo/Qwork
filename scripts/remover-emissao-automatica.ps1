@@ -33,7 +33,7 @@ Write-Host ""
 # Configuração do banco
 $DbName = if ($Environment -eq 'prod') { 'nr-bps_db' } else { 'nr-bps_db_test' }
 $DbUser = 'postgres'
-$DbPassword = '123456'
+$DbPassword = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 
 Write-Info "Ambiente: $Environment"
 Write-Info "Banco de dados: $DbName"

@@ -2,7 +2,7 @@
 // Remove as últimas colunas obsoletas de PROD que não existem em DEV
 
 const { Client } = require('pg');
-const PROD_URL = 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require';
+const PROD_URL = process.env.DATABASE_URL;
 
 const COLUMNS_TO_DROP = [
   { table: 'analise_estatistica', column: 'anomalia_detectada' },

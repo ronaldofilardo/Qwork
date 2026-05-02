@@ -23,9 +23,9 @@ const path = require('path');
 const MIGRATIONS_DIR = path.join(__dirname, '../database/migrations');
 
 const STAGING_URL =
-  'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_staging?sslmode=require';
+  process.env.STAGING_DATABASE_URL;
 const PROD_URL =
-  'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require';
+  process.env.DATABASE_URL;
 
 // ─── LISTA ORDENADA DE MIGRATIONS 1210–1234 ─────────────────────────────────
 // Cada item: { file, version, label, skipEnvs }

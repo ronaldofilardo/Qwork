@@ -2,7 +2,7 @@
 const { Client } = require('pg');
 
 (async () => {
-  const c = new Client({ connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db' });
+  const c = new Client({ connectionString: (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db') });
   await c.connect();
 
   // tipo_usuario enum values

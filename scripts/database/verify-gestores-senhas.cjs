@@ -12,7 +12,7 @@ const bcrypt = require('bcryptjs');
 
 const DATABASE_URL =
   process.env.DATABASE_URL ||
-  'postgresql://postgres:123456@localhost:5432/nr-bps_db';
+  (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db');
 
 async function verificarIntegridadeSenhas() {
   const client = new Client({ connectionString: DATABASE_URL });

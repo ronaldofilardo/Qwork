@@ -99,7 +99,7 @@ Write-Host ""
 Write-Host "Verificando estrutura de producao..."
 Write-Host ""
 
-$env:PGPASSWORD='REDACTED_NEON_PASSWORD'
+$env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
 $result = psql -U neondb_owner -d neondb -h ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech -A -t -c "
 SELECT COUNT(*) as total_colunas,
        COUNT(CASE WHEN column_name LIKE '%pagamento%' THEN 1 END) as colunas_pagamento

@@ -224,7 +224,7 @@ async function compareEnvironments() {
   const prodUrl = process.argv[2] || process.env.DATABASE_URL;
   const devUrl =
     process.env.LOCAL_DATABASE_URL ||
-    'postgresql://postgres:123456@localhost:5432/nr-bps_db';
+    (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db');
 
   if (!prodUrl) {
     console.error('❌ DATABASE_URL de produção não fornecido');

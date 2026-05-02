@@ -26,14 +26,14 @@
 
 ```env
 # Desenvolvimento — banco local
-LOCAL_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db
-DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db
+LOCAL_DATABASE_URL=postgresql://postgres:<local_password>@localhost:5432/nr-bps_db
+DATABASE_URL=postgresql://postgres:<local_password>@localhost:5432/nr-bps_db
 ```
 
 ### Testes (.env.test)
 
 ```env
-TEST_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db_test
+TEST_DATABASE_URL=postgresql://postgres:<local_password>@localhost:5432/nr-bps_db_test
 ```
 
 ---
@@ -72,3 +72,4 @@ TEST_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db_test
 > Em Janeiro 2026, o desenvolvimento local temporariamente usou Neon Cloud direto
 > com `ALLOW_PROD_DB_LOCAL=true`. Essa prática foi descontinuada por risco de
 > corrupção de dados de produção. A policy oficial agora exige banco local para DEV.
+

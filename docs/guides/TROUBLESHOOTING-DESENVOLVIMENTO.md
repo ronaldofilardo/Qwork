@@ -102,16 +102,16 @@ WHERE cpf IN (
 
 ```bash
 # 1. Backup
-pg_dump "postgresql://postgres:123456@localhost:5432/nr-bps_db" > backup_pre_migration.sql
+pg_dump "postgresql://postgres:<local_password>@localhost:5432/nr-bps_db" > backup_pre_migration.sql
 
 # 2. Aplicar Migration 300 (RLS)
-psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -f database/migrations/300_update_rls_exclude_gestores.sql
+psql "postgresql://postgres:<local_password>@localhost:5432/nr-bps_db" -f database/migrations/300_update_rls_exclude_gestores.sql
 
 # 3. Aplicar Migration 301 (Cleanup)
-psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -f database/migrations/301_cleanup_gestores_funcionarios.sql
+psql "postgresql://postgres:<local_password>@localhost:5432/nr-bps_db" -f database/migrations/301_cleanup_gestores_funcionarios.sql
 
 # 4. Validar
-psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -c "
+psql "postgresql://postgres:<local_password>@localhost:5432/nr-bps_db" -c "
 SELECT COUNT(*) as gestores_incorretos FROM funcionarios
 WHERE cpf IN (
   SELECT cpf_cnpj FROM entidades_senhas
@@ -152,7 +152,7 @@ A tabela `lote_id_allocator` está vazia. A função `fn_next_lote_id()` faz UPD
 **Solução Imediata:**
 
 ```bash
-psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -c "
+psql "postgresql://postgres:<local_password>@localhost:5432/nr-bps_db" -c "
   INSERT INTO lote_id_allocator (last_id) VALUES (0)
   ON CONFLICT DO NOTHING;
 "
@@ -162,7 +162,7 @@ psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -c "
 
 ```bash
 # Aplicar Migration 302
-psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -f database/migrations/302_fix_lote_id_allocator.sql
+psql "postgresql://postgres:<local_password>@localhost:5432/nr-bps_db" -f database/migrations/302_fix_lote_id_allocator.sql
 ```
 
 ---
@@ -185,7 +185,7 @@ Após refatoração de gestores (separação de funcionarios), a FK `lotes_avali
 **Aplicar Migration 303:**
 
 ```bash
-psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -f database/migrations/303_fix_lotes_avaliacao_liberado_por_fk.sql
+psql "postgresql://postgres:<local_password>@localhost:5432/nr-bps_db" -f database/migrations/303_fix_lotes_avaliacao_liberado_por_fk.sql
 ```
 
 Esta migration:
@@ -230,3 +230,4 @@ await query('SELECT set_config($1, $2, false)', [
 
 - [IMPLEMENTATION-SUMMARY.md](./IMPLEMENTATION-SUMMARY.md) - Resumo da refatoração
 - [CORRECOES-LIBERACAO-LOTES-DEFINITIVO.md](./CORRECOES-LIBERACAO-LOTES-DEFINITIVO.md) - ✅ Solução definitiva para liberação de lotes
+

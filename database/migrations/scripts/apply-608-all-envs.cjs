@@ -28,13 +28,13 @@ const SQL_FILE = path.join(
 const ENVS = {
   dev: () =>
     process.env.LOCAL_DATABASE_URL ||
-    'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+    (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db'),
   test: () =>
     process.env.TEST_DATABASE_URL ||
-    'postgresql://postgres:123456@localhost:5432/nr-bps_db_test',
+    (process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db_test'),
   staging:
-    'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_staging?sslmode=require&channel_binding=require',
-  prod: 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require&channel_binding=require',
+    process.env.STAGING_DATABASE_URL,
+  prod: process.env.DATABASE_URL,
 };
 
 async function applyMigration(env) {

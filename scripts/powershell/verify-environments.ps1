@@ -21,7 +21,7 @@ function Check-File {
 # Função para executar query SQL
 function Execute-Query {
     param($connString, $query)
-    $env:PGPASSWORD = if ($connString -like "*localhost*") { "123456" } else { "npg_NfJGO8vck9ob" }
+    $env:PGPASSWORD = if ($connString -like "*localhost*") { "123456" } else { $env:NEON_PASSWORD }
     $result = $query | psql $connString -t -A
     return $result
 }
@@ -82,8 +82,8 @@ Write-Host "4. Testando conexões com bancos de dados..." -ForegroundColor Yello
 
 # Desenvolvimento
 Write-Host "   Testando banco de DESENVOLVIMENTO..." -ForegroundColor Cyan
-$localConnString = "postgresql://postgres:123456@localhost:5432/nr-bps_db"
-$env:PGPASSWORD = "123456"
+$localConnString = "postgresql://postgres:*****@localhost:5432/nr-bps_db"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $localTest = "SELECT COUNT(*) FROM funcionarios;" | psql $localConnString -t -A 2>&1
 
 if ($LASTEXITCODE -eq 0) {
@@ -97,8 +97,8 @@ Write-Host ""
 
 # Produção
 Write-Host "   Testando banco de PRODUÇÃO..." -ForegroundColor Cyan
-$prodConnString = "postgresql://neondb_owner:npg_NfJGO8vck9ob@ep-steep-credit-acckkvg4-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-$env:PGPASSWORD = "npg_NfJGO8vck9ob"
+$prodConnString = $env:DATABASE_URL
+$env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
 $prodTest = "SELECT COUNT(*) FROM funcionarios;" | psql $prodConnString -t -A 2>&1
 
 if ($LASTEXITCODE -eq 0) {
@@ -116,10 +116,10 @@ Write-Host "5. Comparando dados entre ambientes..." -ForegroundColor Yellow
 $tables = @("clinicas", "empresas_clientes", "funcionarios", "avaliacoes", "respostas", "resultados")
 
 foreach ($table in $tables) {
-    $env:PGPASSWORD = "123456"
+    $env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
     $localCount = "SELECT COUNT(*) FROM $table;" | psql $localConnString -t -A 2>$null
     
-    $env:PGPASSWORD = "npg_NfJGO8vck9ob"
+    $env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
     $prodCount = "SELECT COUNT(*) FROM $table;" | psql $prodConnString -t -A 2>$null
     
     if ($localCount -eq $prodCount) {
@@ -159,12 +159,12 @@ ORDER BY
 "@
 
 Write-Host "   DESENVOLVIMENTO:" -ForegroundColor Cyan
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $userQuery | psql $localConnString
 
 Write-Host ""
 Write-Host "   PRODUÇÃO:" -ForegroundColor Cyan
-$env:PGPASSWORD = "npg_NfJGO8vck9ob"
+$env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
 $userQuery | psql $prodConnString
 
 Write-Host ""
@@ -172,7 +172,7 @@ Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host "RESUMO" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "✅ Desenvolvimento: postgresql://postgres:123456@localhost:5432/nr-bps_db" -ForegroundColor Green
+Write-Host "✅ Desenvolvimento: postgresql://postgres:*****@localhost:5432/nr-bps_db" -ForegroundColor Green
 Write-Host "✅ Produção: Neon Database (AWS South America)" -ForegroundColor Green
 Write-Host ""
 Write-Host "Para sincronizar dados DEV -> PROD, execute:" -ForegroundColor Yellow

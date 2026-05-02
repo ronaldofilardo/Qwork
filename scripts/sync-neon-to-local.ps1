@@ -6,8 +6,8 @@ Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 
 # URLs dos bancos
-$NEON_URL = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
-$LOCAL_URL = "postgresql://postgres:123456@localhost:5432/nr-bps_db"
+$NEON_URL = $env:DATABASE_URL
+$LOCAL_URL = $env:LOCAL_DATABASE_URL ?? "postgresql://postgres@localhost:5432/nr-bps_db"
 
 # Arquivos temporários
 $DUMP_FILE = "neon-backup-$(Get-Date -Format 'yyyy-MM-dd-HHmmss').sql"

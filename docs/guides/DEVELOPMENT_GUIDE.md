@@ -158,12 +158,12 @@ nr-bps/
 ```bash
 # .env (desenvolvimento - criado automaticamente)
 NODE_ENV=development
-LOCAL_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db
+LOCAL_DATABASE_URL=postgresql://postgres:<local_password>@localhost:5432/nr-bps_db
 SESSION_SECRET=development_secret_key_32_chars
 
 # .env.test (testes)
 NODE_ENV=test
-TEST_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db_test
+TEST_DATABASE_URL=postgresql://postgres:<local_password>@localhost:5432/nr-bps_db_test
 SESSION_SECRET=test_secret_key_32_characters
 ```
 
@@ -319,3 +319,4 @@ public/manifest.json
 1. Explore o código em `pages/` e `components/`
 2. Teste as funcionalidades com os usuários criados
 3. Consulte a documentação em `docs/` para detalhes
+

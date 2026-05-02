@@ -2,8 +2,70 @@ import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 import { getSession } from '@/lib/session';
+import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+
+/** Perfis com acesso irrestrito ao storage (staff da plataforma) */
+const PERFIS_FULL_ACCESS = new Set([
+  'admin',
+  'suporte',
+  'emissor',
+  'comercial',
+  'vendedor',
+]);
+
+/**
+ * Valida ownership do arquivo baseado no path e na sessão do usuário.
+ * Retorna true se o acesso é permitido, false caso contrário.
+ */
+async function hasStorageAccess(
+  filePath: string,
+  session: NonNullable<ReturnType<typeof getSession>>
+): Promise<boolean> {
+  // Staff da plataforma tem acesso irrestrito
+  if (PERFIS_FULL_ACCESS.has(session.perfil)) return true;
+
+  // Representante: somente pasta representantes/{representante_id}/
+  if (filePath.startsWith('representantes/')) {
+    const segments = filePath.split('/');
+    const idInPath = parseInt(segments[1] ?? '', 10);
+    return (
+      !isNaN(idInPath) &&
+      session.representante_id != null &&
+      idInPath === session.representante_id
+    );
+  }
+
+  // Documentos de tomadores (clínicas/entidades)
+  if (filePath.startsWith('tomadores/')) {
+    // RH e gestor precisam de verificação de ownership via CNPJ no path
+    if (session.perfil === 'rh' || session.perfil === 'gestor') {
+      // Extrair CNPJ do path: tomadores/entidades/{cnpj}/...
+      const segments = filePath.split('/');
+      // Formato: tomadores/entidades/CNPJ/arquivo
+      if (segments.length >= 3 && segments[1] === 'entidades') {
+        const cnpjInPath = segments[2];
+        if (!cnpjInPath) return false;
+        const tomadorId =
+          session.perfil === 'rh' ? session.clinica_id : session.entidade_id;
+        if (!tomadorId) return false;
+        const result = await query(
+          `SELECT 1 FROM entidades WHERE id = $1 AND cnpj = $2 LIMIT 1`,
+          [tomadorId, cnpjInPath]
+        );
+        return result.rows.length > 0;
+      }
+      // Path sem CNPJ explícito — negar por segurança
+      return false;
+    }
+    // Outros perfis autenticados não têm acesso a arquivos de tomadores
+    return false;
+  }
+
+  // uploads/: acesso negado por padrão para perfis não-staff
+  return false;
+}
 
 /**
  * GET /api/storage/[...path]
@@ -47,6 +109,15 @@ export async function GET(
       );
     }
 
+    // Verificar ownership: usuário só acessa seus próprios arquivos
+    const allowed = await hasStorageAccess(filePath, session);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Acesso não permitido' },
+        { status: 403 }
+      );
+    }
+
     // Resolver o caminho completo de forma segura (prevenir directory traversal)
     const baseDir = resolve(process.cwd(), 'storage');
     const fullPath = resolve(baseDir, filePath);
@@ -70,13 +141,13 @@ export async function GET(
     else if (ext === 'png') mimeType = 'image/png';
     else if (ext === 'gif') mimeType = 'image/gif';
 
-    // Retornar o arquivo com headers apropriados
+    // Retornar o arquivo com headers de cache privado (documentos médicos/financeiros)
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
         'Content-Type': mimeType,
         'Content-Length': fileBuffer.length.toString(),
-        'Cache-Control': 'public, max-age=3600', // Cache por 1 hora
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
         'Content-Disposition': `inline; filename="${filePath.split('/').pop()}"`,
       },
     });

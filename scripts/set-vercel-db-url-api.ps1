@@ -2,7 +2,7 @@ $auth = Get-Content "$env:APPDATA\com.vercel.cli\Data\auth.json" | ConvertFrom-J
 $token = $auth.token
 $projectId = "prj_LvK5ytsqYligFlwdzBAihqdgj2WS"
 $teamId = "team_xHHvUUaC35GhGpP4ghWud9MR"
-$dbUrl = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require&channel_binding=require"
+$dbUrl = $env:DATABASE_URL
 
 # 1. Listar env vars para encontrar o ID do DATABASE_URL atual
 $headers = @{ Authorization = "Bearer $token"; "Content-Type" = "application/json" }

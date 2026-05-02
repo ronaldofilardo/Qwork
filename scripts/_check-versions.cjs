@@ -8,8 +8,8 @@ async function checkVersions(name, url) {
   await c.end();
 }
 
-const stagingUrl = 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_staging?sslmode=require';
-const prodUrl = 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require';
+const stagingUrl = process.env.STAGING_DATABASE_URL;
+const prodUrl = process.env.DATABASE_URL;
 
 Promise.all([
   checkVersions('STAGING', stagingUrl),

@@ -201,7 +201,7 @@ Testar os endpoints críticos e monitorar logs.
 .\scripts\backup-neon.ps1
 
 # Restaurar se necessário
-$env:PGPASSWORD="REDACTED_NEON_PASSWORD"
+$env:PGPASSWORD="[NEON_PASSWORD]"
 pg_restore -h ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech -U neondb_owner -d neondb -c .\backups\neon\neon_backup_*.dump
 ```
 
@@ -226,3 +226,4 @@ Todos os scripts geram logs detalhados:
 ---
 
 **Última atualização:** 06/02/2026 11:15
+

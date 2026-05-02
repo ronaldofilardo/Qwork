@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const client = new Client({
   connectionString:
     process.env.TEST_DATABASE_URL ||
-    'postgres://postgres:123456@localhost:5432/nr-bps_db_test',
+    (process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db_test'),
 });
 (async () => {
   await client.connect();

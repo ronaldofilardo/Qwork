@@ -20,7 +20,7 @@ $MIGRATIONS_DIR = "C:\apps\QWork\database\migrations"
 # ---- Senha ----
 $password = if ($env:NEON_PROD_PASSWORD) { $env:NEON_PROD_PASSWORD }
             elseif ($env:PGPASSWORD)      { $env:PGPASSWORD }
-            else                          { "REDACTED_NEON_PASSWORD" }
+            else                          { $env:NEON_PASSWORD }
 
 $env:PGPASSWORD    = $password
 $env:PGSSLMODE     = "require"

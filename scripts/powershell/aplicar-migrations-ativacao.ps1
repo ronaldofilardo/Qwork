@@ -48,7 +48,7 @@ Write-Host "   - Triggers de validação" -ForegroundColor Gray
 Write-Host "   - Correção automática de inconsistências" -ForegroundColor Gray
 Write-Host ""
 
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 
 try {
     psql -U $DB_USER -h $DB_HOST -p $DB_PORT -d $DB_NAME -f $migration004
@@ -72,7 +72,7 @@ Write-Host "   - Funções de validação de token" -ForegroundColor Gray
 Write-Host "   - Views de auditoria" -ForegroundColor Gray
 Write-Host ""
 
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 
 try {
     psql -U $DB_USER -h $DB_HOST -p $DB_PORT -d $DB_NAME -f $migration005
@@ -95,7 +95,7 @@ Write-Host ""
 
 # Verificar integridade pós-migration
 Write-Host "🔍 Verificando integridade do banco..." -ForegroundColor Cyan
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 
 try {
     $query = @"

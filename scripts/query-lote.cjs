@@ -1,7 +1,7 @@
 const { Pool } = require('pg');
 const connectionString =
   process.env.LOCAL_DATABASE_URL ||
-  'postgresql://postgres:123456@localhost:5432/nr-bps_db';
+  (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db');
 const pool = new Pool({ connectionString });
 (async () => {
   try {

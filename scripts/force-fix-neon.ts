@@ -4,7 +4,7 @@ const { Pool } = pg;
 
 async function forceFixEvaluations() {
   const connectionString =
-    'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require';
+    process.env.DATABASE_URL;
 
   console.log('🔧 CORREÇÃO FORÇADA - NEON (PRODUÇÃO)\n');
   console.log('═══════════════════════════════════════════════════════════\n');

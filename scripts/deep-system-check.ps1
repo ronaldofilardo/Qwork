@@ -7,8 +7,8 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 $reportPath = "c:\apps\QWork\schema-comparison\deep-check-$(Get-Date -Format 'yyyy-MM-dd_HH-mm-ss').md"
 
 # Conexões
-$prodConn = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech/neondb"
-$devConn = "postgresql://postgres:123456@localhost:5432/nr-bps_db"
+$prodConn = $env:DATABASE_URL
+$devConn = $env:LOCAL_DATABASE_URL ?? "postgresql://postgres@localhost:5432/nr-bps_db"
 
 $report = @"
 # Deep System Check - Análise Completa

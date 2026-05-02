@@ -2,7 +2,7 @@ const { Client } = require('pg');
 
 const connectionString =
   process.env.TEST_DATABASE_URL ||
-  'postgres://postgres:123456@localhost:5432/nr-bps_db_test';
+  (process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db_test');
 
 // ⚠️ SEGURANÇA: Bloqueio absoluto contra seed em banco de produção
 // Este script escreve dados (roles/permissions). Nunca deve rodar em neon.tech.

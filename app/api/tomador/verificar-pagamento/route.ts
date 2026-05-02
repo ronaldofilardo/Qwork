@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,12 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const rateLimitResponse = await rateLimitAsync(request, RATE_LIMIT_CONFIGS.api);
   if (rateLimitResponse) return rateLimitResponse;
+
+  // Requer autenticação
+  const session = getSession();
+  if (!session) {
+    return NextResponse.json({ error: 'Autenticação requerida' }, { status: 401 });
+  }
 
   try {
     const { searchParams } = request.nextUrl;

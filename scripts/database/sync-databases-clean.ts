@@ -17,13 +17,13 @@ const __dirname = path.dirname(__filename);
 const execAsync = promisify(exec);
 
 const DEV_DB = {
-  connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+  connectionString: (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db'),
   name: 'DESENVOLVIMENTO (Local)',
 };
 
 const PROD_DB = {
   connectionString:
-    'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech/neondb?sslmode=require',
+    process.env.DATABASE_URL,
   name: 'PRODUÇÃO (Neon)',
 };
 

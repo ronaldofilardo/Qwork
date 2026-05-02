@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
 const client = new Client({
   user: 'postgres',
-  password: '123456',
+  password: (process.env.LOCAL_DB_PASSWORD ?? ''),
   host: 'localhost',
   port: 5432,
   database: process.env.TEST_DATABASE_URL?.split('/').pop() || 'nr-bps_db_test',

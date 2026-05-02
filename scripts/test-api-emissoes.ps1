@@ -3,7 +3,7 @@ Write-Host "`n=== TESTE: API /api/admin/emissoes ===" -ForegroundColor Cyan
 
 # 1. Testar banco direto
 Write-Host "`n1. Verificando view v_solicitacoes_emissao no banco..." -ForegroundColor Yellow
-$env:PGPASSWORD='REDACTED_NEON_PASSWORD'
+$env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
 psql "postgresql://neondb_owner@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require" -c "SELECT COUNT(*) as total FROM v_solicitacoes_emissao;"
 
 Write-Host "`n2. Listando lotes na view..." -ForegroundColor Yellow

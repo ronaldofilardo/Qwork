@@ -31,7 +31,7 @@ $MIGRATIONS_DIR = "C:\apps\QWork\database\migrations"
 if ($env:NEON_STAGING_PASSWORD) {
     $env:PGPASSWORD = $env:NEON_STAGING_PASSWORD
 } else {
-    $env:PGPASSWORD = "REDACTED_NEON_PASSWORD"
+    $env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
 }
 
 Write-Host ""

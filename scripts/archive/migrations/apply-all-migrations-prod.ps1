@@ -22,7 +22,7 @@ if ($Target -eq "dev") {
     $DbPort = "5432"
     $DbName = "nr-bps_db"
     $DbUser = "postgres"
-    $DbPassword = "123456"
+    $DbPassword = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
     Write-Warning "🔨 TARGET: DESENVOLVIMENTO (LOCAL)"
 }
 else {
@@ -30,7 +30,7 @@ else {
     $DbPort = "5432"
     $DbName = "neondb"
     $DbUser = "neondb_owner"
-    $DbPassword = "REDACTED_NEON_PASSWORD"
+    $DbPassword = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw "Set $env:NEON_PASSWORD" }
     Write-Error "🔴 TARGET: PRODUÇÃO (NEON CLOUD)"
     Write-Warning "⚠️  Continuando em 5 segundos... (Ctrl+C para cancelar)"
     Start-Sleep -Seconds 5

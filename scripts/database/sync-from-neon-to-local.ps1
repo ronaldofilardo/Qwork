@@ -15,7 +15,7 @@ Write-Host ""
 # ========================================
 
 # Banco NEON (fonte da verdade)
-$NEON_URL = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+$NEON_URL = $env:DATABASE_URL
 
 # Banco LOCAL (destino)
 $LOCAL_HOST = "localhost"

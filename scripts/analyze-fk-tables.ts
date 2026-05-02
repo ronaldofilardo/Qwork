@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 
 const devPool = new Pool({
-  connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+  connectionString: (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db'),
 });
 
 async function analyzeTableStructure(tableName: string) {

@@ -38,7 +38,7 @@ Write-Host "══════════════════════�
 Write-Host ""
 
 # Verificar banco de dados
-$env:PGPASSWORD = '123456'
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $database = "nr-bps_db"
 
 Write-Info "Verificando conexão com banco de dados..."

@@ -12,12 +12,12 @@ const path = require('path');
 const DATABASES = [
   {
     name: 'DEV',
-    connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+    connectionString: (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db'),
   },
   {
     name: 'TEST',
     connectionString:
-      'postgresql://postgres:123456@localhost:5432/nr-bps_db_test',
+      (process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db_test'),
   },
 ];
 

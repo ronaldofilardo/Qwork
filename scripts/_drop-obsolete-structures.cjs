@@ -8,8 +8,8 @@
 
 const { Client } = require('pg');
 
-const STAGING_URL = 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_staging?sslmode=require';
-const PROD_URL = 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require';
+const STAGING_URL = process.env.STAGING_DATABASE_URL;
+const PROD_URL = process.env.DATABASE_URL;
 
 // Funções obsoletas que existem em STAGING/PROD mas não em DEV
 const OBSOLETE_FUNCTIONS = [

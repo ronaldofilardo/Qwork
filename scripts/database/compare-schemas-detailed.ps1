@@ -5,8 +5,8 @@
 $ErrorActionPreference = "Stop"
 
 # URLs dos bancos
-$prodUrl = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech/neondb?sslmode=require"
-$devUrl = "postgresql://postgres:123456@localhost:5432/nr-bps_db"
+$prodUrl = $env:DATABASE_URL
+$devUrl = $env:LOCAL_DATABASE_URL ?? "postgresql://postgres@localhost:5432/nr-bps_db"
 
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm-ss"
 $outputDir = "c:\apps\QWork\schema-comparison"

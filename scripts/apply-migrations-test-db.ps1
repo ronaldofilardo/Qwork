@@ -1,7 +1,7 @@
 # Script PowerShell para aplicar migrations no banco de TESTE
 # Executar no diretório raiz do projeto
 
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $database = "nr-bps_db_test"
 $user = "postgres"
 

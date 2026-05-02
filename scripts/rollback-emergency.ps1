@@ -14,8 +14,8 @@
 # TEMPO ESTIMADO: 2-3 minutos
 # ====================================================================
 
-$PROD_ROLLBACK_URL = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-$PROD_V2_URL = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require&channel_binding=require"
+$PROD_ROLLBACK_URL = $env:DATABASE_URL
+$PROD_V2_URL = $env:DATABASE_URL
 
 Write-Host ""
 Write-Host "===================================================================" -ForegroundColor Red
@@ -52,7 +52,7 @@ Write-Host "==================================================================="
 Write-Host "  VERIFICAÇÃO RÁPIDA DOS BANCOS" -ForegroundColor White
 Write-Host "===================================================================" -ForegroundColor White
 
-$env:PGPASSWORD = "REDACTED_NEON_PASSWORD"
+$env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
 $env:PGSSLMODE = "require"
 $H = "ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech"
 $U = "neondb_owner"

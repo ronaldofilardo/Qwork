@@ -115,8 +115,8 @@ else {
 
 Write-Host "`n✨ Setup dos bancos concluído!" -ForegroundColor Cyan
 Write-Host "`n📝 Resumo da configuração:" -ForegroundColor Yellow
-Write-Host "   🗄️ Banco Desenvolvimento: postgresql://postgres:123456@localhost:5432/nr-bps_db" -ForegroundColor White
-Write-Host "   🧪 Banco Testes: postgresql://postgres:123456@localhost:5432/nr-bps_db_test" -ForegroundColor White
+Write-Host "   🗄️ Banco Desenvolvimento: postgresql://postgres:*****@localhost:5432/nr-bps_db" -ForegroundColor White
+Write-Host "   🧪 Banco Testes: postgresql://postgres:*****@localhost:5432/nr-bps_db_test" -ForegroundColor White
 Write-Host "`n👤 Usuários de teste disponíveis:" -ForegroundColor Yellow
 Write-Host "   🔧 Admin: CPF 00000000000 / Senha: 123" -ForegroundColor White
 Write-Host "   👔 RH: CPF 11111111111 / Senha: 123" -ForegroundColor White

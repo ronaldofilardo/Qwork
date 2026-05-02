@@ -35,8 +35,8 @@ param (
 )
 
 # Configurações padrão
-$DefaultLocalConn = "postgresql://postgres:123456@localhost:5432/nr-bps_db"
-$DefaultNeonConn = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neondb?sslmode=require&channel_binding=require"
+$DefaultLocalConn = $env:LOCAL_DATABASE_URL ?? "postgresql://postgres@localhost:5432/nr-bps_db"
+$DefaultNeonConn = $env:DATABASE_URL
 
 # Cores para saída
 $Colors = @{

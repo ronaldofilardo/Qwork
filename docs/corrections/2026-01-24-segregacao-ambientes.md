@@ -17,7 +17,7 @@ Ambiente de desenvolvimento (`nr-bps_db`) e ambiente de testes (`nr-bps_db_test`
 
 ```dotenv
 # .env.local
-DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db
+DATABASE_URL=postgresql://postgres:<local_password>@localhost:5432/nr-bps_db
 ```
 
 **Depois:**
@@ -27,7 +27,7 @@ DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db
 # SEGREGAÇÃO DE AMBIENTES:
 # - Desenvolvimento (pnpm dev): usa LOCAL_DATABASE_URL → nr-bps_db
 # - Testes (pnpm test): usa TEST_DATABASE_URL → nr-bps_db_test
-LOCAL_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db
+LOCAL_DATABASE_URL=postgresql://postgres:<local_password>@localhost:5432/nr-bps_db
 ```
 
 ### 2. Exclusão de Dados de Teste
@@ -165,11 +165,11 @@ beforeEach(() => {
 ```powershell
 # 1. Verificar arquivo .env.test
 cat .env.test
-# ✅ TEST_DATABASE_URL=postgres://postgres:123456@localhost:5432/nr-bps_db_test
+# ✅ TEST_DATABASE_URL=postgres://postgres:<local_password>@localhost:5432/nr-bps_db_test
 
 # 2. Verificar arquivo .env.local
 cat .env.local
-# ✅ LOCAL_DATABASE_URL=postgres://postgres:123456@localhost:5432/nr-bps_db
+# ✅ LOCAL_DATABASE_URL=postgres://postgres:<local_password>@localhost:5432/nr-bps_db
 # ✅ Não tem DATABASE_URL
 
 # 3. Executar teste
@@ -180,7 +180,7 @@ pnpm test -- fluxo-cadastro-regressao.test.ts -i
 
 # 4. Verificar conexão (teste)
 node -e "require('dotenv').config({ path: '.env.test' }); console.log(process.env.TEST_DATABASE_URL)"
-# ✅ postgres://postgres:123456@localhost:5432/nr-bps_db_test
+# ✅ postgres://postgres:<local_password>@localhost:5432/nr-bps_db_test
 ```
 
 ### Status Final
@@ -242,3 +242,4 @@ node -e "require('dotenv').config({ path: '.env.test' }); console.log(process.en
 - [lib/db.ts](../../lib/db.ts) - linhas 60-200
 - [jest.setup.js](../../jest.setup.js) - linhas 30-140
 - [Copilot Instructions](../copilot-instructions.md)
+

@@ -1,5 +1,5 @@
 const { Client } = require('pg');
-const prodUrl = 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_v2?sslmode=require';
+const prodUrl = process.env.DATABASE_URL;
 
 async function run() {
   const c = new Client({ connectionString: prodUrl, connectionTimeoutMillis: 20000 });

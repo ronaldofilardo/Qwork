@@ -556,7 +556,7 @@ Write-Host "1️⃣  BACKUP DO NEON (CRÍTICO):" -ForegroundColor Yellow
 Write-Host "   pg_dump -h ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech -U neondb_owner -d neondb -F c -f backup_neon_antes_sync.dump" -ForegroundColor Gray
 Write-Host ""
 Write-Host "2️⃣  EXECUTAR MIGRAÇÃO:" -ForegroundColor Yellow
-Write-Host "   psql 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech/neondb?sslmode=require' -f $migrationScript" -ForegroundColor Gray
+Write-Host "   psql '$env:DATABASE_URL' -f $migrationScript" -ForegroundColor Gray
 Write-Host ""
 Write-Host "3️⃣  VALIDAR ESTRUTURA:" -ForegroundColor Yellow
 Write-Host "   Execute queries de teste para validar tabelas, triggers, views" -ForegroundColor Gray

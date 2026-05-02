@@ -5,7 +5,7 @@ const { Pool } = pg;
 async function queryNeonProduction() {
   // Connection string do Neon (produção)
   const connectionString =
-    'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require';
+    process.env.DATABASE_URL;
 
   console.log('🔍 Conectando no NEON (PRODUÇÃO)...\n');
 

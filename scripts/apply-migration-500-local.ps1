@@ -28,7 +28,7 @@ Write-Host ""
 $env:PGHOST = "localhost"
 $env:PGDATABASE = "nr-bps_db"
 $env:PGUSER = "postgres"
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $env:PGPORT = "5432"
 
 Write-Host "🔌 Configuração do banco:" -ForegroundColor Yellow

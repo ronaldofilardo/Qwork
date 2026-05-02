@@ -1,7 +1,7 @@
 const { Client } = require('pg');
 const connectionString =
   process.env.LOCAL_DATABASE_URL ||
-  'postgres://postgres:123456@localhost:5432/nr-bps_db';
+  (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db');
 const client = new Client({ connectionString });
 
 async function run() {

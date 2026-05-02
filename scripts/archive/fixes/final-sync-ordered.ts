@@ -6,9 +6,9 @@
 
 import { Pool } from 'pg';
 
-const DEV_DB = 'postgresql://postgres:123456@localhost:5432/nr-bps_db';
+const DEV_DB = (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db');
 const PROD_DB =
-  'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech/neondb?sslmode=require';
+  process.env.DATABASE_URL;
 
 // ORDEM CRÍTICA: respeita ALL foreign keys
 const ORDERED_TABLES = [

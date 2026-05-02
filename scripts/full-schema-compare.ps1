@@ -1,4 +1,4 @@
-$env:PGPASSWORD = "REDACTED_NEON_PASSWORD"
+$env:PGPASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw 'Set $env:NEON_PASSWORD before running' }
 $env:PGSSLMODE = "require"
 $H = "ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech"
 $U = "neondb_owner"

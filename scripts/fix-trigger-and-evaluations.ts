@@ -7,7 +7,7 @@ async function fixTriggerAndCorrect() {
   const connectionString =
     process.env.DATABASE_URL ||
     process.env.LOCAL_DATABASE_URL ||
-    'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require';
+    process.env.DATABASE_URL;
 
   console.log('🔧 CORREÇÃO DO TRIGGER E AVALIAÇÕES - NEON (PRODUÇÃO)\n');
 

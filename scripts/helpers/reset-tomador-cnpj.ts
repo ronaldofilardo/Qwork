@@ -75,7 +75,7 @@ const AUTO_CONFIRM = ARGS.includes('--confirm');
 const DATABASE_URL = IS_PROD
   ? process.env.DATABASE_URL_PROD || process.env.DATABASE_URL
   : process.env.DATABASE_URL ||
-    'postgresql://postgres:123456@localhost:5432/nr-bps_db';
+    (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db');
 
 const BCRYPT_ROUNDS = 12;
 const LOGS_DIR = path.join(process.cwd(), 'logs', 'reset-tomador');

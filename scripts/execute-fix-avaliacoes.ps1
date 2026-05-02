@@ -7,7 +7,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Banco de produção Neon
-$NEON_DB = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require"
+$NEON_DB = $env:DATABASE_URL
 
 Write-Host "Executando correção no banco de PRODUÇÃO (Neon)..." -ForegroundColor Yellow
 Write-Host ""

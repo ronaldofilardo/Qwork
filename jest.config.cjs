@@ -49,7 +49,7 @@ const customJestConfig = {
   globals: {
     'process.env.NODE_ENV': 'test',
     'process.env.TEST_DATABASE_URL':
-      'postgres://postgres:123456@localhost:5432/nr-bps_db_test',
+      (process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db_test'),
   },
 
   // ── Configuração de CI: limiar máximo de falhas ────────────────────────────

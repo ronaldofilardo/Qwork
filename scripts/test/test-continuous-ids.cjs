@@ -12,7 +12,7 @@ const assert = require('assert');
 
 const pool = new Pool({
   connectionString: process.env.TEST_DATABASE_URL || 
-    'postgresql://postgres:123456@localhost:5432/nr-bps_db_test',
+    (process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db_test'),
 });
 
 const queryWithAdmin = async (text, params = []) => {

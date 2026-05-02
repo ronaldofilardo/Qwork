@@ -263,7 +263,7 @@ console.log('[DEBUG] RH Route check:', {
 npx tsx scripts/insert-login-test-data.ts
 
 # 2. Iniciar servidor com banco de teste
-$env:TEST_DATABASE_URL="postgresql://postgres:123456@localhost:5432/nr-bps_db_test"
+$env:TEST_DATABASE_URL="postgresql://postgres:<local_password>@localhost:5432/nr-bps_db_test"
 pnpm dev
 ```
 
@@ -360,3 +360,4 @@ Com essa correção final, espera-se que a taxa de passing aumente significativa
 **Data**: 05/01/2025  
 **Branch**: main  
 **Commit**: (pendente)
+

@@ -1,5 +1,5 @@
 const { Client } = require('pg');
-const c = new Client({ host: 'localhost', port: 5432, database: 'nr-bps_db', user: 'postgres', password: '123456' });
+const c = new Client({ host: 'localhost', port: 5432, database: 'nr-bps_db', user: 'postgres', password: (process.env.LOCAL_DB_PASSWORD ?? '') });
 c.connect().then(async () => {
   const r1 = await c.query("SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND table_name LIKE 'rate%'");
   console.log('tabelas rate*:', r1.rows.map(x => x.table_name).join(', ') || 'nenhuma');

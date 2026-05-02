@@ -1,12 +1,12 @@
 import { Pool } from 'pg';
 
 const devPool = new Pool({
-  connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+  connectionString: (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db'),
 });
 
 const prodPool = new Pool({
   connectionString:
-    'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech/neondb?sslmode=require',
+    process.env.DATABASE_URL,
 });
 
 async function generateSprint1SQL() {

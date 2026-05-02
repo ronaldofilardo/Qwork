@@ -13,7 +13,7 @@ param(
 # Configuration
 # =====================================================
 
-$ProdDatabaseUrl = "postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+$ProdDatabaseUrl = $env:DATABASE_URL
 $MigrationFile1 = "database/migrations/1008_add_entidade_id_to_lotes_avaliacao.sql"
 $MigrationFile2 = "database/migrations/1008b_fix_entidade_segregation.sql"
 

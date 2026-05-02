@@ -1,6 +1,6 @@
 const { Client } = require('pg');
 
-const STAGING_URL = 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb_staging?sslmode=require';
+const STAGING_URL = process.env.STAGING_DATABASE_URL;
 
 async function checkStagingState() {
   const c = new Client({ connectionString: STAGING_URL, connectionTimeoutMillis: 20000 });

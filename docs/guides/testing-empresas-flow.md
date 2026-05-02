@@ -32,7 +32,7 @@ pnpm install
 
 # 3. Verificar variáveis de ambiente
 # Certificar que existe .env.local com:
-DATABASE_URL="postgresql://postgres:123456@localhost:5432/nr-bps_db_test"
+DATABASE_URL="postgresql://postgres:<local_password>@localhost:5432/nr-bps_db_test"
 SESSION_SECRET="seu-secret-aqui"
 NODE_ENV="test"
 ```
@@ -496,3 +496,4 @@ SQL
 - Ver código-fonte dos testes
 - Consultar [Copilot Instructions](../copilot-instructions.md)
 - Revisar commits da implementação
+

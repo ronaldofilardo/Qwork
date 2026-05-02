@@ -4,7 +4,7 @@
 # ============================================================================
 
 $ErrorActionPreference = "Stop"
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 
 Write-Host "`n========================================"
 Write-Host "TESTE COMPLETO DE FLUXO QWORK"

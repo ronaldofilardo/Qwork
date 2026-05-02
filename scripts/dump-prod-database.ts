@@ -19,7 +19,7 @@ const execAsync = promisify(exec);
 const NEON_CONFIG = {
   host: 'ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech',
   user: 'neondb_owner',
-  password: 'REDACTED_NEON_PASSWORD',
+  password: process.env.NEON_PASSWORD ?? '',
   database: 'neondb',
   port: 5432,
 };

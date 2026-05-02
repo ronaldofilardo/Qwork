@@ -5,7 +5,7 @@
  * Disparado quando o(s) assinante(s) completam a assinatura digital.
  *
  * Fluxo:
- * 1. Valida secret via query param ?secret=ZAPSIGN_WEBHOOK_SECRET
+ * 1. Valida secret via header Authorization: Bearer <ZAPSIGN_WEBHOOK_SECRET>
  * 2. Extrai doc_token e verifica status === 'signed'
  * 3. Busca laudo pelo zapsign_doc_token
  * 4. Chama ZapSign API para obter URL do PDF assinado
@@ -16,7 +16,7 @@
  * 9. Retorna 200 para o ZapSign
  *
  * ⚠️ Esta rota é pública (sem session) — ZapSign chama de fora.
- *    Segurança por ZAPSIGN_WEBHOOK_SECRET no query param.
+ *    Segurança por ZAPSIGN_WEBHOOK_SECRET no header Authorization: Bearer.
  */
 
 import { NextResponse } from 'next/server';
@@ -53,9 +53,11 @@ interface ZapSignWebhookPayload {
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: Request): Promise<NextResponse> {
-  // ── 1. Validar secret ────────────────────────────────────────────────────
-  const { searchParams } = new URL(req.url);
-  const receivedSecret = searchParams.get('secret') ?? '';
+  // ── 1. Validar secret via Authorization: Bearer ──────────────────────────
+  const authHeader = req.headers.get('Authorization') ?? '';
+  const receivedSecret = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7)
+    : '';
   const expectedSecret = process.env.ZAPSIGN_WEBHOOK_SECRET ?? '';
 
   if (

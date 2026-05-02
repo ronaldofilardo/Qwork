@@ -5,7 +5,7 @@
 Write-Host "🔐 Criando usuário Admin..." -ForegroundColor Cyan
 Write-Host ""
 
-$DATABASE_URL = "postgresql://postgres:123456@localhost:5432/nr-bps_db"
+$DATABASE_URL = $env:LOCAL_DATABASE_URL ?? "postgresql://postgres@localhost:5432/nr-bps_db"
 $CPF = "00000000000"
 $NOME = "Administrador"
 $SENHA = "5978rdf"

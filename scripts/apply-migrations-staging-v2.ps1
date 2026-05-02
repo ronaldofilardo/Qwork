@@ -15,7 +15,7 @@ param(
 
 $NEON_HOST = "ep-divine-sky-acuderi7.sa-east-1.aws.neon.tech"
 $NEON_USER = "neondb_owner"
-$NEON_PASSWORD = "REDACTED_NEON_PASSWORD"
+$NEON_PASSWORD = if ($env:NEON_PASSWORD) { $env:NEON_PASSWORD } else { throw "Set $env:NEON_PASSWORD before running" }
 $NEON_DB = "neondb_staging"
 $MIGRATIONS_DIR = "C:\apps\QWork\database\migrations"
 

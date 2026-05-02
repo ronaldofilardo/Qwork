@@ -10,8 +10,8 @@
 
 const { Pool } = require('pg');
 
-const DEV_URL = 'postgresql://postgres:123456@localhost:5432/nr-bps_db';
-const TEST_URL = 'postgresql://postgres:123456@localhost:5432/nr-bps_db_test';
+const DEV_URL = (process.env.LOCAL_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db');
+const TEST_URL = (process.env.TEST_DATABASE_URL ?? 'postgresql://postgres@localhost:5432/nr-bps_db_test');
 
 async function applyTo(label, connectionString) {
   console.log(`\n🔧 Aplicando migration 1022 em [${label}]...`);

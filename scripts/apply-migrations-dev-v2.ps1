@@ -11,7 +11,7 @@ param(
     [switch]$DryRun  # Modo dry-run: apenas lista, não aplica
 )
 
-$env:PGPASSWORD = "123456"
+$env:PGPASSWORD = if ($env:LOCAL_DB_PASSWORD) { $env:LOCAL_DB_PASSWORD } else { "postgres" }
 $PG_USER = "postgres"
 $PG_DB = "nr-bps_db"
 $PG_HOST = "localhost"

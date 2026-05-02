@@ -9,7 +9,7 @@ const execAsync = util.promisify(exec);
 const DB_CONFIG = {
   host: 'localhost',
   user: 'postgres',
-  password: '123456',
+  password: (process.env.LOCAL_DB_PASSWORD ?? ''),
   port: 5432,
   database: 'postgres', // conectar ao banco padrão para criar o banco de teste
 };
