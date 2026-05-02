@@ -48,15 +48,17 @@ describe('ImportacaoFlowGuide', () => {
   describe('Clínica (isClinica=true)', () => {
     it('exibe informação de Empresa com CNPJ', () => {
       render(<ImportacaoFlowGuide isClinica={true} />);
-      expect(
-        screen.getByText(/Empresa.*CNPJ/)
-      ).toBeInTheDocument();
+      // Verifica que a coluna CNPJ aparece como requisito para clínicas
+      expect(screen.getByText('CNPJ:')).toBeInTheDocument();
+      expect(screen.getByText('Nome da Empresa:')).toBeInTheDocument();
     });
 
     it('exibe informação de Data de Nascimento com formato dd/mm/aaaa', () => {
       render(<ImportacaoFlowGuide isClinica={true} />);
+      // Verifica o label e o formato dentro do span de dica
+      expect(screen.getByText('Data de Nascimento:')).toBeInTheDocument();
       expect(
-        screen.getByText(/Data de Nascimento.*dd\/mm\/aaaa/)
+        screen.getByText(/use texto ou formato dd\/mm\/aaaa/)
       ).toBeInTheDocument();
     });
 
@@ -69,16 +71,15 @@ describe('ImportacaoFlowGuide', () => {
 
     it('exibe informação de CPF com 11 dígitos', () => {
       render(<ImportacaoFlowGuide isClinica={true} />);
-      expect(
-        screen.getByText(/CPF.*deve conter apenas 11 dígitos/)
-      ).toBeInTheDocument();
+      expect(screen.getByText('CPF:')).toBeInTheDocument();
+      expect(screen.getByText(/sem pontos ou hífen/)).toBeInTheDocument();
     });
 
-    it('exibe informação sobre Função', () => {
+    it('exibe informação sobre nivel_cargo', () => {
       render(<ImportacaoFlowGuide isClinica={true} />);
-      expect(
-        screen.getByText(/Função.*importante para determinar a versão do questionário/)
-      ).toBeInTheDocument();
+      // Label nivel_cargo aparece como campo reconhecido pelo sistema
+      expect(screen.getByText('nivel_cargo:')).toBeInTheDocument();
+      expect(screen.getByText(/importante para determinar a versão do questionário/)).toBeInTheDocument();
     });
 
     it('exibe referência à etapa "4. Níveis"', () => {
@@ -98,8 +99,9 @@ describe('ImportacaoFlowGuide', () => {
 
     it('exibe informação de Data de Nascimento com formato dd/mm/aaaa para entidade', () => {
       render(<ImportacaoFlowGuide isClinica={false} />);
+      expect(screen.getByText('Data de Nascimento:')).toBeInTheDocument();
       expect(
-        screen.getByText(/Data de Nascimento.*dd\/mm\/aaaa/)
+        screen.getByText(/use texto ou formato dd\/mm\/aaaa/)
       ).toBeInTheDocument();
     });
 
@@ -112,16 +114,14 @@ describe('ImportacaoFlowGuide', () => {
 
     it('exibe informação de CPF com 11 dígitos para entidade', () => {
       render(<ImportacaoFlowGuide isClinica={false} />);
-      expect(
-        screen.getByText(/CPF.*deve conter apenas 11 dígitos/)
-      ).toBeInTheDocument();
+      expect(screen.getByText('CPF:')).toBeInTheDocument();
+      expect(screen.getByText(/sem pontos ou hífen/)).toBeInTheDocument();
     });
 
-    it('exibe informação sobre Função para entidade', () => {
+    it('exibe informação sobre nivel_cargo para entidade', () => {
       render(<ImportacaoFlowGuide isClinica={false} />);
-      expect(
-        screen.getByText(/Função.*importante para determinar a versão do questionário/)
-      ).toBeInTheDocument();
+      expect(screen.getByText('nivel_cargo:')).toBeInTheDocument();
+      expect(screen.getByText(/importante para determinar a versão do questionário/)).toBeInTheDocument();
     });
 
     it('exibe referência à etapa "4. Níveis" para entidade', () => {
@@ -135,10 +135,9 @@ describe('ImportacaoFlowGuide', () => {
   describe('Prop isClinica padrão', () => {
     it('renderiza com isClinica=true por padrão', () => {
       render(<ImportacaoFlowGuide />);
-      // Quando isClinica=true (padrão), CNPJ deve aparecer
-      expect(
-        screen.getByText(/Empresa.*CNPJ/)
-      ).toBeInTheDocument();
+      // Quando isClinica=true (padrão), CNPJ deve aparecer como coluna obrigatória
+      expect(screen.getByText('CNPJ:')).toBeInTheDocument();
+      expect(screen.getByText('Nome da Empresa:')).toBeInTheDocument();
     });
   });
 });

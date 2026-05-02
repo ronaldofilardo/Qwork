@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { FileSpreadsheet, ArrowLeft } from 'lucide-react';
+import { FileSpreadsheet, ArrowLeft, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import UploadArea from '@/components/importacao/UploadArea';
 import ImportacaoFlowGuide from '@/components/ImportacaoFlowGuide';
@@ -162,6 +162,9 @@ export default function ImportacaoEntidadePage() {
 
   // Modal de confirmação de erros (step validacao)
   const [showErrorConfirmModal, setShowErrorConfirmModal] = useState(false);
+
+  // Modal hard-block de data_nascimento — sem bypass possível
+  const [showDataNascBlockModal, setShowDataNascBlockModal] = useState(false);
 
   // Step 1: Upload + Analyze
   const handleFileSelect = useCallback(async (file: File) => {
@@ -496,6 +499,13 @@ export default function ImportacaoEntidadePage() {
             hideEmpresaStats
             funcoesComMudancaRole={validateData.funcoesComMudancaRole}
             onConfirm={() => {
+              const errosDataNasc = validateData.erros.filter(
+                (e) => e.campo === 'data_nascimento'
+              );
+              if (errosDataNasc.length > 0) {
+                setShowDataNascBlockModal(true);
+                return;
+              }
               const semNivel =
                 validateData.temNivelCargoDirecto
                   ? validateData.avisos.filter((a) => a.campo === 'nivel_cargo').length
@@ -597,6 +607,45 @@ export default function ImportacaoEntidadePage() {
             setStep('nivel-cargo');
           }}
         />
+      )}
+
+      {/* Modal hard-block de data_nascimento — sem opção de bypass */}
+      {showDataNascBlockModal && validateData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md mx-4 w-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900">Importação bloqueada</h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-3">
+              <strong>{validateData.erros.filter((e) => e.campo === 'data_nascimento').length} problema(s) de data de nascimento</strong> impedem a continuação.
+              A data de nascimento é usada como senha de acesso do funcionário e não pode divergir do cadastro existente.
+            </p>
+            <ul className="text-sm text-red-700 bg-red-50 rounded-lg p-3 mb-5 space-y-1 max-h-48 overflow-y-auto">
+              {validateData.erros
+                .filter((e) => e.campo === 'data_nascimento')
+                .map((e, i) => (
+                  <li key={i}>
+                    <span className="font-medium">Linha {e.linha}:</span> {e.mensagem}
+                  </li>
+                ))}
+            </ul>
+            <p className="text-xs text-gray-400 mb-5">
+              Corrija a planilha e realize uma nova importação para prosseguir.
+            </p>
+            <button
+              onClick={() => {
+                setShowDataNascBlockModal(false);
+                handleNovaImportacao();
+              }}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg py-2.5 text-sm transition-colors"
+            >
+              Voltar e corrigir planilha
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Modal de progresso */}

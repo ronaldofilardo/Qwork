@@ -194,7 +194,7 @@ export default function ImportacaoFlowGuide({
             coluna o sistema inativa automaticamente um funcionário
           </li>
           <li>
-            <strong>Função:</strong> importante para determinar a versão do
+            <strong>nivel_cargo:</strong> importante para determinar a versão do
             questionário. Caso não tenha, o sistema permite selecionar na etapa{' '}
             <span className="italic">&ldquo;4. Níveis&rdquo;</span> em{' '}
             <strong>nivel_cargo</strong>.
