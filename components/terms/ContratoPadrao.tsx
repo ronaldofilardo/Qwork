@@ -4,7 +4,7 @@ import React from 'react';
 
 /* Estilos locais sem dependência de `prose` — mantém identidade visual QWork */
 const heading =
-  'text-[0.8rem] font-bold text-[#2D2D2D] uppercase tracking-widest mt-7 mb-2 border-b border-gray-200 pb-1.5';
+  'text-lg font-bold text-[#2D2D2D] uppercase tracking-widest mt-7 mb-2 border-b border-gray-200 pb-1.5';
 const para = 'text-sm text-gray-700 leading-relaxed mb-2';
 const divider = 'border-none my-0';
 

@@ -109,12 +109,13 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Isso evita bleeding de nivel_cargo entre entidades diferentes para o mesmo CPF.
     const perEntidadeNivelMap = new Map<string, string | null>();
     const existingNomeMap = new Map<string, string>();
+    const existingDataNascMap = new Map<string, string | null>();
     const cpfsVinculadosNaEntidade = new Set<string>();
 
     if (cpfsUnicos.length > 0) {
       // Buscar funcionários existentes (inclui funcao, nivel_cargo e nome para detectar mudanças)
       const existResult = await query(
-        'SELECT id, cpf, nome, funcao FROM funcionarios WHERE cpf = ANY($1)',
+        'SELECT id, cpf, nome, funcao, data_nascimento FROM funcionarios WHERE cpf = ANY($1)',
         [cpfsUnicos]
       );
       const existingCpfs = new Set<string>();
@@ -122,10 +123,12 @@ export async function POST(request: Request): Promise<NextResponse> {
         cpf: string;
         nome: string | null;
         funcao: string | null;
+        data_nascimento: string | null;
       }[]) {
         existingCpfs.add(r.cpf.trim());
         existingFuncaoMap.set(r.cpf.trim(), r.funcao);
         if (r.nome) existingNomeMap.set(r.cpf.trim(), r.nome);
+        existingDataNascMap.set(r.cpf.trim(), r.data_nascimento ?? null);
       }
       funcionariosExistentes = existingCpfs.size;
 
@@ -201,6 +204,32 @@ export async function POST(request: Request): Promise<NextResponse> {
               }
             }
           }
+        }
+      }
+
+      // Verificar divergência de data_nascimento para funcionários já existentes no banco
+      for (let i = 0; i < parsed.data.length; i++) {
+        const row = parsed.data[i];
+        const cpf = limparCPF(row.cpf ?? '');
+        if (!existingDataNascMap.has(cpf)) continue;
+        const dbDate = existingDataNascMap.get(cpf) ?? null;
+        if (!dbDate) continue; // banco sem data_nascimento: não bloqueia
+        const planilhaDateRaw = (row.data_nascimento as string | undefined) ?? '';
+        if (!planilhaDateRaw) continue; // ausente → já capturado como erro pelo data-validator
+        const planilhaDateIso = parseDateCell(planilhaDateRaw);
+        if (!planilhaDateIso) continue; // inválida → já capturado pelo data-validator
+        if (planilhaDateIso !== dbDate) {
+          const fmt = (iso: string) => {
+            const [y, m, d] = iso.split('-');
+            return `${d}/${m}/${y}`;
+          };
+          validacao.erros.push({
+            linha: i + 2,
+            campo: 'data_nascimento',
+            valor: planilhaDateRaw,
+            mensagem: `Funcionário com CPF ${cpf} já cadastrado com data de nascimento diferente. Banco: ${fmt(dbDate)} | Planilha: ${fmt(planilhaDateIso)}. Corrija a planilha.`,
+            severidade: 'erro',
+          });
         }
       }
     }
