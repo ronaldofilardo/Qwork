@@ -190,6 +190,14 @@ export async function POST(request: NextRequest) {
             timestamp: new Date().toISOString(),
           })
         );
+
+        // Email #3: aceite de contrato
+        notificarAceiteContrato({
+          tomadorId: updated.tomador_id,
+          tomadorNome: tomadorData.nome,
+          cnpj: tomadorData.cnpj,
+          tipo: updated.tipo_tomador as 'clinica' | 'entidade',
+        }).catch((e) => console.error('[EMAIL] notificarAceiteContrato falhou:', e));
       } catch (err) {
         console.error(
           '[CONTRATOS] Erro ao liberar login automaticamente após aceite:',
@@ -205,14 +213,6 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
-
-      // Email #3: aceite de contrato
-      notificarAceiteContrato({
-        tomadorId: updated.tomador_id,
-        tomadorNome: tomadorData.nome,
-        cnpj: tomadorData.cnpj,
-        tipo: updated.tipo_tomador as 'clinica' | 'entidade',
-      }).catch((e) => console.error('[EMAIL] notificarAceiteContrato falhou:', e));
 
       return NextResponse.json(
         {

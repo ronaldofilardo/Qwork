@@ -9,6 +9,8 @@
  * Todos os envios são não-bloqueantes: use `.catch()` no call-site para
  * evitar que falha de e-mail quebre a resposta da API.
  */
+'use server';
+
 import nodemailer from 'nodemailer';
 import { query } from '@/lib/db';
 
