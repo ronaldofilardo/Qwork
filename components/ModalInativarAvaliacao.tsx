@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface ModalInativarAvaliacaoProps {
   avaliacaoId: number;
@@ -24,6 +25,7 @@ export default function ModalInativarAvaliacao({
   const [mounted, setMounted] = useState(false);
   const [motivo, setMotivo] = useState('');
   const [submetendo, setSubmetendo] = useState(false);
+  const [processando, setProcessando] = useState(false);
   const motivoRef = React.useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -59,17 +61,9 @@ export default function ModalInativarAvaliacao({
       return;
     }
 
-    if (
-      !confirm(
-        `Tem certeza que deseja inativar a avaliação de ${funcionarioNome}?\n\n` +
-          `Motivo: ${motivo.trim()}\n\n` +
-          `Esta ação não pode ser desfeita.`
-      )
-    ) {
-      return;
-    }
-
+    // Fechar modal de confirmação e mostrar loading modal
     setSubmetendo(true);
+    setProcessando(true);
 
     try {
       // Construir endpoint baseado no contexto
@@ -90,6 +84,7 @@ export default function ModalInativarAvaliacao({
 
       if (!response.ok) {
         alert('Erro: ' + (data.error || 'Erro ao inativar avaliação'));
+        setProcessando(false);
         setSubmetendo(false);
         return;
       }
@@ -97,17 +92,43 @@ export default function ModalInativarAvaliacao({
       // Suportar ambos os formatos de resposta: message (entidade) e mensagem (RH)
       const successMessage =
         data.message || data.mensagem || '✅ Avaliação inativada com sucesso!';
+
+      // Manter loading modal por 1s para boa experiência visual
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       alert(successMessage);
+      setProcessando(false);
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Erro ao inativar:', error);
       alert('Erro ao processar inativação');
+      setProcessando(false);
       setSubmetendo(false);
     }
   };
 
   if (!mounted) return null;
+
+  // Loading Modal - renderizado sobre a modal de confirmação
+  if (processando) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4">
+        <div className="bg-white rounded-lg shadow-2xl p-8 max-w-sm w-full flex flex-col items-center gap-4">
+          <Loader2 size={48} className="text-primary animate-spin" />
+          <div className="text-center space-y-2">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Inativando funcionário...
+            </h3>
+            <p className="text-sm text-gray-600">
+              Estamos inativando o funcionário{' '}
+              <strong>{funcionarioNome}</strong>, aguarde alguns instantes...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget && !submetendo) {
