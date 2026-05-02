@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { query, criarContaResponsavel } from '@/lib/db';
 import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
+import { notificarAceiteContrato } from '@/lib/email';
 
 export const dynamic = 'force-dynamic';
 
@@ -204,6 +205,14 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         );
       }
+
+      // Email #3: aceite de contrato
+      notificarAceiteContrato({
+        tomadorId: updated.tomador_id,
+        tomadorNome: tomadorData.nome,
+        cnpj: tomadorData.cnpj,
+        tipo: updated.tipo_tomador as 'clinica' | 'entidade',
+      }).catch((e) => console.error('[EMAIL] notificarAceiteContrato falhou:', e));
 
       return NextResponse.json(
         {

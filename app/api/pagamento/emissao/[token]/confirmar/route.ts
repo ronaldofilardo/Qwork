@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { dispararEmailLotePago } from '@/lib/email';
 
 export async function POST(
   request: Request,
@@ -124,6 +125,11 @@ export async function POST(
 
     console.log(
       `[INFO] Pagamento confirmado lote ${lote.id} - ${metodo_pagamento} ${num_parcelas}x`
+    );
+
+    // Email #2: lote disponível para o emissor gerar o laudo
+    dispararEmailLotePago(lote.id).catch((e) =>
+      console.error('[EMAIL] dispararEmailLotePago (confirmar) falhou:', e)
     );
 
     return NextResponse.json({

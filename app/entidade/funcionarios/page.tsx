@@ -49,7 +49,6 @@ export default function FuncionariosPage() {
         contexto="entidade"
         tomadorId={session?.tomador_id}
         responsavelCpf={session?.cpf}
-        onRefresh={() => {}}
         defaultStatusFilter="todos"
       />
     </div>

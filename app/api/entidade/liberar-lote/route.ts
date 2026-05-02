@@ -44,9 +44,6 @@ export const POST = async (req: Request) => {
       tipo = body.tipo;
     } catch {
       // Body vazio ou inválido - usar valores padrão
-      console.log(
-        '[LIBERAR-LOTE] Body vazio ou inválido, usando valores padrão'
-      );
     }
 
     const entidadeId = session.entidade_id as number;
@@ -98,17 +95,6 @@ export const POST = async (req: Request) => {
 
       let funcionariosElegiveis = elegibilidadeResult.rows;
 
-      console.log(
-        `[ENTIDADE-tomador] tomador ${entidadeId}: ${funcionariosElegiveis.length} funcionários elegíveis`
-      );
-      console.log(
-        `[DEBUG] Elegíveis:`,
-        funcionariosElegiveis.map((f: any) => ({
-          cpf: f.funcionario_cpf,
-          nome: f.funcionario_nome,
-        }))
-      );
-
       // Aplicar mesmos filtros adicionais (dataFiltro / tipo)
       if (dataFiltro && dataFiltro !== 'all') {
         const dataFiltroResult = await queryAsGestorEntidade(
@@ -120,11 +106,6 @@ export const POST = async (req: Request) => {
           cpfs.includes(f.funcionario_cpf)
         );
       }
-
-      console.log(
-        `[ENTIDADE-tomador] Após filtros: ${funcionariosElegiveis.length} funcionários`
-      );
-      console.log(`[DEBUG] DataFiltro: ${dataFiltro}`);
 
       if (funcionariosElegiveis.length > 0) {
         // Verificar se a entidade é isenta de pagamento
@@ -271,7 +252,7 @@ export const POST = async (req: Request) => {
         {
           error: 'Nenhum funcionário elegível encontrado',
           success: false,
-          detalhes: `Não foram encontrados funcionários elegíveis para avaliação na entidade:\n${mensagensErro.join('\n')}\n\nVerifique os critérios de elegibilidade ou cadastre novos funcionários.`,
+          detalhes: `Não foram encontrados funcionários elegíveis para avaliação na entidade:\n${mensagensErro.join('\n')}\n\nVerifique os critérios de elegibilidade:\n- Funcionários devem estar com status "Ativo" no vínculo\n- Deve haver funcionários "nunca avaliados" (índice = 0) ou com avaliações atrasadas\n- Funcionários devem estar vinculados diretamente à entidade`,
           resultados,
         },
         { status: 400 }
