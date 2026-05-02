@@ -31,6 +31,10 @@ import { NextResponse } from 'next/server';
 import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
 import { transactionWithContext } from '@/lib/db-security';
+import {
+  notificarSolicitacaoEmissao,
+  dispararEmailLotePago,
+} from '@/lib/email';
 
 export async function POST(
   request: Request,
@@ -397,13 +401,13 @@ export async function POST(
         }
       } else if (user.perfil === 'rh') {
         const contatoResult = await query(
-          `SELECT email, celular FROM funcionarios WHERE cpf = $1 LIMIT 1`,
+          `SELECT email FROM funcionarios WHERE cpf = $1 LIMIT 1`,
           [user.cpf]
         );
         if (contatoResult.rows.length > 0) {
           gestorContato = {
             email: contatoResult.rows[0].email || null,
-            celular: contatoResult.rows[0].celular || null,
+            celular: null,
           };
         }
       }
@@ -438,6 +442,24 @@ export async function POST(
       } catch {
         // Falha ao buscar dados do tomador não impede a resposta
       }
+    }
+
+    // Email #1: solicitacao de emissao — dispara SEMPRE (isento ou nao)
+    notificarSolicitacaoEmissao({
+      loteId,
+      solicitanteCpf: user.cpf,
+      perfil: user.perfil,
+      tomadorNome: tomadorInfo?.nome,
+    }).catch((e) =>
+      console.error('[EMAIL] notificarSolicitacaoEmissao falhou:', e)
+    );
+
+    // Email #2: lote disponível para o emissor — apenas quando tomador isento
+    // (nao-isentos: email disparado apos confirmacao de pagamento via webhook Asaas / link pagamento)
+    if (isentoTomador) {
+      dispararEmailLotePago(loteId).catch((e) =>
+        console.error('[EMAIL] dispararEmailLotePago (isento) falhou:', e)
+      );
     }
 
     return NextResponse.json({
