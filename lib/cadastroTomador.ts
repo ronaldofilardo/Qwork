@@ -27,6 +27,18 @@ export interface DadosResponsavel {
   celular: string;
 }
 
+export interface Plano {
+  id: number;
+  nome: string;
+  tipo: 'fixo' | 'personalizado';
+  descricao?: string;
+  preco?: number;
+  valor_por_funcionario?: number;
+  limite_funcionarios?: number;
+  ativo?: boolean;
+  caracteristicas?: string[] | Record<string, any>;
+}
+
 export interface Arquivos {
   cartao_cnpj: File | null;
   contrato_social: File | null;

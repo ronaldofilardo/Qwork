@@ -21,11 +21,7 @@ export async function GET(request: NextRequest) {
         COALESCE(e.id, cl.id) as id,
         COALESCE(e.tipo, 'entidade') as tipo,
         COALESCE(e.nome, cl.nome) as nome,
-        COALESCE(e.status, cl.status) as status,
-        COALESCE(e.numero_funcionarios_estimado, cl.numero_funcionarios_estimado) as numero_funcionarios_estimado,
-        false AS payment_link_generated,
-        (SELECT id FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_id,
-        (SELECT aceito FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_aceito
+        COALESCE(e.numero_funcionarios_estimado, cl.numero_funcionarios_estimado) as numero_funcionarios_estimado
       FROM (SELECT $1::bigint AS tomador_id) source
       LEFT JOIN entidades e ON e.id = source.tomador_id
       LEFT JOIN clinicas cl ON cl.id = source.tomador_id
@@ -46,11 +42,7 @@ export async function GET(request: NextRequest) {
       id: row.id,
       tipo: row.tipo,
       nome: row.nome,
-      status: row.status,
       numero_funcionarios_estimado: row.numero_funcionarios_estimado,
-      payment_link_generated: false,
-      contrato_id: row.contrato_id || null,
-      contrato_aceito: !!row.contrato_aceito,
     };
 
     return NextResponse.json({

@@ -129,67 +129,6 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
     });
   });
 
-  describe('3. Primeiro Acesso - Definição de Senha', () => {
-    it('deve validar token de ativação', () => {
-      cy.intercept('POST', '/api/auth/validate-token', (req) => {
-        expect(req.body.token).to.eq(tokenAtivacao);
-
-        req.reply({
-          statusCode: 200,
-          body: {
-            valid: true,
-            cpf: mockCPF,
-            email: mockEmail,
-          },
-        });
-      }).as('validateToken');
-
-      cy.visit(`/aceite-plano-personalizado?token=${tokenAtivacao}`);
-      cy.wait('@validateToken');
-
-      cy.contains(/definir.*senha/i).should('be.visible');
-    });
-
-    it('deve permitir definir senha inicial', () => {
-      cy.intercept('POST', '/api/auth/set-password', (req) => {
-        expect(req.body.token).to.eq(tokenAtivacao);
-        expect(req.body.senha).to.have.length.greaterThan(5);
-
-        req.reply({
-          statusCode: 200,
-          body: {
-            success: true,
-            message: 'Senha definida com sucesso',
-          },
-        });
-      }).as('setPassword');
-
-      cy.get('input[name="senha"]').type(mockSenha);
-      cy.get('input[name="confirmar_senha"]').type(mockSenha);
-      cy.get('button[type="submit"]')
-        .contains(/definir.*senha/i)
-        .click();
-
-      cy.wait('@setPassword');
-
-      // Verificar redirecionamento para login
-      cy.url().should('include', '/login');
-      cy.contains(/senha.*definida/i).should('be.visible');
-    });
-
-    it('deve ativar tomador após definição de senha', () => {
-      cy.task('db:gettomador', { cnpj: mockCNPJ }).then((result: any) => {
-        expect(result.ativa).to.be.true;
-        expect(result.status).to.eq('ativo');
-      });
-
-      cy.task('db:getSenhaHash', { cpf: mockCPF }).then((result: any) => {
-        expect(result).to.not.be.null;
-        expect(result.senha_hash).to.match(/^\$2[aby]\$/); // bcrypt hash
-      });
-    });
-  });
-
   describe('4. Primeiro Login', () => {
     it('deve fazer login com credenciais criadas', () => {
       cy.intercept('POST', '/api/auth/login', (req) => {

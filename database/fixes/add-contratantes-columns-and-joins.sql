@@ -1,0 +1,16 @@
+-- Fix mínimo pós-reset: colunas e tabela usada por testes rápidos
+BEGIN;
+
+-- Garante que a coluna email exista
+ALTER TABLE IF EXISTS contratantes
+  ADD COLUMN IF NOT EXISTS email VARCHAR(255);
+
+-- Tabela mínima esperada por testes: mapeamento contratante <-> funcionário (usada em cleans)
+CREATE TABLE IF NOT EXISTS contratantes_funcionarios (
+  contratante_id INTEGER NOT NULL,
+  funcionario_cpf VARCHAR(32) NOT NULL,
+  criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (contratante_id, funcionario_cpf)
+);
+
+COMMIT;

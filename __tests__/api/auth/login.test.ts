@@ -125,7 +125,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
 
     expect(response.status).toBe(403);
     expect(data.error).toBe(
-      'Usuário inativo. Entre em contato com o administrador.'
+      'Acesso não autorizado. Entre em contato com o administrador.'
     );
   });
 
@@ -525,7 +525,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
 
     expect(response.status).toBe(403);
     expect(data.error).toBe(
-      'Tomador inativo. Entre em contato com o administrador.'
+      'Acesso não autorizado. Entre em contato com o administrador.'
     );
   });
 
@@ -575,7 +575,9 @@ describe('/api/auth/login - Nova Arquitetura', () => {
       // Query em funcionarios NÃO deve ser chamada (fallback não acionado)
       if (sql.includes('funcionarios') && sql.includes('WHERE cpf =')) {
         // Este bloco não deve ser alcançado; se for, o teste falha
-        console.warn('[TEST] ERRO: Fallback para funcionarios foi acionado indevidamente!');
+        console.warn(
+          '[TEST] ERRO: Fallback para funcionarios foi acionado indevidamente!'
+        );
         return Promise.resolve({
           rows: [],
           rowCount: 0,
@@ -662,7 +664,9 @@ describe('/api/auth/login - Nova Arquitetura', () => {
       }
       // Query em funcionarios NÃO deve ser chamada
       if (sql.includes('funcionarios') && sql.includes('WHERE cpf =')) {
-        console.warn('[TEST] ERRO: Fallback para funcionarios foi acionado indevidamente!');
+        console.warn(
+          '[TEST] ERRO: Fallback para funcionarios foi acionado indevidamente!'
+        );
         return Promise.resolve({
           rows: [],
           rowCount: 0,

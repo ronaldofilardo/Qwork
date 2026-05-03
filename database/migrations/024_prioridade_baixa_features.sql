@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS templates_contrato (
   -- Identificação
   nome TEXT NOT NULL UNIQUE,
   descricao TEXT,
-  tipo_template TEXT NOT NULL CHECK (tipo_template IN ('plano_fixo', 'plano_personalizado', 'padrao')),
+  tipo_template TEXT NOT NULL CHECK (tipo_template IN ('plano_fixo', 'padrao')),
   
   -- Conteúdo do template (HTML ou Markdown com placeholders)
   conteudo TEXT NOT NULL,
@@ -233,64 +233,6 @@ CREATE TABLE IF NOT EXISTS templates_contrato (
 CREATE INDEX idx_templates_contrato_tipo ON templates_contrato(tipo_template);
 CREATE INDEX idx_templates_contrato_ativo ON templates_contrato(ativo) WHERE ativo = TRUE;
 CREATE INDEX idx_templates_contrato_padrao ON templates_contrato(tipo_template, padrao) WHERE padrao = TRUE;
-
--- Trigger para garantir apenas um template padrão por tipo
-CREATE OR REPLACE FUNCTION garantir_template_padrao_unico()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.padrao = TRUE THEN
-    UPDATE templates_contrato
-    SET padrao = FALSE
-    WHERE tipo_template = NEW.tipo_template
-      AND id != NEW.id
-      AND padrao = TRUE;
-  END IF;
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_garantir_template_padrao_unico
-  BEFORE INSERT OR UPDATE ON templates_contrato
-  FOR EACH ROW
-  WHEN (NEW.padrao = TRUE)
-  EXECUTE FUNCTION garantir_template_padrao_unico();
-
--- Inserir template padrão para plano personalizado
-INSERT INTO templates_contrato (nome, descricao, tipo_template, conteudo, padrao, criado_por_cpf)
-VALUES (
-  'Contrato Plano Personalizado - Padrao',
-  'Template padrao para contratos de plano personalizado de Medicina do Trabalho',
-  'plano_personalizado',
-  '<h1>CONTRATO DE PRESTACAO DE SERVICOS - MEDICINA DO TRABALHO</h1>
-<p><strong>CONTRATANTE:</strong> {{contratante_nome}} - CNPJ: {{contratante_cnpj}}</p>
-<p><strong>CONTRATADA:</strong> QWork Medicina Ocupacional</p>
-
-<h2>CLAUSULA PRIMEIRA - DO OBJETO</h2>
-<p>O presente contrato tem por objeto a prestacao de servicos de medicina do trabalho na modalidade de Plano Personalizado, abrangendo {{numero_funcionarios}} funcionarios estimados.</p>
-
-<h2>CLAUSULA SEGUNDA - DO VALOR</h2>
-<p>O valor mensal dos servicos e de R$ {{valor_total}} ({{valor_total_extenso}}), correspondendo a R$ {{valor_por_funcionario}} por funcionario.</p>
-
-<h2>CLAUSULA TERCEIRA - DO PRAZO</h2>
-<p>O presente contrato tem validade de {{prazo_meses}} meses a partir de {{data_inicio}}, podendo ser renovado mediante acordo entre as partes.</p>
-
-<h2>CLAUSULA QUARTA - DOS SERVICOS INCLUSOS</h2>
-<ul>
-  <li>Avaliacao psicossocial completa (COPSOQ III)</li>
-  <li>Modulo de Jogo Patologico (JZ)</li>
-  <li>Modulo de Endividamento Financeiro (EF)</li>
-  <li>Relatorios personalizados</li>
-  <li>Suporte tecnico dedicado</li>
-</ul>
-
-<p><strong>Data do Contrato:</strong> {{data_contrato}}</p>
-<p><strong>Assinaturas:</strong></p>
-<p>_______________________________<br/>CONTRATANTE</p>
-<p>_______________________________<br/>CONTRATADA</p>',
-  TRUE,
-  'SISTEMA'
-) ON CONFLICT (nome) DO NOTHING;
 
 -- =============================================================================
 -- PARTE 4: MULTI-IDIOMA PARA NOTIFICAÇÕES
@@ -332,17 +274,17 @@ CREATE INDEX idx_notificacoes_traducoes_chave ON notificacoes_traducoes(chave_tr
 INSERT INTO notificacoes_traducoes (chave_traducao, idioma, conteudo, categoria) VALUES
 -- Português
 ('pre_cadastro_criado_titulo', 'pt_BR', 'Novo Pre-Cadastro: {{contratante_nome}}', 'titulo'),
-('pre_cadastro_criado_mensagem', 'pt_BR', 'Um novo pre-cadastro de plano personalizado foi criado e aguarda definicao de valor. Funcionarios estimados: {{numero_funcionarios}}.', 'mensagem'),
+('pre_cadastro_criado_mensagem', 'pt_BR', 'Um novo pre-cadastro foi criado. Funcionarios estimados: {{numero_funcionarios}}.', 'mensagem'),
 ('pre_cadastro_criado_botao', 'pt_BR', 'Definir Valor', 'botao'),
 
 -- Inglês
 ('pre_cadastro_criado_titulo', 'en_US', 'New Pre-Registration: {{contratante_nome}}', 'titulo'),
-('pre_cadastro_criado_mensagem', 'en_US', 'A new personalized plan pre-registration has been created and awaits value definition. Estimated employees: {{numero_funcionarios}}.', 'mensagem'),
+('pre_cadastro_criado_mensagem', 'en_US', 'A new pre-registration has been created. Estimated employees: {{numero_funcionarios}}.', 'mensagem'),
 ('pre_cadastro_criado_botao', 'en_US', 'Set Value', 'botao'),
 
 -- Espanhol
 ('pre_cadastro_criado_titulo', 'es_ES', 'Nuevo Pre-Registro: {{contratante_nome}}', 'titulo'),
-('pre_cadastro_criado_mensagem', 'es_ES', 'Se ha creado un nuevo pre-registro de plan personalizado y espera definicion de valor. Empleados estimados: {{numero_funcionarios}}.', 'mensagem'),
+('pre_cadastro_criado_mensagem', 'es_ES', 'Se ha creado un nuevo pre-registro. Empleados estimados: {{numero_funcionarios}}.', 'mensagem'),
 ('pre_cadastro_criado_botao', 'es_ES', 'Definir Valor', 'botao')
 ON CONFLICT (chave_traducao, idioma) DO NOTHING;
 

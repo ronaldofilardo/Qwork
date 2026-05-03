@@ -3,6 +3,14 @@
 
 import { z } from 'zod';
 
+export const PlanoSchema = z.object({
+  tipo: z.string().min(1),
+  nome: z.string().min(1),
+  descricao: z.string().optional(),
+  valor_por_funcionario: z.number().positive(),
+  ativo: z.boolean().optional(),
+});
+
 export const MFACodeSchema = z.object({
   cpf: z.string().length(11).regex(/^\d+$/),
   code: z.string().length(6).regex(/^\d+$/),

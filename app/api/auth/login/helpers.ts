@@ -85,7 +85,7 @@ export async function handleRepresentanteLogin(
     }
     return NextResponse.json(
       {
-        error: 'Usuário inativo. Entre em contato com o administrador.',
+        error: 'Acesso não autorizado. Entre em contato com o administrador.',
       },
       { status: 403 }
     );
@@ -275,9 +275,11 @@ export async function validarSenhaFuncionario(
   try {
     const senhaEsperada = gerarSenhaDeNascimento(data_nascimento);
     const senhaValida = await bcrypt.compare(senhaEsperada, senhaHash);
-    logger.log(
-      `[LOGIN] Resultado da validação por data de nascimento: ${senhaValida}`
-    );
+    if (process.env.DEBUG_MODE === 'true') {
+      logger.log(
+        `[LOGIN] Resultado da validação por data de nascimento: ${senhaValida}`
+      );
+    }
 
     if (!senhaValida) {
       try {
@@ -327,7 +329,7 @@ export async function validarSenhaFuncionario(
           return null; // válida via fallback
         } else {
           return NextResponse.json(
-            { error: 'Senha inválida' },
+            { error: 'CPF ou senha inválidos' },
             { status: 401 }
           );
         }

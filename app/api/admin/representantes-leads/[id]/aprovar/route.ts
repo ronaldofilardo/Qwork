@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import { mascararCPFParaLog } from '@/lib/cpf-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,7 +65,9 @@ export async function POST(
       [leadId, session.cpf]
     );
 
-    console.log(`[ADMIN] Lead ${leadId} aprovado por ${session.cpf}`);
+    console.log(
+      `[ADMIN] Lead ${leadId} aprovado por ${mascararCPFParaLog(session.cpf)}`
+    );
 
     return NextResponse.json({ success: true, status: 'verificado' });
   } catch (err: unknown) {

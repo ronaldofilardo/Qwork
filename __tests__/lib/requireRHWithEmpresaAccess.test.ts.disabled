@@ -1,0 +1,303 @@
+/**
+ * Testes para requireRHWithEmpresaAccess
+ * Validação de controle de acesso seguro entre clínicas e empresas
+ */
+
+import { query } from '@/lib/db'
+import * as session from '@/lib/session'
+
+// Mock das dependências
+jest.mock('@/lib/db')
+
+const mockQuery = query as jest.MockedFunction<typeof query>
+
+// Mock do getSession
+const mockGetSession = jest.spyOn(session, 'getSession')
+
+// Agora importa a função
+const { requireRHWithEmpresaAccess } = session
+
+describe('requireRHWithEmpresaAccess - Controle de Acesso Seguro', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetSession.mockResolvedValue(null)
+  })
+
+  describe('Acesso de Admin', () => {
+    it('deve permitir acesso total para perfil admin', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '11111111111',
+        nome: 'Admin Teste',
+        perfil: 'admin'
+      })
+
+      const result = await requireRHWithEmpresaAccess(1)
+
+      expect(result.perfil).toBe('admin')
+      expect(result.cpf).toBe('11111111111')
+      // Não deve consultar banco para admin
+      expect(mockQuery).not.toHaveBeenCalled()
+    })
+
+    it('deve permitir acesso total para perfil admin', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '11111111111',
+        nome: 'Admin Teste',
+        perfil: 'admin'
+      })
+
+      const result = await requireRHWithEmpresaAccess(1)
+
+      expect(result.perfil).toBe('admin')
+      expect(result.cpf).toBe('00000000000')
+      expect(mockQuery).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Validação Granular de Permissões RH', () => {
+    it('deve permitir acesso quando RH pertence à mesma clínica da empresa', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '22222222222',
+        nome: 'RH Teste',
+        perfil: 'rh'
+      })
+
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1
+        }) // Consulta empresa
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1
+        }) // Consulta RH
+
+      const result = await requireRHWithEmpresaAccess(10)
+
+      expect(result.perfil).toBe('rh')
+      expect(result.cpf).toBe('22222222222')
+      expect(mockQuery).toHaveBeenCalledTimes(2)
+      expect(mockQuery).toHaveBeenCalledWith(
+        'SELECT clinica_id FROM empresas_clientes WHERE id = $1',
+        [10]
+      )
+      expect(mockQuery).toHaveBeenCalledWith(
+        'SELECT clinica_id FROM funcionarios WHERE cpf = $1',
+        ['22222222222']
+      )
+    })
+
+    it('deve negar acesso quando RH pertence a clínica diferente', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '33333333333',
+        nome: 'RH Outra Clínica',
+        perfil: 'rh'
+      })
+
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1
+        }) // Empresa da clínica 1
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 2 }],
+          rowCount: 1
+        }) // RH da clínica 2
+
+      await expect(requireRHWithEmpresaAccess(10)).rejects.toThrow(
+        'Você não tem permissão para acessar esta empresa'
+      )
+
+      expect(mockQuery).toHaveBeenCalledTimes(2)
+    })
+
+    it('deve negar acesso para perfil funcionario', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '44444444444',
+        nome: 'Funcionário Teste',
+        perfil: 'funcionario'
+      })
+
+      await expect(requireRHWithEmpresaAccess(1)).rejects.toThrow(
+        'Apenas gestores RH ou administradores podem acessar empresas'
+      )
+
+      expect(mockQuery).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Validação de Dados', () => {
+    it('deve retornar erro quando empresa não existe', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '55555555555',
+        nome: 'RH Teste',
+        perfil: 'rh'
+      })
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0
+      })
+
+      await expect(requireRHWithEmpresaAccess(999)).rejects.toThrow(
+        'Empresa não encontrada'
+      )
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        'SELECT clinica_id FROM empresas_clientes WHERE id = $1',
+        [999]
+      )
+    })
+
+    it('deve retornar erro quando RH não existe', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '66666666666',
+        nome: 'RH Fantasma',
+        perfil: 'rh'
+      })
+
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1
+        })
+        .mockResolvedValueOnce({
+          rows: [],
+          rowCount: 0
+        })
+
+      await expect(requireRHWithEmpresaAccess(10)).rejects.toThrow(
+        'Gestor RH não encontrado'
+      )
+    })
+  })
+
+  describe('Relacionamento clinicas_empresas', () => {
+    it('deve validar relacionamento correto entre clínica e múltiplas empresas', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '77777777777',
+        nome: 'RH Multi-Empresa',
+        perfil: 'rh'
+      })
+
+      const empresasIds = [1, 2, 3]
+      for (const empresaId of empresasIds) {
+        mockQuery
+          .mockResolvedValueOnce({
+            rows: [{ clinica_id: 5 }],
+            rowCount: 1
+          })
+          .mockResolvedValueOnce({
+            rows: [{ clinica_id: 5 }],
+            rowCount: 1
+          })
+
+        const result = await requireRHWithEmpresaAccess(empresaId)
+        expect(result.cpf).toBe('77777777777')
+      }
+
+      expect(mockQuery).toHaveBeenCalledTimes(empresasIds.length * 2)
+    })
+
+    it('deve garantir isolamento entre clínicas diferentes', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '88888888888',
+        nome: 'RH Clínica A',
+        perfil: 'rh'
+      })
+
+      // Tentar acessar empresa de outra clínica
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 10 }],
+          rowCount: 1
+        }) // Empresa clínica 10
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 20 }],
+          rowCount: 1
+        }) // RH clínica 20
+
+      await expect(requireRHWithEmpresaAccess(100)).rejects.toThrow(
+        'Você não tem permissão para acessar esta empresa'
+      )
+    })
+  })
+
+  describe('Casos Edge', () => {
+    it('deve lidar com empresaId null/undefined', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '99999999999',
+        nome: 'RH Teste',
+        perfil: 'rh'
+      })
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0
+      })
+
+      await expect(requireRHWithEmpresaAccess(null as any)).rejects.toThrow()
+    })
+
+    it('deve lidar com erro de banco de dados', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '10101010101',
+        nome: 'RH Teste',
+        perfil: 'rh'
+      })
+
+      mockQuery.mockRejectedValueOnce(new Error('Database connection failed'))
+
+      await expect(requireRHWithEmpresaAccess(1)).rejects.toThrow(
+        'Database connection failed'
+      )
+    })
+
+    it('deve validar tipo de empresaId', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '12121212121',
+        nome: 'Admin Teste',
+        perfil: 'admin'
+      })
+
+      // Admin deve ter acesso mesmo com empresaId string
+      const result = await requireRHWithEmpresaAccess('999' as any)
+      expect(result.perfil).toBe('admin')
+    })
+  })
+
+  describe('Performance e Cache', () => {
+    it('deve fazer apenas consultas necessárias para admin', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '13131313131',
+        nome: 'Admin Performance',
+        perfil: 'admin'
+      })
+
+      await requireRHWithEmpresaAccess(1)
+      await requireRHWithEmpresaAccess(2)
+      await requireRHWithEmpresaAccess(3)
+
+      // Nenhuma consulta ao banco para admin
+      expect(mockQuery).toHaveBeenCalledTimes(0)
+    })
+
+    it('deve fazer duas consultas para RH (empresa + funcionário)', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '14141414141',
+        nome: 'RH Performance',
+        perfil: 'rh'
+      })
+
+      mockQuery
+        .mockResolvedValue({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1
+        })
+
+      await requireRHWithEmpresaAccess(1)
+
+      expect(mockQuery).toHaveBeenCalledTimes(2)
+    })
+  })
+})

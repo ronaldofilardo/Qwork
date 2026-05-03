@@ -5,7 +5,7 @@
 
 import { NextResponse } from 'next/server';
 
-jest.mock('@/lib/db');
+jest.mock('@/lib/db', () => ({ query: jest.fn() }));
 jest.mock('bcryptjs');
 jest.mock('@/lib/session');
 jest.mock('@/lib/auth/password-generator');

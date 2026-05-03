@@ -9,7 +9,7 @@
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/admin/reset-senha/route';
 
-jest.mock('@/lib/db');
+jest.mock('@/lib/db', () => ({ query: jest.fn(), transaction: jest.fn() }));
 jest.mock('@/lib/session');
 jest.mock('@/lib/audit', () => ({
   logAudit: jest.fn().mockResolvedValue(undefined),

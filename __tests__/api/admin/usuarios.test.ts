@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/admin/usuarios/route';
 import { PATCH } from '@/app/api/admin/usuarios/[id]/route';
 
-jest.mock('@/lib/db');
+jest.mock('@/lib/db', () => ({ query: jest.fn() }));
 jest.mock('@/lib/session');
 jest.mock('@/lib/audit', () => ({
   logAudit: jest.fn().mockResolvedValue(undefined),

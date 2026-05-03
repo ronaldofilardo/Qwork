@@ -8,7 +8,7 @@ import {
   aprovarEntidade,
   rejeitarEntidade,
   solicitarReanalise,
-} from '@/lib/db';
+} from '@/lib/db/entidade-status';
 import { logAudit, extractRequestInfo } from '@/lib/audit';
 import type { RequestContext } from '@/lib/application/handlers/api-handler';
 import { requireRole } from '@/lib/application/handlers/api-handler';

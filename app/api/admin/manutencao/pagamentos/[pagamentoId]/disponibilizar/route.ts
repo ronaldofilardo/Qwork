@@ -85,7 +85,7 @@ export async function POST(
           ) VALUES (
             'pagamento_pendente',
             'Taxa de manutenção disponível para pagamento',
-            $1, $2, 'gestor_entidade',
+            $1, $2, 'gestor',
             'alta', $3, $4
           )`,
           [

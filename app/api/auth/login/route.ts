@@ -250,7 +250,9 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json(
-        { error: 'Usuário inativo. Entre em contato com o administrador.' },
+        {
+          error: 'Acesso não autorizado. Entre em contato com o administrador.',
+        },
         { status: 403 }
       );
     }
@@ -407,7 +409,9 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json(
-        { error: 'Tomador inativo. Entre em contato com o administrador.' },
+        {
+          error: 'Acesso não autorizado. Entre em contato com o administrador.',
+        },
         { status: 403 }
       );
     }

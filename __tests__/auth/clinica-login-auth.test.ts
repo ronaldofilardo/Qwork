@@ -155,7 +155,7 @@ describe('Autenticação de Clínica - Perfil RH (Nova Arquitetura)', () => {
       const data = await response.json();
 
       expect(response.status).toBe(403);
-      expect(data.error).toContain('Usuário inativo');
+      expect(data.error).toContain('Acesso não autorizado');
       expect(mockCreateSession).not.toHaveBeenCalled();
     });
 

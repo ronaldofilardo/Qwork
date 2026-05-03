@@ -43,9 +43,12 @@ function hasMaintenanceBypass(request: NextRequest): boolean {
  */
 function isDeveloperIP(clientIP: string): boolean {
   // Whitelist de IPs de dev autorizados durante manutenção
-  const DEVELOPER_IPS = [
-    '177.146.190.175', // Ronaldo (seu IP público)
-  ];
+  // Configurar via env var MAINTENANCE_DEV_IPS (CSV): "1.2.3.4,5.6.7.8"
+  const envIPs = process.env.MAINTENANCE_DEV_IPS ?? '';
+  const DEVELOPER_IPS = envIPs
+    .split(',')
+    .map((ip) => ip.trim())
+    .filter(Boolean);
 
   return DEVELOPER_IPS.includes(clientIP);
 }
@@ -465,7 +468,7 @@ export function middleware(request: NextRequest) {
   );
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
+    "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
   );
 
   return response;

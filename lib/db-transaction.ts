@@ -9,7 +9,8 @@
  */
 
 import { getSession } from './session';
-import { getPool, isProduction, transaction as dbTransaction } from './db';
+import { getPool, isProduction } from './db/connection';
+import { transaction as dbTransaction } from './db';
 import { PoolClient } from 'pg';
 
 /**

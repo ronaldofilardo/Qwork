@@ -95,7 +95,7 @@ export async function POST(
       (lote.valor_por_funcionario || 0) * (lote.num_avaliacoes || 0);
 
     // Determinar destinatário
-    const destinatarioTipo = lote.entidade_id ? 'gestor_entidade' : 'clinica';
+    const destinatarioTipo = lote.entidade_id ? 'gestor' : 'clinica';
 
     // Buscar CPF do liberado_por (gestor que solicitou emissão)
     if (lote.liberado_por) {
