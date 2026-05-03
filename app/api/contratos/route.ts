@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
+import { criarContaResponsavel } from '@/lib/db/user-creation';
 import bcrypt from 'bcryptjs';
 import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
 import { notificarAceiteContrato } from '@/lib/email';
@@ -168,6 +169,25 @@ export async function POST(request: NextRequest) {
                 insertUserRes.rows[0]?.primeira_senha_alterada,
             }
           );
+        }
+
+        // Criar/atualizar senha na tabela apropriada (entidades_senhas ou clinicas_senhas)
+        // Isso garante que o login funcione na primeira tentativa após aceitar contrato
+        try {
+          await criarContaResponsavel(tomadorData);
+          console.log(
+            `[CONTRATOS] Conta responsável criada/atualizada para tomador ${updated.tomador_id}`,
+            {
+              cpf: cpfLogin,
+              tipo: tabelaTomador,
+            }
+          );
+        } catch (criarContaErr) {
+          console.error(
+            `[CONTRATOS] Erro ao criar conta responsável para tomador ${updated.tomador_id}:`,
+            criarContaErr
+          );
+          throw criarContaErr;
         }
 
         // Atualizar tomador para marcar como ativo
