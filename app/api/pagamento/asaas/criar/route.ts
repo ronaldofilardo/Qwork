@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { query } from '@/lib/db';
 import { asaasClient } from '@/lib/asaas/client';
 import { mapMetodoPagamentoToAsaasBillingType } from '@/lib/asaas/mappers';
+import { validarEmail } from '@/lib/validators';
 import {
   calcularSplit,
   montarSplitAsaas,
@@ -65,6 +66,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar se Asaas está configurado antes de qualquer operação no banco
+    if (!asaasClient.isConfigured()) {
+      return NextResponse.json(
+        { error: 'Gateway de pagamento não configurado. Contate o suporte.' },
+        { status: 503 }
+      );
+    }
+
     // Buscar dados do tomador
     const tomadorResult = await query(
       `SELECT t.id, t.nome, t.status, 
@@ -72,8 +81,10 @@ export async function POST(request: NextRequest) {
               t.tipo,
               e.cnpj as entidade_cnpj,
               e.email as entidade_email,
+              e.responsavel_email as entidade_responsavel_email,
               c.cnpj as clinica_cnpj,
-              c.email as clinica_email
+              c.email as clinica_email,
+              c.responsavel_email as clinica_responsavel_email
        FROM tomadores t
        LEFT JOIN entidades e ON t.tipo = 'entidade' AND e.id = t.id
        LEFT JOIN clinicas c ON t.tipo = 'clinica' AND c.id = t.id
@@ -90,14 +101,45 @@ export async function POST(request: NextRequest) {
 
     const tomador = tomadorResult.rows[0];
     const cnpj = tomador.entidade_cnpj || tomador.clinica_cnpj;
-    const email = tomador.entidade_email || tomador.clinica_email;
+
+    // Selecionar email válido com fallback para responsavel_email
+    let email: string | null = null;
+    const primaryEmail = tomador.entidade_email || tomador.clinica_email;
+    const responsavelEmail =
+      tomador.entidade_responsavel_email || tomador.clinica_responsavel_email;
+
+    const primaryValid = primaryEmail ? validarEmail(primaryEmail) : false;
+    const responsavelValid = responsavelEmail
+      ? validarEmail(responsavelEmail)
+      : false;
+
+    if (primaryValid) {
+      email = primaryEmail;
+    } else if (responsavelValid) {
+      email = responsavelEmail;
+    }
 
     if (!cnpj || !email) {
       return NextResponse.json(
-        { error: 'Dados incompletos do tomador (CNPJ ou email ausente)' },
+        {
+          error: !email
+            ? 'Email inválido ou ausente. Verifique os dados cadastrais do tomador.'
+            : 'CNPJ não encontrado para o tomador',
+        },
         { status: 400 }
       );
     }
+
+    // Log para diagnóstico - mostra validação de cada email
+    console.log(`[Asaas] Seleção de email:`, {
+      tomador_id: finalTomadorId,
+      tomador_nome: tomador.nome,
+      email_primario: primaryEmail,
+      email_primario_valido: primaryValid,
+      email_responsavel: responsavelEmail,
+      email_responsavel_valido: responsavelValid,
+      email_final: email,
+    });
 
     // Verificar isenção de pagamento
     const isentoRes = await query(
@@ -156,8 +198,25 @@ export async function POST(request: NextRequest) {
         ]);
       } catch {}
 
+      // Email inválido: retornar 400 com mensagem útil ao usuário
+      if (
+        err?.hasErrorCode?.('invalid_email') ||
+        err?.errors?.some?.((e: { code: string }) => e.code === 'invalid_email')
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'O email cadastrado no tomador é inválido. Atualize o cadastro antes de gerar o pagamento.',
+            code: 'invalid_email',
+          },
+          { status: 400 }
+        );
+      }
+
       return NextResponse.json(
-        { error: `Erro ao criar cliente: ${err.message}` },
+        {
+          error: `Erro ao criar cliente no gateway de pagamento: ${err.message}`,
+        },
         { status: 500 }
       );
     }

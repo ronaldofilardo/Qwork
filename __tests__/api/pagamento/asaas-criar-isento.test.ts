@@ -9,6 +9,7 @@ jest.mock('@/lib/db', () => ({
 
 jest.mock('@/lib/asaas/client', () => ({
   asaasClient: {
+    isConfigured: jest.fn(() => true),
     createCustomer: jest.fn(),
     createPayment: jest.fn(),
   },

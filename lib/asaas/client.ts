@@ -21,15 +21,8 @@ import type {
 } from './subconta';
 
 // Configuração da API Asaas via variáveis de ambiente
-const ASAAS_API_URL =
-  process.env.ASAAS_API_URL || 'https://api-sandbox.asaas.com/v3';
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY;
-
-if (!ASAAS_API_KEY) {
-  console.warn(
-    '[Asaas] ASAAS_API_KEY não configurada. Pagamentos do Asaas não funcionarão.'
-  );
-}
+// NOTA: Não lemos em nível de módulo para evitar que o dotenv não tenha carregado ainda
+// As variáveis são lidas dinamicamente em tempo de execução
 
 /**
  * Erro customizado para falhas na API Asaas
@@ -43,18 +36,43 @@ export class AsaasApiError extends Error {
     super(message);
     this.name = 'AsaasApiError';
   }
+
+  hasErrorCode(code: string): boolean {
+    return this.errors?.some((e) => e.code === code) ?? false;
+  }
 }
 
 /**
  * Cliente HTTP para comunicação com API Asaas
  */
 class AsaasClient {
-  private baseUrl: string;
-  private apiKey: string;
+  /**
+   * Lê a URL da API em tempo de execução para garantir que o dotenv já foi processado
+   */
+  private getBaseUrl(): string {
+    return process.env.ASAAS_API_URL || 'https://api-sandbox.asaas.com/v3';
+  }
 
   constructor() {
-    this.baseUrl = ASAAS_API_URL;
-    this.apiKey = ASAAS_API_KEY || '';
+    // Vazio — todas as configurações são lidas dinamicamente
+  }
+
+  /** Lê a API key em tempo de execução para garantir que o dotenv já foi processado */
+  private getApiKey(): string {
+    return process.env.ASAAS_API_KEY || '';
+  }
+
+  /**
+   * Retorna true se a ASAAS_API_KEY está configurada
+   */
+  isConfigured(): boolean {
+    const key = this.getApiKey();
+    if (!key) {
+      console.warn(
+        '[Asaas] ASAAS_API_KEY não configurada. Pagamentos do Asaas não funcionarão.'
+      );
+    }
+    return Boolean(key);
   }
 
   /**
@@ -64,21 +82,22 @@ class AsaasClient {
     endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
-    if (!this.apiKey) {
+    const apiKey = this.getApiKey();
+    if (!apiKey) {
       throw new AsaasApiError(
         'ASAAS_API_KEY não configurada. Configure a variável de ambiente.',
         500
       );
     }
 
-    const url = `${this.baseUrl}${endpoint}`;
+    const url = `${this.getBaseUrl()}${endpoint}`;
 
     try {
       const response = await fetch(url, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
-          access_token: this.apiKey,
+          access_token: apiKey,
           'User-Agent': 'QWork/1.0',
           ...options.headers,
         },

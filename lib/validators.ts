@@ -138,8 +138,19 @@ export function formatarCNPJ(cnpj: string): string {
  * Valida formato de email
  */
 export function validarEmail(email: string): boolean {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
+  // RFC 5322 simplificado: rejeita caracteres especiais (#, !, &, etc)
+  // Local part: letras, números, ponto, hífen, underscore, percentual, mais
+  // Domain: letras, números, ponto, hífen
+  // TLD: 2+ letras
+  const regex = /^[a-zA-Z0-9._%-+]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const isValid = regex.test(email);
+
+  // Debug: log em caso de validação falhar
+  if (!isValid && process.env.DEBUG_EMAIL_VALIDATION) {
+    console.log(`[validarEmail] REJEITADO: ${email}`);
+  }
+
+  return isValid;
 }
 
 /**

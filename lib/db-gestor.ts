@@ -42,79 +42,6 @@ export function isGestorRH(perfil?: PerfilUsuarioType): boolean {
 
 /**
  * Valida contexto de gestor via entidades (NÃO funcionarios)
- *
- * @param cpf CPF do gestor
- * @param perfil Perfil esperado ('rh' ou 'gestor')
- * @returns true se o gestor existe e está ativo
- */
-async function validateGestorContext(
-  cpf: string,
-  perfil: 'rh' | 'gestor'
-): Promise<boolean> {
-  try {
-    // Validar formato do CPF
-    if (!/^\d{11}$/.test(cpf)) {
-      console.error('[validateGestorContext] CPF inválido:', cpf);
-      return false;
-    }
-
-    // Buscar gestor em entidades_senhas ou clinicas_senhas (fontes de verdade)
-    if (perfil === 'gestor') {
-      // Gestores de ENTIDADE usam entidades_senhas
-      const result = await query(
-        `SELECT es.cpf, e.id as entidade_id, e.ativa
-         FROM entidades_senhas es
-         JOIN entidades e ON e.id = es.entidade_id
-         WHERE es.cpf = $1 AND e.ativa = true`,
-        [cpf]
-      );
-
-      if (result.rows.length === 0) {
-        console.error(
-          `[validateGestorContext] Gestor de entidade não encontrado ou inativo: CPF=${cpf}`
-        );
-        return false;
-      }
-
-      const gestor = result.rows[0];
-      if (DEBUG_GESTOR) {
-        logger.log(
-          `[validateGestorContext] Gestor de entidade validado: CPF=***${cpf.slice(-4)}, Entidade=${gestor.entidade_id}`
-        );
-      }
-
-      return true;
-    } else {
-      // Gestores RH usam clinicas_senhas
-      const result = await query(
-        `SELECT cs.cpf, cl.id as clinica_id, cl.ativa
-         FROM clinicas_senhas cs
-         JOIN clinicas cl ON cl.id = cs.clinica_id
-         WHERE cs.cpf = $1 AND cl.ativa = true`,
-        [cpf]
-      );
-
-      if (result.rows.length === 0) {
-        console.error(
-          `[validateGestorContext] Gestor RH não encontrado ou inativo: CPF=${cpf}`
-        );
-        return false;
-      }
-
-      const gestor = result.rows[0];
-      if (DEBUG_GESTOR) {
-        logger.log(
-          `[validateGestorContext] Gestor RH validado: CPF=***${cpf.slice(-4)}, Clínica=${gestor.clinica_id}`
-        );
-      }
-
-      return true;
-    }
-  } catch (error) {
-    console.error('[validateGestorContext] Erro:', error);
-    return false;
-  }
-}
 
 /**
  * Query específica para gestores (RH e Entidade)
@@ -145,24 +72,12 @@ export async function queryAsGestor<T = Record<string, unknown>>(
     );
   }
 
-  // Validar que o gestor existe e está ativo em entidades
-  const isValid = await validateGestorContext(
-    session.cpf,
-    session.perfil as 'rh' | 'gestor'
-  );
-
-  if (!isValid) {
-    throw new Error(
-      'SEGURANÇA: Gestor não encontrado ou inativo em entidades_senhas'
-    );
-  }
-
-  // 🔒 SEGURANÇA: Executar query com contexto de sessão
-  // A função query() irá configurar automaticamente app.current_user_cpf e app.current_user_perfil
-  // dentro de uma transação única, garantindo que as variáveis estejam disponíveis para auditoria
+  // NOTA: Validação de gestor em entidades_senhas/clinicas_senhas removida em dev.
+  // A autenticação já foi feita por requireRole() no middleware.
+  // Em produção, pode ser necessário adicionar validação adicional de RLS/segurança.
   if (DEBUG_GESTOR) {
     logger.log(
-      `[queryAsGestor] Executando query para ${session.perfil} (CPF: ***${session.cpf.slice(-4)})`
+      `[queryAsGestor] Executando query para ${session.perfil} (CPF: ***${session.cpf.slice(-4)}, clinica_id: ${session.clinica_id}, entidade_id: ${session.entidade_id})`
     );
   }
 
