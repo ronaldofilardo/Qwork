@@ -45,7 +45,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
   });
 
   describe('POST - regenerar_link', () => {
-    it('deve regenerar link com sucesso para plano fixo', async () => {
+    it('deve regenerar link com sucesso', async () => {
       const contratanteId = 1;
 
       // Mock do getContratanteById
@@ -53,7 +53,6 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         id: contratanteId,
         nome: 'Clínica Teste',
         status: 'aguardando_pagamento',
-        plano_tipo: 'fixo',
         plano_id: 1,
         numero_funcionarios_estimado: 10,
         pagamento_confirmado: false,
@@ -74,8 +73,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
             numero_funcionarios_estimado: 10,
             ativa: false,
             pagamento_confirmado: false,
-            plano_nome: 'Plano Fixo Básico',
-            plano_tipo: 'fixo',
+            plano_nome: 'Plano Padrão',
             plano_preco: 20.0,
             plano_caracteristicas: { limite_funcionarios: 50 },
           },
@@ -128,7 +126,6 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         id: contratanteId,
         nome: 'Clínica Teste',
         status: 'aprovado', // Status diferente
-        plano_tipo: 'fixo',
         plano_id: 1,
         numero_funcionarios_estimado: 10,
         pagamento_confirmado: true,
@@ -164,7 +161,6 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         id: contratanteId,
         nome: 'Clínica Teste',
         status: 'aguardando_pagamento',
-        plano_tipo: 'fixo',
         plano_id: 1,
         numero_funcionarios_estimado: 10,
         pagamento_confirmado: false,
@@ -210,7 +206,6 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         id: contratanteId,
         nome: 'Clínica Teste',
         status: 'aguardando_pagamento',
-        plano_tipo: 'fixo',
         plano_id: 1,
         numero_funcionarios_estimado: 10,
         pagamento_confirmado: false,

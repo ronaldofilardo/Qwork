@@ -219,7 +219,7 @@ export async function handleRepresentanteLogin(
       acao: 'login_sucesso',
       usuario_cpf: cpf,
       usuario_perfil: 'representante',
-      metadados: { representante_id: rep.id, tipo_pessoa: rep.tipo_pessoa },
+      metadados: { representante_id: rep.id },
       ...contextoRequisicao,
     });
   } catch (err) {

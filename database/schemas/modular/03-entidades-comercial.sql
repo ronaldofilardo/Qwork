@@ -1834,7 +1834,7 @@ ALTER SEQUENCE public.leads_representante_id_seq OWNED BY public.leads_represent
 
 CREATE TABLE public.representantes (
     id integer NOT NULL,
-    tipo_pessoa public.tipo_pessoa_representante DEFAULT 'pf'::public.tipo_pessoa_representante NOT NULL,
+    tipo_pessoa public.tipo_pessoa_representante DEFAULT 'pj'::public.tipo_pessoa_representante NOT NULL,
     nome character varying(150) NOT NULL,
     email character varying(150) NOT NULL,
     telefone character varying(20) NOT NULL,

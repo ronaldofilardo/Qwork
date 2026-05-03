@@ -165,24 +165,11 @@ COMMENT ON COLUMN contratantes_senhas.cpf IS 'CPF do responsavel_cpf em contrata
 COMMENT ON COLUMN contratantes_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
 
 -- ============================================================================
--- 4. CRIAR ENUM tipo_plano
--- ============================================================================
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_plano') THEN
-        CREATE TYPE tipo_plano AS ENUM ('personalizado', 'fixo');
-        RAISE NOTICE 'Enum tipo_plano criado';
-    ELSE
-        RAISE NOTICE 'Enum tipo_plano já existe';
-    END IF;
-END $$;
-
--- ============================================================================
--- 5. CRIAR TABELA planos
+-- 4. CRIAR TABELA planos
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS planos (
     id SERIAL PRIMARY KEY,
-    tipo tipo_plano NOT NULL,
+    tipo VARCHAR(20) NOT NULL,
     nome VARCHAR(100) NOT NULL,
     descricao TEXT,
     valor_por_funcionario DECIMAL(10,2), -- Para personalizado
@@ -211,13 +198,9 @@ BEGIN
 END $$;
 
 -- Inserir planos padrão (apenas se não existirem)
-INSERT INTO planos (tipo, nome, descricao, preco, limite_funcionarios)
-SELECT 'fixo', 'Plano Fixo Básico', 'Até 50 funcionários', 1224.00, 50
-WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Plano Fixo Básico');
-
-INSERT INTO planos (tipo, nome, descricao, preco, limite_funcionarios)
-SELECT 'fixo', 'Plano Fixo Premium', 'Até 200 funcionários', 3999.99, 200
-WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Plano Fixo Premium');
+INSERT INTO planos (tipo, nome, descricao, preco)
+SELECT 'padrao', 'Plano Padrão', 'Plano padrão do sistema', 0.00
+WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Plano Padrão');
 
 -- ============================================================================
 -- 6. CRIAR TABELA contratos_planos
@@ -229,7 +212,6 @@ CREATE TABLE IF NOT EXISTS contratos_planos (
     contratante_id INTEGER REFERENCES contratantes(id),
     tipo_contratante VARCHAR(20) NOT NULL CHECK (tipo_contratante IN ('clinica', 'entidade')),
     
-    -- Para plano personalizado
     valor_personalizado_por_funcionario DECIMAL(10,2),
     
     -- Controle de vigência

@@ -104,8 +104,7 @@ CREATE TABLE mfa_codes (
 
 **Planos padrão:**
 
-- Plano Fixo Básico: R$ 1.224,00 (até 50 funcionários)
-- Plano Fixo Premium: R$ 3.999,99 (até 200 funcionários)
+- Plano Padrão: R$ 0,00 (modelo genérico)
 
 **tomador entidade para testes:**
 

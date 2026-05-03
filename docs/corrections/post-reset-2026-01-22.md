@@ -24,7 +24,7 @@
 ### 4. Tabela `planos`
 
 - ✅ Corrigida - planos fixos 1, 2, 3 criados
-- ✅ Plano personalizado ID 4 existe
+- ✅ Plano padrão ID 4 existe
 
 ### 5. Tabela `entidades_senhas`
 

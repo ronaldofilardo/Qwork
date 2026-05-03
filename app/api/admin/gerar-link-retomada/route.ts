@@ -6,7 +6,7 @@ import { getBaseUrl } from '@/lib/utils/get-base-url';
 /**
  * POST /api/admin/gerar-link-retomada
  *
- * Gera link de retomada de pagamento para plano fixo
+ * Gera link de retomada de pagamento
  * Body:
  * - tomador_id: ID do tomador
  * - contrato_id: ID do contrato

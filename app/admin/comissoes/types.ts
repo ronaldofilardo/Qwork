@@ -5,7 +5,6 @@ export interface Comissao {
   representante_id: number;
   representante_nome: string;
   representante_email: string;
-  representante_tipo_pessoa: string;
   entidade_nome: string;
   numero_laudo: string | null;
   lote_pagamento_id: number | null;

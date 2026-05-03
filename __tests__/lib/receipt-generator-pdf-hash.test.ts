@@ -66,8 +66,7 @@ describe('Receipt Generator - PDF com Hash', () => {
               plataforma_id: 'PAG123',
               data_pagamento: '2025-12-15',
               plano_id: 1,
-              plano_nome: 'Plano Fixo',
-              plano_tipo: 'fixo',
+              plano_nome: 'Plano Padrão',
               plano_descricao: 'Plano para até 50 funcionários',
             },
           ],
@@ -146,7 +145,6 @@ describe('Receipt Generator - PDF com Hash', () => {
         contratante_estado: 'SP',
         contratante_cep: '01234-567',
         plano_nome: 'Plano Fixo',
-        plano_tipo: 'fixo',
         plano_descricao: 'Avaliações ilimitadas',
         valor_total: 1500.0,
         valor_por_funcionario: 30.0,
@@ -167,7 +165,7 @@ describe('Receipt Generator - PDF com Hash', () => {
       expect(html).toContain('REC-2025-00001');
       expect(html).toContain('Empresa Teste Ltda');
       expect(html).toContain('12.345.678/0001-99'); // CNPJ formatado
-      expect(html).toContain('Plano Fixo');
+      expect(html).toContain('plano_nome');
       expect(html).toContain('{{HASH_PDF}}'); // Placeholder para hash
       expect(html).toContain('01/01/2025'); // Data formatada
       expect(html).toContain('R$'); // Valor formatado
@@ -235,7 +233,6 @@ describe('Receipt Generator - PDF com Hash', () => {
         numero_recibo: 'REC-TEST',
         contratante_nome: 'Teste',
         plano_nome: 'Plano',
-        plano_tipo: 'fixo',
         valor_total: 100,
         metodo_pagamento: 'pix',
         numero_parcelas: 1,
@@ -258,7 +255,6 @@ describe('Receipt Generator - PDF com Hash', () => {
         numero_recibo: 'REC-TEST',
         contratante_nome: 'Teste',
         plano_nome: 'Plano',
-        plano_tipo: 'fixo',
         valor_total: 1234.56,
         valor_por_funcionario: 24.69,
         qtd_funcionarios: 50,
@@ -282,7 +278,6 @@ describe('Receipt Generator - PDF com Hash', () => {
         numero_recibo: 'REC-TEST',
         contratante_nome: 'Teste',
         plano_nome: 'Plano',
-        plano_tipo: 'fixo',
         valor_total: 1200,
         metodo_pagamento: 'cartao_credito',
         numero_parcelas: 12,

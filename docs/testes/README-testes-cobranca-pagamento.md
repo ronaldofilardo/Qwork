@@ -43,28 +43,7 @@
 
 ---
 
-#### 3. **Geração de Link para Plano Fixo**
-
-📁 `__tests__/api/gerar-link-plano-fixo.test.ts`
-
-**Cobertura:**
-
-- ✓ Erro 400 sem campos obrigatórios
-- ✓ Erro 404 para plano inexistente
-- ✓ Erro 400 quando excede limite de funcionários
-- ✓ Cria novo contrato quando não existe
-- ✓ Usa contrato existente quando fornecido
-- ✓ Gera link com `retry=true`
-- ✓ Atualiza status do contratante para `pendente_pagamento`
-- ✓ Calcula valor correto baseado no plano
-- ✓ Cria contrato com status `pendente_pagamento`
-- ✓ Inclui mensagem apropriada
-
-**Objetivo:** Testar sistema de geração de link de pagamento para retry em planos fixos.
-
----
-
-#### 4. **Dashboard de Cobrança**
+#### 3. **Dashboard de Cobrança**
 
 📁 `__tests__/api/cobranca-dashboard.test.ts`
 
@@ -121,7 +100,7 @@
 
 **Cobertura do Fluxo Principal:**
 
-1. ✓ Cadastro inicial com plano fixo
+1. ✓ Cadastro inicial
 2. ✓ Simulação de falha no pagamento
 3. ✓ Verificação de status (pagamento pendente)
 4. ✓ Geração de link de retry

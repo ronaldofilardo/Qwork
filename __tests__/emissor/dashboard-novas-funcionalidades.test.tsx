@@ -8,11 +8,9 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import EmissorDashboard from '@/app/emissor/page';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
-import { useEmergenciaLaudo } from '@/hooks/useEmergenciaLaudo';
 
 // Mocks
 jest.mock('@/hooks/useReprocessarLaudo');
-jest.mock('@/hooks/useEmergenciaLaudo');
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: jest.fn(),
@@ -27,9 +25,6 @@ jest.mock('react-hot-toast', () => ({
 const mockUseReprocessarLaudo = useReprocessarLaudo as jest.MockedFunction<
   typeof useReprocessarLaudo
 >;
-const mockUseEmergenciaLaudo = useEmergenciaLaudo as jest.MockedFunction<
-  typeof useEmergenciaLaudo
->;
 
 describe('EmissorDashboard - Novas Funcionalidades', () => {
   let queryClient: QueryClient;
@@ -43,15 +38,6 @@ describe('EmissorDashboard - Novas Funcionalidades', () => {
 
     // Mock dos hooks
     mockUseReprocessarLaudo.mockReturnValue({
-      mutate: jest.fn(),
-      isPending: false,
-      isError: false,
-      isSuccess: false,
-      error: null,
-      data: null,
-    });
-
-    mockUseEmergenciaLaudo.mockReturnValue({
       mutate: jest.fn(),
       isPending: false,
       isError: false,

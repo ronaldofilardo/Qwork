@@ -31,24 +31,21 @@ describe('getContratantesPendentes', () => {
           nome: 'Clínica Pendente',
           status: 'pendente',
           tipo: 'clinica',
-          plano_tipo: 'fixo',
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
         },
         {
           id: 2,
           nome: 'Empresa Reanálise',
           status: 'em_reanalise',
           tipo: 'entidade',
-          plano_tipo: 'personalizado',
-          plano_nome: 'Plano Personalizado',
+          plano_nome: 'Plano Padrão',
         },
         {
           id: 3,
           nome: 'Clínica Aguardando',
           status: 'aguardando_pagamento',
           tipo: 'clinica',
-          plano_tipo: 'fixo',
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
         },
       ];
 

@@ -17,7 +17,7 @@ beforeEach(() => {
               {
                 id: 1,
                 nome: 'Plano Teste',
-                descricao: 'Plano fixo',
+                descricao: 'Plano padrão',
                 preco: 100,
                 tipo: 'fixo',
                 caracteristicas: { limite_funcionarios: 10, parcelas_max: 2 },

@@ -37,7 +37,6 @@ describe('POST /api/pagamento/iniciar - fallback quando tabela contratos ausente
               nome: 'Empresa X',
               status: 'aprovado',
               plano_nome: 'Plano Teste',
-              plano_tipo: 'fixo',
               numero_funcionarios: 100,
               contrato_id: null,
               valor_unitario: 20.0,
@@ -73,3 +72,4 @@ describe('POST /api/pagamento/iniciar - fallback quando tabela contratos ausente
     expect(body.error).toBe('Contrato deve ser aceito antes do pagamento');
   });
 });
+

@@ -62,10 +62,6 @@ switch (option) {
         'Verificação de Pagamento'
       ) &&
       runCommand(
-        'pnpm test __tests__/api/gerar-link-plano-fixo.test.ts --forceExit',
-        'Geração de Link Plano Fixo'
-      ) &&
-      runCommand(
         'pnpm test __tests__/api/cobranca-dashboard.test.ts --forceExit',
         'Dashboard de Cobrança'
       ) &&
@@ -98,8 +94,8 @@ switch (option) {
   case 'link':
   case 'gerar':
     success = runCommand(
-      'pnpm test __tests__/api/gerar-link-plano-fixo.test.ts --forceExit',
-      'Geração de Link Plano Fixo'
+      'pnpm test __tests__/api/cobranca-dashboard.test.ts --forceExit',
+      'Dashboard de Cobrança'
     );
     break;
 

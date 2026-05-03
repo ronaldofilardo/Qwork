@@ -126,7 +126,7 @@ export default function MinhasVendasPage() {
       href: '/representante/minhas-vendas/comissoes',
       icon: DollarSign,
       titulo: 'Comissões',
-      descricao: 'NF/RPA e pagamentos das suas vendas diretas',
+      descricao: 'Pagamentos das suas vendas diretas',
       cor: 'text-purple-700',
       bg: 'bg-purple-50',
       borderCor: 'border-purple-200',

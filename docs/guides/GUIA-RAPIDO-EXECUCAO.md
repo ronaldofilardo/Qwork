@@ -75,15 +75,14 @@ SELECT chave_traducao, idioma FROM notificacoes_traducoes;
 ### 4️⃣ Rodar Testes
 
 ```powershell
-# Testes unitários do PlanoPersonalizadoService
-pnpm test __tests__/lib/plano-personalizado-service.test.ts
-
-# Testes de integração
-$env:NODE_ENV="test"
-pnpm test __tests__/integration/plano-personalizado-fluxo.test.ts
-
-# Todos os testes
+# Testes unitários
 pnpm test
+
+# Testes com coverage
+pnpm test -- --coverage
+
+# Testes E2E
+pnpm test:e2e
 ```
 
 ---
@@ -119,7 +118,7 @@ GROUP BY idioma;
 1. Colunas: `destinatario_cpf` (text), `destinatario_tipo` (text)
 2. 0 registros (histórico vazio inicialmente)
 3. 0 registros (configurações criadas sob demanda)
-4. 1 registro (template padrão de plano personalizado)
+4. 1 registro (template padrão)
 5. pt_BR: 3, en_US: 3, es_ES: 3
 
 ---

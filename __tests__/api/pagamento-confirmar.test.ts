@@ -22,7 +22,7 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
   // Cenário de confirmação com token personalizado removido (testes do fluxo personalizado excluídos).
 
   describe('Cenário 2: Confirmação com tomador_id', () => {
-    it('deve confirmar pagamento para plano fixo', async () => {
+    it('deve confirmar pagamento', async () => {
       mockPOST.mockResolvedValueOnce({
         status: 200,
         json: async () => ({
@@ -50,8 +50,6 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
       expect(data.show_receipt_info).toBe(true);
       expect(data.acesso_liberado).toBe(true);
     });
-
-    // Teste de confirmação para plano personalizado removido (parte do fluxo de geração de link → pagamento → liberação).
   });
 
   describe('Cenário 3: Confirmação com parcelamento', () => {

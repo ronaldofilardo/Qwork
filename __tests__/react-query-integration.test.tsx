@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClientProvider } from '@/components/QueryClientProvider';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
-import { useEmergenciaLaudo } from '@/hooks/useEmergenciaLaudo';
 
 // Mock do fetch para simular chamadas de API
 global.fetch = jest.fn();
@@ -17,32 +16,17 @@ jest.mock('react-hot-toast', () => ({
 // Componente de teste que usa os hooks
 const TestComponent = () => {
   const reprocessarMutation = useReprocessarLaudo();
-  const emergenciaMutation = useEmergenciaLaudo();
 
   return (
     <div>
       <div data-testid="reprocessar-status">
         {reprocessarMutation.isPending ? 'Loading' : 'Ready'}
       </div>
-      <div data-testid="emergencia-status">
-        {emergenciaMutation.isPending ? 'Loading' : 'Ready'}
-      </div>
       <button
         data-testid="reprocessar-btn"
         onClick={() => reprocessarMutation.mutate({ loteId: 1 })}
       >
         Reprocessar
-      </button>
-      <button
-        data-testid="emergencia-btn"
-        onClick={() =>
-          emergenciaMutation.mutate({
-            loteId: 1,
-            motivo: 'Teste de emergência',
-          })
-        }
-      >
-        Emergência
       </button>
     </div>
   );
@@ -68,8 +52,6 @@ describe('React Query Integration', () => {
     }).not.toThrow();
 
     expect(screen.getByTestId('reprocessar-status')).toHaveTextContent('Ready');
-    // emergency assertions intentionally skipped per request (emissão emergencial será tratada depois)
-    // expect(screen.getByTestId('emergencia-status')).toHaveTextContent('Ready');
   });
 
   it('deve falhar ao usar hooks fora do QueryClientProvider', () => {

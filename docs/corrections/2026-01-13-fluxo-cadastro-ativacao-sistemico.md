@@ -202,7 +202,7 @@ Arquivo: [**tests**/integration/fluxo-cadastro-pagamento-ativacao.test.ts](__tes
 
 **Cobertura:**
 
-1. ✅ Criação de tomador com plano fixo
+1. ✅ Criação de tomador
 2. ✅ Geração e aceite de contrato
 3. ✅ Inicialização de pagamento
 4. ✅ Confirmação de pagamento
@@ -238,7 +238,7 @@ pnpm test __tests__/integration/fluxo-cadastro-pagamento-ativacao.test.ts
 Para testar manualmente um novo cadastro:
 
 ```bash
-# 1. Criar cadastro com plano fixo
+# 1. Criar cadastro
 POST /api/cadastro/tomador
 {
   "tipo": "entidade",

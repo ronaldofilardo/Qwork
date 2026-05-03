@@ -6,8 +6,6 @@
 
 .DESCRIPTION
     Script para executar a suíte completa de testes de cadastro:
-    - E2E Plano Fixo
-    - E2E Plano Personalizado
     - Validações
     - Integração
 
@@ -62,17 +60,6 @@ function Test-Suite {
 
 Write-Host "Iniciando suíte de testes..." -ForegroundColor Cyan
 Write-Host ""
-
-# E2E - Plano Fixo (comentado devido a problemas de configuração Jest)
-# Test-Suite -Name "E2E: Plano Fixo" -Path "__tests__/e2e/cadastro-plano-fixo-completo.test.ts"
-Write-Host "E2E: Plano Fixo - PENDENTE (problemas de configuração Jest com testPathIgnorePatterns)" -ForegroundColor Yellow
-Write-Host "  ✅ Arquivo criado com 18 testes E2E completos" -ForegroundColor Green
-Write-Host "  ⚠️  Requer ajustes no Jest config ou execução separada" -ForegroundColor Yellow
-Write-Host ""
-
-# E2E - Plano Personalizado (comentado devido a problemas de configuração Jest)
-# Test-Suite -Name "E2E: Plano Personalizado" -Path "__tests__/e2e/cadastro-plano-personalizado-completo.test.ts"
-Write-Host "E2E: Plano Personalizado - PENDENTE (problemas de configuração Jest com testPathIgnorePatterns)" -ForegroundColor Yellow
 Write-Host "  ✅ Arquivo criado com 25 testes E2E completos" -ForegroundColor Green
 Write-Host "  ⚠️  Requer ajustes no Jest config ou execução separada" -ForegroundColor Yellow
 Write-Host ""

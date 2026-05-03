@@ -4,7 +4,7 @@
  * O representante deve ver todas as comissões que lhe foram atribuídas,
  * independentemente da origem do lead (direto, vendedor ou admin).
  *
- * Upload de NF/RPA: reutiliza /api/representante/comissoes/[id]/nf (sem duplicação).
+ * Rota de comissões das vendas diretas do representante.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';

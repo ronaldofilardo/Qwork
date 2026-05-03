@@ -42,7 +42,6 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
               contratante_nome: 'Empresa Teste',
               plano_id: 1,
               plano_nome: 'Plano Básico',
-              plano_tipo: 'fixo',
               numero_funcionarios: 10,
               valor_por_funcionario: 20,
               valor_total: 200,
@@ -144,3 +143,4 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
     });
   });
 });
+

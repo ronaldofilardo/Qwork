@@ -51,7 +51,7 @@
 12. ✅ 023 - sistema de notificações
 13. ✅ 041 - recibos table
 14. ✅ 042 - PDF BYTEA in recibos
-15. ✅ migration-017 - pagamentos plano fixo
+15. ✅ migration-017 - pagamentos de contratos
 
 ## ✅ Ajustes de Código
 

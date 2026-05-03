@@ -96,50 +96,6 @@ describe('useCadastroTomador', () => {
     expect(res.redirect).toBe('/sucesso-cadastro?id=123&contrato_id=999');
   });
 
-  test('permite definir código de representante durante confirmacao', async () => {
-    const ref: any = { current: null };
-
-    const fakeFetcher = makeFetcher({
-      cadastro: { id: 123, contrato_id: 999 },
-    });
-
-    render(
-      <Harness
-        apiFetcher={fakeFetcher}
-        resultRef={ref}
-        initialTipo="entidade"
-      />
-    );
-
-    act(() => {
-      ref.current.setCodigoRepresentante('REP-ABC123');
-    });
-
-    expect(ref.current.codigoRepresentante).toBe('REP-ABC123');
-  });
-
-  test('permite marcar semIndicacao para pular representante', async () => {
-    const ref: any = { current: null };
-
-    const fakeFetcher = makeFetcher({
-      cadastro: { id: 123, contrato_id: 999 },
-    });
-
-    render(
-      <Harness
-        apiFetcher={fakeFetcher}
-        resultRef={ref}
-        initialTipo="entidade"
-      />
-    );
-
-    act(() => {
-      ref.current.setSemIndicacao(true);
-    });
-
-    expect(ref.current.semIndicacao).toBe(true);
-  });
-
   test('validação de CNPJ rejeita inválido', async () => {
     const ref: any = { current: null };
 

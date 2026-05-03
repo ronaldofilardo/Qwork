@@ -26,7 +26,7 @@ O sistema agora possui um fluxo completo de contratação automatizado com **sep
 ### 🎯 Fluxo de Contratação
 
 1. **Cadastro** - Formulário com dados da empresa e responsável
-2. **Seleção de Plano** - Plano Fixo ou Personalizado
+2. **Seleção de Plano** - Plano Padrão
 3. **Geração de Contrato Neutro** - Focado em prestação de serviço (sem valores)
 4. **Aceite Digital** - Com registro de IP e timestamp
 5. **Pagamento** - PIX, Boleto ou Cartão (simulado)
@@ -57,7 +57,7 @@ O sistema agora separa claramente:
 ### 📚 Documentação Completa
 
 - [Fluxo de Contratação](guides/FLUXO-CONTRATACAO.md) - Fluxo completo (Contract-First)
-- [Fluxo de Cadastro de Tomadores](guides/FLUXO-CADASTRO-TOMADORES.md) - Plano Fixo e Personalizado
+- [Fluxo de Cadastro de Tomadores](guides/FLUXO-CADASTRO-TOMADORES.md) - Tomadores
 
 ### 📂 Índice de Documentação
 

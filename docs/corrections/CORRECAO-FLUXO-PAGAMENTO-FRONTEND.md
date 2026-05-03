@@ -166,7 +166,7 @@ if (process.env.NODE_ENV === 'production') {
 
 ## 🧪 Como Testar
 
-### 1. Cadastro + Plano Fixo
+### 1. Cadastro + Modelo de Pagamento
 
 ```bash
 # Deve criar empresa com status='aguardando_pagamento'

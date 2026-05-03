@@ -41,7 +41,7 @@ O **Representante Comercial** é o profissional parceiro do QWork responsável p
 ```
 Landing Page → Código Gerado → Análise de Documentos → Apto →
 Criar Leads → Cliente Cadastrado → Laudo Emitido → Comissão Gerada →
-Enviar NF/RPA → Pagamento Realizado
+Enviar NF → Pagamento Realizado
 ```
 
 ---
@@ -393,7 +393,7 @@ As comissões são geradas toda vez que um laudo é emitido para um cliente dent
 | -------------------- | ------------------------------------------------------ | -------- |
 | **Retida**           | Aguardando aprovação do seu cadastro (status não-Apto) | Cinza    |
 | **Aguardando NF**    | Pronto para você enviar Nota Fiscal ou RPA             | Azul     |
-| **NF em Análise**    | NF/RPA enviada, aguardando aprovação do time QWork     | Índigo   |
+| **NF em Análise**    | NF enviada, aguardando aprovação do time QWork         | Índigo   |
 | **Congelada**        | Temporariamente suspensa por questão nas contas        | Laranja  |
 | **Aguardando Admin** | Em análise especial pela equipe                        | Amarelo  |
 | **Liberada**         | NF aprovada, pronto para pagamento                     | Roxo     |
@@ -404,12 +404,12 @@ As comissões são geradas toda vez que um laudo é emitido para um cliente dent
 
 > 📅 **ATENÇÃO — PRAZO CRÍTICO**
 >
-> O pagamento ocorre mensalmente. Para receber no **dia 15** do mês, você precisa enviar sua NF/RPA até o **dia 5 do mesmo mês às 18h (horário de São Paulo)**.
+> O pagamento ocorre mensalmente. Para receber no **dia 15** do mês, você precisa enviar sua NF até o **dia 5 do mesmo mês às 18h (horário de São Paulo)**.
 >
-> | Evento                            | Data                            |
-> | --------------------------------- | ------------------------------- |
-> | 🗓️ **Prazo para envio de NF/RPA** | Dia 5 do mês às 18h (São Paulo) |
-> | 💸 **Pagamento realizado**        | Dia 15 do mês                   |
+> | Evento                        | Data                            |
+> | ----------------------------- | ------------------------------- |
+> | 🗃️ **Prazo para envio de NF** | Dia 5 do mês às 18h (São Paulo) |
+> | 💸 **Pagamento realizado**    | Dia 15 do mês                   |
 >
 > NFs enviadas após o prazo entram no ciclo do **mês seguinte**.
 
@@ -424,12 +424,12 @@ Na parte superior da página de comissões, você vê:
 | **Liberado**        | Soma de comissões aprovadas aguardando pagamento          |
 | **Total Recebido**  | Todo o histórico de pagamentos realizados                 |
 
-### Enviar NF/RPA
+### Enviar NF
 
 Quando uma comissão está com status **"Aguardando NF"**:
 
 1. Localize a comissão na lista
-2. Clique no botão **"Enviar NF/RPA"**
+2. Clique no botão **"Enviar NF"**
 3. Selecione o arquivo:
    - Formatos aceitos: **PDF, PNG, JPEG ou WEBP**
    - Tamanho máximo: **2MB**
@@ -549,7 +549,7 @@ Após o cadastro, seu perfil passa por uma trajetória de status:
 | Ver Vínculos           | ✅    | ✅            | ✅   |
 | Ver Comissões          | ✅    | ✅            | ✅   |
 | **Receber Pagamentos** | ❌    | ❌            | ✅   |
-| Enviar NF/RPA          | ❌    | ❌            | ✅   |
+| Enviar NF              | ❌    | ❌            | ✅   |
 
 > **Resumo:** Só o status **"Apto"** permite receber pagamentos. Comissões geradas enquanto seu status é Ativo ou Apto Pendente ficam **retidas** e são pagas depois da aprovação.
 
@@ -599,7 +599,7 @@ Nenhuma ação sua é necessária. A equipe QWork resolverá a situação.
 
 ### 7. Enviei NF mas foi rejeitada. O que acontece?
 
-Quando a NF/RPA é rejeitada, o status da comissão volta para **"Aguardando NF"** e o motivo da rejeição é exibido. Você pode enviar um novo documento.
+Quando a NF é rejeitada, o status da comissão volta para **"Aguardando NF"** e o motivo da rejeição é exibido. Você pode enviar um novo documento.
 
 Motivos comuns de rejeição:
 

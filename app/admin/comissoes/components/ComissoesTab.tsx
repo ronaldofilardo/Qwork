@@ -167,8 +167,7 @@ export function ComissoesTab({
                         {c.representante_nome}
                       </div>
                       <div className="text-xs text-gray-400 font-mono">
-                        #{c.representante_id} ·{' '}
-                        {c.representante_tipo_pessoa?.toUpperCase()}
+                        #{c.representante_id}
                       </div>
                     </td>
                     <td className="px-3 py-3 text-gray-700">

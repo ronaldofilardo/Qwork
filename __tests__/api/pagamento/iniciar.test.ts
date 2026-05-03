@@ -40,7 +40,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           nome: 'Empresa Teste',
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 10,
         },
       ],
@@ -89,7 +89,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           nome: 'Empresa Teste',
           status: 'ativo',
           valor_unitario: 50.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 10,
           valor_total: 500.0,
         },
@@ -117,7 +117,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           nome: 'Empresa Teste',
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 10,
         },
       ],
@@ -158,7 +158,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           nome: 'Empresa Teste',
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 10,
           valor_total: 500.0, // Valor total já calculado
         },
@@ -197,7 +197,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     expect(body.valor).toBe(500.0); // valor_total do contrato
     expect(body.valor_plano).toBe(50.0); // preco (valor personalizado ou preço do plano)
     expect(body.numero_funcionarios).toBe(10);
-    expect(body.plano_nome).toBe('Plano Fixo');
+    expect(body.plano_nome).toBe('Plano Padrão');
     expect(body.tomador_nome).toBe('Empresa Teste');
     expect(body.message).toBe('Pagamento iniciado com sucesso');
 
@@ -301,7 +301,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           nome: 'Empresa Teste',
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 1,
         },
       ],
@@ -367,7 +367,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           plano_id: 2,
           status: 'aguardando_pagamento',
           valor_unitario: 100.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 1,
           valor_total: 100.0, // Valor total já calculado
         },
@@ -404,7 +404,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     expect(body.success).toBe(true);
     expect(body.pagamento_id).toBe(400);
     expect(body.valor).toBe(100.0); // valor_total
-    expect(body.plano_nome).toBe('Plano Fixo');
+    expect(body.plano_nome).toBe('Plano Padrão');
     expect(body.tomador_nome).toBe('Empresa Teste Ltda');
   });
 
@@ -418,7 +418,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           plano_id: 1,
           status: 'aguardando_pagamento',
           valor_unitario: 75.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 1, // Valor padrão usado na query corrigida
           valor_total: 75.0, // Valor total já calculado
         },
@@ -466,7 +466,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
           plano_id: 1,
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
-          plano_nome: 'Plano Fixo',
+          plano_nome: 'Plano Padrão',
           numero_funcionarios: 1,
         },
       ],

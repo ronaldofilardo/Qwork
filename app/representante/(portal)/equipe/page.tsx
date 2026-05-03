@@ -571,7 +571,7 @@ function EditarVendedorDrawer({
                     </div>
                   </div>
 
-                  {/* Doc NF/RPA */}
+                  {/* Doc NF */}
                   <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg px-4 py-3">
                     <div className="flex items-center gap-2 min-w-0">
                       {dadosCompletos.doc_nf_path ? (

@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS templates_contrato (
   -- Identificação
   nome TEXT NOT NULL UNIQUE,
   descricao TEXT,
-  tipo_template TEXT NOT NULL CHECK (tipo_template IN ('plano_fixo', 'padrao')),
+  tipo_template TEXT NOT NULL CHECK (tipo_template IN ('padrao')),
   
   -- Conteúdo do template (HTML ou Markdown com placeholders)
   conteudo TEXT NOT NULL,

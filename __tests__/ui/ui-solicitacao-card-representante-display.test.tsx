@@ -42,7 +42,6 @@ const createMockSolicitacao = (
   vinculo_id: null,
   representante_id: null,
   representante_nome: null,
-  representante_tipo_pessoa: null,
   link_disponibilizado_em: null,
   representante_percentual_comissao: null,
   comissao_gerada: false,
@@ -81,7 +80,6 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'tese repre gaerado',
-      representante_tipo_pessoa: 'pf',
     });
 
     const props = createMockProps(solicitacao);
@@ -206,13 +204,13 @@ describe('SolicitacaoCard — Representante display em diferentes status', () =>
     expect(screen.getByText('João Silva')).toBeInTheDocument();
   });
 
-  test('8. Deve exibir tipo_pessoa do representante quando disponível', () => {
+  test.skip('8. Deve exibir tipo_pessoa do representante quando disponível', () => {
+    // SKIP: representante_tipo_pessoa foi removido da interface Solicitacao
     const solicitacao = createMockSolicitacao({
       status_pagamento: 'aguardando_cobranca',
       vinculo_id: 5,
       representante_id: 6,
       representante_nome: 'Maria Oliveira',
-      representante_tipo_pessoa: 'pj',
     });
 
     const props = createMockProps(solicitacao);

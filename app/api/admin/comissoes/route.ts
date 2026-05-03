@@ -90,7 +90,6 @@ export async function GET(request: NextRequest) {
          c.*,
          r.nome                        AS representante_nome,
          r.email                       AS representante_email,
-         r.tipo_pessoa                 AS representante_tipo_pessoa,
          COALESCE(e.nome, cl.nome) AS entidade_nome,
          c.lote_pagamento_id,
          (c.valor_laudo / c.total_parcelas) AS valor_parcela,

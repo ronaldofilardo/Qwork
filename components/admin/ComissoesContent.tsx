@@ -7,7 +7,6 @@ interface Comissao {
   representante_nome: string;
   representante_id: number;
   representante_email: string;
-  representante_tipo_pessoa: string;
   entidade_nome: string;
   lote_pagamento_id: number | null;
   lote_pagamento_metodo: string | null;
@@ -459,8 +458,7 @@ export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
                         {c.representante_nome}
                       </div>
                       <div className="text-xs text-gray-400 font-mono">
-                        #{c.representante_id} ·{' '}
-                        {c.representante_tipo_pessoa.toUpperCase()}
+                        #{c.representante_id}
                       </div>
                     </td>
                     <td className="px-3 py-3 text-gray-700">

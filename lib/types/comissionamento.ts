@@ -98,11 +98,9 @@ export type Triggador =
  */
 export interface Representante {
   id: number;
-  tipo_pessoa: TipoPessoaRepresentante;
   nome: string;
   email: string;
   telefone: string;
-  // PJ: CNPJ + cpf_responsavel_pj obrigatórios
   cpf?: string | null;
   cnpj?: string | null;
   cpf_responsavel_pj?: string | null;
@@ -254,7 +252,6 @@ export interface ComissionamentoAuditoria {
 export interface CriarRepresentanteDTO {
   nome: string;
   email: string;
-  tipo_pessoa: TipoPessoaRepresentante;
   telefone: string;
   // PJ
   cnpj?: string;
@@ -325,7 +322,6 @@ export interface VinculoComDetalhes extends VinculoComissao {
 export interface ComissaoComDetalhes extends ComissaoLaudo {
   representante_nome: string;
   representante_email: string;
-  representante_tipo_pessoa: TipoPessoaRepresentante;
   entidade_nome: string;
   numero_laudo?: string | null;
 }

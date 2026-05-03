@@ -89,14 +89,8 @@ describe('ModalCadastrotomador - integração leve', () => {
       target: { files: [doc] },
     });
 
-    // Avançar (isso gera contrato automático para plano fixo e pulará para confirmação)
+    // Avançar para o próximo passo
     fireEvent.click(screen.getByText('Próximo'));
-
-    // Marcar semIndicacao (obrigatório para habilitar envio)
-    const semIndicacaoCheckbox = screen.getByRole('checkbox', {
-      name: /N.o fui indicado/i,
-    });
-    fireEvent.click(semIndicacaoCheckbox);
 
     // Confirmar checkbox final
     const confirmCheckbox = screen.getByRole('checkbox', {

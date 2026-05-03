@@ -91,7 +91,7 @@ if (isDevelopment && databaseUrl.includes('nr-bps_db_test')) {
 
 ```typescript
 // ✅ CORRETO: Chama a API real
-it('deve cadastrar tomador com plano fixo', async () => {
+it('deve cadastrar tomador', async () => {
   const request = new NextRequest(
     'http://localhost:3000/api/cadastro/tomador',
     {
@@ -192,7 +192,7 @@ const planoResult = await query(
   ['fixo']
 );
 const planoId = planoResult.rows[0]?.id;
-if (!planoId) throw new Error('Plano fixo não encontrado - seed necessário');
+  if (!planoId) throw new Error('Plano não encontrado - seed necessário');
 ```
 
 ### 2. Assumir Estado do Banco

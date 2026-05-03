@@ -2,7 +2,7 @@
  * POST /api/suporte/comissionamento/representantes/[id]/desbloquear
  *
  * Desbloqueia manualmente um representante que foi bloqueado por não enviar
- * NF/RPA até o dia 10 (status 'apto_bloqueado').
+ * até o dia 10 (status 'apto_bloqueado').
  *
  * Body: { motivo?: string }
  *

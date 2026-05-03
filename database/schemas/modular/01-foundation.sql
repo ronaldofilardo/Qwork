@@ -3539,7 +3539,7 @@ COMMENT ON COLUMN public.recibos.clinica_id IS 'ID da clínica associada ao reci
 -- Name: COLUMN representantes.tipo_pessoa; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.representantes.tipo_pessoa IS 'pf: emite RPA; pj: emite NF de Serviços';
+COMMENT ON COLUMN public.representantes.tipo_pessoa IS 'Sempre pj (constraint representantes_somente_pj)';
 
 
 

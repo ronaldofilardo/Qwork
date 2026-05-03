@@ -1102,7 +1102,6 @@ SELECT
     NULL::integer AS vinculo_id,
     NULL::integer AS representante_id,
     NULL::character varying(150) AS representante_nome,
-    NULL::public.tipo_pessoa_representante AS representante_tipo_pessoa,
     NULL::numeric(5,2) AS representante_percentual_comissao,
     NULL::boolean AS comissao_gerada,
     NULL::integer AS comissoes_geradas_count,
@@ -1838,7 +1837,6 @@ CREATE OR REPLACE VIEW public.v_solicitacoes_emissao AS
     vc.id AS vinculo_id,
     r.id AS representante_id,
     r.nome AS representante_nome,
-    r.tipo_pessoa AS representante_tipo_pessoa,
     r.percentual_comissao AS representante_percentual_comissao,
     (EXISTS ( SELECT 1
            FROM public.comissoes_laudo cl

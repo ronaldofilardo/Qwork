@@ -121,46 +121,7 @@ afterAll(async () => {
 
 ## Testes de Fluxos de Pagamento
 
-### Teste 1: Cadastro com Plano Fixo
-
-**Objetivo:** Validar fluxo completo de cadastro → contrato → pagamento
-
-```typescript
-describe('Cadastro com Plano Fixo', () => {
-  test('deve criar tomador e aguardar pagamento', async () => {
-    // 1. Criar cadastro
-    const response = await fetch('/api/cadastro/tomador', {
-      method: 'POST',
-      body: JSON.stringify({
-        cnpj: '99999999000199',
-        razao_social: 'TESTE EMPRESA LTDA',
-        plano_id: 1, // Plano fixo
-        responsavel: {
-          cpf: '99999999999',
-          nome: 'Teste Responsável',
-          email: 'teste@exemplo.com',
-          senha: 'Teste@123',
-        },
-      }),
-    });
-
-    expect(response.status).toBe(201);
-    const data = await response.json();
-
-    // 2. Verificar status
-    const tomador = await db('tomadores').where({ id: data.tomadorId }).first();
-
-    expect(tomador.status).toBe('aguardando_pagamento');
-
-    // 3. Verificar contrato criado
-    const contrato = await db('contratos')
-      .where({ tomador_id: data.tomadorId })
-      .first();
-
-    expect(contrato).toBeDefined();
-    expect(contrato.status).toBe('aguardando_aceite');
-  });
-});
+Consulte os testes específicos em `__tests__/` para cobertura completa de fluxos de pagamento.
 ```
 
 ### Teste 2: Falha de Pagamento
@@ -201,49 +162,6 @@ describe('Falha de Pagamento', () => {
     });
 
     expect(loginResponse.status).toBe(403);
-  });
-});
-```
-
-### Teste 3: Cadastro com Plano Personalizado
-
-**Objetivo:** Validar fluxo de aprovação manual
-
-```typescript
-describe('Cadastro com Plano Personalizado', () => {
-  test('deve criar como pendente e aguardar aprovação', async () => {
-    // 1. Criar cadastro
-    const response = await fetch('/api/cadastro/tomador', {
-      method: 'POST',
-      body: JSON.stringify({
-        cnpj: '99999999000188',
-        razao_social: 'TESTE PERSONALIZADO LTDA',
-        plano_id: null, // Plano personalizado
-        mensagem: 'Preciso de 100 funcionários',
-        responsavel: {
-          cpf: '99999999988',
-          nome: 'Teste Gestor',
-          email: 'gestor@exemplo.com',
-          senha: 'Senha@123',
-        },
-      }),
-    });
-
-    expect(response.status).toBe(201);
-    const data = await response.json();
-
-    // 2. Verificar status pendente
-    const tomador = await db('tomadores').where({ id: data.tomadorId }).first();
-
-    expect(tomador.status).toBe('pendente');
-
-    // 3. Verificar criação de contratacao_personalizada
-    const personalizacao = await db('contratacao_personalizada')
-      .where({ tomador_id: data.tomadorId })
-      .first();
-
-    expect(personalizacao).toBeDefined();
-    expect(personalizacao.status).toBe('aguardando_valor_admin');
   });
 });
 ```
@@ -565,7 +483,7 @@ pnpm test:integration
 pnpm test:watch
 
 # Teste específico
-pnpm test -- --testNamePattern="Cadastro com Plano Fixo"
+pnpm test -- --testNamePattern="cadastrar tomador"
 ```
 
 ### Limpar Dados de Teste (ambiente test apenas!)

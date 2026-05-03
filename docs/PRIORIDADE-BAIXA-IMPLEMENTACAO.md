@@ -129,7 +129,7 @@
 
 - ✅ Templates armazenados como HTML/Markdown
 - ✅ Sistema de placeholders: `{{contratante_nome}}`, `{{valor_total}}`, etc.
-- ✅ Tipos: plano_fixo, plano_personalizado, padrao
+- ✅ Tipos: padrao
 - ✅ Versionamento automático (incrementa versão a cada update)
 - ✅ Template padrão por tipo (apenas um pode ser padrão)
 - ✅ Ativo/Inativo (soft delete)
@@ -138,7 +138,7 @@
 
 **Template padrão inserido:**
 
-- Nome: "Contrato Plano Personalizado - Padrao"
+- Nome: "Contrato Padrão"
 - Inclui cláusulas padrão
 - Placeholders para personalização
 

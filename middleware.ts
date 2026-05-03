@@ -460,15 +460,20 @@ export function middleware(request: NextRequest) {
     'geolocation=(), microphone=(), camera=()'
   );
 
-  // Edge Runtime: aplicar headers de segurança sempre (não verificar NODE_ENV dinamicamente)
+  // Edge Runtime: aplicar headers de segurança sempre
   // Em produção, ativar HSTS e CSP mais restritivo
   response.headers.set(
     'Strict-Transport-Security',
     'max-age=31536000; includeSubDomains; preload'
   );
+  // Em dev, webpack usa eval() para source maps / HMR → adicionar 'unsafe-eval'
+  const scriptSrc =
+    process.env.NODE_ENV === 'development'
+      ? "'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net"
+      : "'self' 'unsafe-inline' cdn.jsdelivr.net";
   response.headers.set(
     'Content-Security-Policy',
-    "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
+    `default-src 'self'; script-src ${scriptSrc}; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:`
   );
 
   return response;

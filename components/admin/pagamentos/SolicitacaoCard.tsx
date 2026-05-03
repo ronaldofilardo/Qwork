@@ -364,12 +364,6 @@ function StatusActions({
                 </span>
                 <span className="text-gray-400 text-xs">
                   · #{solicitacao.representante_id}
-                  {solicitacao.representante_tipo_pessoa && (
-                    <>
-                      {' '}
-                      ({solicitacao.representante_tipo_pessoa.toUpperCase()})
-                    </>
-                  )}
                 </span>
               </span>
             )}
@@ -846,11 +840,6 @@ function ComissaoSection({
               </p>
               <p className="text-xs text-gray-500">
                 ID: #{solicitacao.representante_id}
-                {solicitacao.representante_tipo_pessoa && (
-                  <span className="ml-2 uppercase">
-                    ({solicitacao.representante_tipo_pessoa})
-                  </span>
-                )}
               </p>
               {(() => {
                 const modelo = solicitacao.modelo_comissionamento;

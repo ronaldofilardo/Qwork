@@ -37,7 +37,7 @@ const STATE_TRANSITIONS: Record<
 > = {
   cadastro_inicial: {
     aguardando_contrato: () => true,
-    aguardando_pagamento: (ctx) => !!ctx?.contrato_id, // Plano fixo: vai direto para pagamento após aceite
+    aguardando_pagamento: (ctx) => !!ctx?.contrato_id,
     rejeitado: (ctx) => !!ctx?.admin_cpf && !!ctx?.motivo,
   },
   aguardando_contrato: {

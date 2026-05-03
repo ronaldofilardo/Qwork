@@ -9,7 +9,6 @@
  */
 import { query, transaction, type TransactionClient } from '@/lib/db';
 import { gerarTokenConvite, logEmailConvite } from './gerar-convite';
-import { verificarCpfEmUso } from '@/lib/cpf-conflict';
 
 export interface ConversaoResult {
   representante_id: number;
@@ -57,8 +56,7 @@ export async function converterLeadEmRepresentante(
       throw new Error('Lead já foi convertido anteriormente');
     }
 
-    // 2. Verificar se já existe representante com mesmo email/cpf/cnpj
-    const tipoPessoa = String(lead.tipo_pessoa);
+    // 2. Verificar se já existe representante com mesmo email/cnpj
     const email = String(lead.email);
 
     const emailCheck = await client.query(
@@ -69,18 +67,7 @@ export async function converterLeadEmRepresentante(
       throw new Error(`Já existe representante com o e-mail ${email}`);
     }
 
-    if (tipoPessoa === 'pf' && lead.cpf) {
-      // Verificar CPF cross-table (funcionarios, usuarios, representantes, senhas)
-      const cpfConflicts = await verificarCpfEmUso(String(lead.cpf), client);
-      if (cpfConflicts.length > 0) {
-        const first = cpfConflicts[0];
-        throw new Error(
-          `CPF já cadastrado como ${first.tipo_usuario} em ${first.origem}`
-        );
-      }
-    }
-
-    if (tipoPessoa === 'pj' && lead.cnpj) {
+    if (lead.cnpj) {
       const cnpjCheck = await client.query(
         `SELECT id FROM representantes WHERE cnpj = $1`,
         [lead.cnpj]
@@ -93,7 +80,7 @@ export async function converterLeadEmRepresentante(
     // 3. IMPORTANTE: Bloquear qualquer outro lead com mesmo cpf_responsavel (PJ)
     // Isso evita conflito com trigger tg_representante_cpf_unico quando inserir.
     // Só deixa o lead atual como convertido para que trigger ignore.
-    if (tipoPessoa === 'pj' && lead.cpf_responsavel) {
+    if (lead.cpf_responsavel) {
       await client.query(
         `UPDATE representantes_cadastro_leads
          SET status = 'rejeitado',
@@ -137,19 +124,17 @@ export async function converterLeadEmRepresentante(
         modelo_comissionamento, percentual_comissao,
         status, aprovado_em, aprovado_por_cpf
       ) VALUES (
-        $1, $2, $3, $4,
-        $5, $6, $7,
-        $8,
-        $9,
+        'pj', $1, $2, $3,
+        NULL, $4, $5,
+        $6,
+        $7,
         'percentual', 20,
-        'aguardando_senha', NOW(), $10
+        'aguardando_senha', NOW(), $8
       ) RETURNING id, nome, email`,
       [
-        tipoPessoa,
         lead.nome,
         lead.email,
         lead.telefone,
-        lead.cpf ?? null,
         lead.cnpj ?? null,
         lead.cpf_responsavel ?? null,
         lead.asaas_wallet_id ?? null,

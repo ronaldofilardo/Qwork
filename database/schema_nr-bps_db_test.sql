@@ -829,60 +829,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.bloquear_alteracao_contrato_vigente() OWNER TO postgres;
-
 --
 -- Name: calcular_custo_contrato(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
-
-CREATE FUNCTION public.calcular_custo_contrato(p_contrato_id integer) RETURNS numeric
-    LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    v_contrato RECORD;
-
-    v_plano RECORD;
-
-    v_custo DECIMAL;
-
-BEGIN
-
-    SELECT * INTO v_contrato FROM contratos_planos WHERE id = p_contrato_id;
-
-    SELECT * INTO v_plano FROM planos WHERE id = v_contrato.plano_id;
-
-    
-
-    IF v_plano.tipo = 'personalizado' THEN
-
-        -- Custo = valor por funcionÃ¡rio Ã— funcionÃ¡rios ativos
-
-        v_custo := v_contrato.valor_personalizado_por_funcionario * v_contrato.numero_funcionarios_atual;
-
-    ELSE
-
-        -- Custo fixo dividido pelas parcelas
-
-        v_custo := v_plano.valor_fixo_anual / v_contrato.numero_parcelas;
-
-    END IF;
-
-    
-
-    RETURN v_custo;
-
-END;
-
-$$;
+-- FUNCTION REMOVIDA: calcular_custo_contrato foi removida porque dependia de tipos de plano (fixo/personalizado) que não existem mais
 
 
-ALTER FUNCTION public.calcular_custo_contrato(p_contrato_id integer) OWNER TO postgres;
-
---
--- Name: calcular_elegibilidade_lote(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
---
+ALTER FUNCTION public.bloquear_alteracao_contrato_vigente() OWNER TO postgres;
 
 CREATE FUNCTION public.calcular_elegibilidade_lote(p_empresa_id integer, p_numero_lote_atual integer) RETURNS TABLE(funcionario_cpf character, funcionario_nome character varying, motivo_inclusao character varying, indice_atual integer, data_ultimo_lote timestamp without time zone, dias_sem_avaliacao integer, prioridade character varying)
     LANGUAGE plpgsql
@@ -5251,7 +5204,7 @@ COMMENT ON COLUMN public.contratantes.data_liberacao_login IS 'Data em que o log
 -- Name: COLUMN contratantes.numero_funcionarios_estimado; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratantes.numero_funcionarios_estimado IS 'NÃºmero estimado de funcionÃ¡rios informado no cadastro - usado para calcular valor total em planos personalizados';
+COMMENT ON COLUMN public.contratantes.numero_funcionarios_estimado IS 'Número estimado de funcionários informado no cadastro';
 
 
 --
@@ -5447,7 +5400,7 @@ COMMENT ON TABLE public.contratos IS 'Contratos gerados para contratantes. Fluxo
 -- Name: COLUMN contratos.valor_personalizado; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratos.valor_personalizado IS 'Valor personalizado por funcionÃ¡rio (para planos personalizados)';
+COMMENT ON COLUMN public.contratos.valor_personalizado IS 'Valor contratado por funcionário';
 
 
 --
@@ -6588,8 +6541,7 @@ CREATE TABLE public.planos (
     caracteristicas jsonb,
     ativo boolean DEFAULT true,
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT planos_tipo_check CHECK (((tipo)::text = ANY (ARRAY[('fixo'::character varying)::text, ('personalizado'::character varying)::text])))
+    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -6605,8 +6557,6 @@ COMMENT ON TABLE public.planos IS 'Planos disponÃ­veis para contrataÃ§Ã£o'
 --
 -- Name: COLUMN planos.tipo; Type: COMMENT; Schema: public; Owner: postgres
 --
-
-COMMENT ON COLUMN public.planos.tipo IS 'fixo: valor fixo por perÃ­odo | personalizado: valor baseado em quantidade de funcionÃ¡rios';
 
 
 --
@@ -6976,7 +6926,7 @@ CREATE TABLE public.templates_contrato (
     atualizado_por_cpf text,
     tags text[],
     metadata jsonb DEFAULT '{}'::jsonb,
-    CONSTRAINT templates_contrato_tipo_template_check CHECK ((tipo_template = ANY (ARRAY['plano_fixo'::text, 'plano_personalizado'::text, 'padrao'::text])))
+    CONSTRAINT templates_contrato_tipo_template_check CHECK ((tipo_template = ANY (ARRAY['padrao'::text])))
 );
 
 
@@ -7030,8 +6980,7 @@ CREATE TABLE public.tokens_retomada_pagamento (
     ip_uso character varying(50),
     gerado_por character varying(14),
     gerado_em timestamp without time zone DEFAULT now(),
-    metadata jsonb,
-    CONSTRAINT tokens_retomada_pagamento_tipo_plano_check CHECK (((tipo_plano)::text = ANY ((ARRAY['fixo'::character varying, 'personalizado'::character varying])::text[])))
+    metadata jsonb
 );
 
 

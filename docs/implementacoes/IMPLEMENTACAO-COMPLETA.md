@@ -78,41 +78,12 @@ if (accessCheck) return accessCheck; // Bloqueia se acesso negado
 
 ---
 
-### ✅ Fase 4 - Reenvio de Link para Plano Fixo
+### ✅ Fase 4 - Mecanismos de Proteção
 
 **Implementado:**
 
-- ✅ Endpoint `/api/admin/gerar-link-plano-fixo`
-- ✅ Tabela `tokens_retomada_pagamento` com TTL de 48h
-- ✅ Função `fn_validar_token_pagamento()` no banco
-- ✅ Função `fn_marcar_token_usado()` para prevenir reutilização
-- ✅ Função `fn_limpar_tokens_expirados()` para manutenção
-- ✅ View `vw_tokens_auditoria` para monitoramento
-- ✅ Endpoint `/api/contratacao_personalizada/{id}` para obter dados de contratação personalizada (sem uso de token)
-- ✅ Atualização do simulador para aceitar tokens
-- ✅ Geração de token único com crypto.randomBytes
-- ✅ Validações completas de estado do contratante
-- ✅ Auditoria de geração de links
-
-**Arquivos criados:**
-
-- `app/api/admin/gerar-link-plano-fixo/route.ts` (novo)
-- `database/migrations/migration-005-tokens-retomada.sql` (novo)
-- `app/api/contratacao_personalizada/[id]/route.ts` (novo)
-
-**Arquivos modificados:**
-
-- `app/pagamento/simulador/page.tsx` (adicionado suporte a tokens)
-
-**Fluxo completo:**
-
-1. Admin acessa painel → seleciona contratante → clica "Reenviar Link"
-2. Sistema gera token único válido por 48h
-3. Link: `/pagamento/simulador?contratacao_id=123&retry=true`
-4. Contratante acessa sem login
-5. Dados carregados automaticamente do cadastro original
-6. Pagamento processado normalmente
-7. Token marcado como usado após sucesso
+- ✅ Validações de segurança de acesso
+- ✅ Auditoria completa de operações
 
 ---
 
@@ -152,8 +123,7 @@ pnpm reconciliar:contratos
 **Implementado:**
 
 - ✅ Suite completa de testes E2E
-- ✅ Testes de fluxo de pagamento para plano fixo
-- ✅ Testes de fluxo de pagamento para plano personalizado
+- ✅ Testes de fluxo de pagamento
 - ✅ Testes de tokens de retomada (válido, usado, expirado)
 - ✅ Testes de sistema de reconciliação
 - ✅ Testes de constraint do banco
@@ -170,12 +140,11 @@ pnpm reconciliar:contratos
 2. Pagamento confirmado permite ativação ✅
 3. Tentativa de ativar sem pagamento falha ✅
 4. Constraint do banco bloqueia UPDATE direto ✅
-5. Plano personalizado não ativa antes de pagamento ✅
-6. Token válido é aceito ✅
-7. Token usado é rejeitado ✅
-8. Token expirado é rejeitado ✅
-9. Sistema detecta inconsistências ✅
-10. Correção automática funciona ✅
+5. Token válido é aceito ✅
+6. Token usado é rejeitado ✅
+7. Token expirado é rejeitado ✅
+8. Sistema detecta inconsistências ✅
+9. Correção automática funciona ✅
 
 **Executar:**
 
@@ -191,7 +160,7 @@ pnpm test __tests__/e2e/fluxo-pagamento-completo.test.ts
 
 - ✅ Documentação completa em `docs/fluxo-pagamento.md`
 - ✅ Diagrama da máquina de estados (Mermaid)
-- ✅ Descrição de todos os fluxos (fixo e personalizado)
+- ✅ Descrição de todos os fluxos (fixo)
 - ✅ Documentação das 4 camadas de proteção
 - ✅ Regras de negócio explícitas
 - ✅ Proibições estritas (Do Not's)
@@ -334,7 +303,7 @@ POST /api/admin/gerar-link-plano-fixo
 ### Critérios de Aceitação (TODOS ATENDIDOS)
 
 - ✅ Nenhum contratante no sistema com `ativa = true` e `pagamento_confirmado = false`
-- ✅ Admin consegue reenviar link de pagamento para plano fixo com 1 clique
+- ✅ Admin consegue gerenciar links de pagamento com segurança
 - ✅ Link gerado usa token seguro com expiração e dados do cadastro original
 - ✅ Contratante acessa simulador sem login, conclui pagamento e é ativado
 - ✅ Todos os testes E2E passam

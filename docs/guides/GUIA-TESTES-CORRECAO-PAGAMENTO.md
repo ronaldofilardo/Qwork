@@ -27,10 +27,10 @@ Garantir que falha no pagamento **não libera acesso** e **notifica admin**
 
 ### Passos
 
-1. **Criar novo cadastro de contratante (Plano Fixo)**
+1. **Criar novo cadastro de contratante**
    - Acessar: `/cadastro` (ou rota equivalente)
    - Preencher dados
-   - Selecionar plano fixo
+   - Selecionar um plano
    - Finalizar cadastro
 
 2. **Aceitar contrato gerado**

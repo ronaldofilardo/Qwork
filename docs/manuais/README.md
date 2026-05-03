@@ -83,7 +83,7 @@ O sistema QWork possui **5 tipos de usuários**, cada um com funcionalidades e j
 - Cadastro via landing page (PF ou PJ) com upload de documentos
 - Criar e acompanhar leads (indicações de empresas)
 - Monitorar vínculos ativos e alertas de expiração
-- Pipeline de comissões e envio de NF/RPA
+- Pipeline de comissões e envio de NF
 - Gerenciar dados bancários para recebimento
 
 **Acesso:** `/representante/*` | **Autenticação:** E-mail + Código de Representante

@@ -395,7 +395,7 @@ Detalhamento de Parcelas (#50)
 - [Schema de Pagamentos](../../database/migrations/041_criar_tabela_recibos.sql)
 - [Helper de Parcelas](../../lib/parcelas-helper.ts)
 - [Componente de Cobrança](../../components/admin/CobrancaContent.tsx)
-- [Modal de Plano Personalizado](../../components/modals/ModalDefinirValorPersonalizado.tsx)
+- Modal para definição de valores de contrato
 
 ---
 

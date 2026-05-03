@@ -72,10 +72,6 @@ export default function ModalCadastroTomador({
     contratoGerado: contratoGeradoHook,
     confirmacaoFinalAceita: confirmacaoFinalAceitaHook,
     setConfirmacaoFinalAceita: setConfirmacaoFinalAceitaHook,
-    codigoRepresentante: codigoRepresentanteHook,
-    setCodigoRepresentante: setCodigoRepresentanteHook,
-    semIndicacao: semIndicacaoHook,
-    setSemIndicacao: setSemIndicacaoHook,
     dadostomador: dadosContratanteHook,
     setDadostomador: setDadosContratanteHook,
     dadosResponsavel: dadosResponsavelHook,
@@ -111,10 +107,6 @@ export default function ModalCadastroTomador({
   const _contratoGerado = contratoGeradoHook;
   const confirmacaoFinalAceita = confirmacaoFinalAceitaHook;
   const setConfirmacaoFinalAceita = setConfirmacaoFinalAceitaHook;
-  const codigoRepresentante = codigoRepresentanteHook;
-  const setCodigoRepresentante = setCodigoRepresentanteHook;
-  const semIndicacao = semIndicacaoHook;
-  const setSemIndicacao = setSemIndicacaoHook;
   const dadosContratante = dadosContratanteHook;
   const _setDadosContratante = setDadosContratanteHook;
   const dadosResponsavel = dadosResponsavelHook;
@@ -410,10 +402,6 @@ export default function ModalCadastroTomador({
                   confirmacaoFinalAceita={confirmacaoFinalAceita}
                   setConfirmacaoFinalAceita={setConfirmacaoFinalAceita}
                   responsavelLabel={responsavelLabel}
-                  codigoRepresentante={codigoRepresentante}
-                  onCodigoRepresentanteChange={setCodigoRepresentante}
-                  semIndicacao={semIndicacao}
-                  setSemIndicacao={setSemIndicacao}
                 />
               )}
 
@@ -467,11 +455,7 @@ export default function ModalCadastroTomador({
                     <button
                       type="submit"
                       className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      disabled={
-                        enviando ||
-                        !confirmacaoFinalAceita ||
-                        (!codigoRepresentante.trim() && !semIndicacao)
-                      }
+                      disabled={enviando || !confirmacaoFinalAceita}
                       title={
                         !confirmacaoFinalAceita
                           ? 'Você precisa confirmar que revisou todos os dados'

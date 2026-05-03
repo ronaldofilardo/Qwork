@@ -16,8 +16,8 @@ describe('ModalCadastroContratante - preços como string', () => {
               planos: [
                 {
                   id: 1,
-                  nome: 'Plano Fixo Teste',
-                  descricao: 'Plano fixo',
+                  nome: 'Plano Padrão',
+                  descricao: 'Plano padrão',
                   preco: '24.00', // string coming from DB numeric
                   tipo: 'fixo',
                   caracteristicas: { limite_funcionarios: 50, parcelas_max: 4 },
@@ -38,9 +38,9 @@ describe('ModalCadastroContratante - preços como string', () => {
 
     // Selecionar plano
     expect(
-      await screen.findByText('Plano Fixo Teste', {}, { timeout: 15000 })
+      await screen.findByText('Plano Padrão', {}, { timeout: 15000 })
     ).toBeInTheDocument();
-    userEvent.click(screen.getByText('Plano Fixo Teste'));
+    userEvent.click(screen.getByText('Plano Padrão'));
 
     // Expect preço formatado
     const priceElements = screen.getAllByText(/R\$/i);

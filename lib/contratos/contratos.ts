@@ -2,7 +2,6 @@
  * Módulo de Contratos — Aceite e Gerenciamento
  *
  * Fluxo ativo: aceite do contrato de prestação de serviços pelo tomador.
- * Mecanismo de proposta comercial (plano fixo/personalizado) foi removido.
  */
 
 import { query } from '../db';

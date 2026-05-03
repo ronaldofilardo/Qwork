@@ -62,7 +62,7 @@ if (isNaN(Number(contratoId))) {
 
 ### 3. ✅ Sistema de Link de Pagamento para Planos Fixos
 
-**Problema:** Quando pagamento falhava em plano fixo, não havia mecanismo de retry
+**Problema:** Mecanismo de retry de pagamento
 
 **Solução Implementada:**
 
@@ -73,7 +73,7 @@ if (isNaN(Number(contratoId))) {
 - Cria contrato com status `pendente_pagamento` se não existir
 - Atualiza status do tomador para `pendente_pagamento`
 - Gera link para simulador com parâmetro `retry=true`
-- Calcula valor total baseado no plano fixo (preço × número de funcionários)
+- Calcula valor total baseado no plano (preço × número de funcionários)
 
 #### 3.2 Atualização do Simulador de Pagamento
 
@@ -171,7 +171,7 @@ if (isNaN(Number(contratoId))) {
    GET /api/tomador/verificar-pagamento?tomador_id=X
    ```
 
-2. **Gerar Link Plano Fixo**
+2. **Gerar Link de Pagamento**
 
    ```
    POST /api/pagamento/gerar-link-plano-fixo
@@ -213,7 +213,7 @@ if (isNaN(Number(contratoId))) {
 
 ### Teste 1: Fluxo Completo de Retry
 
-1. Registrar novo tomador com plano fixo
+1. Registrar novo tomador
 2. Simular falha no pagamento (desconectar internet, erro de cartão)
 3. Verificar se contrato foi criado com status `pendente_pagamento`
 4. Gerar link de retry usando API `/api/pagamento/gerar-link-plano-fixo`

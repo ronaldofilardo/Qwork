@@ -177,7 +177,7 @@ const tomadorResult = await txClient.query<tomador>(
 2. INSERT tomador com `status='aguardando_pagamento'`, `ativa=false`, `pagamento_confirmado=false`
 3. UPDATE numero_funcionarios_estimado (se fornecido)
 4. SELECT plano para calcular valores
-5. Se plano fixo: INSERT contrato com `status='aguardando_pagamento'`, `aceito=false`
+5. INSERT contrato com `status='aguardando_pagamento'`, `aceito=false` se necessário
 
 **Estado resultante no banco:**
 
@@ -188,7 +188,7 @@ ativa: false
 pagamento_confirmado: false
 plano_id: <id do plano selecionado>
 
--- Tabela: contratos (se plano fixo)
+-- Tabela: contratos
 status: 'aguardando_pagamento'
 aceito: false
 valor_total: <calculado>
@@ -292,7 +292,7 @@ aceito: true
 ### ✅ Fluxo
 
 - [ ] POST /api/cadastro/tomador cria tomador com status correto
-- [ ] Contrato criado se plano fixo
+- [ ] Contrato criado se necessário
 - [ ] Frontend recebe `contrato_id` e `requires_contract_acceptance`
 - [ ] Rota de aceite de contrato (a implementar)
 - [ ] Simulador de pagamento valida contrato aceito
@@ -303,7 +303,7 @@ aceito: true
 ## Próximos Passos
 
 1. **Testar fluxo completo:**
-   - POST cadastro com plano fixo
+   - POST cadastro com modelo de pagamento
    - Verificar response contém `contrato_id`
    - Verificar dados no banco
 

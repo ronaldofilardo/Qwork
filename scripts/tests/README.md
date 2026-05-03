@@ -18,12 +18,10 @@ Esta pasta contém scripts utilitários para executar testes de forma organizada
 
 **Cobertura:**
 
-- ✅ E2E Plano Fixo (20+ casos)
-- ✅ E2E Plano Personalizado (25+ casos)
 - ✅ Validações (45+ casos)
 - ✅ Integração Completa (15+ casos)
 
-**Total:** 105+ casos de teste
+**Total:** 80+ casos de teste
 
 **Saída esperada:**
 
@@ -33,12 +31,6 @@ Testes de Cadastro de Contratantes
 ==================================
 
 Iniciando suíte de testes...
-
-[E2E: Plano Fixo] Executando...
-  ✅ PASSOU
-
-[E2E: Plano Personalizado] Executando...
-  ✅ PASSOU
 
 [Validações] Executando...
   ✅ PASSOU

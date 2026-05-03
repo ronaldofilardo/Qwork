@@ -65,7 +65,7 @@ CADASTRO
    ↓
 pendente (BLOQUEADO)
    ↓
-[PLANO FIXO OU PERSONALIZADO]
+[MODELO DE PAGAMENTO]
    ↓
 aguardando_pagamento
    ↓ (pagamento)
@@ -143,7 +143,7 @@ cd c:\apps\QWork\scripts\database
 
 ## 🧪 Checklist de Testes
 
-- [ ] Cadastro com plano fixo
+- [ ] Cadastro com modelo de pagamento
 - [ ] Aceitar contrato
 - [ ] Simular falha de pagamento
 - [ ] Verificar status = 'aguardando_pagamento'

@@ -41,7 +41,6 @@ describe('API Pagamento - Fluxo Tomador', () => {
             status: 'aguardando_pagamento',
             numero_funcionarios_estimado: 50,
             plano_nome: 'Plano Pro',
-            plano_tipo: 'fixo',
             preco: 10.0,
           },
         ],
@@ -266,3 +265,4 @@ describe('API Pagamento - Fluxo Tomador', () => {
     });
   });
 });
+
