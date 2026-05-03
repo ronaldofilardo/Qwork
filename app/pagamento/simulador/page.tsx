@@ -165,7 +165,7 @@ export default function SimuladorPagamentoPage() {
           'Pagamento confirmado!\n\n' +
             'Seu acesso foi liberado.\n' +
             'O comprovante de pagamento está disponível em:\n' +
-            'Informações da Conta > Plano > Baixar Comprovante'
+            'Conta > Recibos'
         );
       }
       router.push(confirmarData.redirect_to || '/');

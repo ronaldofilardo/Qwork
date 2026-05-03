@@ -567,7 +567,7 @@ export async function POST(request: NextRequest) {
       proximos_passos: [
         'Acesso ao sistema liberado imediatamente',
         'Login: use CPF do responsável e senha = últimos 6 dígitos do CNPJ',
-        'Recibo disponível sob demanda: Conta > Plano > Baixar Comprovante',
+        'Recibo disponível sob demanda: Conta > Recibos > Baixar',
         'Contrato padrão em: /termos/contrato',
       ],
     });

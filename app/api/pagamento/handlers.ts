@@ -402,7 +402,7 @@ export async function handleConfirmarPagamento(
       proximos_passos: [
         'Acesso ao sistema liberado',
         'Faça login com suas credenciais',
-        'Recibo disponível em: Informações da Conta > Plano > Baixar Comprovante',
+        'Recibo disponível em: Conta > Recibos > Baixar',
       ],
     };
   } catch (error: any) {
@@ -419,7 +419,7 @@ export async function handleConfirmarPagamento(
       proximos_passos: [
         'Acesso ao sistema liberado',
         'Faça login com suas credenciais',
-        'Recibo disponível em: Informações da Conta > Plano > Baixar Comprovante',
+        'Recibo disponível em: Conta > Recibos > Baixar',
       ],
     };
   }
