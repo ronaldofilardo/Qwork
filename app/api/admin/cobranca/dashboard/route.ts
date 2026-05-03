@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// Evitar tentativa de static generation durante build
+// Essa rota requer acesso ao banco de dados (não pode ser gerada como static)
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/admin/cobranca/dashboard
  *

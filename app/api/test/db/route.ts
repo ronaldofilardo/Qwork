@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// Evitar tentativa de static generation durante build
+export const dynamic = 'force-dynamic';
+
 export async function GET(_req: NextRequest) {
   try {
     const res = await query('SELECT current_database() as db');
