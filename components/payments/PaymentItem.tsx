@@ -135,9 +135,6 @@ export default function PaymentItem({
           <p className="text-xs text-gray-500 mb-2">
             Recibo: {pagamento.recibo.numero_recibo}
           </p>
-          <p className="text-xs text-gray-400 mb-2">
-            Baixe em <span className="font-medium">Conta &gt; Plano</span>
-          </p>
         </>
       )}
 

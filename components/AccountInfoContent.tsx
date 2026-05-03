@@ -173,7 +173,7 @@ export default function AccountInfoContent({
           </dl>
         </div>
 
-        {/* Card: Plano Contratado */}
+        {/* Card: Serviço Contratado */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <CreditCard className="text-primary" size={20} />
