@@ -320,14 +320,6 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Email #3: aceite de contrato
-      notificarAceiteContrato({
-        tomadorId: updated.tomador_id,
-        tomadorNome: tomadorData.nome,
-        cnpj: tomadorData.cnpj,
-        tipo: updated.tipo_tomador as 'clinica' | 'entidade',
-      }).catch((e) => console.error('[EMAIL] notificarAceiteContrato falhou:', e));
-
       return NextResponse.json(
         {
           success: true,
