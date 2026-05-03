@@ -7,11 +7,6 @@ settings:
 overrides:
   puppeteer: ^24.37.5
 
-patchedDependencies:
-  next@14.2.35:
-    hash: 9baa6665994e3f08a94c3cfc397840a66a538c2d580a9bf5967f84394ea599e4
-    path: patches/next@14.2.35.patch
-
 importers:
 
   .:

@@ -197,7 +197,9 @@ export async function POST(request: NextRequest) {
           tomadorNome: tomadorData.nome,
           cnpj: tomadorData.cnpj,
           tipo: updated.tipo_tomador as 'clinica' | 'entidade',
-        }).catch((e) => console.error('[EMAIL] notificarAceiteContrato falhou:', e));
+        }).catch((e) =>
+          console.error('[EMAIL] notificarAceiteContrato falhou:', e)
+        );
       } catch (err) {
         console.error(
           '[CONTRATOS] Erro ao liberar login automaticamente após aceite:',
