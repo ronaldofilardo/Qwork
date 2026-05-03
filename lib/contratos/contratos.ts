@@ -84,16 +84,68 @@ export async function aceitarContrato(
  * Usa a view `tomadores` para compatibilidade com entidades e clínicas.
  */
 export async function obterContrato(contrato_id: number) {
+  console.log('[obterContrato] Buscando contrato com ID:', contrato_id);
+
   const result = await query(
     `SELECT c.*,
-            t.nome  AS tomador_nome,
-            t.cnpj  AS tomador_cnpj,
-            t.tipo  AS tomador_tipo
+            CASE 
+              WHEN c.tipo_tomador = 'clinica' THEN cl.nome
+              WHEN c.tipo_tomador = 'entidade' THEN e.nome
+              ELSE NULL
+            END AS tomador_nome,
+            CASE 
+              WHEN c.tipo_tomador = 'clinica' THEN cl.cnpj
+              WHEN c.tipo_tomador = 'entidade' THEN e.cnpj
+              ELSE NULL
+            END AS tomador_cnpj,
+            c.tipo_tomador AS tomador_tipo
      FROM contratos c
-     LEFT JOIN tomadores t ON c.tomador_id = t.id
+     LEFT JOIN clinicas cl ON c.tipo_tomador = 'clinica' AND c.tomador_id = cl.id
+     LEFT JOIN entidades e ON c.tipo_tomador = 'entidade' AND c.tomador_id = e.id
      WHERE c.id = $1`,
     [contrato_id]
   );
 
-  return result.rows[0] ?? null;
+  console.log(
+    '[obterContrato] Resultado da query:',
+    result.rows.length,
+    'linhas'
+  );
+
+  if (!result.rows[0]) {
+    console.log('[obterContrato] Contrato não encontrado!');
+    return null;
+  }
+
+  const contrato = result.rows[0];
+  console.log('[obterContrato] Contrato encontrado:', {
+    id: contrato.id,
+    tipo_tomador: contrato.tipo_tomador,
+    tomador_id: contrato.tomador_id,
+    temConteudo: !!contrato.conteudo,
+  });
+
+  // Se não houver conteúdo, carregar conteúdo padrão
+  if (!contrato.conteudo) {
+    try {
+      const { obterContratopadrao } = await import('./contratos-content');
+      const conteudoPadrao = await obterContratopadrao();
+
+      // Atualizar no banco e retornar com conteúdo
+      await query(
+        'UPDATE contratos SET conteudo = $1, atualizado_em = NOW() WHERE id = $2',
+        [conteudoPadrao, contrato_id]
+      );
+
+      contrato.conteudo = conteudoPadrao;
+      console.log('[obterContrato] Conteúdo padrão carregado e persistido');
+    } catch (err) {
+      console.error('Erro ao carregar conteúdo padrão do contrato:', err);
+      // Fallback: usar conteúdo vazio em vez de falhar
+      contrato.conteudo =
+        'Contrato de Prestação de Serviços - Plataforma QWork';
+    }
+  }
+
+  return contrato;
 }

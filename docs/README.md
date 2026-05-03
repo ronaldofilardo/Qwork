@@ -11,7 +11,7 @@ Sistema de avaliação psicossocial baseado no questionário COPSOQ III (versão
 - **10 Grupos de Avaliação** - 37 itens (COPSOQ III reduzido + módulos JZ e EF)
 - **Dashboard Analítico** - Gráficos e semáforo de riscos
 - **Exportação** - PDF e Excel
-- **Sistema de Contratação Completo** - Planos, Contratos, Pagamentos
+- **Sistema de Contratação Completo** - Contratos, Pagamentos
 - **Auditoria Avançada** - Registro completo de ações críticas
 - **Banco de Dados** - Neon (produção) e PostgreSQL local (desenvolvimento)
 
@@ -26,15 +26,14 @@ O sistema agora possui um fluxo completo de contratação automatizado com **sep
 ### 🎯 Fluxo de Contratação
 
 1. **Cadastro** - Formulário com dados da empresa e responsável
-2. **Seleção de Plano** - Plano Padrão
-3. **Geração de Contrato Neutro** - Focado em prestação de serviço (sem valores)
-4. **Aceite Digital** - Com registro de IP e timestamp
-5. **Pagamento** - PIX, Boleto ou Cartão (simulado)
-6. **Emissão Automática de Recibo** - Documento financeiro completo:
+2. **Geração de Contrato Neutro** - Focado em prestação de serviço (sem valores)
+3. **Aceite Digital** - Com registro de IP e timestamp
+4. **Pagamento** - PIX, Boleto ou Cartão (simulado)
+5. **Emissão Automática de Recibo** - Documento financeiro completo:
    - Vigência calculada (data pagamento + 364 dias)
    - Valores totais e por funcionário
    - Forma de pagamento detalhada (parcelas, vencimentos)
-7. **Login Liberado** - Acesso ao sistema
+6. **Login Liberado** - Acesso ao sistema
 
 ### 📄 Novidade: Separação Contrato/Recibo
 

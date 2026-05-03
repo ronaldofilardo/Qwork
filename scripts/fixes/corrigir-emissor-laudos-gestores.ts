@@ -55,7 +55,7 @@ async function corrigirEmissorLaudos() {
         [laudo.gestor_cpf, laudo.id]
       );
       console.log(
-        `✓ Laudo ${laudo.id} (lote ${laudo.codigo}) - emissor atualizado para ${laudo.gestor_cpf}`
+        `✓ Laudo ${laudo.id} (lote ${laudo.lote_id}) - emissor atualizado para ${laudo.gestor_cpf}`
       );
     } catch (error) {
       console.error(`✗ Erro ao atualizar laudo ${laudo.id}:`, error);

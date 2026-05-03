@@ -176,6 +176,7 @@ export function extractFormDataFields(
 ): Record<string, unknown> {
   const str = (key: string) => formData.get(key) as string | null;
   const numFuncStr = str('numero_funcionarios_estimado');
+  const semIndicacaoStr = str('sem_indicacao');
 
   return {
     tipo: str('tipo') || 'entidade',
@@ -194,5 +195,8 @@ export function extractFormDataFields(
     responsavel_cargo: str('responsavel_cargo') || null,
     responsavel_email: str('responsavel_email') || '',
     responsavel_celular: str('responsavel_celular') || '',
+    codigo_representante: str('codigo_representante') || null,
+    sem_indicacao:
+      semIndicacaoStr === 'true' || semIndicacaoStr === '1' || false,
   };
 }

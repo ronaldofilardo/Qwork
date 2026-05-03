@@ -7,7 +7,7 @@ async function verificarLotesPendentes() {
     );
 
     const result = await query(`
-      SELECT la.id, la.codigo, la.status, la.emitido_em, l.id as laudo_id, l.status as status_laudo
+      SELECT la.id, la.status, la.emitido_em, l.id as laudo_id, l.status as status_laudo
       FROM lotes_avaliacao la
       LEFT JOIN laudos l ON la.id = l.lote_id
       WHERE la.status = 'concluido' AND (l.id IS NULL OR l.status = 'rascunho')
@@ -17,9 +17,7 @@ async function verificarLotesPendentes() {
 
     console.log(`Encontrados ${result.rows.length} lotes pendentes:`);
     result.rows.forEach((lote) => {
-      console.log(
-        `ID: ${lote.id} | Código: ${lote.codigo} | Status: ${lote.status}`
-      );
+      console.log(`ID: ${lote.id} | Status: ${lote.status}`);
       console.log(
         `Emitido em: ${lote.emitido_em} | Laudo ID: ${lote.laudo_id} | Status Laudo: ${lote.status_laudo}`
       );

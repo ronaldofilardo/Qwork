@@ -330,13 +330,14 @@ export async function POST(request: Request) {
           `[LOGIN] clinicas_senhas vazia; tentando buscar senha em usuarios para CPF ${cpf}`
         );
         const uRes = await query(
-          `SELECT senha_hash, clinica_id FROM usuarios WHERE cpf = $1`,
+          `SELECT senha_hash, primeira_senha_alterada, clinica_id FROM usuarios WHERE cpf = $1`,
           [cpf]
         );
 
         if (uRes.rows.length > 0 && uRes.rows[0].senha_hash) {
           senhaHash = uRes.rows[0].senha_hash;
           tomadorId = uRes.rows[0].clinica_id || usuario.clinica_id;
+          primeiraSenhaAlterada = uRes.rows[0].primeira_senha_alterada ?? true;
           // tentar inferir ativo como true para evitar bloqueio indevido
           tomadorAtivo = true;
         } else {

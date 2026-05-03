@@ -1,8 +1,16 @@
 import dotenv from 'dotenv';
 
+// Detectar se estamos em testes ANTES de carregar .env.local
+// Se estamos em testes, NÃO carregamos .env.local — deixamos .env.test com override=true fazer isso
+const isJestRunning = !!process.env.JEST_WORKER_ID;
+const isTestMode = process.env.NODE_ENV === 'test' || isJestRunning;
+
 // Load local env early to ensure LOCAL_DATABASE_URL, ALLOW_PROD_DB_LOCAL, and other overrides are available
 // This helps when scripts import lib/db.ts directly and .env.local wasn't loaded yet by the caller.
-dotenv.config({ path: '.env.local', override: false });
+// IMPORTANTE: Não carregar .env.local se estamos em testes — deixar .env.test fazer isso com override=true
+if (!isTestMode) {
+  dotenv.config({ path: '.env.local', override: false });
+}
 
 import pg from 'pg';
 import bcrypt from 'bcryptjs';

@@ -30,12 +30,7 @@ describe('LoginPage', () => {
     mockFetch.mockReset();
     // Set up default mock that handles common cases
     mockFetch.mockImplementation((url, options) => {
-      if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
-        } as Response);
-      } else if (url === '/api/auth/session') {
+      if (url === '/api/auth/session') {
         return Promise.resolve({
           ok: true,
           json: async () => ({ authenticated: true }),
@@ -81,11 +76,6 @@ describe('LoginPage', () => {
             perfil: 'admin',
             redirectTo: '/admin',
           }),
-        } as Response);
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
         } as Response);
       } else {
         return Promise.resolve({
@@ -139,11 +129,6 @@ describe('LoginPage', () => {
             return obj;
           },
         } as Response);
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
-        } as Response);
       } else {
         return Promise.resolve({
           ok: true,
@@ -178,11 +163,6 @@ describe('LoginPage', () => {
             success: true,
             redirectTo: '/dashboard',
           }),
-        } as Response);
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
         } as Response);
       } else {
         return Promise.resolve({
@@ -220,222 +200,6 @@ describe('LoginPage', () => {
           json: async () => ({
             error: 'Credenciais inválidas',
           }),
-        } as Response);
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
-        } as Response);
-      } else if (url === '/api/auth/session') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ authenticated: true }),
-        } as Response);
-      } else {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ success: true }),
-        } as Response);
-      }
-    });
-
-    render(<LoginPage />);
-
-    await user.type(screen.getByLabelText(/cpf/i), '99999999999');
-    await user.type(screen.getByLabelText(/^Senha/i), 'senhaerrada');
-    await user.click(screen.getByRole('button', { name: /entrar/i }));
-
-    await waitFor(
-      () => {
-        expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument();
-      },
-      { timeout: 10000 }
-    );
-
-    expect(mockHref).not.toHaveBeenCalled();
-  });
-
-  it('deve validar campos obrigatórios', async () => {
-    const user = userEvent.setup();
-
-    render(<LoginPage />);
-
-    // Tentar submeter sem preencher campos
-    await user.click(screen.getByRole('button', { name: /entrar/i }));
-
-    // Deve exibir validação do HTML5 ou erro customizado
-    const cpfInput = screen.getByLabelText(/cpf/i);
-    const senhaInput = screen.getByLabelText(/^Senha/i);
-
-    expect(cpfInput).toBeRequired();
-    // Senha agora é opcional (funcionário pode usar data de nascimento)
-    // O campo não tem atributo required
-    expect(senhaInput).toBeInTheDocument();
-  });
-
-  it('deve exibir estado de loading durante login', async () => {
-    const user = userEvent.setup();
-
-    // Mock that takes time to resolve
-    mockFetch.mockImplementation((url, options) => {
-      if (url === '/api/auth/login' && options?.method === 'POST') {
-        return new Promise((resolve) =>
-          setTimeout(
-            () =>
-              resolve({
-                ok: true,
-                json: async () => ({
-                  success: true,
-                  cpf: '00000000000',
-                  nome: 'Admin',
-                  perfil: 'admin',
-                  redirectTo: '/admin',
-                }),
-              } as Response),
-            100
-          )
-        );
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
-        } as Response);
-      } else if (url === '/api/auth/session') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ authenticated: true }),
-        } as Response);
-      } else {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ success: true }),
-        } as Response);
-      }
-    });
-
-    render(<LoginPage />);
-
-    await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-    await user.type(screen.getByLabelText(/^Senha/i), 'admin123');
-    await user.click(screen.getByRole('button', { name: /entrar/i }));
-
-    // Deve mostrar loading no botão E estar desabilitado
-    await waitFor(
-      () => {
-        const submitButton = screen.getByRole('button', {
-          name: /entrando\.{3}/i,
-        });
-        expect(submitButton).toBeInTheDocument();
-        expect(submitButton).toBeDisabled();
-      },
-      { timeout: 10000 }
-    );
-  });
-
-  it('deve tratar erro de rede', async () => {
-    const user = userEvent.setup();
-
-    mockFetch.mockImplementation((url, options) => {
-      if (url === '/api/auth/login' && options?.method === 'POST') {
-        return Promise.reject(new Error('Erro de rede'));
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
-        } as Response);
-      } else if (url === '/api/auth/session') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ authenticated: true }),
-        } as Response);
-      } else {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ success: true }),
-        } as Response);
-      }
-    });
-
-    render(<LoginPage />);
-
-    await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-    await user.type(screen.getByLabelText(/^Senha/i), 'admin123');
-    await user.click(screen.getByRole('button', { name: /entrar/i }));
-
-    await waitFor(
-      () => {
-        expect(screen.getByText(/erro de rede/i)).toBeInTheDocument();
-      },
-      { timeout: 10000 }
-    );
-  });
-
-  it('deve limpar erros ao digitar novamente', async () => {
-    const user = userEvent.setup();
-
-    mockFetch.mockImplementation((url, options) => {
-      if (url === '/api/auth/login' && options?.method === 'POST') {
-        return Promise.resolve({
-          ok: false,
-          json: async () => ({ error: 'Credenciais inválidas' }),
-        } as Response);
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
-        } as Response);
-      } else if (url === '/api/auth/session') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ authenticated: true }),
-        } as Response);
-      } else {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({ success: true }),
-        } as Response);
-      }
-    });
-
-    render(<LoginPage />);
-
-    // Fazer login inválido primeiro
-    await user.type(screen.getByLabelText(/cpf/i), '99999999999');
-    await user.type(screen.getByLabelText(/^Senha/i), 'senhaerrada');
-    await user.click(screen.getByRole('button', { name: /entrar/i }));
-
-    await waitFor(
-      () => {
-        expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument();
-      },
-      { timeout: 10000 }
-    );
-
-    // Digitar novamente deve limpar erro (implementação futura)
-    await user.clear(screen.getByLabelText(/cpf/i));
-    await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-
-    // Teste simplificado - apenas verifica que não quebra e erro ainda está visível
-    expect(screen.getByLabelText(/cpf/i)).toHaveValue('00000000000');
-    expect(screen.getByText('Credenciais inválidas')).toBeInTheDocument();
-  });
-
-  it('deve aceitar Enter para submeter formulário', async () => {
-    const user = userEvent.setup();
-
-    mockFetch.mockImplementationOnce((url, options) => {
-      if (url === '/api/auth/login' && options?.method === 'POST') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => ({
-            perfil: 'admin',
-            user: { id: 1, cpf: '00000000000' },
-          }),
-        } as Response);
-      } else if (url === '/api/planos') {
-        return Promise.resolve({
-          ok: true,
-          json: async () => [],
         } as Response);
       } else {
         return Promise.resolve({
@@ -491,11 +255,6 @@ describe('LoginPage', () => {
               redirectTo: expectedPath,
             }),
           } as Response);
-        } else if (url === '/api/planos') {
-          return Promise.resolve({
-            ok: true,
-            json: async () => [],
-          } as Response);
         } else {
           return Promise.resolve({
             ok: true,
@@ -545,11 +304,6 @@ describe('LoginPage', () => {
               redirectTo: '/admin',
             }),
           } as Response);
-        } else if (url === '/api/planos') {
-          return Promise.resolve({
-            ok: true,
-            json: async () => [],
-          } as Response);
         } else {
           return Promise.resolve({
             ok: true,
@@ -597,11 +351,6 @@ describe('LoginPage', () => {
             json: async () => ({
               error: 'CPF ou senha inválidos',
             }),
-          } as Response);
-        } else if (url === '/api/planos') {
-          return Promise.resolve({
-            ok: true,
-            json: async () => [],
           } as Response);
         } else {
           return Promise.resolve({

@@ -127,7 +127,7 @@ export async function POST(
       String(loteId),
       session.cpf,
       session.perfil,
-      JSON.stringify({ motivo: motivo.trim(), codigo_lote: lote.codigo }),
+      JSON.stringify({ motivo: motivo.trim() }),
       request.headers.get('x-forwarded-for') ||
         request.headers.get('x-real-ip') ||
         '0.0.0.0',
@@ -136,7 +136,7 @@ export async function POST(
       String(loteId),
       session.cpf,
       session.perfil,
-      JSON.stringify({ motivo: motivo.trim(), codigo_lote: lote.codigo }),
+      JSON.stringify({ motivo: motivo.trim() }),
       request.headers.get('x-forwarded-for') ||
         request.headers.get('x-real-ip') ||
         '0.0.0.0',

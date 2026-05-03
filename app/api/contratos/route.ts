@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { query, criarContaResponsavel } from '@/lib/db';
+import { query } from '@/lib/db';
+import bcrypt from 'bcryptjs';
 import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
 import { notificarAceiteContrato } from '@/lib/email';
 
@@ -72,10 +73,11 @@ export async function POST(request: NextRequest) {
       let boasVindasUrl: string | null = null;
       let credenciais: { login: string; senha: string } | null = null;
 
+      const tabelaTomador: 'entidades' | 'clinicas' =
+        updated.tipo_tomador === 'clinica' ? 'clinicas' : 'entidades';
+
       try {
         // Buscar dados completos do tomador usando tipo_tomador do contrato
-        const tabelaTomador: 'entidades' | 'clinicas' =
-          updated.tipo_tomador === 'clinica' ? 'clinicas' : 'entidades';
 
         const tomadorRes = await query(
           `SELECT * FROM ${tabelaTomador} WHERE id = $1`,
@@ -107,12 +109,78 @@ export async function POST(request: NextRequest) {
           })
         );
 
-        // Criar conta responsável (libera login)
-        await criarContaResponsavel(tomadorData);
+        // Criar/atualizar usuário em `usuarios` (modelo atual — sem contratantes_senhas)
+        const cleanCnpjConta = (tomadorData.cnpj || '').replace(/[./-]/g, '');
+        const cpfLogin = tomadorData.responsavel_cpf || cleanCnpjConta;
+        const defaultPwd = cleanCnpjConta.slice(-6);
+        const senhaHashed = await bcrypt.hash(defaultPwd, 10);
+        const tipoUsuario = tabelaTomador === 'clinicas' ? 'rh' : 'gestor';
+        const clinicaIdParam =
+          tabelaTomador === 'clinicas' ? updated.tomador_id : null;
+        const entidadeIdParam =
+          tabelaTomador === 'entidades' ? updated.tomador_id : null;
+
+        const usuarioExistente = await query(
+          `SELECT id FROM usuarios WHERE cpf = $1`,
+          [cpfLogin]
+        );
+        if (usuarioExistente.rows.length > 0) {
+          const updateUserRes = await query(
+            `UPDATE usuarios SET senha_hash = $1, ativo = true, primeira_senha_alterada = false,
+              clinica_id = COALESCE($2, clinica_id),
+              entidade_id = COALESCE($3, entidade_id),
+              atualizado_em = NOW()
+              WHERE cpf = $4
+              RETURNING id, ativo, primeira_senha_alterada`,
+            [senhaHashed, clinicaIdParam, entidadeIdParam, cpfLogin]
+          );
+          console.log(
+            `[CONTRATOS] Usuário atualizado em usuarios para CPF ${cpfLogin}`,
+            {
+              usuarioId: updateUserRes.rows[0]?.id,
+              ativo: updateUserRes.rows[0]?.ativo,
+              primeira_senha_alterada:
+                updateUserRes.rows[0]?.primeira_senha_alterada,
+            }
+          );
+        } else {
+          const insertUserRes = await query(
+            `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, entidade_id, ativo, primeira_senha_alterada)
+              VALUES ($1, $2, $3, $4, $5::usuario_tipo_enum, $6, $7, true, false)
+              RETURNING id, ativo, primeira_senha_alterada`,
+            [
+              cpfLogin,
+              tomadorData.responsavel_nome || tomadorData.nome,
+              tomadorData.responsavel_email || tomadorData.email,
+              senhaHashed,
+              tipoUsuario,
+              clinicaIdParam,
+              entidadeIdParam,
+            ]
+          );
+          console.log(
+            `[CONTRATOS] Usuário criado em usuarios para CPF ${cpfLogin}`,
+            {
+              usuarioId: insertUserRes.rows[0]?.id,
+              tipo_usuario: tipoUsuario,
+              ativo: insertUserRes.rows[0]?.ativo,
+              primeira_senha_alterada:
+                insertUserRes.rows[0]?.primeira_senha_alterada,
+            }
+          );
+        }
 
         // Atualizar tomador para marcar como ativo
         const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true WHERE id = $1`;
-        await query(updateTableQuery, [updated.tomador_id]);
+        const updateResult = await query(updateTableQuery, [
+          updated.tomador_id,
+        ]);
+        console.log(
+          `[CONTRATOS] Tomador ${updated.tomador_id} marcado como ativo (tabela: ${tabelaTomador})`,
+          {
+            rowsAffected: updateResult.rowCount,
+          }
+        );
 
         // Auto-converter leads pendentes por CNPJ
         try {
@@ -197,12 +265,30 @@ export async function POST(request: NextRequest) {
           tomadorNome: tomadorData.nome,
           cnpj: tomadorData.cnpj,
           tipo: updated.tipo_tomador as 'clinica' | 'entidade',
-        }).catch((e) => console.error('[EMAIL] notificarAceiteContrato falhou:', e));
+        }).catch((e) =>
+          console.error('[EMAIL] notificarAceiteContrato falhou:', e)
+        );
       } catch (err) {
         console.error(
           '[CONTRATOS] Erro ao liberar login automaticamente após aceite:',
           err
         );
+        // Mesmo com erro, garantir que o tomador foi ativado
+        try {
+          const fallbackUpdate = await query(
+            `UPDATE ${tabelaTomador} SET ativa = true WHERE id = $1`,
+            [updated.tomador_id]
+          );
+          console.log(
+            `[CONTRATOS] Fallback: Tomador ${updated.tomador_id} marcado como ativo após erro`,
+            { rowsAffected: fallbackUpdate.rowCount }
+          );
+        } catch (fallbackErr) {
+          console.error(
+            `[CONTRATOS] Fallback também falhou para tomador ${updated.tomador_id}:`,
+            fallbackErr
+          );
+        }
         return NextResponse.json(
           {
             success: false,
@@ -221,6 +307,7 @@ export async function POST(request: NextRequest) {
           boasVindasUrl,
           credenciais,
           loginLiberadoImediatamente: true,
+          tomadorId: updated.tomador_id,
         },
         { status: 200 }
       );

@@ -65,27 +65,4 @@ describe('Cadastro de Entidade — Fluxo Completo', () => {
       }
     });
   });
-
-  describe('Seleção de Planos', () => {
-    it('deve exibir planos disponíveis', () => {
-      cy.intercept('GET', '/api/planos*', {
-        statusCode: 200,
-        body: {
-          planos: [
-            { id: 1, nome: 'Básico', valor: 500, descricao: 'Plano básico' },
-            {
-              id: 2,
-              nome: 'Profissional',
-              valor: 1500,
-              descricao: 'Plano profissional',
-            },
-          ],
-        },
-      }).as('planos');
-
-      cy.visit('/cadastro', { timeout: TIMEOUT });
-
-      cy.contains(/plano|planos/i, { timeout: TIMEOUT }).should('exist');
-    });
-  });
 });

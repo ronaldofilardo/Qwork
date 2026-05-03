@@ -72,6 +72,10 @@ export default function ModalCadastroTomador({
     contratoGerado: contratoGeradoHook,
     confirmacaoFinalAceita: confirmacaoFinalAceitaHook,
     setConfirmacaoFinalAceita: setConfirmacaoFinalAceitaHook,
+    codigoRepresentante: codigoRepresentanteHook,
+    setCodigoRepresentante: setCodigoRepresentanteHook,
+    semIndicacao: semIndicacaoHook,
+    setSemIndicacao: setSemIndicacaoHook,
     dadostomador: dadosContratanteHook,
     setDadostomador: setDadosContratanteHook,
     dadosResponsavel: dadosResponsavelHook,
@@ -107,6 +111,10 @@ export default function ModalCadastroTomador({
   const _contratoGerado = contratoGeradoHook;
   const confirmacaoFinalAceita = confirmacaoFinalAceitaHook;
   const setConfirmacaoFinalAceita = setConfirmacaoFinalAceitaHook;
+  const codigoRepresentante = codigoRepresentanteHook;
+  const setCodigoRepresentante = setCodigoRepresentanteHook;
+  const semIndicacao = semIndicacaoHook;
+  const setSemIndicacao = setSemIndicacaoHook;
   const dadosContratante = dadosContratanteHook;
   const _setDadosContratante = setDadosContratanteHook;
   const dadosResponsavel = dadosResponsavelHook;
@@ -402,6 +410,10 @@ export default function ModalCadastroTomador({
                   confirmacaoFinalAceita={confirmacaoFinalAceita}
                   setConfirmacaoFinalAceita={setConfirmacaoFinalAceita}
                   responsavelLabel={responsavelLabel}
+                  codigoRepresentante={codigoRepresentante}
+                  setCodigoRepresentante={setCodigoRepresentante}
+                  semIndicacao={semIndicacao}
+                  setSemIndicacao={setSemIndicacao}
                 />
               )}
 
@@ -429,14 +441,17 @@ export default function ModalCadastroTomador({
                 )}
 
                 <div className="ml-auto flex items-center gap-4">
-                  {/* Se estiver na etapa de confirmação e o usuário ainda não
-                      aceitou, mostramos uma dica visível para orientar */}
-                  {etapaAtual === 'confirmacao' && !confirmacaoFinalAceita && (
-                    <div className="text-sm text-gray-600">
-                      ⚠️ Marque a caixa{' '}
-                      <strong>Confirmo que revisei todos os dados</strong> para
-                      habilitar o envio
-                    </div>
+                  {/* Se estiver na etapa de confirmação e faltar dados, mostramos uma dica visível */}
+                  {etapaAtual === 'confirmacao' && (
+                    <>
+                      {!confirmacaoFinalAceita && (
+                        <div className="text-sm text-gray-600">
+                          ⚠️ Marque a caixa{' '}
+                          <strong>Confirmo que revisei todos os dados</strong>{' '}
+                          para habilitar o envio
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {etapaAtual !== 'confirmacao' ? (

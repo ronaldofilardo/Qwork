@@ -322,7 +322,7 @@ export async function autoConvertirLeadPorCnpj(
 
         const vinculoResult = await query<{ id: number }>(
           `INSERT INTO vinculos_comissao (${insertFields})
-           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7, $8)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
            RETURNING id`,
           [
             lead.representante_id,
@@ -330,6 +330,7 @@ export async function autoConvertirLeadPorCnpj(
             lead.id,
             dataInicio,
             dataExpiracao,
+            'ativo',
             percRep,
             numVidas,
             valorNegociado,

@@ -72,10 +72,21 @@ export async function POST(request: Request) {
 
     // Buscar hash atual na tabela correta
     let tabelaSenha: string;
-    let campoId: string;
+    let campoId: string | null;
     let idValue: number | undefined;
 
-    if (perfil === 'gestor') {
+    // Primeiro, tentar buscar em usuarios (para recém-criados via contrato)
+    const usuariosRes = await query(
+      `SELECT senha_hash FROM usuarios WHERE cpf = $1`,
+      [cpf]
+    );
+
+    if (usuariosRes.rows.length > 0 && usuariosRes.rows[0].senha_hash) {
+      tabelaSenha = 'usuarios';
+      campoId = null; // usuarios não usa campoId adicional
+      idValue = undefined;
+      console.log('[TROCAR_SENHA] Encontrado em usuarios');
+    } else if (perfil === 'gestor') {
       tabelaSenha = 'entidades_senhas';
       campoId = 'entidade_id';
       idValue = session.entidade_id;
@@ -85,17 +96,31 @@ export async function POST(request: Request) {
       idValue = session.clinica_id;
     }
 
-    if (!idValue) {
+    if (!tabelaSenha) {
       return NextResponse.json(
         { error: 'Erro de configuração da sessão. Faça login novamente.' },
         { status: 400 }
       );
     }
 
-    const senhaResult = await query(
-      `SELECT senha_hash FROM ${tabelaSenha} WHERE cpf = $1 AND ${campoId} = $2`,
-      [cpf, idValue]
-    );
+    let senhaResult;
+    if (tabelaSenha === 'usuarios') {
+      senhaResult = await query(
+        `SELECT senha_hash FROM usuarios WHERE cpf = $1`,
+        [cpf]
+      );
+    } else {
+      if (!idValue) {
+        return NextResponse.json(
+          { error: 'Erro de configuração da sessão. Faça login novamente.' },
+          { status: 400 }
+        );
+      }
+      senhaResult = await query(
+        `SELECT senha_hash FROM ${tabelaSenha} WHERE cpf = $1 AND ${campoId} = $2`,
+        [cpf, idValue]
+      );
+    }
 
     if (senhaResult.rows.length === 0) {
       return NextResponse.json(
@@ -131,12 +156,21 @@ export async function POST(request: Request) {
     // Hash da nova senha e atualizar
     const novoHash = await bcrypt.hash(nova_senha, 12);
 
-    await query(
-      `UPDATE ${tabelaSenha}
-       SET senha_hash = $1, primeira_senha_alterada = true, atualizado_em = CURRENT_TIMESTAMP
-       WHERE cpf = $2 AND ${campoId} = $3`,
-      [novoHash, cpf, idValue]
-    );
+    if (tabelaSenha === 'usuarios') {
+      await query(
+        `UPDATE usuarios
+         SET senha_hash = $1, primeira_senha_alterada = true, atualizado_em = CURRENT_TIMESTAMP
+         WHERE cpf = $2`,
+        [novoHash, cpf]
+      );
+    } else {
+      await query(
+        `UPDATE ${tabelaSenha}
+         SET senha_hash = $1, primeira_senha_alterada = true, atualizado_em = CURRENT_TIMESTAMP
+         WHERE cpf = $2 AND ${campoId} = $3`,
+        [novoHash, cpf, idValue]
+      );
+    }
 
     // Auditoria de sucesso
     try {

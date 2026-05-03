@@ -52,7 +52,7 @@ async function corrigirEmissorIncorreto() {
         [emissorOficial, laudo.id]
       );
       console.log(
-        `✓ Laudo ${laudo.id} (lote ${laudo.codigo}) - emissor atualizado para ${emissorOficial}`
+        `✓ Laudo ${laudo.id} (lote ${laudo.lote_id}) - emissor atualizado para ${emissorOficial}`
       );
     } catch (error) {
       console.error(`✗ Erro ao atualizar laudo ${laudo.id}:`, error);

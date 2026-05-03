@@ -65,6 +65,8 @@ export function useCadastroTomador({
   const [contratoAceito, setContratoAceito] = useState(false);
   const [contratoGerado, setContratoGerado] = useState('');
   const [confirmacaoFinalAceita, setConfirmacaoFinalAceita] = useState(false);
+  const [codigoRepresentante, setCodigoRepresentante] = useState('');
+  const [semIndicacao, setSemIndicacao] = useState(false);
 
   const [dadostomador, setDadostomador] = useState<DT>({
     nome: '',
@@ -300,6 +302,10 @@ export function useCadastroTomador({
         formData.append(`responsavel_${key}`, value as string)
       );
 
+      if (codigoRepresentante.trim()) {
+        formData.append('codigo_representante', codigoRepresentante.trim());
+      }
+
       if (arquivos.cartao_cnpj)
         formData.append('cartao_cnpj', arquivos.cartao_cnpj);
       if (arquivos.contrato_social)
@@ -389,6 +395,10 @@ export function useCadastroTomador({
     contratoGerado,
     confirmacaoFinalAceita,
     setConfirmacaoFinalAceita,
+    codigoRepresentante,
+    setCodigoRepresentante,
+    semIndicacao,
+    setSemIndicacao,
     dadosContratante: dadostomador,
     setDadosContratante: setDadostomador,
     dadostomador,

@@ -225,7 +225,7 @@ export async function handleCadastroTomador(
     // Auto-vincular representante por CNPJ
     let representanteVinculado: CadastroResult['representanteVinculado'] = null;
 
-    // Fallback: auto-converter leads pendentes por match de CNPJ (sem código)
+    // Auto-converter leads pendentes por match de CNPJ
     if (!representanteVinculado && cnpjLimpo) {
       try {
         const autoResult = await autoConvertirLeadPorCnpj(

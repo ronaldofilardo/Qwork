@@ -19,7 +19,7 @@ def verificar_lotes_pendentes():
         
         # Consultar lotes concluídos sem laudo ou com laudo em rascunho
         cur.execute('''
-            SELECT la.id, la.codigo, la.status, la.emitido_em, l.id as laudo_id, l.status as status_laudo
+            SELECT la.id, la.status, la.emitido_em, l.id as laudo_id, l.status as status_laudo
             FROM lotes_avaliacao la
             LEFT JOIN laudos l ON la.id = l.lote_id
             WHERE la.status = 'concluido' AND (l.id IS NULL OR l.status = 'rascunho')

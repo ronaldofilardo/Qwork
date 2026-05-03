@@ -82,7 +82,7 @@ async function atualizarHashLaudo(laudoId, hash) {
  * Processa um laudo: localiza PDF, gera hash, atualiza banco
  */
 async function processarLaudo(laudo) {
-  const { id, lote_id, codigo, status, emitido_em } = laudo;
+  const { id, lote_id, status, emitido_em } = laudo;
 
   // Tentar localizar o PDF
   const pastaLaudos = path.join(__dirname, '..', 'storage', 'laudos');

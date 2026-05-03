@@ -430,11 +430,3 @@ export const getPagamentosBytomador = getPagamentosByEntidade;
 export const tomadorPodeLogar = entidadePodeLogar;
 /** @deprecated Use getEntidadeCompleta instead */
 export const gettomadorCompleto = getEntidadeCompleta;
-
-/**
- * @deprecated Planos foram removidos do sistema.
- * Retorna array vazio para compatibilidade.
- */
-export function getPlanos(_session?: Session) {
-  return [];
-}

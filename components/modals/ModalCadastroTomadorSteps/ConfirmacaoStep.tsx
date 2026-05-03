@@ -32,6 +32,10 @@ interface Props {
   confirmacaoFinalAceita: boolean;
   setConfirmacaoFinalAceita: (v: boolean) => void;
   responsavelLabel?: string;
+  codigoRepresentante: string;
+  setCodigoRepresentante: (v: string) => void;
+  semIndicacao: boolean;
+  setSemIndicacao: (v: boolean) => void;
 }
 
 export default function ConfirmacaoStep({
@@ -41,6 +45,10 @@ export default function ConfirmacaoStep({
   confirmacaoFinalAceita,
   setConfirmacaoFinalAceita,
   responsavelLabel = 'Responsável',
+  codigoRepresentante,
+  setCodigoRepresentante,
+  semIndicacao,
+  setSemIndicacao,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -110,6 +118,40 @@ export default function ConfirmacaoStep({
             {arquivos.doc_identificacao?.name}
           </li>
         </ul>
+      </div>
+
+      <div className="border rounded-lg p-4 space-y-3">
+        <h4 className="font-semibold text-gray-800">Código do Representante</h4>
+        <p className="text-xs text-gray-500">
+          Se você foi indicado por um representante QWork, informe o código
+          aqui. Campo opcional.
+        </p>
+        <div className="space-y-2">
+          <input
+            type="text"
+            value={codigoRepresentante}
+            onChange={(e) =>
+              setCodigoRepresentante(e.target.value.toUpperCase())
+            }
+            disabled={semIndicacao}
+            placeholder="Ex: REP-ABC123"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+          />
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={semIndicacao}
+              onChange={(e) => {
+                setSemIndicacao(e.target.checked);
+                if (e.target.checked) setCodigoRepresentante('');
+              }}
+              className="w-4 h-4 text-gray-600 rounded"
+            />
+            <span className="text-sm text-gray-600">
+              Não possuo código de representante
+            </span>
+          </label>
+        </div>
       </div>
 
       <div className="border-2 border-orange-300 rounded-lg p-4 bg-orange-50">
