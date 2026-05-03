@@ -39,7 +39,7 @@ export async function processEmissionQueue(maxItems = 10) {
         try {
           await emitirLaudoImediato();
           await query('DELETE FROM emissao_queue WHERE id = $1', [r.id]);
-        } catch (_emitErr) {
+        } catch {
           // atualizar tentativas e agendar novamente pela própria função enqueueEmissao
           await enqueueEmissao(r.lote_id, 'Falha ao reemitir (worker)');
         }

@@ -14,14 +14,27 @@
 import nodemailer from 'nodemailer';
 import { query } from '@/lib/db';
 
+const SMTP_HOST = process.env.SMTP_HOST ?? 'smtp.office365.com';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT ?? '587', 10);
 const SMTP_FROM = process.env.SMTP_USER ?? 'contato@qwork.app.br';
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL ?? 'ronaldofilardo@gmail.com';
 
 function createTransporter() {
+  const isDev = process.env.NODE_ENV === 'development';
+
+  if (
+    isDev &&
+    (!process.env.SMTP_PASSWORD || process.env.SMTP_PASSWORD === '')
+  ) {
+    console.warn(
+      '[EMAIL] ⚠️ SMTP_PASSWORD não configurado em development. Emails serão logados mas não enviados.'
+    );
+  }
+
   return nodemailer.createTransport({
-    host: 'smtp.office365.com',
-    port: 587,
-    secure: false, // STARTTLS
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465, // TLS para porta 465, STARTTLS para 587
     auth: {
       user: SMTP_FROM,
       pass: process.env.SMTP_PASSWORD,
@@ -84,14 +97,24 @@ export async function notificarSolicitacaoEmissao(
     )
   );
 
-  await transporter.sendMail({
-    from: `QWork <${SMTP_FROM}>`,
-    to: NOTIFY_EMAIL,
-    subject: `[QWork] Solicitação de emissão — Lote #${data.loteId}`,
-    html,
-  });
-
-  console.log(`[EMAIL] notificarSolicitacaoEmissao → lote #${data.loteId}`);
+  try {
+    const result = await transporter.sendMail({
+      from: `QWork <${SMTP_FROM}>`,
+      to: NOTIFY_EMAIL,
+      subject: `[QWork] Solicitação de emissão — Lote #${data.loteId}`,
+      html,
+    });
+    console.log(
+      `[EMAIL] ✅ notificarSolicitacaoEmissao enviado com sucesso → lote #${data.loteId}`,
+      { messageId: result.messageId }
+    );
+  } catch (error) {
+    console.error(
+      `[EMAIL] ❌ Erro ao enviar notificarSolicitacaoEmissao (lote #${data.loteId}):`,
+      { error: error instanceof Error ? error.message : String(error) }
+    );
+    throw error;
+  }
 }
 
 // ── Notificação 2: Lote liberado para emissão ─────────────────────────────────
@@ -127,14 +150,33 @@ export async function notificarLoteLiberado(
     )
   );
 
-  await transporter.sendMail({
-    from: `QWork <${SMTP_FROM}>`,
-    to: NOTIFY_EMAIL,
-    subject: `[QWork] Lote liberado — #${data.loteId} (${data.tomadorNome})`,
-    html,
-  });
-
-  console.log(`[EMAIL] notificarLoteLiberado → lote #${data.loteId}`);
+  try {
+    const result = await transporter.sendMail({
+      from: `QWork <${SMTP_FROM}>`,
+      to: NOTIFY_EMAIL,
+      subject: `[QWork] Lote liberado — #${data.loteId} (${data.tomadorNome})`,
+      html,
+    });
+    console.log(
+      `[EMAIL] ✅ notificarLoteLiberado enviado com sucesso → lote #${data.loteId}`,
+      {
+        messageId: result.messageId,
+        destinatario: NOTIFY_EMAIL,
+      }
+    );
+  } catch (error) {
+    console.error(
+      `[EMAIL] ❌ Erro ao enviar notificarLoteLiberado (lote #${data.loteId}):`,
+      {
+        error: error instanceof Error ? error.message : String(error),
+        destinatario: NOTIFY_EMAIL,
+        host: SMTP_HOST,
+        port: SMTP_PORT,
+        user: SMTP_FROM,
+      }
+    );
+    throw error;
+  }
 }
 
 /**
@@ -146,24 +188,49 @@ export async function notificarLoteLiberado(
  * dispararEmailLotePago(lote.id).catch(e => console.error('[EMAIL]', e));
  */
 export async function dispararEmailLotePago(loteId: number): Promise<void> {
-  const result = await query(
-    `SELECT la.numero_ordem,
-            COALESCE(e.nome, c.nome) AS tomador_nome,
-            CASE WHEN la.entidade_id IS NOT NULL THEN 'entidade' ELSE 'clinica' END AS tomador_tipo
-     FROM lotes_avaliacao la
-     LEFT JOIN entidades e ON e.id = la.entidade_id
-     LEFT JOIN clinicas c ON c.id = la.clinica_id
-     WHERE la.id = $1`,
-    [loteId]
-  );
-  if (result.rows.length === 0) return;
-  const { numero_ordem, tomador_nome, tomador_tipo } = result.rows[0];
-  await notificarLoteLiberado({
-    loteId,
-    numeroOrdem: numero_ordem ?? loteId,
-    tomadorNome: String(tomador_nome ?? '—'),
-    tomadorTipo: tomador_tipo as 'clinica' | 'entidade',
-  });
+  try {
+    console.log(
+      `[EMAIL] 📢 Iniciando dispararEmailLotePago para lote #${loteId}`
+    );
+
+    const result = await query(
+      `SELECT la.numero_ordem,
+              COALESCE(e.nome, c.nome) AS tomador_nome,
+              CASE WHEN la.entidade_id IS NOT NULL THEN 'entidade' ELSE 'clinica' END AS tomador_tipo
+       FROM lotes_avaliacao la
+       LEFT JOIN entidades e ON e.id = la.entidade_id
+       LEFT JOIN clinicas c ON c.id = la.clinica_id
+       WHERE la.id = $1`,
+      [loteId]
+    );
+
+    if (result.rows.length === 0) {
+      console.warn(
+        `[EMAIL] ⚠️ Lote #${loteId} não encontrado no banco de dados`
+      );
+      return;
+    }
+
+    const { numero_ordem, tomador_nome, tomador_tipo } = result.rows[0];
+    console.log(`[EMAIL] 🔍 Dados do lote #${loteId}:`, {
+      numero_ordem,
+      tomador_nome,
+      tomador_tipo,
+    });
+
+    await notificarLoteLiberado({
+      loteId,
+      numeroOrdem: numero_ordem ?? loteId,
+      tomadorNome: String(tomador_nome ?? '—'),
+      tomadorTipo: tomador_tipo as 'clinica' | 'entidade',
+    });
+  } catch (error) {
+    console.error(
+      `[EMAIL] ❌ Erro em dispararEmailLotePago (lote #${loteId}):`,
+      error
+    );
+    throw error;
+  }
 }
 
 // ── Notificação 3: Aceite de contrato ─────────────────────────────────────────
@@ -190,14 +257,22 @@ export async function notificarAceiteContrato(
     )
   );
 
-  await transporter.sendMail({
-    from: `QWork <${SMTP_FROM}>`,
-    to: NOTIFY_EMAIL,
-    subject: `[QWork] Contrato aceito — ${data.tomadorNome}`,
-    html,
-  });
-
-  console.log(
-    `[EMAIL] notificarAceiteContrato → tomador #${data.tomadorId} (${data.tomadorNome})`
-  );
+  try {
+    const result = await transporter.sendMail({
+      from: `QWork <${SMTP_FROM}>`,
+      to: NOTIFY_EMAIL,
+      subject: `[QWork] Contrato aceito — ${data.tomadorNome}`,
+      html,
+    });
+    console.log(
+      `[EMAIL] ✅ notificarAceiteContrato enviado com sucesso → tomador #${data.tomadorId}`,
+      { messageId: result.messageId }
+    );
+  } catch (error) {
+    console.error(
+      `[EMAIL] ❌ Erro ao enviar notificarAceiteContrato (tomador #${data.tomadorId}):`,
+      { error: error instanceof Error ? error.message : String(error) }
+    );
+    throw error;
+  }
 }

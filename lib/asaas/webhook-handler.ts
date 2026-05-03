@@ -543,9 +543,19 @@ export async function activateSubscription(
     }
 
     // Email #2: lote disponível para o emissor gerar o laudo
-    dispararEmailLotePago(loteId).catch((e) =>
-      console.error('[EMAIL] dispararEmailLotePago (webhook) falhou:', e)
-    );
+    console.log(`[Asaas Webhook] 📧 Disparando email para lote ${loteId}...`);
+    dispararEmailLotePago(loteId)
+      .then(() => {
+        console.log(
+          `[Asaas Webhook] ✅ Email enviado com sucesso para lote ${loteId}`
+        );
+      })
+      .catch((e) => {
+        console.error(
+          `[Asaas Webhook] ❌ dispararEmailLotePago (lote ${loteId}) falhou:`,
+          e
+        );
+      });
   }
 }
 
