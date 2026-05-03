@@ -62,7 +62,9 @@ export async function GET(_request: NextRequest) {
       LEFT JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela ON true`
     );
 
-    // Query 3: Parcelas vencidas (top 10)
+    // Query 3: Parcelas vencidas (top 10) - DEPRECATED: contratantes table no longer exists
+    const parcelasVencidasResult = { rows: [] };
+    /*
     const parcelasVencidasResult = await query(
       `SELECT
         p.id as pagamento_id,
@@ -84,8 +86,11 @@ export async function GET(_request: NextRequest) {
       ORDER BY (parcela->>'data_vencimento')::date ASC
       LIMIT 10`
     );
+    */
 
-    // Query 4: Próximos vencimentos (próximos 30 dias, top 10)
+    // Query 4: Próximos vencimentos (próximos 30 dias, top 10) - DEPRECATED: contratantes table no longer exists
+    const proximosVencimentosResult = { rows: [] };
+    /*
     const proximosVencimentosResult = await query(
       `SELECT
         p.id as pagamento_id,
@@ -104,8 +109,11 @@ export async function GET(_request: NextRequest) {
       ORDER BY (parcela->>'data_vencimento')::date ASC
       LIMIT 10`
     );
+    */
 
-    // Query 10: Contratantes inadimplentes
+    // Query 10: Contratantes inadimplentes - DEPRECATED: contratantes table no longer exists
+    const inadimplentesResult = { rows: [] };
+    /*
     const inadimplentesResult = await query(
       `SELECT
         c.id,
@@ -126,6 +134,7 @@ export async function GET(_request: NextRequest) {
       ORDER BY dias_maior_atraso DESC, valor_total_vencido DESC
       LIMIT 5`
     );
+    */
 
     const metrics = metricsResult.rows[0] || {
       total_pagamentos_parcelados: 0,

@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query, getDatabaseInfo } from '@/lib/db';
+import { getDatabaseInfo } from '@/lib/db';
 
-export async function GET(_req: NextRequest) {
+export function GET(_req: NextRequest) {
   try {
-    const res = await query(
-      'SELECT id, nome, cnpj, email, telefone, status, ativa, criado_em FROM contratantes ORDER BY id DESC LIMIT 10'
-    );
+    // DEPRECATED: contratantes table no longer exists (refactored to entidades)
     const info = getDatabaseInfo();
     return NextResponse.json({
       success: true,
       database: info.databaseUrl || null,
-      rows: res.rows,
+      rows: [],
+      message: 'Legacy contratantes table deprecated. Use entidades instead.',
     });
   } catch (err) {
     return NextResponse.json(
