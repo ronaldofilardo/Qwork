@@ -191,7 +191,6 @@ export const MENSAGENS_ERRO = {
   ARQUIVO_TIPO: 'Tipo de arquivo não permitido',
   METODO_PAGAMENTO_OBRIGATORIO: 'Selecione um método de pagamento',
   VALOR_INVALIDO: 'Valor inválido',
-  PLANO_OBRIGATORIO: 'Selecione um plano',
 };
 
 // Validação completa de formulário de tomador

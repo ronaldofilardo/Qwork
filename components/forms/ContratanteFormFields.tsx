@@ -24,7 +24,6 @@ interface ContratanteFormFieldsProps {
     cep?: string;
   };
   errors: Record<string, string>;
-  planos?: Array<{ id: number; nome: string; tipo: string }>;
   onChange: (field: string, value: any) => void;
   disabled?: boolean;
 }
@@ -32,7 +31,6 @@ interface ContratanteFormFieldsProps {
 export function ContratanteFormFields({
   formData,
   errors,
-  _planos,
   onChange,
   disabled = false,
 }: ContratanteFormFieldsProps) {

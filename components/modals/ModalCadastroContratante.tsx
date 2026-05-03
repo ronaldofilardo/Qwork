@@ -52,7 +52,6 @@ export default function ModalCadastroContratante({
   // Estado e handlers agora são gerenciados pelo hook `useCadastroContratante`
   // (aliases abaixo mapeiam os nomes antigos para a API do hook)
 
-  // Novos estados para planos
   // Extrair estados e handlers para hook `useCadastroContratante`
   const hook = useCadastroContratante({ initialTipo: tipoInicial });
   const {

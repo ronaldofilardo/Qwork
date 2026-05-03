@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { getStatusBadge, Parcela } from '@/lib/parcelas-helper';
 
-interface ContratoPlano {
+interface Contrato {
   contratante_id: number;
   cnpj: string;
   contrato_id: number | null;
@@ -37,7 +37,7 @@ interface ContratoPlano {
 }
 
 export function CobrancaContent() {
-  const [contratos, setContratos] = useState<ContratoPlano[]>([]);
+  const [contratos, setContratos] = useState<Contrato[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtroTipo, setFiltroTipo] = useState<
     'todos' | 'clinica' | 'entidade'
@@ -154,7 +154,7 @@ export function CobrancaContent() {
   };
 
   const renderTabelaContratos = (
-    contratosParaRenderizar: ContratoPlano[],
+    contratosParaRenderizar: Contrato[],
     titulo: string
   ) => {
     if (contratosParaRenderizar.length === 0) {
@@ -241,7 +241,6 @@ export function CobrancaContent() {
                         {contrato.cnpj}
                       </div>
                     </td>
-
 
                     <td className="px-4 py-4 whitespace-nowrap text-center">
                       <div className="text-sm text-gray-900">
@@ -451,8 +450,12 @@ export function CobrancaContent() {
             >
               <option value="data_pagamento:desc">Data Pagamento (desc)</option>
               <option value="data_pagamento:asc">Data Pagamento (asc)</option>
-              <option value="data_contratacao:desc">Data Contratação (desc)</option>
-              <option value="data_contratacao:asc">Data Contratação (asc)</option>
+              <option value="data_contratacao:desc">
+                Data Contratação (desc)
+              </option>
+              <option value="data_contratacao:asc">
+                Data Contratação (asc)
+              </option>
             </select>
           </div>
           {/* Busca */}

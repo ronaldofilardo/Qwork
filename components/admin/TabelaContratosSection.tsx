@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { getStatusBadge, Parcela } from '@/lib/parcelas-helper';
 
-interface ContratoPlano {
+interface Contrato {
   tomador_id: number;
   cnpj: string;
   contrato_id: number | null;
@@ -26,7 +26,7 @@ interface ContratoPlano {
 }
 
 interface Props {
-  contratos: ContratoPlano[];
+  contratos: Contrato[];
   titulo: string;
   contratoExpandido: number | null;
   onToggleExpand: (id: number | null) => void;
