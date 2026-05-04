@@ -15,8 +15,14 @@ if (!isTestMode) {
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
 import { Session } from './session';
+import { query as queryFn, QueryResult } from './db/query'; // ⭐ Import da função e tipo para uso interno
+
+// ⭐ RE-EXPORT da implementação correta de query() de lib/db/query.ts
+// Isso garante que query() tenha suporte a dynamic pools para emissores
+export { query } from './db/query';
 
 export type { Session };
+export type { QueryResult } from './db/query';
 
 // ============================================================================
 // TIPAGEM FORTE PARA PERFIS
@@ -262,11 +268,12 @@ const KNOWN_ADMIN_HASH =
   '$2a$10$1FmG9Rn0QJ9T78GbvS/Yf.AfR9tp9qTxBznhUWLwBhsP8BChtmSVW';
 
 // Tipo para as queries
+// ⭐ Agora re-exportado de ./db/query — remover isso em favor do import
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type QueryResult<T = any> = {
-  rows: T[];
-  rowCount: number;
-};
+// export type QueryResult<T = any> = {
+//   rows: T[];
+//   rowCount: number;
+// };
 
 // Conexão Neon (Produção) - Será importada dinamicamente quando necessário
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -309,208 +316,9 @@ function _generateRLSQuery(text: string, session?: Session): string {
   return text;
 }
 
-// Função unificada de query
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function query<T = any>(
-  text: string,
-  params?: unknown[],
-  session?: Session
-): Promise<QueryResult<T>> {
-  const start = Date.now();
-
-  // Validação de isolamento de ambiente - BLOQUEIO CRÍTICO
-  // Esta validação impede qualquer acesso ao banco de desenvolvimento em ambiente de testes
-  const validateDatabaseIsolation = () => {
-    // Verificar em ambiente de testes
-    if (isTest && databaseUrl) {
-      try {
-        const parsedDb = new URL(databaseUrl);
-        const dbName = parsedDb.pathname.replace(/^\//, '');
-
-        // Bloquear acesso ao banco de desenvolvimento em testes
-        if (dbName === 'nr-bps_db' || dbName === 'nr-bps-db') {
-          throw new Error(
-            `🚨 ERRO CRÍTICO DE ISOLAMENTO: Tentativa de usar banco de DESENVOLVIMENTO (${dbName}) em ambiente de TESTES!\n` +
-              `Os testes DEVEM usar nr-bps_db_test.\n` +
-              `Configure TEST_DATABASE_URL corretamente.`
-          );
-        }
-      } catch {
-        // Fallback: se não for uma URL válida, ainda verificamos por segmentos exatos
-        if (databaseUrl.match(/\/(?:nr-bps_db|nr-bps-db)(?:$|[\/\?])/)) {
-          throw new Error(
-            `🚨 ERRO CRÍTICO DE ISOLAMENTO: Tentativa de usar banco de DESENVOLVIMENTO em ambiente de TESTES!\n` +
-              `Os testes DEVEM usar nr-bps_db_test.\n` +
-              `Configure TEST_DATABASE_URL corretamente.`
-          );
-        }
-      }
-    }
-
-    // Verificar em ambiente de desenvolvimento
-    if (
-      isDevelopment &&
-      databaseUrl &&
-      databaseUrl.includes('nr-bps_db_test')
-    ) {
-      throw new Error(
-        `🚨 ERRO CRÍTICO: Tentativa de usar banco de TESTES (nr-bps_db_test) em ambiente de DESENVOLVIMENTO!\n` +
-          `URL detectada: ${databaseUrl}\n` +
-          `Isso viola o isolamento de ambientes. Corrija seu .env: defina LOCAL_DATABASE_URL apontando para "nr-bps_db" e remova/limpe TEST_DATABASE_URL em desenvolvimento.`
-      );
-    }
-  };
-
-  validateDatabaseIsolation();
-
-  try {
-    if ((isDevelopment || isTest) && localPool) {
-      // PostgreSQL Local (Desenvolvimento e Testes)
-      const client = await localPool.connect();
-      try {
-        // If we have a session, run the query inside a transaction and set LOCAL params
-        if (session) {
-          await client.query('BEGIN');
-          try {
-            const escapeString = (str: string) => str.replace(/'/g, "''");
-
-            await client.query(
-              `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
-            );
-            await client.query(
-              `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
-            );
-            await client.query(
-              `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
-            );
-            await client.query(
-              `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
-            );
-
-            const result = await client.query(text, params);
-            await client.query('COMMIT');
-
-            const duration = Date.now() - start;
-            if (DEBUG_DB) {
-              console.log(
-                `[db][query] local (${duration}ms): ${text.substring(0, 200)}...`
-              );
-            }
-
-            return {
-              rows: result.rows,
-              rowCount: result.rowCount || 0,
-            };
-          } catch (err) {
-            try {
-              await client.query('ROLLBACK');
-            } catch (rollbackErr) {
-              console.error('Erro durante ROLLBACK:', rollbackErr);
-            }
-            throw err;
-          }
-        }
-
-        // No session: just execute the query normally
-        try {
-          const result = await client.query(text, params);
-          const duration = Date.now() - start;
-          console.log(
-            `[DEBUG] Query local (${duration}ms): ${text.substring(0, 100)}...`
-          );
-          return {
-            rows: result.rows,
-            rowCount: result.rowCount || 0,
-          };
-        } catch (err) {
-          console.error(
-            '[db][query] ERROR executing (no session):',
-            text,
-            params,
-            err?.message || err
-          );
-          throw err;
-        }
-      } finally {
-        client.release();
-      }
-    } else if (isProduction) {
-      // Neon Database (Produção)
-      const sql = await getNeonSql();
-      if (!sql) {
-        throw new Error('Conexão Neon não disponível');
-      }
-      // Garantir search_path em produção
-      if (!text.trim().toLowerCase().startsWith('set search_path')) {
-        await sql('SET search_path TO public;');
-      }
-
-      // Para Neon: não podemos enviar múltiplos comandos em uma prepared statement.
-      // Se houver sessão, execute os set_config separadamente e depois a query principal.
-      if (session) {
-        const escapeString = (str: string) => String(str).replace(/'/g, "''");
-
-        const setCpf = `SELECT set_config('app.current_user_cpf', '${escapeString(
-          session.cpf
-        )}', true)`;
-        const setPerfil = `SELECT set_config('app.current_user_perfil', '${escapeString(
-          session.perfil
-        )}', true)`;
-        const setClinica = `SELECT set_config('app.current_user_clinica_id', '${escapeString(
-          String(session.clinica_id || '')
-        )}', true)`;
-        const setEntidade = `SELECT set_config('app.current_user_entidade_id', '${escapeString(
-          String(session.entidade_id || '')
-        )}', true)`;
-
-        try {
-          await sql(setCpf);
-          await sql(setPerfil);
-          await sql(setClinica);
-          await sql(setEntidade);
-        } catch (err) {
-          console.warn('[db][neon] falha ao aplicar set_config:', err);
-        }
-
-        const rows = await sql(text, params || []);
-        const duration = Date.now() - start;
-        if (DEBUG_DB) {
-          console.log(
-            `[db][query] neon (${duration}ms): ${text.substring(0, 200)}...`
-          );
-        }
-        return {
-          rows: rows as T[],
-          rowCount: Array.isArray(rows) ? rows.length : 0,
-        };
-      }
-
-      // Sem sessão, executar diretamente
-      const rows = await sql(text, params || []);
-      const duration = Date.now() - start;
-      if (DEBUG_DB) {
-        console.log(
-          `[db][query] neon (${duration}ms): ${text.substring(0, 200)}...`
-        );
-      }
-      return {
-        rows: rows as T[],
-        rowCount: Array.isArray(rows) ? rows.length : 0,
-      };
-    } else {
-      throw new Error(
-        `Nenhuma conexão configurada para ambiente: ${environment}`
-      );
-    }
-  } catch (error) {
-    const duration = Date.now() - start;
-    console.error(
-      `Erro na query do banco (${environment}, ${duration}ms):`,
-      error
-    );
-    throw error;
-  }
-}
+// ⭐ REMOVIDO: A implementação antiga de queryFn() foi movida para lib/db/query.ts
+// Esta versão tinha suporte limitado a dynamic pools.
+// Agora o re-export em cima garante que a versão correta seja usada.
 
 /**
  * Garante que o usuário admin exista e possua um hash bcrypt válido (apenas em dev/test).
@@ -521,14 +329,14 @@ export async function ensureAdminPassword(): Promise<void> {
     if (isProduction) return; // Não mexer em produção
 
     // Buscar usuário admin se existir
-    const existsRes = await query(
+    const existsRes = await queryFn(
       'SELECT cpf, senha_hash FROM funcionarios WHERE cpf = $1 LIMIT 1',
       [KNOWN_ADMIN_CPF]
     );
 
     if (existsRes.rows.length === 0) {
       // Inserir usuário admin com hash conhecido
-      await query(
+      await queryFn(
         `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo) VALUES ($1, $2, $3, $4, 'admin', true) ON CONFLICT (cpf) DO UPDATE SET senha_hash = EXCLUDED.senha_hash`,
         [KNOWN_ADMIN_CPF, 'Admin', 'admin@bps.com.br', KNOWN_ADMIN_HASH]
       );
@@ -549,7 +357,7 @@ export async function ensureAdminPassword(): Promise<void> {
       .compare('123456', currentHash)
       .catch(() => false);
     if (!senhaValida) {
-      await query('UPDATE funcionarios SET senha_hash = $1 WHERE cpf = $2', [
+      await queryFn('UPDATE funcionarios SET senha_hash = $1 WHERE cpf = $2', [
         KNOWN_ADMIN_HASH,
         KNOWN_ADMIN_CPF,
       ]);
@@ -588,7 +396,7 @@ if ((isDevelopment || isTest) && databaseUrl) {
 // Função para testar conexão
 export async function testConnection(): Promise<boolean> {
   try {
-    const result = await query(
+    const result = await queryFn(
       'SELECT NOW() as now, current_database() as database'
     );
     console.log(`✅ Conexão OK [${environment}]:`, result.rows[0]);
@@ -689,7 +497,7 @@ export async function transaction<T>(
 
     const txClient: TransactionClient = {
       query: async <R = any>(text: string, params?: unknown[]) => {
-        return await query<R>(text, params, session);
+        return await queryFn<R>(text, params, session);
       },
     };
 
@@ -782,7 +590,7 @@ export async function getContratantesByTipo(
        WHERE status NOT IN ('pendente', 'em_reanalise', 'aguardando_pagamento')
        ORDER BY nome`;
   const params = tipo ? [tipo] : [];
-  const result = await query<Contratante>(queryText, params, session);
+  const result = await queryFn<Contratante>(queryText, params, session);
   return result.rows;
 }
 
@@ -793,7 +601,7 @@ export async function getContratanteById(
   id: number,
   session?: Session
 ): Promise<Contratante | null> {
-  const result = await query<Contratante>(
+  const result = await queryFn<Contratante>(
     `SELECT * FROM contratantes WHERE id = $1`,
     [id],
     session
@@ -821,7 +629,7 @@ export async function getContratantesPendentes(
     ? ['pendente', 'em_reanalise', 'aguardando_pagamento', tipo]
     : ['pendente', 'em_reanalise', 'aguardando_pagamento'];
 
-  const result = await query<Contratante>(queryText, params, session);
+  const result = await queryFn<Contratante>(queryText, params, session);
   return result.rows;
 }
 
@@ -845,7 +653,7 @@ export async function createContratante(
     });
   }
   // Verificar se email já existe
-  const emailCheck = await query(
+  const emailCheck = await queryFn(
     'SELECT id FROM contratantes WHERE email = $1',
     [data.email],
     session
@@ -855,7 +663,7 @@ export async function createContratante(
   }
 
   // Verificar se CNPJ já existe
-  const cnpjCheck = await query(
+  const cnpjCheck = await queryFn(
     'SELECT id FROM contratantes WHERE cnpj = $1',
     [data.cnpj],
     session
@@ -865,7 +673,7 @@ export async function createContratante(
   }
 
   // Verificar se CPF do responsável já existe em contratantes (apenas se aprovado)
-  const cpfCheckContratantes = await query(
+  const cpfCheckContratantes = await queryFn(
     'SELECT id, status FROM contratantes WHERE responsavel_cpf = $1',
     [data.responsavel_cpf],
     session
@@ -883,7 +691,7 @@ export async function createContratante(
   // Verificar se CPF do responsável já existe em funcionários de OUTRO contratante
   // Um gestor pode ser responsável por sua própria clínica, mas não pode ser funcionário
   // de uma clínica E responsável por outra clínica diferente
-  const cpfCheckFuncionarios = await query(
+  const cpfCheckFuncionarios = await queryFn(
     `SELECT f.id, f.perfil, c.id as contratante_id, c.cnpj as contratante_cnpj
      FROM funcionarios f
      INNER JOIN clinicas cl ON f.clinica_id = cl.id
@@ -906,7 +714,7 @@ export async function createContratante(
 
   // Garantir que colunas adicionadas por migração existam (adicionar se ausentes)
   try {
-    await query(
+    await queryFn(
       `ALTER TABLE contratantes
        ADD COLUMN IF NOT EXISTS pagamento_confirmado BOOLEAN DEFAULT false,
        ADD COLUMN IF NOT EXISTS data_liberacao_login TIMESTAMP,
@@ -928,7 +736,7 @@ export async function createContratante(
   // Inserção com retry para conter problemas de enum em bancos locais antigos
   let result: QueryResult<Contratante>;
   try {
-    result = await query<Contratante>(
+    result = await queryFn<Contratante>(
       `INSERT INTO contratantes (
         tipo, nome, cnpj, inscricao_estadual, email, telefone,
         endereco, cidade, estado, cep,
@@ -978,7 +786,7 @@ export async function createContratante(
         '[CREATE_CONTRATANTE] Enum status inconsistente no DB, tentando inserir com status fallback "pendente"',
         { error: msg }
       );
-      result = await query<Contratante>(
+      result = await queryFn<Contratante>(
         `INSERT INTO contratantes (
           tipo, nome, cnpj, inscricao_estadual, email, telefone,
           endereco, cidade, estado, cep,
@@ -1036,7 +844,7 @@ export async function aprovarContratante(
   session?: Session
 ): Promise<Contratante> {
   // Primeiro, buscar o contratante para verificar o tipo
-  const contratanteResult = await query<Contratante>(
+  const contratanteResult = await queryFn<Contratante>(
     'SELECT * FROM contratantes WHERE id = $1',
     [id],
     session
@@ -1050,7 +858,7 @@ export async function aprovarContratante(
 
   // Aprovar o contratante (apenas altera status, NÃO ativa automaticamente)
   // Nota: ativação deve ser controlada por contrato aceito e confirmações apropriadas
-  const result = await query<Contratante>(
+  const result = await queryFn<Contratante>(
     `UPDATE contratantes
      SET status = 'aprovado',
          aprovado_em = CURRENT_TIMESTAMP,
@@ -1066,7 +874,7 @@ export async function aprovarContratante(
   // Se for uma clínica, criar entrada na tabela clinicas
   if (contratante.tipo === 'clinica') {
     try {
-      const clinicaResult = await query(
+      const clinicaResult = await queryFn(
         `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, contratante_id)
          VALUES ($1, $2, $3, $4, $5, $6)
          ON CONFLICT (cnpj) DO UPDATE SET contratante_id = EXCLUDED.contratante_id, ativa = COALESCE(clinicas.ativa, true), atualizado_em = CURRENT_TIMESTAMP
@@ -1105,7 +913,7 @@ export async function ativarContratante(
   session?: Session
 ): Promise<{ success: boolean; message: string; contratante?: Contratante }> {
   // Verificar estado atual
-  const checkResult = await query<{
+  const checkResult = await queryFn<{
     pagamento_confirmado: boolean;
     ativa: boolean;
   }>(
@@ -1134,7 +942,7 @@ export async function ativarContratante(
   }
 
   // Verificar recibo - geração pode ser sob demanda. Se não existir, registrar aviso e prosseguir
-  const reciboCheck = await query(
+  const reciboCheck = await queryFn(
     'SELECT id FROM recibos WHERE contratante_id = $1 AND cancelado = false LIMIT 1',
     [id],
     session
@@ -1147,7 +955,7 @@ export async function ativarContratante(
   }
 
   // Ativar o contratante e marcar aprovado se ainda não estiver aprovado.
-  const result = await query<Contratante>(
+  const result = await queryFn<Contratante>(
     `UPDATE contratantes
      SET ativa = true,
          data_liberacao_login = CURRENT_TIMESTAMP,
@@ -1183,7 +991,7 @@ export async function rejeitarContratante(
   motivo: string,
   session?: Session
 ): Promise<Contratante> {
-  const result = await query<Contratante>(
+  const result = await queryFn<Contratante>(
     `UPDATE contratantes 
      SET status = 'rejeitado', motivo_rejeicao = $2
      WHERE id = $1 
@@ -1202,7 +1010,7 @@ export async function solicitarReanalise(
   observacoes: string,
   session?: Session
 ): Promise<Contratante> {
-  const result = await query<Contratante>(
+  const result = await queryFn<Contratante>(
     `UPDATE contratantes
      SET status = 'em_reanalise',
          observacoes_reanalise = $2,
@@ -1228,7 +1036,7 @@ export async function vincularFuncionarioContratante(
   tipoContratante: TipoContratante,
   session?: Session
 ): Promise<ContratanteFuncionario> {
-  const result = await query<ContratanteFuncionario>(
+  const result = await queryFn<ContratanteFuncionario>(
     `INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
      VALUES ($1, $2, $3, true)
      ON CONFLICT (funcionario_id, contratante_id) 
@@ -1247,7 +1055,7 @@ export async function getContratanteDeFuncionario(
   funcionarioId: number,
   session?: Session
 ): Promise<Contratante | null> {
-  const result = await query<Contratante>(
+  const result = await queryFn<Contratante>(
     `SELECT c.* FROM contratantes c
      INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
      WHERE cf.funcionario_id = $1 AND cf.vinculo_ativo = true AND c.ativa = true
@@ -1275,7 +1083,7 @@ export async function getFuncionariosDeContratante(
        INNER JOIN contratantes_funcionarios cf ON cf.funcionario_id = f.id
        WHERE cf.contratante_id = $1`;
 
-  const result = await query(queryText, [contratanteId], session);
+  const result = await queryFn(queryText, [contratanteId], session);
   return result.rows;
 }
 
@@ -1317,7 +1125,7 @@ export async function queryMultiTenant<T = unknown>(
     filteredParams.push(tenantFilter.contratante_id);
   }
 
-  return query<T>(filteredQuery, filteredParams, session);
+  return queryFn<T>(filteredQuery, filteredParams, session);
 }
 
 /**
@@ -1343,7 +1151,7 @@ export async function getNotificacoesFinanceiras(
 
   queryText += ' ORDER BY created_at DESC';
 
-  const result = await query(queryText, params, session);
+  const result = await queryFn(queryText, params, session);
   return result.rows;
 }
 
@@ -1354,7 +1162,7 @@ export async function marcarNotificacaoComoLida(
   notificacaoId: number,
   session?: Session
 ) {
-  const result = await query(
+  const result = await queryFn(
     'UPDATE notificacoes_financeiras SET lida = true, lida_em = NOW() WHERE id = $1 RETURNING *',
     [notificacaoId],
     session
@@ -1373,7 +1181,7 @@ export async function criarContaResponsavel(
 
   // Se recebeu um número (ID), buscar os dados do contratante
   if (typeof contratante === 'number') {
-    const result = await query(
+    const result = await queryFn(
       'SELECT * FROM contratantes WHERE id = $1',
       [contratante],
       session
@@ -1402,7 +1210,7 @@ export async function criarContaResponsavel(
       console.debug(
         '[CRIAR_CONTA] CNPJ não encontrado no objeto, buscando do banco...'
       );
-    const contratanteResult = await query(
+    const contratanteResult = await queryFn(
       'SELECT cnpj FROM contratantes WHERE id = $1',
       [contratanteData.id],
       session
@@ -1438,14 +1246,14 @@ export async function criarContaResponsavel(
   // 1. Criar senha em contratantes_senhas usando prepared statement
   try {
     // Garantir compatibilidade com esquemas que não possuem UNIQUE(contratante_id, cpf)
-    const exists = await query(
+    const exists = await queryFn(
       'SELECT id FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
       [contratanteData.id, cpfParaUsar],
       session
     );
 
     if (exists.rows.length > 0) {
-      await query(
+      await queryFn(
         'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE contratante_id = $2 AND cpf = $3',
         [hashed, contratanteData.id, cpfParaUsar],
         session
@@ -1454,7 +1262,7 @@ export async function criarContaResponsavel(
         `[CRIAR_CONTA] Senha atualizada em contratantes_senhas para CPF ${cpfParaUsar}`
       );
     } else {
-      await query(
+      await queryFn(
         'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash, criado_em, atualizado_em) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
         [contratanteData.id, cpfParaUsar, hashed],
         session
@@ -1472,7 +1280,7 @@ export async function criarContaResponsavel(
   }
 
   // Verificar se foi inserido corretamente
-  const checkResult = await query(
+  const checkResult = await queryFn(
     'SELECT senha_hash, length(senha_hash) as hash_len FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
     [contratanteData.id, cpfParaUsar],
     session
@@ -1503,7 +1311,7 @@ export async function criarContaResponsavel(
   // Observação: criando registro também para contratantes do tipo 'entidade' para suportar
   // flows de ativação que esperam um login do responsável (gestor_entidade).
   try {
-    const f = await query(
+    const f = await queryFn(
       'SELECT id FROM funcionarios WHERE cpf = $1',
       [contratanteData.responsavel_cpf],
       session
@@ -1520,7 +1328,7 @@ export async function criarContaResponsavel(
       let clinicaId = null;
       if (perfilToSet === 'rh') {
         try {
-          const clinicaResult = await query(
+          const clinicaResult = await queryFn(
             'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
             [contratanteData.id],
             session
@@ -1543,7 +1351,7 @@ export async function criarContaResponsavel(
         // Se não houver clínica, tentar criar uma entry idempotente vinculada ao contratante
         if (!clinicaId) {
           try {
-            const ins = await query(
+            const ins = await queryFn(
               `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, contratante_id, ativa, criado_em, atualizado_em)
                VALUES ($1,$2,$3,$4,$5,$6, true, NOW(), NOW())
                ON CONFLICT (cnpj)
@@ -1567,7 +1375,7 @@ export async function criarContaResponsavel(
                 );
             } else {
               // Se não foi criada (conflito), tentar recarregar
-              const reload = await query(
+              const reload = await queryFn(
                 'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
                 [contratanteData.id],
                 session
@@ -1584,7 +1392,7 @@ export async function criarContaResponsavel(
                 (err.message || '').includes('clinicas_cnpj_key'));
             if (isUniqueViolation) {
               try {
-                const reload = await query(
+                const reload = await queryFn(
                   'SELECT id FROM clinicas WHERE cnpj = $1 LIMIT 1',
                   [contratanteData.cnpj],
                   session
@@ -1612,7 +1420,7 @@ export async function criarContaResponsavel(
         }
       }
 
-      await query(
+      await queryFn(
         `UPDATE funcionarios SET nome = $1, email = $2, perfil = $3, contratante_id = $4, clinica_id = $5, ativo = true, senha_hash = $6, atualizado_em = CURRENT_TIMESTAMP WHERE id = $7`,
         [
           contratanteData.responsavel_nome || 'Gestor',
@@ -1626,19 +1434,19 @@ export async function criarContaResponsavel(
         session
       );
       // Upsert vinculo
-      const vinc = await query(
+      const vinc = await queryFn(
         'SELECT * FROM contratantes_funcionarios WHERE funcionario_id = $1 AND contratante_id = $2',
         [fid, contratanteData.id],
         session
       );
       if (vinc.rows.length > 0) {
-        await query(
+        await queryFn(
           'UPDATE contratantes_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND contratante_id = $2',
           [fid, contratanteData.id],
           session
         );
       } else {
-        await query(
+        await queryFn(
           'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
           [fid, contratanteData.id, contratanteData.tipo || 'entidade'],
           session
@@ -1657,7 +1465,7 @@ export async function criarContaResponsavel(
       let clinicaId = null;
       if (perfilToSet === 'rh') {
         try {
-          const clinicaResult = await query(
+          const clinicaResult = await queryFn(
             'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
             [contratanteData.id],
             session
@@ -1672,7 +1480,7 @@ export async function criarContaResponsavel(
           } else {
             // Tentar criar a clínica de forma idempotente para este contratante
             try {
-              const ins = await query(
+              const ins = await queryFn(
                 `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, contratante_id, ativa, criado_em, atualizado_em)
                  VALUES ($1,$2,$3,$4,$5,$6, true, NOW(), NOW())
                  ON CONFLICT (cnpj)
@@ -1695,7 +1503,7 @@ export async function criarContaResponsavel(
                     `[CRIAR_CONTA] Clínica criada id=${clinicaId} para contratante ${contratanteData.id}`
                   );
               } else {
-                const reload = await query(
+                const reload = await queryFn(
                   'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
                   [contratanteData.id],
                   session
@@ -1709,7 +1517,7 @@ export async function criarContaResponsavel(
                   (err.message || '').includes('clinicas_cnpj_key'));
               if (isUniqueViolation) {
                 try {
-                  const reload = await query(
+                  const reload = await queryFn(
                     'SELECT id FROM clinicas WHERE cnpj = $1 LIMIT 1',
                     [contratanteData.cnpj],
                     session
@@ -1746,7 +1554,7 @@ export async function criarContaResponsavel(
         }
       }
 
-      const insertRes = await query(
+      const insertRes = await queryFn(
         `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, nivel_cargo, contratante_id, clinica_id, empresa_id, criado_em, atualizado_em)
          VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id`,
         [
@@ -1763,7 +1571,7 @@ export async function criarContaResponsavel(
         session
       );
       const fid = insertRes.rows[0].id;
-      await query(
+      await queryFn(
         'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
         [fid, contratanteData.id, contratanteData.tipo || 'entidade'],
         session
@@ -1800,7 +1608,7 @@ export async function criarContaResponsavel(
 
   // Ler senha armazenada em funcionarios e validar que o hash corresponde à senha padrão
   try {
-    const funcCheck = await query(
+    const funcCheck = await queryFn(
       'SELECT senha_hash FROM funcionarios WHERE cpf = $1',
       [contratanteData.responsavel_cpf],
       session
@@ -1829,7 +1637,7 @@ export async function criarContaResponsavel(
         }
         if (!funcMatch) {
           // Forçar atualização com o hash correto e logar a ação
-          await query(
+          await queryFn(
             'UPDATE funcionarios SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE cpf = $2',
             [hashed, contratanteData.responsavel_cpf],
             session
@@ -1862,7 +1670,7 @@ export async function criarSenhaInicialEntidade(
   contratanteId: number,
   session?: Session
 ): Promise<void> {
-  await query(
+  await queryFn(
     'SELECT criar_senha_inicial_entidade($1)',
     [contratanteId],
     session
@@ -1898,7 +1706,7 @@ export async function criarEmissorIndependente(
   const senhaHash = await bcrypt.hash(senha || '123456', 10);
 
   // Inserir emissor com clinica_id = NULL
-  const result = await query(
+  const result = await queryFn(
     `INSERT INTO funcionarios (
       cpf, 
       nome, 
