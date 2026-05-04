@@ -134,7 +134,10 @@ export async function POST(request: Request): Promise<NextResponse> {
             dataNascStr = r.data_nascimento;
           } else if (r.data_nascimento instanceof Date) {
             const y = r.data_nascimento.getUTCFullYear();
-            const m = String(r.data_nascimento.getUTCMonth() + 1).padStart(2, '0');
+            const m = String(r.data_nascimento.getUTCMonth() + 1).padStart(
+              2,
+              '0'
+            );
             const d = String(r.data_nascimento.getUTCDate()).padStart(2, '0');
             dataNascStr = `${y}-${m}-${d}`;
           }
@@ -238,7 +241,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!existingDataNascMap.has(cpf)) continue;
         const dbDate = existingDataNascMap.get(cpf) ?? null;
         if (!dbDate) continue; // banco sem data_nascimento: não bloqueia
-        const planilhaDateRaw = (row.data_nascimento as string | undefined) ?? '';
+        const planilhaDateRaw =
+          (row.data_nascimento as string | undefined) ?? '';
         if (!planilhaDateRaw) continue; // ausente → já capturado como erro pelo data-validator
         const planilhaDateIso = parseDateCell(planilhaDateRaw);
         if (!planilhaDateIso) continue; // inválida → já capturado pelo data-validator
@@ -324,17 +328,19 @@ export async function POST(request: Request): Promise<NextResponse> {
         const nivelRaw = perCnpjNivelMap.get(`${cpf}|${cnpjRow}`) ?? null;
         const nivelAtual: NivelCargoValue =
           nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
-        if (!mudancaRoleDetalhesMap.has(novaFuncao)) {
-          mudancaRoleDetalhesMap.set(novaFuncao, []);
+        // Chave composta funcao|cnpj para segregar por empresa
+        const chaveRole = `${novaFuncao}|${cnpjRow}`;
+        if (!mudancaRoleDetalhesMap.has(chaveRole)) {
+          mudancaRoleDetalhesMap.set(chaveRole, []);
         }
         // Deduplicar por CPF (um funcionário pode aparecer em várias linhas da planilha)
-        if (!mudancaRoleCpfsAdicionados.has(novaFuncao)) {
-          mudancaRoleCpfsAdicionados.set(novaFuncao, new Set());
+        if (!mudancaRoleCpfsAdicionados.has(chaveRole)) {
+          mudancaRoleCpfsAdicionados.set(chaveRole, new Set());
         }
-        const cpfsRole = mudancaRoleCpfsAdicionados.get(novaFuncao)!;
+        const cpfsRole = mudancaRoleCpfsAdicionados.get(chaveRole)!;
         if (!cpfsRole.has(cpf)) {
           cpfsRole.add(cpf);
-          mudancaRoleDetalhesMap.get(novaFuncao)!.push({
+          mudancaRoleDetalhesMap.get(chaveRole)!.push({
             nome: nomeCompleto,
             funcaoAnterior: funcaoAtual,
             nivelAtual,
@@ -391,7 +397,9 @@ export async function POST(request: Request): Promise<NextResponse> {
             : null;
 
         if (nivelBanco !== nivelPlanilha) {
-          funcoesComMudancaNivel.add(funcao);
+          // Chave composta funcao|cnpj para segregar mudanças de nível por empresa
+          const chaveNivel = `${funcao}|${cnpjRow}`;
+          funcoesComMudancaNivel.add(chaveNivel);
           // Nome: planilha sempre tem prioridade quando não vazia e não parece máscara de iniciais.
           // Detecta padrões de iniciais: "J. S.", "J.S.", "P. A. C.", etc.
           const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
@@ -404,17 +412,17 @@ export async function POST(request: Request): Promise<NextResponse> {
             : pareceIniciaisNivel
               ? nomeDb || nomePlanilha
               : nomePlanilha;
-          if (!mudancaNivelDetalhesMap.has(funcao)) {
-            mudancaNivelDetalhesMap.set(funcao, []);
+          if (!mudancaNivelDetalhesMap.has(chaveNivel)) {
+            mudancaNivelDetalhesMap.set(chaveNivel, []);
           }
           // Deduplicar por CPF
-          if (!mudancaNivelCpfsAdicionados.has(funcao)) {
-            mudancaNivelCpfsAdicionados.set(funcao, new Set());
+          if (!mudancaNivelCpfsAdicionados.has(chaveNivel)) {
+            mudancaNivelCpfsAdicionados.set(chaveNivel, new Set());
           }
-          const cpfsNivel = mudancaNivelCpfsAdicionados.get(funcao)!;
+          const cpfsNivel = mudancaNivelCpfsAdicionados.get(chaveNivel)!;
           if (!cpfsNivel.has(cpf)) {
             cpfsNivel.add(cpf);
-            mudancaNivelDetalhesMap.get(funcao)!.push({
+            mudancaNivelDetalhesMap.get(chaveNivel)!.push({
               nome: nomeCompleto,
               nivelAtual: nivelBanco,
               nivelProposto: nivelPlanilha,
@@ -435,6 +443,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // Construir funcoesNivelInfo: dados ricos por função para a etapa dedicada de classificação de nível
     interface FuncaoNivelInfoBuild {
+      /** Nome de exibição da função */
+      funcao: string;
+      /** CNPJ normalizado da empresa (chave de segregação) */
+      empresa_cnpj: string;
+      /** Nome de exibição da empresa */
+      empresa_nome: string;
       cpfs: Set<string>;
       novosCpfs: Set<string>;
       existentesCpfs: Set<string>;
@@ -448,15 +462,23 @@ export async function POST(request: Request): Promise<NextResponse> {
         cpf: string;
       }>;
     }
+    // Chave composta: "${funcao}|${cnpj}" — segrega nivel_cargo por empresa+função
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
     for (const row of linhasValidasParaFuncoes) {
       const cpfRow = limparCPF(row.cpf ?? '');
       // Funcionários sem função são agrupados sob 'Não informado' (chave usada no execute route)
       const funcaoRow = (row.funcao ?? '').trim() || 'Não informado';
+      const cnpjInfoRow = normalizeCNPJ(row.cnpj_empresa ?? '');
+      const nomeEmpresaRow = (row.nome_empresa ?? '').trim();
+      // Chave composta funcao|cnpj — mesmo nome de função em empresas distintas = entradas distintas
+      const chaveRow = `${funcaoRow}|${cnpjInfoRow}`;
 
-      if (!funcaoInfoMap.has(funcaoRow)) {
-        funcaoInfoMap.set(funcaoRow, {
+      if (!funcaoInfoMap.has(chaveRow)) {
+        funcaoInfoMap.set(chaveRow, {
+          funcao: funcaoRow,
+          empresa_cnpj: cnpjInfoRow,
+          empresa_nome: nomeEmpresaRow,
           cpfs: new Set(),
           novosCpfs: new Set(),
           existentesCpfs: new Set(),
@@ -465,14 +487,17 @@ export async function POST(request: Request): Promise<NextResponse> {
           semNivelNaPlanilhaDetalhes: [],
         });
       }
-      const info = funcaoInfoMap.get(funcaoRow)!;
+      const info = funcaoInfoMap.get(chaveRow)!;
+      // Atualizar nome da empresa se ainda não definido
+      if (!info.empresa_nome && nomeEmpresaRow)
+        info.empresa_nome = nomeEmpresaRow;
       info.cpfs.add(cpfRow);
 
       if (cpfsVinculadosNaClinica.has(cpfRow)) {
         info.existentesCpfs.add(cpfRow);
-        // Lookup por-CNPJ para nivel_cargo do vínculo
-        const cnpjRow = normalizeCNPJ(row.cnpj_empresa ?? '');
-        const nivelRaw = perCnpjNivelMap.get(`${cpfRow}|${cnpjRow}`) ?? null;
+        // Lookup por-CNPJ para nivel_cargo do vínculo (cnpjInfoRow já definido acima)
+        const nivelRaw =
+          perCnpjNivelMap.get(`${cpfRow}|${cnpjInfoRow}`) ?? null;
         const nivelNorm: NivelCargoValue =
           nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
         info.niveisSet.add(nivelNorm);
@@ -513,20 +538,26 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const funcoesNivelInfo = [...funcaoInfoMap.entries()]
-      .map(([funcao, info]) => ({
-        funcao,
+      .map(([chave, info]) => ({
+        // Chave composta "funcao|cnpj" — usada como key no nivelCargoMap do frontend
+        chave,
+        funcao: info.funcao,
+        empresa_cnpj: info.empresa_cnpj,
+        empresa_nome: info.empresa_nome,
         qtdFuncionarios: info.cpfs.size,
         qtdNovos: info.novosCpfs.size,
         qtdExistentes: info.existentesCpfs.size,
         niveisAtuais: [...info.niveisSet] as NivelCargoValue[],
-        isMudancaRole: funcoesNovasPorMudancaRole.has(funcao),
-        isMudancaNivel: funcoesComMudancaNivel.has(funcao),
+        // isMudancaRole usa funcao (nome) pois funcoesNovasPorMudancaRole não é segregado por CNPJ
+        isMudancaRole: funcoesNovasPorMudancaRole.has(info.funcao),
+        // isMudancaNivel usa chave pois funcoesComMudancaNivel é segregado por CNPJ
+        isMudancaNivel: funcoesComMudancaNivel.has(chave),
         temNivelNuloExistente:
           info.niveisSet.has(null) && info.existentesCpfs.size > 0,
         qtdSemNivelNaPlanilha: info.semNivelNaPlanilha.size,
         funcionariosSemNivel: info.semNivelNaPlanilhaDetalhes,
-        funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
-        funcionariosComMudancaNivel: mudancaNivelDetalhesMap.get(funcao) ?? [],
+        funcionariosComMudanca: mudancaRoleDetalhesMap.get(chave) ?? [],
+        funcionariosComMudancaNivel: mudancaNivelDetalhesMap.get(chave) ?? [],
       }))
       .sort((a, b) => {
         // Prioridade: mudanças de função > novos sem nível > demais

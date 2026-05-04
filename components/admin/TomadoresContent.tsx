@@ -75,7 +75,6 @@ export function TomadoresContent({
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   const [codigoRepInput, setCodigoRepInput] = useState('');
-  const [valorNegociadoInput, setValorNegociadoInput] = useState('');
   const [vinculando, setVinculando] = useState(false);
 
   // Auto-preenchimento do valor/% quando nome do rep é digitado
@@ -90,9 +89,8 @@ export function TomadoresContent({
 
   useEffect(() => {
     setRepAutoFill(null);
-    setValorNegociadoInput('');
 
-    if (!tomadorSelecionado || codigoRepInput.trim().length < 2) {
+    if (!tomadorSelecionado || codigoRepInput.trim().length < 1) {
       setBuscandoRep(false);
       return;
     }
@@ -115,7 +113,6 @@ export function TomadoresContent({
           valor_custo_fixo_entidade: string | null;
           valor_custo_fixo_clinica: string | null;
         }> = data.representantes ?? [];
-        // Busca por nome (simples correspondência do primeiro resultado)
         const rep = reps.length > 0 ? reps[0] : null;
         if (rep && rep.modelo_comissionamento) {
           setRepAutoFill({
@@ -127,18 +124,9 @@ export function TomadoresContent({
                 ? Number(rep.percentual_comissao)
                 : null,
           });
-          if (rep.modelo_comissionamento === 'percentual') {
-            setValorNegociadoInput(rep.percentual_comissao ?? '');
-          } else {
-            const val =
-              tomadorSelecionado.tipo === 'clinica'
-                ? rep.valor_custo_fixo_clinica
-                : rep.valor_custo_fixo_entidade;
-            setValorNegociadoInput(val ?? '');
-          }
         }
       } catch {
-        // silencioso — usuário pode digitar o valor manualmente
+        // silencioso
       } finally {
         setBuscandoRep(false);
       }
@@ -291,23 +279,17 @@ export function TomadoresContent({
   }, [activeSubSection]);
 
   const handleVincularRepresentante = async () => {
-    if (!tomadorSelecionado || !codigoRepInput.trim()) return;
+    if (!tomadorSelecionado || !repAutoFill) return;
     setVinculando(true);
     try {
       const body: Record<string, unknown> = {
-        codigo: codigoRepInput.trim(),
+        representante_id: repAutoFill.id,
         cnpj: tomadorSelecionado.cnpj,
       };
       if (tomadorSelecionado.tipo === 'clinica') {
         body.clinica_id = Number(tomadorSelecionado.id);
       } else {
         body.entidade_id = Number(tomadorSelecionado.id);
-      }
-      if (valorNegociadoInput) {
-        const numVal = parseFloat(
-          valorNegociadoInput.replace(/\./g, '').replace(',', '.')
-        );
-        if (!isNaN(numVal) && numVal > 0) body.valor_negociado = numVal;
       }
       const res = await fetch('/api/admin/comissoes/vincular-representante', {
         method: 'POST',
@@ -319,15 +301,12 @@ export function TomadoresContent({
         alert(data.error || 'Erro ao vincular representante');
         return;
       }
-      // Atualizar representante no estado local
       const rep: RepresentanteVinculo = {
         vinculo_id: data.vinculo_id,
         representante_id: data.representante_id,
         nome: data.representante_nome,
-        codigo: codigoRepInput.trim().toUpperCase(),
-        valor_negociado: body.valor_negociado
-          ? (body.valor_negociado as number)
-          : null,
+        codigo: String(repAutoFill.id),
+        valor_negociado: null,
       };
       setTomadores((prev) =>
         prev.map((t) =>
@@ -338,7 +317,7 @@ export function TomadoresContent({
         prev ? { ...prev, representante: rep } : null
       );
       setCodigoRepInput('');
-      setValorNegociadoInput('');
+      setRepAutoFill(null);
     } catch {
       alert('Erro ao vincular representante');
     } finally {
@@ -818,13 +797,10 @@ export function TomadoresContent({
           onClose={() => {
             setTomadorSelecionado(null);
             setCodigoRepInput('');
-            setValorNegociadoInput('');
             setRepAutoFill(null);
           }}
           codigoRepInput={codigoRepInput}
           setCodigoRepInput={setCodigoRepInput}
-          valorNegociadoInput={valorNegociadoInput}
-          setValorNegociadoInput={setValorNegociadoInput}
           vinculando={vinculando}
           ativando={ativando}
           onVincular={handleVincularRepresentante}

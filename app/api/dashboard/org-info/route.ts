@@ -45,13 +45,15 @@ export async function GET(): Promise<NextResponse> {
     const clinResult = await query(
       `SELECT
          CASE WHEN ec.nome IS NOT NULL THEN ec.nome ELSE c.nome END AS nome,
-         cc.logo_url
+         cc.logo_url,
+         c.id AS clinica_id
        FROM funcionarios f
        JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id AND fc.ativo = true
        JOIN clinicas c ON c.id = fc.clinica_id
        LEFT JOIN clinica_configuracoes cc ON cc.clinica_id = c.id
        LEFT JOIN empresas_clientes ec ON ec.id = fc.empresa_id
        WHERE TRIM(f.cpf) = $1
+       ORDER BY fc.id DESC
        LIMIT 1`,
       [cpf]
     );
@@ -85,6 +87,7 @@ export async function GET(): Promise<NextResponse> {
        JOIN entidades e ON e.id = fe.entidade_id
        LEFT JOIN entidade_configuracoes ec ON ec.entidade_id = e.id
        WHERE TRIM(f.cpf) = $1
+       ORDER BY fe.id DESC
        LIMIT 1`,
       [cpf]
     );

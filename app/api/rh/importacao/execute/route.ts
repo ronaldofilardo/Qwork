@@ -334,14 +334,18 @@ export async function POST(request: Request): Promise<NextResponse> {
           const nomeFunc = (row.nome ?? '').trim();
           const funcao = (row.funcao ?? 'Não informado').trim();
           const setor = (row.setor ?? 'Não informado').trim();
-          // Prioridade: nivel por CPF (individual) > coluna nivel_cargo > classificação por função
+          // Prioridade: nivel por CPF (individual) > coluna nivel_cargo > classificação por função+empresa
           const nivelCargoFromRow = row.nivel_cargo
             ? normalizarNivelCargo(row.nivel_cargo)
             : null;
+          // Chave composta funcao|cnpj para lookup no nivelCargoMap (segrega por empresa)
+          const cnpjParaChave = normalizeCNPJ(row.cnpj_empresa ?? '');
+          const chaveNivelCargo = `${funcao}|${cnpjParaChave}`;
           const nivelCargo =
             ((nivelCargoCpfMap?.[cpf] ?? '') || null) ??
             nivelCargoFromRow ??
-            ((nivelCargoMap?.[funcao] ?? '') || null);
+            ((nivelCargoMap?.[chaveNivelCargo] ?? '') || null) ??
+            ((nivelCargoMap?.[funcao] ?? '') || null); // fallback legacy (chave simples)
           const dataNasc = row.data_nascimento
             ? (parseDateCell(row.data_nascimento) ?? null)
             : null;
@@ -381,7 +385,10 @@ export async function POST(request: Request): Promise<NextResponse> {
                 params.push(dataNasc);
                 // Regenerar senha_hash para manter sincronia com a nova data de nascimento
                 const senhaPlaintextUpdate = gerarSenhaDeNascimento(dataNasc);
-                const senhaHashUpdate = await bcrypt.hash(senhaPlaintextUpdate, 10);
+                const senhaHashUpdate = await bcrypt.hash(
+                  senhaPlaintextUpdate,
+                  10
+                );
                 updates.push(`senha_hash = $${paramIdx++}`);
                 params.push(senhaHashUpdate);
               }
@@ -426,7 +433,8 @@ export async function POST(request: Request): Promise<NextResponse> {
                 errosProcessamento.push({
                   linha: linhaNum,
                   cpf,
-                  mensagem: 'data_nascimento obrigatória para gerar senha. Corrija a planilha e reimporte.',
+                  mensagem:
+                    'data_nascimento obrigatória para gerar senha. Corrija a planilha e reimporte.',
                 });
                 continue;
               }

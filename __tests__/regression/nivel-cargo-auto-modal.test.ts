@@ -60,6 +60,9 @@ function makeFuncao(
   overrides: Partial<FuncaoNivelInfo> & { funcao: string }
 ): FuncaoNivelInfo {
   return {
+    chave: overrides.funcao,
+    empresa_cnpj: '',
+    empresa_nome: '',
     qtdFuncionarios: 5,
     qtdNovos: 0,
     qtdExistentes: 5,

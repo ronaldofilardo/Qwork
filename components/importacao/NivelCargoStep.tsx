@@ -14,7 +14,13 @@ import MudancasAgrupadas from './MudancasAgrupadas';
 export type NivelCargo = 'gestao' | 'operacional' | '';
 
 export interface FuncaoNivelInfo {
+  /** Chave composta "funcao|cnpj" — usada como key no nivelCargoMap */
+  chave: string;
   funcao: string;
+  /** CNPJ normalizado da empresa (segrega funções de mesmo nome entre empresas distintas) */
+  empresa_cnpj: string;
+  /** Nome de exibição da empresa */
+  empresa_nome: string;
   qtdFuncionarios: number;
   qtdNovos: number;
   qtdExistentes: number;
@@ -121,7 +127,7 @@ export function groupMudancasByEmpresaAndFuncao(
     ) {
       for (const troca of funcaoInfo.funcionariosComMudanca) {
         const empresa = troca.empresa || '(sem empresa)';
-        ensureEntry(empresa, funcaoInfo.funcao, nivelAtualStr).trocas.push(
+        ensureEntry(empresa, funcaoInfo.chave, nivelAtualStr).trocas.push(
           troca
         );
       }
@@ -134,7 +140,7 @@ export function groupMudancasByEmpresaAndFuncao(
     ) {
       for (const troca of funcaoInfo.funcionariosComMudancaNivel) {
         const empresa = troca.empresa || '(sem empresa)';
-        ensureEntry(empresa, funcaoInfo.funcao, nivelAtualStr).trocasNivel.push(
+        ensureEntry(empresa, funcaoInfo.chave, nivelAtualStr).trocasNivel.push(
           troca
         );
       }
@@ -163,7 +169,7 @@ export default function NivelCargoStep({
   const mudancasNaoConfirmadas = useMemo(
     () =>
       funcoesNivelInfo.filter(
-        (f) => (f.isMudancaRole || f.isMudancaNivel) && !nivelCargoMap[f.funcao]
+        (f) => (f.isMudancaRole || f.isMudancaNivel) && !nivelCargoMap[f.chave]
       ),
     [funcoesNivelInfo, nivelCargoMap]
   );
@@ -208,7 +214,7 @@ export default function NivelCargoStep({
   const totalFuncoes = funcoesBloqueantes.length;
 
   const classificadas = useMemo(
-    () => funcoesBloqueantes.filter((f) => !!nivelCargoMap[f.funcao]).length,
+    () => funcoesBloqueantes.filter((f) => !!nivelCargoMap[f.chave]).length,
     [funcoesBloqueantes, nivelCargoMap]
   );
 
@@ -224,7 +230,7 @@ export default function NivelCargoStep({
           return todos.every((emp) => !!nivelCargoCpfMap[emp.cpf]);
         }
         // Fallback para classificação por função
-        return !!nivelCargoMap[f.funcao];
+        return !!nivelCargoMap[f.chave];
       });
     }
     return classificadas === totalFuncoes;
@@ -246,15 +252,15 @@ export default function NivelCargoStep({
         return (
           niveisValidos.length === 1 &&
           !f.niveisAtuais.includes(null) &&
-          !!nivelCargoMap[f.funcao]
+          !!nivelCargoMap[f.chave]
         );
       }).length,
     [funcoesBloqueantes, nivelCargoMap]
   );
 
   const handleToggle = useCallback(
-    (funcao: string, nivel: NivelCargo) => {
-      onChange(funcao, nivelCargoMap[funcao] === nivel ? '' : nivel);
+    (chave: string, nivel: NivelCargo) => {
+      onChange(chave, nivelCargoMap[chave] === nivel ? '' : nivel);
     },
     [nivelCargoMap, onChange]
   );
@@ -262,7 +268,7 @@ export default function NivelCargoStep({
   const handleDefinirTodos = useCallback(
     (nivel: NivelCargo) => {
       for (const info of funcoesNivelInfo) {
-        onChange(info.funcao, nivel);
+        onChange(info.chave, nivel);
       }
     },
     [funcoesNivelInfo, onChange]
@@ -341,7 +347,7 @@ export default function NivelCargoStep({
           </p>
           <ul className="space-y-1 text-xs text-gray-600">
             {mudancasNaoConfirmadas.map((info) => (
-              <li key={info.funcao} className="flex items-center gap-1">
+              <li key={info.chave} className="flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
                 <strong>{info.funcao}</strong> ({info.qtdFuncionarios}
                 {info.qtdFuncionarios > 1 ? ' func.' : ' func.'})
@@ -359,7 +365,7 @@ export default function NivelCargoStep({
 
         {/* Blocker */}
         {mudancasNaoConfirmadas.length > 0 &&
-          mudancasNaoConfirmadas.some((f) => !nivelCargoMap[f.funcao]) && (
+          mudancasNaoConfirmadas.some((f) => !nivelCargoMap[f.chave]) && (
             <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
               <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
               <span>
@@ -378,7 +384,7 @@ export default function NivelCargoStep({
           <button
             onClick={onConfirm}
             disabled={
-              mudancasNaoConfirmadas.some((f) => !nivelCargoMap[f.funcao]) ||
+              mudancasNaoConfirmadas.some((f) => !nivelCargoMap[f.chave]) ||
               isLoading
             }
             className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
@@ -514,8 +520,9 @@ export default function NivelCargoStep({
         {/* Rows */}
         <div className="divide-y divide-gray-50">
           {funcoesVisiveis.map((info) => {
-            const nivel = nivelCargoMap[info.funcao] ?? '';
-            const todosIndividuais = (info.funcionariosSemNivel?.length ?? 0) > 0;
+            const nivel = nivelCargoMap[info.chave] ?? '';
+            const todosIndividuais =
+              (info.funcionariosSemNivel?.length ?? 0) > 0;
             const todosCpfsClassificados =
               todosIndividuais &&
               info.funcionariosSemNivel!.every(
@@ -525,7 +532,7 @@ export default function NivelCargoStep({
 
             return (
               <div
-                key={info.funcao}
+                key={info.chave}
                 className="flex items-center gap-3 px-4 py-2.5"
               >
                 {/* Status icon */}
@@ -672,7 +679,7 @@ export default function NivelCargoStep({
                 {(info.funcionariosSemNivel?.length ?? 0) === 0 && (
                   <div className="flex gap-1.5 flex-shrink-0">
                     <button
-                      onClick={() => handleToggle(info.funcao, 'gestao')}
+                      onClick={() => handleToggle(info.chave, 'gestao')}
                       className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
                         nivel === 'gestao'
                           ? 'bg-purple-600 text-white border-purple-600'
@@ -682,7 +689,7 @@ export default function NivelCargoStep({
                       G
                     </button>
                     <button
-                      onClick={() => handleToggle(info.funcao, 'operacional')}
+                      onClick={() => handleToggle(info.chave, 'operacional')}
                       className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors ${
                         nivel === 'operacional'
                           ? 'bg-blue-600 text-white border-blue-600'
@@ -723,12 +730,12 @@ export default function NivelCargoStep({
               <strong>
                 {
                   funcoesSemNivelNaPlanilha.filter(
-                    (f) => !nivelCargoMap[f.funcao]
+                    (f) => !nivelCargoMap[f.chave]
                   ).length
                 }{' '}
                 pendente
                 {funcoesSemNivelNaPlanilha.filter(
-                  (f) => !nivelCargoMap[f.funcao]
+                  (f) => !nivelCargoMap[f.chave]
                 ).length > 1
                   ? 's'
                   : ''}

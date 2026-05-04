@@ -235,7 +235,10 @@ export default function ImportacaoEntidadePage() {
 
   // Step 3: Execute Import
   const handleExecute = useCallback(
-    async (nivelMap: Record<string, NivelCargo> | null, cpfMap: Record<string, NivelCargo> | null = null) => {
+    async (
+      nivelMap: Record<string, NivelCargo> | null,
+      cpfMap: Record<string, NivelCargo> | null = null
+    ) => {
       const file = fileRef.current;
       if (!file || !mapeamento) return;
 
@@ -291,14 +294,14 @@ export default function ImportacaoEntidadePage() {
     >;
     const autoMap: Record<string, NivelCargo> = { ...templateMap };
     for (const info of validateData.funcoesNivelInfo) {
-      if (autoMap[info.funcao]) continue;
+      if (autoMap[info.chave]) continue;
       if (info.isMudancaRole) continue;
       if (info.isMudancaNivel) continue;
       const niveisValidos = info.niveisAtuais.filter(
         (n): n is 'gestao' | 'operacional' => n !== null
       );
       if (niveisValidos.length === 1 && !info.niveisAtuais.includes(null)) {
-        autoMap[info.funcao] = niveisValidos[0];
+        autoMap[info.chave] = niveisValidos[0];
       }
     }
     setNivelCargoMap(autoMap);
@@ -327,9 +330,15 @@ export default function ImportacaoEntidadePage() {
     }
     void handleExecute(
       Object.keys(nivelCargoMap).length > 0 ? nivelCargoMap : null,
-      Object.keys(nivelCargoCpfMap).length > 0 ? nivelCargoCpfMap : null,
+      Object.keys(nivelCargoCpfMap).length > 0 ? nivelCargoCpfMap : null
     );
-  }, [appliedTemplate, lastSavedTemplateId, nivelCargoMap, nivelCargoCpfMap, handleExecute]);
+  }, [
+    appliedTemplate,
+    lastSavedTemplateId,
+    nivelCargoMap,
+    nivelCargoCpfMap,
+    handleExecute,
+  ]);
 
   // Reset
   const handleNovaImportacao = useCallback(() => {
@@ -506,10 +515,10 @@ export default function ImportacaoEntidadePage() {
                 setShowDataNascBlockModal(true);
                 return;
               }
-              const semNivel =
-                validateData.temNivelCargoDirecto
-                  ? validateData.avisos.filter((a) => a.campo === 'nivel_cargo').length
-                  : 0;
+              const semNivel = validateData.temNivelCargoDirecto
+                ? validateData.avisos.filter((a) => a.campo === 'nivel_cargo')
+                    .length
+                : 0;
               if (semNivel > 0) {
                 setShowNivelCargoWarningModal(true);
               } else if (validateData.erros.length > 0) {
@@ -617,18 +626,29 @@ export default function ImportacaoEntidadePage() {
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
                 <AlertTriangle className="w-5 h-5 text-red-600" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900">Importação bloqueada</h2>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Importação bloqueada
+              </h2>
             </div>
             <p className="text-sm text-gray-600 mb-3">
-              <strong>{validateData.erros.filter((e) => e.campo === 'data_nascimento').length} problema(s) de data de nascimento</strong> impedem a continuação.
-              A data de nascimento é usada como senha de acesso do funcionário e não pode divergir do cadastro existente.
+              <strong>
+                {
+                  validateData.erros.filter(
+                    (e) => e.campo === 'data_nascimento'
+                  ).length
+                }{' '}
+                problema(s) de data de nascimento
+              </strong>{' '}
+              impedem a continuação. A data de nascimento é usada como senha de
+              acesso do funcionário e não pode divergir do cadastro existente.
             </p>
             <ul className="text-sm text-red-700 bg-red-50 rounded-lg p-3 mb-5 space-y-1 max-h-48 overflow-y-auto">
               {validateData.erros
                 .filter((e) => e.campo === 'data_nascimento')
                 .map((e, i) => (
                   <li key={i}>
-                    <span className="font-medium">Linha {e.linha}:</span> {e.mensagem}
+                    <span className="font-medium">Linha {e.linha}:</span>{' '}
+                    {e.mensagem}
                   </li>
                 ))}
             </ul>

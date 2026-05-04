@@ -135,7 +135,10 @@ export async function POST(request: Request): Promise<NextResponse> {
             dataNascStr = r.data_nascimento;
           } else if (r.data_nascimento instanceof Date) {
             const y = r.data_nascimento.getUTCFullYear();
-            const m = String(r.data_nascimento.getUTCMonth() + 1).padStart(2, '0');
+            const m = String(r.data_nascimento.getUTCMonth() + 1).padStart(
+              2,
+              '0'
+            );
             const d = String(r.data_nascimento.getUTCDate()).padStart(2, '0');
             dataNascStr = `${y}-${m}-${d}`;
           }
@@ -226,7 +229,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!existingDataNascMap.has(cpf)) continue;
         const dbDate = existingDataNascMap.get(cpf) ?? null;
         if (!dbDate) continue; // banco sem data_nascimento: não bloqueia
-        const planilhaDateRaw = (row.data_nascimento as string | undefined) ?? '';
+        const planilhaDateRaw =
+          (row.data_nascimento as string | undefined) ?? '';
         if (!planilhaDateRaw) continue; // ausente → já capturado como erro pelo data-validator
         const planilhaDateIso = parseDateCell(planilhaDateRaw);
         if (!planilhaDateIso) continue; // inválida → já capturado pelo data-validator
@@ -400,6 +404,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         cpf: string;
       }>;
     }
+    // Para entidade (sem multi-empresa por CNPJ), a chave é apenas a função
     const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
 
     for (const row of linhasValidasParaFuncoes) {
@@ -452,7 +457,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const funcoesNivelInfo = [...funcaoInfoMap.entries()]
       .map(([funcao, info]) => ({
+        // Para entidade sem multi-empresa, chave = funcao (sem CNPJ)
+        chave: funcao,
         funcao,
+        empresa_cnpj: '',
+        empresa_nome: '',
         qtdFuncionarios: info.cpfs.size,
         qtdNovos: info.novosCpfs.size,
         qtdExistentes: info.existentesCpfs.size,

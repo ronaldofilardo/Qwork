@@ -28,9 +28,9 @@ export function gerarRelatorioLotePDF(dados: DadosLote): Buffer {
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 15;
 
-  // Cores do design (verde/laranja)
-  const corPrimaria: [number, number, number] = [76, 175, 80]; // Verde
-  const corSecundaria: [number, number, number] = [255, 152, 0]; // Laranja
+  // Cores do design system QWork
+  const corPrimaria: [number, number, number] = [45, 45, 45]; // primary #2D2D2D
+  const corSecundaria: [number, number, number] = [154, 205, 50]; // accent #9ACD32
 
   // Título
   doc.setFontSize(16);

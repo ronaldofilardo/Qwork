@@ -141,7 +141,7 @@ export default function CriarSenhaForm() {
   if (estado.fase === 'validando') {
     return (
       <div className="flex flex-col items-center py-8 gap-3">
-        <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-[#9ACD32] border-t-transparent rounded-full animate-spin" />
         <p className="text-sm text-gray-500">Validando link de convite...</p>
       </div>
     );
@@ -225,7 +225,7 @@ export default function CriarSenhaForm() {
         <p className="text-sm text-gray-500 max-w-xs">{info.descricao}</p>
         <a
           href="/login"
-          className="mt-4 text-sm text-blue-600 hover:text-blue-700 underline"
+          className="mt-4 text-sm text-[#2D2D2D] hover:text-[#9ACD32] underline"
         >
           Ir para o login
         </a>
@@ -239,9 +239,9 @@ export default function CriarSenhaForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* Identificação */}
-      <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-        <p className="text-sm font-medium text-blue-900">Olá, {nome}!</p>
-        <p className="text-xs text-blue-700 mt-0.5">
+      <div className="p-4 bg-[#9ACD32]/10 rounded-lg border border-[#9ACD32]/30">
+        <p className="text-sm font-medium text-[#2D2D2D]">Olá, {nome}!</p>
+        <p className="text-xs text-[#4a4a4a] mt-0.5">
           Criando senha para: <strong>{email}</strong>
         </p>
       </div>
@@ -263,7 +263,7 @@ export default function CriarSenhaForm() {
             required
             minLength={8}
             autoComplete="new-password"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-[#9ACD32] focus:border-transparent"
             placeholder="Mínimo 8 caracteres"
           />
           <button
@@ -374,7 +374,7 @@ export default function CriarSenhaForm() {
           onChange={(e) => setConfirmacao(e.target.value)}
           required
           autoComplete="new-password"
-          className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+          className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#9ACD32] focus:border-transparent ${
             confirmacao && confirmacao !== senha
               ? 'border-red-300 bg-red-50'
               : 'border-gray-300'
@@ -397,11 +397,11 @@ export default function CriarSenhaForm() {
       <button
         type="submit"
         disabled={enviando || senha !== confirmacao || senha.length < 8}
-        className="w-full bg-blue-600 text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        className="w-full bg-[#2D2D2D] text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-[#1a1a1a] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {enviando ? (
           <span className="flex items-center justify-center gap-2">
-            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className="w-4 h-4 border-2 border-[#9ACD32] border-t-transparent rounded-full animate-spin" />
             Criando senha...
           </span>
         ) : (

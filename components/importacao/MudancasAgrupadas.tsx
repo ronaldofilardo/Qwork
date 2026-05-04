@@ -30,6 +30,10 @@ export default function MudancasAgrupadas({
   onChange,
 }: MudancasAgrupadasProps) {
   const grouped = groupMudancasByEmpresaAndFuncao(funcoesNivelInfo);
+  // Mapa chave→nome de exibição da função (para exibir nome legível em vez da chave composta)
+  const chaveToFuncaoNome = new Map<string, string>(
+    funcoesNivelInfo.map((f) => [f.chave, f.funcao])
+  );
 
   if (grouped.size === 0) {
     return null;
@@ -63,11 +67,12 @@ export default function MudancasAgrupadas({
 
           <div className="divide-y divide-gray-200">
             {Array.from(funcaosMap.entries()).map(
-              ([funcao, { trocas, trocasNivel }]) => {
-                const nivelClassificado = nivelCargoMap[funcao] ?? '';
-                const semFuncao = funcao === 'Não informado';
+              ([chave, { trocas, trocasNivel }]) => {
+                const nivelClassificado = nivelCargoMap[chave] ?? '';
+                const nomeFuncao = chaveToFuncaoNome.get(chave) ?? chave;
+                const semFuncao = nomeFuncao === 'Não informado';
                 return (
-                  <div key={`${empresa}-${funcao}`} className="p-4">
+                  <div key={`${empresa}-${chave}`} className="p-4">
                     <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
                       <div className="flex-1">
                         {semFuncao ? (
@@ -77,7 +82,7 @@ export default function MudancasAgrupadas({
                           </p>
                         ) : (
                           <p className="text-sm font-semibold text-gray-800">
-                            {funcao}
+                            {nomeFuncao}
                           </p>
                         )}
                         <p className="text-xs text-gray-500 mt-1">
@@ -91,7 +96,7 @@ export default function MudancasAgrupadas({
                         <button
                           onClick={() =>
                             onChange(
-                              funcao,
+                              chave,
                               nivelClassificado === 'gestao' ? '' : 'gestao'
                             )
                           }
@@ -106,7 +111,7 @@ export default function MudancasAgrupadas({
                         <button
                           onClick={() =>
                             onChange(
-                              funcao,
+                              chave,
                               nivelClassificado === 'operacional'
                                 ? ''
                                 : 'operacional'

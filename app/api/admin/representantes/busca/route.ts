@@ -13,6 +13,7 @@ export const dynamic = 'force-dynamic';
 interface RepBusca {
   id: number;
   nome: string;
+  codigo: string | null;
   cpf: string | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: string | null;
@@ -28,17 +29,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get('q') ?? '').trim();
 
-    if (q.length < 2) {
+    if (q.length < 1) {
       return NextResponse.json({ representantes: [] });
     }
 
-    const termo = `%${q}%`;
+    const isNumericId = /^\d+$/.test(q);
 
-    const rows = await query<RepBusca>(
-      `SELECT
+    const baseSelect = `SELECT
          r.id,
          r.nome,
-
+         r.codigo,
          r.cpf,
          r.modelo_comissionamento,
          r.percentual_comissao,
@@ -46,12 +46,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          r.valor_custo_fixo_clinica,
          r.status
        FROM public.representantes r
-       WHERE r.status NOT IN ('desativado', 'rejeitado')
-         AND r.nome  ILIKE $1
-       ORDER BY r.nome
-       LIMIT 10`,
-      [termo]
-    );
+       WHERE r.status NOT IN ('desativado', 'rejeitado')`;
+
+    let rows;
+    if (isNumericId) {
+      rows = await query<RepBusca>(`${baseSelect} AND r.id = $1 LIMIT 1`, [
+        Number(q),
+      ]);
+    } else {
+      rows = await query<RepBusca>(
+        `${baseSelect} AND r.nome ILIKE $1 ORDER BY r.nome LIMIT 10`,
+        [`%${q}%`]
+      );
+    }
 
     return NextResponse.json({ representantes: rows.rows });
   } catch (err: unknown) {
