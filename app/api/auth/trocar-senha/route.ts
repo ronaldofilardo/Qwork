@@ -163,6 +163,29 @@ export async function POST(request: Request) {
          WHERE cpf = $2`,
         [novoHash, cpf]
       );
+
+      // Sincronizar senha nas tabelas dedicadas de autenticação.
+      // RH autentica via clinicas_senhas e gestor via entidades_senhas — se apenas
+      // usuarios for atualizado, o próximo login falhará (hash provisório ainda lá)
+      // e primeira_senha_alterada continuará false → loop infinito de /trocar-senha.
+      // Padrão idêntico ao já adotado em /api/admin/reset-senha/confirmar.
+      if (perfil === 'rh' && session.clinica_id) {
+        await query(
+          `INSERT INTO clinicas_senhas (clinica_id, cpf, senha_hash, primeira_senha_alterada)
+           VALUES ($1, $2, $3, TRUE)
+           ON CONFLICT (cpf, clinica_id)
+           DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
+          [session.clinica_id, cpf, novoHash]
+        );
+      } else if (perfil === 'gestor' && session.entidade_id) {
+        await query(
+          `INSERT INTO entidades_senhas (entidade_id, cpf, senha_hash, primeira_senha_alterada)
+           VALUES ($1, $2, $3, TRUE)
+           ON CONFLICT (cpf, entidade_id)
+           DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE`,
+          [session.entidade_id, cpf, novoHash]
+        );
+      }
     } else {
       await query(
         `UPDATE ${tabelaSenha}

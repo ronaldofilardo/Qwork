@@ -6,6 +6,7 @@ import { useLeads } from '@/app/admin/representantes/hooks/useLeads';
 import { useCachedDocs } from '@/app/admin/representantes/hooks/useCachedDocs';
 import { useRepActions } from '@/app/admin/representantes/hooks/useRepActions';
 import { LeadsTab } from '@/app/admin/representantes/components/LeadsTab';
+import RepresentantesFlowGuide from '@/components/RepresentantesFlowGuide';
 import { RepresentantesLista } from './RepresentantesLista';
 
 interface RepresentantesContentProps {
@@ -64,6 +65,10 @@ export function RepresentantesContent({
             Lista de todos os representantes e seus vendedores vinculados.
           </p>
         </div>
+
+        {/* Quadro de instruções */}
+        <RepresentantesFlowGuide section="ativos" />
+
         <RepresentantesLista />
       </div>
     );
@@ -80,6 +85,9 @@ export function RepresentantesContent({
           representantes.
         </p>
       </div>
+
+      {/* Quadro de instruções */}
+      <RepresentantesFlowGuide section="pendentes" />
 
       {/* Feedback de erro/sucesso */}
       {ld.leadsError && (

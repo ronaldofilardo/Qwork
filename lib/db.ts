@@ -272,27 +272,7 @@ const KNOWN_ADMIN_HASH =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 // export type QueryResult<T = any> = {
 //   rows: T[];
-//   rowCount: number;
 // };
-
-// Conexão Neon (Produção) - Será importada dinamicamente quando necessário
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let neonSql: any = null;
-let neonImported = false;
-
-async function getNeonSql() {
-  if (!neonImported && isProduction && process.env.DATABASE_URL) {
-    try {
-      const { neon } = await import('@neondatabase/serverless');
-      neonSql = neon(process.env.DATABASE_URL);
-      neonImported = true;
-    } catch (_err) {
-      console.error('Erro ao importar Neon:', _err);
-      throw _err;
-    }
-  }
-  return neonSql;
-}
 
 // Conexão PostgreSQL Local (Desenvolvimento e Testes)
 let localPool: pg.Pool | null = null;
@@ -418,7 +398,6 @@ export function getDatabaseInfo() {
       ? databaseUrl.replace(/password=[^&\s]+/g, 'password=***')
       : 'N/A',
     hasLocalPool: !!localPool,
-    hasNeonSql: !!neonSql,
   };
 }
 
