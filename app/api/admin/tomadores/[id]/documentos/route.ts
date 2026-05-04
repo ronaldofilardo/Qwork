@@ -33,11 +33,14 @@ async function resolveDocUrl(
         ''
       ).trim();
 
-      const endpoint = (
+      const rawEndpoint = (
         process.env.BACKBLAZE_ENDPOINT ||
         process.env.BACKBLAZE_S2_ENDPOINT ||
         'https://s3.us-east-005.backblazeb2.com'
       ).trim();
+      const endpoint = rawEndpoint.startsWith('http')
+        ? rawEndpoint
+        : `https://${rawEndpoint}`;
       const region = (
         process.env.BACKBLAZE_REGION ||
         endpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/)?.[1] ||
