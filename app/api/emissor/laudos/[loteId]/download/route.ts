@@ -36,6 +36,7 @@ export const GET = async (
       SELECT
         l.id,
         l.lote_id,
+        l.status,
         l.arquivo_remoto_key
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
@@ -84,14 +85,41 @@ export const GET = async (
       }
     }
 
-    // Using local and public storage only.
+    // 2) Laudo assinado via ZapSign — arquivo final (com página de evidências) está no Backblaze
+    if (
+      laudo.arquivo_remoto_key &&
+      ['emitido', 'enviado', 'assinado_processando'].includes(laudo.status)
+    ) {
+      console.log(
+        `[INFO] Servindo laudo assinado do Backblaze: ${laudo.arquivo_remoto_key}`
+      );
+      const { getPresignedUrl } = await import(
+        '@/lib/storage/backblaze-client'
+      );
+      const presignedUrl = await getPresignedUrl(laudo.arquivo_remoto_key, 300);
+      const pdfResponse = await fetch(presignedUrl);
+      if (!pdfResponse.ok) {
+        console.error(
+          `[ERROR] Falha ao baixar PDF assinado do Backblaze: ${pdfResponse.status}`
+        );
+        return NextResponse.json(
+          { error: 'Falha ao baixar PDF assinado', success: false },
+          { status: 502 }
+        );
+      }
+      const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+      return new NextResponse(pdfBuffer, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="laudo-${laudo.id}.pdf"`,
+        },
+      });
+    }
 
-    // Se não foi encontrado localmente, instruir uso de geração client-side
-    // (Puppeteer/Chromium não funciona confiávelmente na Vercel Free/Pro)
+    // 3) Fallback: instruir geração client-side para laudos sem arquivo remoto (pdf_gerado, aguardando_assinatura)
     console.log(
-      `[INFO] PDF não encontrado localmente para laudo ${loteId}. Retornando instrução para geração client-side.`
+      `[INFO] PDF não encontrado para laudo ${loteId}. Retornando instrução para geração client-side.`
     );
-
     return NextResponse.json(
       {
         success: false,
