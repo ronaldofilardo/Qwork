@@ -111,6 +111,15 @@ describe('/api/rh/liberar-lote - permissões', () => {
 
     mockRequireRHWithEmpresaAccess.mockResolvedValue({} as any);
 
+    // Lote ativo check (novo) — sem lote ativo
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    // isentoRes (novo, antes de queryAsGestorRH)
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ isento_pagamento: false }],
+      rowCount: 1,
+    } as any);
+
     // queryAsGestorRH calls:
     // 1) obter_proximo_numero_ordem
     mockQueryAsGestorRH.mockResolvedValueOnce({
@@ -151,6 +160,15 @@ describe('/api/rh/liberar-lote - permissões', () => {
     } as any);
 
     mockRequireRHWithEmpresaAccess.mockResolvedValue({} as any);
+
+    // Lote ativo check (novo) — sem lote ativo
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    // isentoRes (novo, antes de queryAsGestorRH)
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ isento_pagamento: false }],
+      rowCount: 1,
+    } as any);
 
     // Sem elegíveis — retorna 400 antes da transação
     mockQueryAsGestorRH
@@ -260,6 +278,15 @@ describe('/api/rh/liberar-lote - permissões', () => {
     } as any);
 
     mockRequireRHWithEmpresaAccess.mockResolvedValue({} as any);
+
+    // Lote ativo check (novo) — sem lote ativo
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    // isentoRes (novo, antes de queryAsGestorRH)
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ isento_pagamento: false }],
+      rowCount: 1,
+    } as any);
 
     // queryAsGestorRH calls:
     // 1) obter_proximo_numero_ordem

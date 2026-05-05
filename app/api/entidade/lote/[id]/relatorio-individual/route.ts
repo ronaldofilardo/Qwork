@@ -168,7 +168,7 @@ export async function GET(
         la.codigo as lote_codigo,
         la.titulo as lote_titulo,
         la.clinica_id as lote_clinica_id,
-        la.contratante_id as lote_contratante_id
+        la.entidade_id as lote_entidade_id
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
@@ -177,7 +177,7 @@ export async function GET(
         AND a.funcionario_cpf = $2
         AND a.status = 'concluida'
         AND (
-          ${ownershipField === 'clinica' ? '(f.clinica_id = $3 OR la.clinica_id = $3)' : '(f.contratante_id = $3 OR la.contratante_id = $3)'}
+          ${ownershipField === 'clinica' ? '(f.clinica_id = $3 OR la.clinica_id = $3)' : '(la.entidade_id = $3)'}
         )
     `;
 

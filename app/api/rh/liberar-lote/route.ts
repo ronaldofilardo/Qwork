@@ -149,6 +149,46 @@ export const POST = async (req: Request) => {
       );
     }
 
+    // Verificar se já existe lote ativo para esta empresa (bloquear duplicatas)
+    const loteAtivoCheck = await query<{ id: number; status: string }>(
+      `SELECT id, status FROM lotes_avaliacao WHERE empresa_id = $1 ORDER BY numero_ordem DESC LIMIT 1`,
+      [empresaId]
+    );
+    if (loteAtivoCheck.rowCount !== null && loteAtivoCheck.rowCount > 0) {
+      const loteAtual = loteAtivoCheck.rows[0];
+      const statusBloqueante = [
+        'ativo',
+        'emissao_solicitada',
+        'emissao_em_andamento',
+        'rascunho',
+      ];
+      if (statusBloqueante.includes(loteAtual.status)) {
+        const labels: Record<string, string> = {
+          rascunho: 'Lote atual em rascunho',
+          ativo: 'Lote atual ainda em andamento',
+          emissao_solicitada: 'Emissão de laudo já solicitada',
+          emissao_em_andamento: 'Emissão de laudo em andamento',
+        };
+        return NextResponse.json(
+          {
+            error:
+              labels[loteAtual.status] ??
+              `Lote atual em estado bloqueante: ${loteAtual.status}`,
+            success: false,
+            lote_atual_id: loteAtual.id,
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Verificar se a clínica é isenta de pagamento
+    const isentoRes = await query(
+      `SELECT isento_pagamento FROM clinicas WHERE id = $1`,
+      [empresaCheck.rows[0].clinica_id]
+    );
+    const isento = isentoRes.rows[0]?.isento_pagamento === true;
+
     // Obter próximo número de ordem do lote (usar contexto de gestor RH para set_config e auditoria)
     const numeroOrdemResult = await queryAsGestorRH<NumeroOrdemResult>(
       `SELECT obter_proximo_numero_ordem($1) as numero_ordem`,
@@ -213,13 +253,6 @@ export const POST = async (req: Request) => {
     // ✅ CORREÇÃO: Usar transação explícita para garantir contexto de auditoria
     // withTransactionAsGestor mantém app.current_user_cpf durante toda a transação
     // Isso evita erro "SECURITY: app.current_user_cpf not set" após falhas parciais
-
-    // Verificar se a clínica é isenta de pagamento
-    const isentoRes = await query(
-      `SELECT isento_pagamento FROM clinicas WHERE id = $1`,
-      [empresaCheck.rows[0].clinica_id]
-    );
-    const isento = isentoRes.rows[0]?.isento_pagamento === true;
 
     const resultado = await withTransactionAsGestor(async (client) => {
       // ✅ CPF de quem liberou o lote — sempre registrado para cadeia de custódia
@@ -404,6 +437,32 @@ export const POST = async (req: Request) => {
       detalhes: resultado.detalhes,
     } as const);
   } catch (error) {
+    const err = error as any;
+    // 23505: violação UNIQUE (lotes_avaliacao_empresa_numero_ordem_unique) — race condition entre duas requisições concorrentes
+    if (err?.code === '23505' && err?.constraint?.includes('numero_ordem')) {
+      return NextResponse.json(
+        {
+          error:
+            'Outro processo já criou um lote para esta empresa. Tente novamente.',
+          success: false,
+        },
+        { status: 409 }
+      );
+    }
+    if (
+      err instanceof Error &&
+      (err as NodeJS.ErrnoException).code === 'NO_ELIGIBLE_WORKERS'
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            'Nenhum funcionário elegível encontrado para este tipo de lote',
+          success: false,
+          detalhes: `Verifique se:\n1. Existem funcionários cadastrados e ativos na empresa\n2. Funcionários "nunca avaliados" (índice = 0) estão com status "Ativo" no vínculo\n3. A função de elegibilidade está retornando resultados corretos`,
+        },
+        { status: 400 }
+      );
+    }
     console.error('[ERRO] Erro ao Iniciar Ciclo:', error);
     return NextResponse.json(
       {

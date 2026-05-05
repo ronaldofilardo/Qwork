@@ -19,6 +19,8 @@ type Motivo =
   | 'ADICIONADO_APOS_LOTE'
   | 'SEM_CONCLUSAO_VALIDA';
 
+type Prioridade = 'CRITICA' | 'ALTA';
+
 interface FuncionarioPendente {
   cpf: string;
   nome: string;
@@ -28,10 +30,12 @@ interface FuncionarioPendente {
   matricula: string | null;
   ativo: boolean;
   criado_em: string;
+  indice_avaliacao: number;
   inativado_em: string | null;
   inativacao_lote_id: number | null;
   inativacao_lote_numero_ordem: number | null;
   motivo: Motivo;
+  prioridade: Prioridade;
 }
 
 interface LoteReferencia {
@@ -80,6 +84,21 @@ const MOTIVO_CONFIG: Record<
     icon: AlertTriangle,
     cor: 'amber',
     badge: 'bg-amber-100 text-amber-700',
+  },
+};
+
+// Mapeamento de cores por prioridade: CRITICA sempre vermelho, ALTA sempre laranja
+const PRIORIDADE_CORES: Record<
+  Prioridade,
+  { badge: string; cor: string }
+> = {
+  CRITICA: {
+    badge: 'bg-red-100 text-red-700',
+    cor: 'red',
+  },
+  ALTA: {
+    badge: 'bg-amber-100 text-amber-700',
+    cor: 'amber',
   },
 };
 
@@ -338,27 +357,35 @@ export default function PendenciasSection({
             </div>
 
             <div className="divide-y divide-gray-100">
-              {lista.map((func) => (
-                <div
-                  key={func.cpf}
-                  className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`flex-shrink-0 h-10 w-10 rounded-full ${cor.avatar} flex items-center justify-center`}
-                    >
-                      <Icon className={`h-5 w-5 ${cor.icon}`} />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate flex items-center gap-2">
-                        {func.nome}
-                        {!func.ativo && (
-                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600">
-                            Inativo
+              {lista.map((func) => {
+                // Usar prioridade para determinar cor de cada linha
+                const prioridadeCores = PRIORIDADE_CORES[func.prioridade];
+                const prioridadeCor = COR_CLASSES[prioridadeCores.cor];
+                return (
+                  <div
+                    key={func.cpf}
+                    className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`flex-shrink-0 h-10 w-10 rounded-full ${prioridadeCor.avatar} flex items-center justify-center`}
+                      >
+                        <Icon className={`h-5 w-5 ${prioridadeCor.icon}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-medium text-gray-900 truncate flex items-center gap-2">
+                          {func.nome}
+                          {!func.ativo && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-600">
+                              Inativo
+                            </span>
+                          )}
+                          {/* Badge de prioridade */}
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${prioridadeCores.badge}`}>
+                            {func.prioridade}
                           </span>
-                        )}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
                         {[func.setor, func.funcao]
                           .filter(Boolean)
                           .join(' • ') || '—'}
@@ -388,7 +415,8 @@ export default function PendenciasSection({
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

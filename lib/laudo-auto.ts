@@ -17,6 +17,10 @@ import {
   criarDocumentoZapSign,
   isZapSignHabilitado,
 } from '@/lib/integrations/zapsign/client';
+import {
+  uploadToBackblaze,
+  downloadFromBackblaze,
+} from '@/lib/storage/backblaze-client';
 
 // ─── Tipos de retorno ──────────────────────────────────────────────────────────
 
@@ -174,18 +178,23 @@ export async function gerarPDFLaudo(
       `[EMISSÃO] PDF gerado com sucesso (${pdfBuffer.byteLength} bytes)`
     );
 
-    // ETAPA 5: Salvar PDF em storage/laudos/
+    // ETAPA 5: Salvar PDF
     const storageDir = path.join(process.cwd(), 'storage', 'laudos');
     const fileName = `laudo-${laudoId}.pdf`;
     const filePath = path.join(storageDir, fileName);
 
-    if (!fs.existsSync(storageDir)) {
-      fs.mkdirSync(storageDir, { recursive: true });
-      console.log(`[EMISSÃO] Diretório ${storageDir} criado`);
+    // Tenta salvar localmente (funciona em dev; em Vercel o FS é read-only)
+    try {
+      if (!fs.existsSync(storageDir)) {
+        fs.mkdirSync(storageDir, { recursive: true });
+      }
+      fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
+      console.log(`[EMISSÃO] PDF (pré-assinatura) salvo localmente em ${filePath}`);
+    } catch (fsErr) {
+      console.warn(
+        `[EMISSÃO] Filesystem indisponível para escrita (esperado em Vercel): ${(fsErr as Error).message}`
+      );
     }
-
-    fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
-    console.log(`[EMISSÃO] PDF (pré-assinatura) salvo em ${filePath}`);
 
     // ─── FORK: ZapSign ou legado ───────────────────────────────────────────
     if (isZapSignHabilitado()) {
@@ -193,14 +202,35 @@ export async function gerarPDFLaudo(
       // Não calcula hash aqui — hash calculado no webhook do PDF ASSINADO.
       // Não envia para ZapSign ainda — emissor clicará em "Assinar Digitalmente".
 
+      // Upload do PDF pré-assinatura para Backblaze.
+      // Obrigatório em cloud/Vercel (sem FS gravável); opcional em dev se arquivo local existir.
+      const presignKey = `laudos/presign/laudo-${laudoId}.pdf`;
+      let remoteKey: string | null = null;
+      try {
+        await uploadToBackblaze(Buffer.from(pdfBuffer), presignKey, 'application/pdf');
+        remoteKey = presignKey;
+        console.log(`[EMISSÃO] PDF pré-assinatura enviado ao Backblaze: ${presignKey}`);
+      } catch (bbErr) {
+        if (fs.existsSync(filePath)) {
+          // Dev sem Backblaze configurado: arquivo local disponível, continuar sem key remota
+          console.warn(
+            `[EMISSÃO] Backblaze indisponível (${(bbErr as Error).message}); usando arquivo local.`
+          );
+        } else {
+          // Cloud sem FS local: Backblaze é obrigatório
+          throw bbErr;
+        }
+      }
+
       const updateResult = await query(
         `UPDATE laudos
-         SET status        = 'pdf_gerado',
-             pdf_gerado_em = NOW(),
-             atualizado_em = NOW()
+         SET status             = 'pdf_gerado',
+             pdf_gerado_em      = NOW(),
+             arquivo_remoto_key = $2,
+             atualizado_em      = NOW()
          WHERE id = $1 AND status = 'rascunho'
          RETURNING id`,
-        [laudoId],
+        [laudoId, remoteKey],
         session
       );
 
@@ -210,19 +240,24 @@ export async function gerarPDFLaudo(
         );
       }
 
-      const metaZap = {
-        laudo_id: laudoId,
-        lote_id: loteId,
-        emissor_cpf: emissorCpf,
-        gerado_em: new Date().toISOString(),
-        arquivo_local: fileName,
-        tamanho_bytes: pdfBuffer.byteLength,
-        status: 'pdf_gerado',
-      };
-      fs.writeFileSync(
-        path.join(storageDir, `laudo-${laudoId}.json`),
-        JSON.stringify(metaZap, null, 2)
-      );
+      try {
+        const metaZap = {
+          laudo_id: laudoId,
+          lote_id: loteId,
+          emissor_cpf: emissorCpf,
+          gerado_em: new Date().toISOString(),
+          arquivo_local: fileName,
+          arquivo_remoto_key: remoteKey,
+          tamanho_bytes: pdfBuffer.byteLength,
+          status: 'pdf_gerado',
+        };
+        fs.writeFileSync(
+          path.join(storageDir, `laudo-${laudoId}.json`),
+          JSON.stringify(metaZap, null, 2)
+        );
+      } catch {
+        // Metadata local não é crítico em ambiente cloud
+      }
 
       console.log(
         `[EMISSÃO] ✅ Laudo ${laudoId} com status 'pdf_gerado'. Clique em "Assinar Digitalmente" para enviar ao ZapSign.`
@@ -363,7 +398,7 @@ export async function enviarParaAssinaturaZapSign(
   const laudoId = loteId;
 
   const laudoResult = await query(
-    `SELECT id, status FROM laudos WHERE lote_id = $1 LIMIT 1`,
+    `SELECT id, status, arquivo_remoto_key FROM laudos WHERE lote_id = $1 LIMIT 1`,
     [loteId],
     session
   );
@@ -373,7 +408,9 @@ export async function enviarParaAssinaturaZapSign(
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const laudoStatus = (laudoResult.rows[0] as any).status as string;
+  const laudoRow = laudoResult.rows[0] as any;
+  const laudoStatus = laudoRow.status as string;
+  const laudoArquivoRemotoKey = laudoRow.arquivo_remoto_key as string | null;
 
   if (laudoStatus !== 'pdf_gerado') {
     throw new Error(
@@ -385,13 +422,21 @@ export async function enviarParaAssinaturaZapSign(
   const storageDir = path.join(process.cwd(), 'storage', 'laudos');
   const pdfPath = path.join(storageDir, `laudo-${laudoId}.pdf`);
 
-  if (!fs.existsSync(pdfPath)) {
+  let pdfBuffer: Buffer;
+  if (fs.existsSync(pdfPath)) {
+    pdfBuffer = fs.readFileSync(pdfPath);
+    console.log(`[ASSINATURA] PDF lido do filesystem local: ${pdfPath}`);
+  } else if (laudoArquivoRemotoKey) {
+    console.log(
+      `[ASSINATURA] PDF não encontrado localmente, baixando do Backblaze: ${laudoArquivoRemotoKey}`
+    );
+    pdfBuffer = await downloadFromBackblaze(laudoArquivoRemotoKey);
+  } else {
     throw new Error(
-      `Arquivo PDF não encontrado em ${pdfPath}. Regenere o laudo.`
+      `Arquivo PDF não encontrado (local: ${pdfPath}, Backblaze: não disponível). Regenere o laudo.`
     );
   }
 
-  const pdfBuffer = fs.readFileSync(pdfPath);
   const base64Pdf = pdfBuffer.toString('base64');
 
   // Buscar dados do emissor: primeiro em funcionarios, depois em usuarios (conta de sistema)

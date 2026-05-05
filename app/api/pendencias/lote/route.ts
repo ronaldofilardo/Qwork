@@ -126,6 +126,7 @@ export async function GET(request: NextRequest) {
            f.matricula,
            f.ativo,
            f.criado_em,
+           fc.indice_avaliacao,
            ${SUBQUERIES_INATIVACAO},
            CASE
              WHEN EXISTS (
@@ -139,7 +140,19 @@ export async function GET(request: NextRequest) {
              ) THEN 'NUNCA_AVALIADO'
              WHEN f.criado_em > $4 THEN 'ADICIONADO_APOS_LOTE'
              ELSE 'SEM_CONCLUSAO_VALIDA'
-           END AS motivo
+           END AS motivo,
+           CASE
+             WHEN EXISTS (
+               SELECT 1 FROM avaliacoes a3
+               WHERE a3.funcionario_cpf = f.cpf AND a3.lote_id = $3 AND a3.status = 'inativada'
+             ) THEN 'CRITICA'
+             WHEN NOT EXISTS (
+               SELECT 1 FROM avaliacoes a4
+               JOIN lotes_avaliacao la4 ON la4.id = a4.lote_id
+               WHERE a4.funcionario_cpf = f.cpf AND la4.empresa_id = $1
+             ) AND fc.indice_avaliacao = 0 AND fc.ativo = true THEN 'CRITICA'
+             ELSE 'ALTA'
+           END AS prioridade
          FROM funcionarios f
          INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
          WHERE fc.empresa_id = $1
@@ -208,6 +221,7 @@ export async function GET(request: NextRequest) {
          f.matricula,
          f.ativo,
          f.criado_em,
+         fe.indice_avaliacao,
          ${SUBQUERIES_INATIVACAO},
          CASE
            WHEN EXISTS (
@@ -220,7 +234,18 @@ export async function GET(request: NextRequest) {
            ) THEN 'NUNCA_AVALIADO'
            WHEN f.criado_em > $3 THEN 'ADICIONADO_APOS_LOTE'
            ELSE 'SEM_CONCLUSAO_VALIDA'
-         END AS motivo
+         END AS motivo,
+         CASE
+           WHEN EXISTS (
+             SELECT 1 FROM avaliacoes a3
+             WHERE a3.funcionario_cpf = f.cpf AND a3.lote_id = $2 AND a3.status = 'inativada'
+           ) THEN 'CRITICA'
+           WHEN NOT EXISTS (
+             SELECT 1 FROM avaliacoes a4
+             WHERE a4.funcionario_cpf = f.cpf
+           ) AND fe.indice_avaliacao = 0 AND fe.ativo = true THEN 'CRITICA'
+           ELSE 'ALTA'
+         END AS prioridade
        FROM funcionarios f
        INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
        WHERE fe.entidade_id = $1

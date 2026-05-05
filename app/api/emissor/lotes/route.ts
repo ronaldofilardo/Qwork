@@ -30,7 +30,11 @@ export const GET = async (req: Request) => {
       LEFT JOIN entidades ent ON ent.id = la.entidade_id
       LEFT JOIN clinicas c ON c.id = la.clinica_id
       WHERE la.status != 'cancelado'
-        AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
+        AND (
+          fe.id IS NOT NULL
+          OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL)
+          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando'))
+        )
         AND (
           la.status_pagamento = 'pago'
           OR la.status_pagamento IS NULL
@@ -69,6 +73,7 @@ export const GET = async (req: Request) => {
         l.arquivo_remoto_key,
         l.arquivo_remoto_url,
         l.arquivo_remoto_uploaded_at,
+        l.zapsign_sign_url,
         f.nome as emissor_nome,
         fe.solicitado_por,
         fe.solicitado_em,
@@ -82,13 +87,17 @@ export const GET = async (req: Request) => {
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       WHERE la.status != 'cancelado'
-        AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
+        AND (
+          fe.id IS NOT NULL
+          OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL)
+          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando'))
+        )
         AND (
           la.status_pagamento = 'pago'
           OR la.status_pagamento IS NULL
           OR COALESCE(ent.isento_pagamento, c.isento_pagamento, false) = true
         )
-      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, l.zapsign_sign_url, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE
           WHEN la.status IN ('emissao_solicitada', 'emissao_em_andamento') THEN 1
@@ -118,6 +127,11 @@ export const GET = async (req: Request) => {
         temLaudo &&
         (lote.status_laudo === 'emitido' || lote.status_laudo === 'enviado');
 
+      const aguardandoAssinatura =
+        temLaudo &&
+        (lote.status_laudo === 'aguardando_assinatura' ||
+          lote.status_laudo === 'assinado_processando');
+
       const laudoObj = temLaudo
         ? {
             id: lote.laudo_id,
@@ -131,7 +145,9 @@ export const GET = async (req: Request) => {
             arquivo_remoto_key: lote.arquivo_remoto_key || null,
             arquivo_remoto_url: lote.arquivo_remoto_url || null,
             arquivo_remoto_uploaded_at: lote.arquivo_remoto_uploaded_at || null,
+            zapsign_sign_url: lote.zapsign_sign_url || null,
             _emitido: laudoEmitido,
+            _aguardandoAssinatura: aguardandoAssinatura,
           }
         : null;
 

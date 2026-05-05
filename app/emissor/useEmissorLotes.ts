@@ -123,7 +123,11 @@ export function useEmissorLotes() {
       case 'laudo-para-emitir':
         return !lote.laudo || !lote.laudo._emitido;
       case 'laudo-emitido':
-        return lote.laudo?._emitido === true && !lote.laudo?.enviado_em;
+        return (
+          (lote.laudo?._emitido === true ||
+            lote.laudo?._aguardandoAssinatura === true) &&
+          !lote.laudo?.enviado_em
+        );
       case 'laudos-enviados':
         return !!(lote.laudo?.enviado_em || lote.laudo?.status === 'enviado');
       default:
@@ -138,7 +142,9 @@ export function useEmissorLotes() {
     'laudo-para-emitir': lotes.filter((l) => !l.laudo || !l.laudo._emitido)
       .length,
     'laudo-emitido': lotes.filter(
-      (l) => l.laudo?._emitido === true && !l.laudo?.enviado_em
+      (l) =>
+        (l.laudo?._emitido === true || l.laudo?._aguardandoAssinatura === true) &&
+        !l.laudo?.enviado_em
     ).length,
     'laudos-enviados': lotes.filter(
       (l) => !!(l.laudo?.enviado_em || l.laudo?.status === 'enviado')
