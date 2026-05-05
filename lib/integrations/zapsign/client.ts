@@ -61,7 +61,7 @@ function getBaseUrl(): string {
       'ZAPSIGN_BASE_URL não está configurado. Defina no .env.local.'
     );
   }
-  return url.replace(/\/$/, ''); // remover trailing slash
+  return url.trim().replace(/\/$/, ''); // remover whitespace/CRLF e trailing slash
 }
 
 function getApiToken(): string {
