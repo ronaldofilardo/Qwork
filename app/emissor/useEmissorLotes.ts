@@ -10,7 +10,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 import type { Lote, NotificacaoLote, ActiveTab } from './types';
 
@@ -21,11 +20,17 @@ export function useEmissorLotes() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [activeTab, setActiveTab] = useState<ActiveTab>('laudo-para-emitir');
+  const [activeTab, setActiveTabState] = useState<ActiveTab>('laudo-para-emitir');
+  const [filterLoteId, setFilterLoteId] = useState('');
+  const [filterPeriod, setFilterPeriod] = useState<'all' | 'today' | 'week'>('all');
   const router = useRouter();
-  const { mutate: reprocessarLaudo, isPending: isReprocessando } =
-    useReprocessarLaudo();
   const { canInstall, handleInstallClick } = usePWAInstall();
+
+  const setActiveTab = useCallback((tab: ActiveTab) => {
+    setActiveTabState(tab);
+    setFilterLoteId('');
+    setFilterPeriod('all');
+  }, []);
 
   // ---- Data fetching ----
   const fetchLotes = useCallback(
@@ -108,39 +113,51 @@ export function useEmissorLotes() {
     void fetchLotes(1, true);
   }, [fetchLotes]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!loading && !loadingMore) {
-        void fetchLotes(currentPage, false);
-      }
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [currentPage, loading, loadingMore, fetchLotes]);
-
   // ---- Derived state ----
-  const filteredLotes = lotes.filter((lote) => {
-    switch (activeTab) {
-      case 'laudo-para-emitir':
-        return !lote.laudo || !lote.laudo._emitido;
-      case 'laudo-emitido':
-        return (
-          (lote.laudo?._emitido === true ||
-            lote.laudo?._aguardandoAssinatura === true) &&
-          !lote.laudo?.enviado_em
-        );
-      case 'laudos-enviados':
-        return !!(lote.laudo?.enviado_em || lote.laudo?.status === 'enviado');
-      default:
-        return true;
-    }
-  });
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfWeek = new Date(startOfToday);
+  startOfWeek.setDate(startOfToday.getDate() - ((startOfToday.getDay() + 6) % 7));
+
+  const filteredLotes = lotes
+    .filter((lote) => {
+      switch (activeTab) {
+        case 'laudo-para-emitir':
+          // Lotes ZapSign aguardando assinatura pertencem a "Laudo Emitido"
+          return (
+            !lote.laudo ||
+            (!lote.laudo._emitido && !lote.laudo._aguardandoAssinatura)
+          );
+        case 'laudo-emitido':
+          return (
+            (lote.laudo?._emitido === true ||
+              lote.laudo?._aguardandoAssinatura === true) &&
+            !lote.laudo?.enviado_em
+          );
+        case 'laudos-enviados':
+          return !!(lote.laudo?.enviado_em || lote.laudo?.status === 'enviado');
+        default:
+          return true;
+      }
+    })
+    .filter((lote) => {
+      if (filterLoteId.trim() && !String(lote.id).includes(filterLoteId.trim()))
+        return false;
+      if (filterPeriod !== 'all') {
+        const liberadoEm = new Date(lote.liberado_em);
+        if (filterPeriod === 'today' && liberadoEm < startOfToday) return false;
+        if (filterPeriod === 'week' && liberadoEm < startOfWeek) return false;
+      }
+      return true;
+    });
 
   const counts: Record<
     'laudo-para-emitir' | 'laudo-emitido' | 'laudos-enviados',
     number
   > = {
-    'laudo-para-emitir': lotes.filter((l) => !l.laudo || !l.laudo._emitido)
-      .length,
+    'laudo-para-emitir': lotes.filter(
+      (l) => !l.laudo || (!l.laudo._emitido && !l.laudo._aguardandoAssinatura)
+    ).length,
     'laudo-emitido': lotes.filter(
       (l) =>
         (l.laudo?._emitido === true || l.laudo?._aguardandoAssinatura === true) &&
@@ -340,15 +357,16 @@ export function useEmissorLotes() {
     hasMore,
     filteredLotes,
     counts,
+    filterLoteId,
+    setFilterLoteId,
+    filterPeriod,
+    setFilterPeriod,
     // Actions
     handleEmitirLaudo,
     handleDownloadLaudo,
     handleRefresh,
     handleLoadMore,
     handleLogout,
-    // Reprocessar
-    reprocessarLaudo,
-    isReprocessando,
     // PWA
     canInstall,
     handleInstallClick,

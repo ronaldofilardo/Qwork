@@ -37,7 +37,6 @@ export const GET = async (req: Request) => {
         )
         AND (
           la.status_pagamento = 'pago'
-          OR la.status_pagamento IS NULL
           OR COALESCE(ent.isento_pagamento, c.isento_pagamento, false) = true
         )
     `,
@@ -94,7 +93,6 @@ export const GET = async (req: Request) => {
         )
         AND (
           la.status_pagamento = 'pago'
-          OR la.status_pagamento IS NULL
           OR COALESCE(ent.isento_pagamento, c.isento_pagamento, false) = true
         )
       GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, l.zapsign_sign_url, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante

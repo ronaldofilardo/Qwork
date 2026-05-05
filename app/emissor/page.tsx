@@ -20,12 +20,12 @@ export default function EmissorDashboard() {
     handleRefresh,
     handleLoadMore,
     handleLogout,
-    reprocessarLaudo,
-    isReprocessando,
     canInstall,
     handleInstallClick,
-    currentPage,
-    fetchLotes,
+    filterLoteId,
+    setFilterLoteId,
+    filterPeriod,
+    setFilterPeriod,
   } = useEmissorLotes();
 
   return (
@@ -45,6 +45,31 @@ export default function EmissorDashboard() {
             loading={loading}
             onRefresh={handleRefresh}
           />
+
+          {!loading && !error && (
+            <div className="mb-4 bg-white rounded-lg shadow p-3 flex flex-wrap items-center gap-3">
+              <input
+                type="text"
+                placeholder="ID do lote..."
+                value={filterLoteId}
+                onChange={(e) => setFilterLoteId(e.target.value)}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm w-36 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {(['all', 'today', 'week'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setFilterPeriod(p)}
+                  className={`px-3 py-2 text-sm rounded-md font-medium transition-colors cursor-pointer ${
+                    filterPeriod === p
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {p === 'all' ? 'Todos' : p === 'today' ? 'Hoje' : 'Esta semana'}
+                </button>
+              ))}
+            </div>
+          )}
 
           {loading ? (
             <div className="flex items-center justify-center py-20">
@@ -79,11 +104,7 @@ export default function EmissorDashboard() {
                       lote={lote}
                       onEmitirLaudo={handleEmitirLaudo}
                       onDownloadLaudo={handleDownloadLaudo}
-                      onReprocessar={reprocessarLaudo}
-                      isReprocessando={isReprocessando}
-                      onUploadSuccess={() => {
-                        void fetchLotes(currentPage, false);
-                      }}
+                      onUploadSuccess={handleRefresh}
                     />
                   ))}
                 </div>
