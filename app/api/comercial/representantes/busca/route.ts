@@ -38,7 +38,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       `SELECT
          r.id,
          r.nome,
-
          r.cpf,
          r.modelo_comissionamento,
          r.percentual_comissao,

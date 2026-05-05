@@ -13,7 +13,6 @@ export const dynamic = 'force-dynamic';
 interface RepBusca {
   id: number;
   nome: string;
-  codigo: string | null;
   cpf: string | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: string | null;
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { searchParams } = new URL(request.url);
     const q = (searchParams.get('q') ?? '').trim();
 
-    if (q.length < 1) {
+    if (q.length < 2) {
       return NextResponse.json({ representantes: [] });
     }
 
@@ -38,7 +37,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const baseSelect = `SELECT
          r.id,
          r.nome,
-         r.codigo,
          r.cpf,
          r.modelo_comissionamento,
          r.percentual_comissao,

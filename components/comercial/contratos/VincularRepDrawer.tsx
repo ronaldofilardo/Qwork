@@ -13,7 +13,6 @@ import {
 interface RepResultado {
   id: number;
   nome: string;
-  codigo: string;
   cpf: string | null;
   modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
   percentual_comissao: string | null;
@@ -258,9 +257,6 @@ export function VincularRepDrawer({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-200 text-gray-600 font-mono tracking-wide">
-                      {repSelecionado.codigo}
-                    </span>
                     <span
                       className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                         repSelecionado.modelo_comissionamento === 'percentual'
@@ -333,7 +329,7 @@ export function VincularRepDrawer({
               >
                 Buscar representante
                 <span className="font-normal text-gray-400 ml-1">
-                  (nome ou código)
+                  (nome)
                 </span>
               </label>
               <div className="relative">
@@ -354,7 +350,7 @@ export function VincularRepDrawer({
                   type="text"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Digite o nome ou código do representante…"
+                  placeholder="Digite o nome do representante…"
                   autoComplete="off"
                   className="w-full pl-9 pr-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
                 />
@@ -370,9 +366,6 @@ export function VincularRepDrawer({
                         className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
                       >
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500 font-mono">
-                            {r.codigo}
-                          </span>
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                               r.modelo_comissionamento === 'percentual'

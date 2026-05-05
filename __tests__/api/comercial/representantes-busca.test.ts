@@ -29,7 +29,6 @@ const fakeReps = [
   {
     id: 1,
     nome: 'João Silva',
-    codigo: 'REP001',
     cpf: '12345678901',
     modelo_comissionamento: 'percentual',
     percentual_comissao: '10.00',
@@ -38,7 +37,6 @@ const fakeReps = [
   {
     id: 2,
     nome: 'Maria Souza',
-    codigo: 'REP002',
     cpf: '98765432100',
     modelo_comissionamento: 'custo_fixo',
     percentual_comissao: null,
