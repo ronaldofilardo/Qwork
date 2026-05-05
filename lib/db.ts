@@ -468,19 +468,66 @@ export async function transaction<T>(
       client.release();
     }
   } else if (isProduction) {
-    // Para Neon, não temos suporte a transações no mesmo nível
-    // Por enquanto, executamos as queries sequencialmente
-    console.warn(
-      '[db][transaction] Transações nativas não suportadas em Neon - executando queries sequencialmente'
-    );
+    // Neon suporta transações reais via BEGIN/COMMIT/ROLLBACK
+    try {
+      // Iniciar transação
+      await queryFn('BEGIN', undefined, session);
 
-    const txClient: TransactionClient = {
-      query: async <R = any>(text: string, params?: unknown[]) => {
-        return await queryFn<R>(text, params, session);
-      },
-    };
+      // Configurar contexto RLS se houver sessão
+      if (session) {
+        const escapeString = (str: string) => str.replace(/'/g, "''");
+        await queryFn(
+          `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`,
+          undefined,
+          session
+        );
+        await queryFn(
+          `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`,
+          undefined,
+          session
+        );
+        await queryFn(
+          `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`,
+          undefined,
+          session
+        );
+      }
 
-    return await callback(txClient);
+      // Criar cliente de transação que usa queryFn
+      const txClient: TransactionClient = {
+        query: async <R = any>(text: string, params?: unknown[]) => {
+          return await queryFn<R>(text, params, session);
+        },
+      };
+
+      // Executar callback
+      const result = await callback(txClient);
+
+      // Commit
+      await queryFn('COMMIT', undefined, session);
+
+      if (DEBUG_DB) {
+        console.log('[db][transaction] Transação em Neon comitada com sucesso');
+      }
+
+      return result;
+    } catch (error) {
+      // Rollback em caso de erro
+      try {
+        await queryFn('ROLLBACK', undefined, session);
+      } catch (rollbackErr) {
+        console.error('[db][transaction] Erro ao fazer ROLLBACK:', rollbackErr);
+      }
+
+      if (DEBUG_DB) {
+        console.error(
+          '[db][transaction] Transação em Neon revertida devido a erro:',
+          error
+        );
+      }
+
+      throw error;
+    }
   } else {
     throw new Error(
       `Nenhuma conexão configurada para ambiente: ${environment}`
