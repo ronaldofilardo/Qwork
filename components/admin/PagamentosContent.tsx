@@ -12,7 +12,6 @@ import { SolicitacaoCard } from './pagamentos/SolicitacaoCard';
 import { ParcelasAVencer } from './pagamentos/ParcelasAVencer';
 import { ManutencaoTab } from './pagamentos/ManutencaoTab';
 import { AguardandoPagamentoTab } from './pagamentos/AguardandoPagamentoTab';
-import PagamentosFlowGuide from '../PagamentosFlowGuide';
 
 export default function PagamentosContent() {
   const {
@@ -72,16 +71,6 @@ export default function PagamentosContent() {
           Atualizar
         </button>
       </div>
-
-      {/* Flow Guide - Aguardando Cobrança */}
-      {filterTab === 'aguardando_cobranca' && (
-        <PagamentosFlowGuide section="aguardando_cobranca" />
-      )}
-
-      {/* Flow Guide - Aguardando Pagamento */}
-      {filterTab === 'aguardando_pagamento' && (
-        <PagamentosFlowGuide section="aguardando_pagamento" />
-      )}
 
       {/* Tabs de Filtro */}
       <PagamentosFilterTabs
