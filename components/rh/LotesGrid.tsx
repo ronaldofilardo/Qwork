@@ -65,7 +65,9 @@ export function LotesGrid({
             laudoAssociado.status === 'emitido' ||
             laudoAssociado.status === 'enviado' ||
             laudoAssociado.hash) &&
-          (lote.status === 'concluido' || lote.status === 'finalizado')
+          (lote.status === 'concluido' ||
+            lote.status === 'finalizado' ||
+            lote.status === 'laudo_emitido')
         );
         const isPronto = lote.pode_emitir_laudo || temLaudo;
         const isCancelado = lote.status === 'cancelado';

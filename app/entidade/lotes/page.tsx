@@ -75,11 +75,15 @@ export default function LotesPage() {
         setLotes(lotesData.lotes || []);
 
         // Converter lotes para formato de laudos para compatibilidade com LotesGrid
-        // ✅ APENAS incluir laudos que foram enviados ao bucket (arquivo_remoto_url preenchido)
+        // Inclui laudos emitidos (status emitido/enviado) mesmo sem arquivo_remoto_url
+        // para que LotesGrid reconheça temLaudo=true e oculte o banner "aguardando emissão"
         const laudosFromLotes: Laudo[] = (lotesData.lotes || [])
           .filter(
             (lote: LoteAvaliacao) =>
-              lote.laudo_id && lote.laudo_arquivo_remoto_url // ✅ Exige arquivo no bucket
+              lote.laudo_id &&
+              (lote.laudo_arquivo_remoto_url ||
+                lote.laudo_status === 'emitido' ||
+                lote.laudo_status === 'enviado')
           )
           .map((lote: LoteAvaliacao) => ({
             id: lote.laudo_id!,
