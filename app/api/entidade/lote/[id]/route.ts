@@ -45,7 +45,7 @@ export async function GET(
         CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
         fe.solicitado_em as emissao_solicitado_em,
         CASE 
-          WHEN l.id IS NOT NULL AND l.status IN ('emitido', 'enviado') AND l.arquivo_remoto_url IS NOT NULL
+          WHEN l.id IS NOT NULL AND l.status IN ('emitido', 'enviado') AND l.arquivo_remoto_key IS NOT NULL
           THEN true 
           ELSE false 
         END as tem_laudo,

@@ -35,7 +35,7 @@ export const GET = async (_req: Request) => {
       LEFT JOIN users u ON l.emissor_cpf = u.cpf
       WHERE la.clinica_id = $1
         AND l.status = 'emitido'
-        AND l.arquivo_remoto_url IS NOT NULL
+        AND l.arquivo_remoto_key IS NOT NULL
       ORDER BY l.enviado_em DESC
       LIMIT $2
     `,

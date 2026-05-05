@@ -112,13 +112,15 @@ export const GET = async (_req: Request) => {
     params.push(limit);
 
     // Buscar laudos enviados para a clínica do usuário (com filtro opcional por empresa)
-    // ✅ Apenas laudos que estão efetivamente no bucket (arquivo_remoto_url preenchido)
+    // ✅ Laudos que estão no bucket: critério é arquivo_remoto_key (a URL pode ser NULL
+    //    em uploads legados onde apenas a key foi salva mas a URL não foi preenchida).
     const laudosQuery = await query(
       `
       SELECT
         l.id as laudo_id,
         l.lote_id,
         l.status,
+        l.emitido_em,
         l.enviado_em,
         l.hash_pdf,
         la.id as lote_id_ref,
@@ -132,8 +134,8 @@ export const GET = async (_req: Request) => {
       LEFT JOIN funcionarios f ON l.emissor_cpf = f.cpf
       ${String(whereClause)}
         AND l.status IN ('emitido', 'enviado')
-        AND l.arquivo_remoto_url IS NOT NULL
-      ORDER BY l.enviado_em DESC
+        AND l.arquivo_remoto_key IS NOT NULL
+      ORDER BY COALESCE(l.enviado_em, l.emitido_em) DESC
       LIMIT $${String(params.length)}
     `,
       params
@@ -145,9 +147,10 @@ export const GET = async (_req: Request) => {
       empresa_nome: laudo.empresa_nome,
       clinica_nome: laudo.clinica_nome,
       emissor_nome: laudo.emissor_nome || 'N/A',
+      emitido_em: laudo.emitido_em,
       enviado_em: laudo.enviado_em,
       status: laudo.status || 'emitido',
-      data_emissao: laudo.enviado_em,
+      data_emissao: laudo.enviado_em || laudo.emitido_em,
       hash: laudo.hash_pdf || null,
       arquivos: {
         relatorio_lote: laudo.laudo_id
