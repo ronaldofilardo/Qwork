@@ -259,6 +259,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         // Criar avaliações
         const agora = new Date().toISOString();
         let avaliacoesCriadas = 0;
+        const errosAvaliacao: Array<{ cpf: string; erro: string }> = [];
 
         for (const func of funcionarios) {
           try {
@@ -269,15 +270,21 @@ export async function POST(request: Request): Promise<NextResponse> {
             );
             avaliacoesCriadas++;
           } catch (err) {
-            console.warn(
-              `[bulk-liberar-ciclos] falha ao criar avaliação para ${func.funcionario_cpf}:`,
-              err instanceof Error ? err.message : err
+            const msgErro = err instanceof Error ? err.message : String(err);
+            console.error(
+              `[bulk-liberar-ciclos] Erro ao criar avaliação para ${func.funcionario_cpf} no lote ${lote.id}: ${msgErro}`
             );
+            errosAvaliacao.push({ cpf: func.funcionario_cpf, erro: msgErro });
           }
         }
 
         if (avaliacoesCriadas === 0) {
-          throw new Error('Nenhuma avaliação foi criada para o lote');
+          const detalhesErro = errosAvaliacao
+            .map((e) => `${e.cpf}: ${e.erro}`)
+            .join('; ');
+          throw new Error(
+            `Nenhuma avaliação foi criada para o lote. Detalhes: ${detalhesErro}`
+          );
         }
 
         return { lote, avaliacoesCriadas };

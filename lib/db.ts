@@ -16,6 +16,7 @@ import pg from 'pg';
 import bcrypt from 'bcryptjs';
 import { Session } from './session';
 import { query as queryFn, QueryResult } from './db/query'; // ⭐ Import da função e tipo para uso interno
+import { getNeonPool } from './db/connection'; // ⭐ Pool Neon para transações dedicadas em produção
 
 // ⭐ RE-EXPORT da implementação correta de query() de lib/db/query.ts
 // Isso garante que query() tenha suporte a dynamic pools para emissores
@@ -468,43 +469,46 @@ export async function transaction<T>(
       client.release();
     }
   } else if (isProduction) {
-    // Neon suporta transações reais via BEGIN/COMMIT/ROLLBACK
+    // Neon: usar conexão DEDICADA do pool para garantir que todos os queries
+    // da transação (incluindo SAVEPOINTs) compartilhem a mesma conexão.
+    // NUNCA usar queryFn aqui — queryFn faz BEGIN/COMMIT próprio por chamada.
+    const pool = await getNeonPool();
+    if (!pool) {
+      throw new Error('Neon Pool não disponível para transação em produção');
+    }
+    const client = await pool.connect();
     try {
-      // Iniciar transação
-      await queryFn('BEGIN', undefined, session);
+      await client.query('BEGIN');
 
       // Configurar contexto RLS se houver sessão
       if (session) {
         const escapeString = (str: string) => str.replace(/'/g, "''");
-        await queryFn(
-          `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`,
-          undefined,
-          session
+        await client.query(
+          `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
         );
-        await queryFn(
-          `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`,
-          undefined,
-          session
+        await client.query(
+          `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
         );
-        await queryFn(
-          `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`,
-          undefined,
-          session
+        await client.query(
+          `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
         );
       }
 
-      // Criar cliente de transação que usa queryFn
+      // Criar cliente de transação que usa a MESMA conexão dedicada
       const txClient: TransactionClient = {
         query: async <R = any>(text: string, params?: unknown[]) => {
-          return await queryFn<R>(text, params, session);
+          const result = await client.query(text, params);
+          return {
+            rows: result.rows as R[],
+            rowCount: result.rowCount || 0,
+          };
         },
       };
 
       // Executar callback
       const result = await callback(txClient);
 
-      // Commit
-      await queryFn('COMMIT', undefined, session);
+      await client.query('COMMIT');
 
       if (DEBUG_DB) {
         console.log('[db][transaction] Transação em Neon comitada com sucesso');
@@ -512,9 +516,8 @@ export async function transaction<T>(
 
       return result;
     } catch (error) {
-      // Rollback em caso de erro
       try {
-        await queryFn('ROLLBACK', undefined, session);
+        await client.query('ROLLBACK');
       } catch (rollbackErr) {
         console.error('[db][transaction] Erro ao fazer ROLLBACK:', rollbackErr);
       }
@@ -527,6 +530,8 @@ export async function transaction<T>(
       }
 
       throw error;
+    } finally {
+      client.release();
     }
   } else {
     throw new Error(
