@@ -67,7 +67,7 @@ export const GET = (req: Request) => {
             JOIN empresas_clientes ec ON la.empresa_id = ec.id
             WHERE la.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $1)
               AND l.status IN ('emitido', 'enviado')
-              AND l.arquivo_remoto_url IS NOT NULL
+              AND l.arquivo_remoto_key IS NOT NULL
               AND l.emitido_em >= NOW() - INTERVAL '7 days'
 
             ORDER BY data_evento DESC
