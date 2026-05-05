@@ -136,55 +136,72 @@ describe('Sistema de Índice de Avaliação', () => {
     });
 
     it('não deve considerar funcionário com indice = numero_ordem - 1 como atrasado (caso limite)', async () => {
-      // Criar um contratante e funcionário atrelado a ele (empresa_id = NULL)
-      // Criar contratante com email unico para evitar conflitos de unicidade em ambiente de teste
+      // Criar uma entidade e funcionário vinculado via funcionarios_entidades (arquitetura per-vínculo)
       const timestamp = Date.now();
-      const emailContratante = `contratante+${timestamp}@teste.local`;
+      const emailEntidade = `entidade+${timestamp}@teste.local`;
       const cnpjDinamico = ('00000000000000' + String(timestamp)).slice(-14);
       const responsavelCpf = ('00000000000' + String(timestamp)).slice(-11);
       const responsavelEmail = `resp+${timestamp}@teste.local`;
-      const responsavelCelular = ('0000000000' + String(timestamp)).slice(-10);
-      const contratante = await query(
-        `INSERT INTO contratantes (nome, responsavel_cpf, tipo, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+      const responsavelCelular = ('00000000000' + String(timestamp)).slice(-11);
+      const entidade = await query(
+        `INSERT INTO entidades (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
         [
-          'Contratante Teste',
-          responsavelCpf,
-          'entidade',
+          'Entidade Teste Limite',
           cnpjDinamico,
-          emailContratante,
+          emailEntidade,
           '0000000000',
           'Rua Teste, 1',
           'Cidade',
           'SP',
           '00000000',
           'Responsavel Teste',
+          responsavelCpf,
           responsavelEmail,
           responsavelCelular,
         ]
       );
-      const contratanteId = contratante.rows[0].id;
+      const entidadeId = entidade.rows[0].id;
 
       const cpfTeste = '99988877766';
-      // inserir funcionário com indice = 1 e data_ultimo_lote recente
+      // Inserir funcionário sem vínculo de empresa (entidade não usa empresa_id)
       await query(
-        `INSERT INTO funcionarios (cpf, nome, contratante_id, empresa_id, ativo, indice_avaliacao, data_ultimo_lote, perfil, nivel_cargo, senha_hash)
-         VALUES ($1, $2, $3, NULL, true, 1, NOW(), 'funcionario', 'operacional', '$2b$10$dummy.hash.for.test')`,
-        [cpfTeste, 'Limite Teste', contratanteId]
+        `INSERT INTO funcionarios (cpf, nome, ativo, perfil, nivel_cargo, senha_hash)
+         VALUES ($1, $2, true, 'funcionario', 'operacional', '$2b$10$dummy.hash.for.test')`,
+        [cpfTeste, 'Limite Teste']
       );
 
-      // Chamar função de elegibilidade com numero_ordem = 2 -> diff = 0
+      // Buscar o id do funcionário recem-criado para criar o vínculo
+      const funcRes = await query(
+        `SELECT id FROM funcionarios WHERE cpf = $1`,
+        [cpfTeste]
+      );
+      const funcionarioId = funcRes.rows[0].id;
+
+      // Criar vínculo na tabela per-vínculo com indice_avaliacao = 1 e data_ultimo_lote recente
+      await query(
+        `INSERT INTO funcionarios_entidades (funcionario_id, entidade_id, ativo, indice_avaliacao, data_ultimo_lote)
+         VALUES ($1, $2, true, 1, NOW())`,
+        [funcionarioId, entidadeId]
+      );
+
+      // Chamar função de elegibilidade com numero_ordem = 2 -> diff = 2-1-1 = 0 (não elegível)
       const res = await query(
-        'SELECT funcionario_cpf FROM calcular_elegibilidade_lote_contratante($1::integer, $2::integer)',
-        [contratanteId, 2]
+        'SELECT funcionario_cpf FROM calcular_elegibilidade_lote_tomador($1::integer, $2::integer)',
+        [entidadeId, 2]
       );
 
-      // Não deve conter o cpfTeste
-      const cpfs = res.rows.map((r: any) => r.funcionario_cpf);
+      // Não deve conter o cpfTeste (indice=1, lote=2 -> não atrasado)
+      const cpfs = res.rows.map((r: any) => r.funcionario_cpf.trim());
       expect(cpfs).not.toContain(cpfTeste);
 
       // Cleanup
+      await query(
+        'DELETE FROM funcionarios_entidades WHERE funcionario_id = $1',
+        [funcionarioId]
+      );
       await query('DELETE FROM funcionarios WHERE cpf = $1', [cpfTeste]);
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+      await query('DELETE FROM entidades WHERE id = $1', [entidadeId]);
     });
   });
 

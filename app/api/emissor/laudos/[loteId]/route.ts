@@ -91,6 +91,7 @@ export const GET = async (
     const STATUSES_POS_GERACAO = [
       'pdf_gerado',
       'aguardando_assinatura',
+      'assinado_processando',
       'emitido',
       'enviado',
     ];

@@ -81,9 +81,46 @@ export const POST = async (req: Request) => {
       const entidadeNome =
         entidadeRes.rowCount > 0 ? entidadeRes.rows[0].nome : 'Entidade';
 
-      // Próximo numero de ordem para lotes sem empresa (usamos empresa_id IS NULL)
+      // Verificar se já existe lote ativo para esta entidade (bloquear duplicatas)
+      const loteAtivoCheck = await queryAsGestorEntidade(
+        `SELECT id, status FROM lotes_avaliacao WHERE entidade_id = $1 ORDER BY numero_ordem DESC LIMIT 1`,
+        [entidadeId]
+      );
+      if (loteAtivoCheck.rowCount !== null && loteAtivoCheck.rowCount > 0) {
+        const loteAtual = loteAtivoCheck.rows[0] as {
+          id: number;
+          status: string;
+        };
+        const statusBloqueante = [
+          'ativo',
+          'emissao_solicitada',
+          'emissao_em_andamento',
+          'rascunho',
+        ];
+        if (statusBloqueante.includes(loteAtual.status)) {
+          const labels: Record<string, string> = {
+            rascunho: 'Lote atual em rascunho',
+            ativo: 'Lote atual ainda em andamento',
+            emissao_solicitada: 'Emissão de laudo já solicitada',
+            emissao_em_andamento: 'Emissão de laudo em andamento',
+          };
+          return NextResponse.json(
+            {
+              error:
+                labels[loteAtual.status] ??
+                `Lote atual em estado bloqueante: ${loteAtual.status}`,
+              success: false,
+              lote_atual_id: loteAtual.id,
+            },
+            { status: 409 }
+          );
+        }
+      }
+
+      // Próximo numero de ordem para lotes desta entidade (per-entidade, nao global)
       const numeroOrdemResult = await queryAsGestorEntidade(
-        `SELECT COALESCE(MAX(numero_ordem), 0) + 1 as numero_ordem FROM lotes_avaliacao WHERE empresa_id IS NULL`
+        `SELECT obter_proximo_numero_ordem_entidade($1) as numero_ordem`,
+        [entidadeId]
       );
       const numeroOrdem = numeroOrdemResult.rows[0].numero_ordem;
 

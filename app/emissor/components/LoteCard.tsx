@@ -7,6 +7,7 @@
  * hash integrity section, notifications and action buttons.
  */
 
+import { useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import UploadLaudoButton from '@/components/UploadLaudoButton';
 import type { Lote } from '../types';
@@ -142,6 +143,34 @@ export default function LoteCard({
       {/* Hash do Laudo - Seção destacada */}
       {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
       {lote.laudo && lote.laudo._emitido && <HashSection lote={lote} />}
+
+      {/* Aguardando assinatura ZapSign */}
+      {lote.laudo?._aguardandoAssinatura && (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-sm font-semibold text-amber-800 mb-1">
+            Aguardando assinatura digital no ZapSign
+          </p>
+          <p className="text-xs text-amber-700 mb-3">
+            Assine o laudo no ZapSign, baixe o PDF assinado e faça o upload abaixo.
+          </p>
+          {lote.laudo.zapsign_sign_url && (
+            <a
+              href={lote.laudo.zapsign_sign_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block mb-3 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-medium rounded transition-colors"
+            >
+              Abrir ZapSign para assinar
+            </a>
+          )}
+          {/* eslint-disable-next-line @typescript-eslint/no-use-before-define */}
+          <UploadAssinadoZapSignButton
+            loteId={lote.id}
+            laudoId={lote.laudo.id}
+            onSuccess={onUploadSuccess}
+          />
+        </div>
+      )}
 
       {/* Notificações do Lote */}
       {lote.notificacoes && lote.notificacoes.length > 0 && (
@@ -444,5 +473,77 @@ function MainActionButton({
     >
       {label}
     </button>
+  );
+}
+
+function UploadAssinadoZapSignButton({
+  loteId,
+  laudoId,
+  onSuccess,
+}: {
+  loteId: number;
+  laudoId: number;
+  onSuccess: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Apenas arquivos PDF são aceitos');
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      toast.error('Arquivo muito grande. Máximo: 20MB');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(
+        `/api/emissor/laudos/${loteId}/upload-assinado`,
+        { method: 'POST', body: formData }
+      );
+      const data = await res.json() as { success: boolean; error?: string };
+
+      if (data.success) {
+        toast.success('PDF assinado enviado com sucesso!');
+        onSuccess();
+      } else {
+        toast.error(data.error ?? 'Erro ao enviar PDF assinado');
+      }
+    } catch {
+      toast.error('Erro ao enviar PDF assinado');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  return (
+    <>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf"
+        className="hidden"
+        onChange={handleFileChange}
+        aria-label={`Upload do PDF assinado do laudo ${laudoId}`}
+      />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded transition-colors disabled:opacity-50"
+      >
+        {uploading ? 'Enviando...' : 'Upload do PDF assinado'}
+      </button>
+    </>
   );
 }
