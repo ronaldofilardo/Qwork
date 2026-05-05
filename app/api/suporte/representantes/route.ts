@@ -1,7 +1,7 @@
 /**
  * GET /api/suporte/representantes
  * Lista todos os representantes com seus vendedores vinculados.
- * Inclui filtros por status e busca por nome/email/código.
+ * Inclui filtros por status e busca por ID/nome/email/código.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -21,10 +21,21 @@ export async function GET(request: NextRequest) {
     const params: unknown[] = [];
 
     if (busca) {
-      params.push(`%${busca}%`);
-      conditions.push(
-        `(r.nome ILIKE $${params.length} OR r.email ILIKE $${params.length})`
-      );
+      const isNumericId = /^\d+$/.test(busca);
+      
+      if (isNumericId) {
+        // Se é só dígitos, incluir busca por ID também
+        params.push(Number(busca), `%${busca}%`, `%${busca}%`, `%${busca}%`);
+        conditions.push(
+          `(r.id = $${params.length - 3} OR r.nome ILIKE $${params.length - 2} OR r.email ILIKE $${params.length - 2} OR r.codigo ILIKE $${params.length - 1})`
+        );
+      } else {
+        // Se tem letras, buscar como texto em nome, email e código
+        params.push(`%${busca}%`, `%${busca}%`, `%${busca}%`);
+        conditions.push(
+          `(r.nome ILIKE $${params.length - 2} OR r.email ILIKE $${params.length - 1} OR r.codigo ILIKE $${params.length})`
+        );
+      }
     }
 
     const statusValidos = [
@@ -41,7 +52,7 @@ export async function GET(request: NextRequest) {
       conditions.push(`r.status = $${params.length}`);
     }
 
-    // Filtro por grupo: ativos (excluindo desativado/rejeitado) ou inativos (desativado)
+    // Filtro por grupo: ativos (excluindo desativado/rejeitado) ou inativos (desativado/rejeitado)
     const grupo = searchParams.get('grupo')?.trim() ?? '';
     if (grupo === 'inativos') {
       conditions.push(`r.status IN ('desativado', 'rejeitado')`);
