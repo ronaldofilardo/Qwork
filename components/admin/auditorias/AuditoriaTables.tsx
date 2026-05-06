@@ -1,8 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { RefreshCw, Loader2 } from 'lucide-react';
-import { formatDate } from './helpers';
+import { RefreshCw, Loader2, Download, FileText } from 'lucide-react';
+import {
+  formatDate,
+  generateAvaliacoesReportTxt,
+  generateAvaliacoesPDF,
+} from './helpers';
 import type {
   AcessoGestorUnificado,
   AcessoOperacional,
@@ -417,6 +421,26 @@ export function TabelaAvaliacoes({
           </button>
         )}
 
+        <button
+          onClick={() => generateAvaliacoesReportTxt(filtrados)}
+          disabled={filtrados.length === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-50 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          title="Exportar avaliações visíveis como arquivo de texto"
+        >
+          <FileText className="w-4 h-4" />
+          Exportar .txt
+        </button>
+
+        <button
+          onClick={() => generateAvaliacoesPDF(filtrados)}
+          disabled={filtrados.length === 0}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium bg-gray-50 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          title="Exportar avaliações visíveis como PDF"
+        >
+          <Download className="w-4 h-4" />
+          Gerar PDF
+        </button>
+
         <span className="ml-auto text-xs text-gray-500">
           {filtrados.length} de {data.length} registros
         </span>
@@ -516,52 +540,139 @@ export function TabelaLotes({
   onAtualizar: () => void;
   loading: boolean;
 }) {
+  const [filtroTomador, setFiltroTomador] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
+
+  const normalizar = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+  const statusUnicos = useMemo(() => {
+    const set = new Set(data.map((l) => l.status));
+    return Array.from(set).sort();
+  }, [data]);
+
+  const filtrados = useMemo(() => {
+    return data.filter((l) => {
+      if (filtroTomador.trim()) {
+        const termo = normalizar(filtroTomador.trim());
+        const tomadorOk = normalizar(l.empresa_nome ?? '').includes(termo);
+        if (!tomadorOk) return false;
+      }
+
+      if (filtroStatus && l.status !== filtroStatus) return false;
+
+      return true;
+    });
+  }, [data, filtroTomador, filtroStatus]);
+
+  const temFiltro = filtroTomador.trim() || filtroStatus;
+
+  function limparFiltros() {
+    setFiltroTomador('');
+    setFiltroStatus('');
+  }
+
   return (
-    <TableShell
-      title="Auditoria de Lotes"
-      subtitle={`Total: ${data.length} registros`}
-      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>ID / Seq</Th>
-            <Th>Tomador</Th>
-            <Th>Status</Th>
-            <Th center>Avaliações</Th>
-            <Th center>Concluídas</Th>
-            <Th>Criado em</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {data.map((l) => (
-            <tr key={l.lote_id} className="hover:bg-gray-50">
-              <Td className="font-semibold text-gray-900">
-                <span className="text-gray-900">#{l.lote_id}</span>
-                <span className="ml-1 text-xs text-gray-400">
-                  seq {l.numero_lote}
-                </span>
-              </Td>
-              <Td className="text-gray-700 text-sm">{l.empresa_nome ?? '—'}</Td>
-              <Td>
-                <span
-                  className={`px-2 py-1 rounded text-xs font-semibold ${LOTE_STATUS_STYLES[l.status] ?? 'bg-gray-100 text-gray-800'}`}
-                >
-                  {LOTE_STATUS_LABELS[l.status] ?? l.status.toUpperCase()}
-                </span>
-              </Td>
-              <Td center className="text-gray-900">
-                {l.total_avaliacoes}
-              </Td>
-              <Td center className="text-gray-900">
-                {l.avaliacoes_concluidas}
-              </Td>
-              <Td>{formatDate(l.criado_em)}</Td>
-            </tr>
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          placeholder="Filtrar por tomador..."
+          value={filtroTomador}
+          onChange={(e) => setFiltroTomador(e.target.value)}
+          className="w-52 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos os status</option>
+          {statusUnicos.map((s) => (
+            <option key={s} value={s}>
+              {LOTE_STATUS_LABELS[s] ?? s.toUpperCase()}
+            </option>
           ))}
-        </tbody>
-      </table>
-    </TableShell>
+        </select>
+
+        {temFiltro && (
+          <button
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Limpar filtros
+          </button>
+        )}
+
+        <span className="ml-auto text-xs text-gray-500">
+          {filtrados.length} de {data.length} registros
+        </span>
+      </div>
+
+      <TableShell
+        title="Auditoria de Lotes"
+        subtitle={`Total: ${data.length} registros`}
+        headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+      >
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <Th>ID / Seq</Th>
+              <Th>Tomador</Th>
+              <Th>Status</Th>
+              <Th center>Avaliações</Th>
+              <Th center>Concluídas</Th>
+              <Th>Criado em</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
+                    : 'Nenhum lote encontrado.'}
+                </td>
+              </tr>
+            )}
+            {filtrados.map((l) => (
+              <tr key={l.lote_id} className="hover:bg-gray-50">
+                <Td className="font-semibold text-gray-900">
+                  <span className="text-gray-900">#{l.lote_id}</span>
+                  <span className="ml-1 text-xs text-gray-400">
+                    seq {l.numero_lote}
+                  </span>
+                </Td>
+                <Td className="text-gray-700 text-sm">
+                  {l.empresa_nome ?? '—'}
+                </Td>
+                <Td>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${LOTE_STATUS_STYLES[l.status] ?? 'bg-gray-100 text-gray-800'}`}
+                  >
+                    {LOTE_STATUS_LABELS[l.status] ?? l.status.toUpperCase()}
+                  </span>
+                </Td>
+                <Td center className="text-gray-900">
+                  {l.total_avaliacoes}
+                </Td>
+                <Td center className="text-gray-900">
+                  {l.avaliacoes_concluidas}
+                </Td>
+                <Td>{formatDate(l.criado_em)}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
+    </div>
   );
 }
 
@@ -584,27 +695,111 @@ export function TabelaLaudos({
   onAtualizar: () => void;
   loading: boolean;
 }) {
+  const [filtroTomador, setFiltroTomador] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
+
+  const normalizar = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+  const statusUnicos = useMemo(() => {
+    const set = new Set(data.map((l) => l.status));
+    return Array.from(set).sort();
+  }, [data]);
+
+  const filtrados = useMemo(() => {
+    return data.filter((l) => {
+      if (filtroTomador.trim()) {
+        const termo = normalizar(filtroTomador.trim());
+        const tomadorOk = normalizar(l.tomador_nome ?? '').includes(termo);
+        if (!tomadorOk) return false;
+      }
+
+      if (filtroStatus && l.status !== filtroStatus) return false;
+
+      return true;
+    });
+  }, [data, filtroTomador, filtroStatus]);
+
+  const temFiltro = filtroTomador.trim() || filtroStatus;
+
+  function limparFiltros() {
+    setFiltroTomador('');
+    setFiltroStatus('');
+  }
+
+  const hasEmpresa = data.some((l) => l.empresa_cliente_nome);
+
   return (
-    <TableShell
-      title="Auditoria de Laudos"
-      subtitle={`Total: ${data.length} registros`}
-      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
-    >
-      <table className="w-full">
-        <thead className="bg-gray-50">
-          <tr>
-            <Th>ID</Th>
-            <Th>Tomador</Th>
-            {data.some((l) => l.empresa_cliente_nome) && <Th>Empresa</Th>}
-            <Th>Solicitação</Th>
-            <Th>Status</Th>
-            <Th center>Custódia</Th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {(() => {
-            const hasEmpresa = data.some((l) => l.empresa_cliente_nome);
-            return data.map((l) => (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <input
+          type="text"
+          placeholder="Filtrar por tomador..."
+          value={filtroTomador}
+          onChange={(e) => setFiltroTomador(e.target.value)}
+          className="w-52 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Todos os status</option>
+          {statusUnicos.map((s) => (
+            <option key={s} value={s}>
+              {s.toUpperCase()}
+            </option>
+          ))}
+        </select>
+
+        {temFiltro && (
+          <button
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Limpar filtros
+          </button>
+        )}
+
+        <span className="ml-auto text-xs text-gray-500">
+          {filtrados.length} de {data.length} registros
+        </span>
+      </div>
+
+      <TableShell
+        title="Auditoria de Laudos"
+        subtitle={`Total: ${data.length} registros`}
+        headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+      >
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <Th>ID</Th>
+              <Th>Tomador</Th>
+              {hasEmpresa && <Th>Empresa</Th>}
+              <Th>Solicitação</Th>
+              <Th>Status</Th>
+              <Th center>Custódia</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={hasEmpresa ? 6 : 5}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
+                    : 'Nenhum laudo encontrado.'}
+                </td>
+              </tr>
+            )}
+            {filtrados.map((l) => (
               <tr key={l.laudo_id} className="hover:bg-gray-50">
                 <Td className="font-semibold text-gray-900">#{l.lote_id}</Td>
                 <Td className="text-gray-900">{l.tomador_nome ?? '—'}</Td>
@@ -630,11 +825,11 @@ export function TabelaLaudos({
                   </button>
                 </Td>
               </tr>
-            ));
-          })()}
-        </tbody>
-      </table>
-    </TableShell>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
+    </div>
   );
 }
 
