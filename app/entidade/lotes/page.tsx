@@ -6,6 +6,7 @@ import { Rocket, Loader2 } from 'lucide-react';
 import { LotesGrid } from '@/components/rh';
 import { useLiberarLoteEntidade } from '@/lib/hooks/useLiberarLoteEntidade';
 import { LiberandoCicloOverlay } from '@/components/LiberandoCicloOverlay';
+import { ErrorLiberacaoModal } from '@/components/modals/ErrorLiberacaoModal';
 import toast from 'react-hot-toast';
 
 interface LoteAvaliacao {
@@ -55,6 +56,8 @@ export default function LotesPage() {
     liberarLote,
     loading: liberandoLote,
     error: erroLiberacao,
+    errorModalOpen,
+    closeErrorModal,
   } = useLiberarLoteEntidade();
 
   // Referências para controlar polling e evitar duplicidade em Strict Mode
@@ -145,8 +148,6 @@ export default function LotesPage() {
     if (result?.success && result.resultados?.[0]?.loteId) {
       await loadLotes();
       router.push(`/entidade/lote/${result.resultados[0].loteId}`);
-    } else if (result && !result.success) {
-      toast.error(result.message || 'Nenhum funcionário elegível encontrado');
     }
   }, [liberarLote, router, loadLotes]);
 
@@ -270,9 +271,6 @@ export default function LotesPage() {
             </>
           )}
         </button>
-        {erroLiberacao && (
-          <p className="text-xs text-red-600 mt-1">{erroLiberacao}</p>
-        )}
       </div>
 
       {/* Grid de Lotes - Usando componente reutilizável */}
@@ -288,6 +286,14 @@ export default function LotesPage() {
       </div>
 
       <LiberandoCicloOverlay visible={liberandoLote} />
+
+      {/* Modal de erro */}
+      <ErrorLiberacaoModal
+        isOpen={errorModalOpen}
+        onClose={closeErrorModal}
+        mensagem={erroLiberacao || ''}
+        title="Não foi possível criar o ciclo"
+      />
     </div>
   );
 }
