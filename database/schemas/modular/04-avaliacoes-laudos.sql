@@ -2530,7 +2530,7 @@ CREATE TABLE public.laudos (
     lote_id integer NOT NULL,
     emissor_cpf character(11),
     observacoes text,
-    status character varying(20) DEFAULT 'emitido'::public.status_laudo_enum,
+    status character varying(25) DEFAULT 'emitido'::public.status_laudo_enum,
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     emitido_em timestamp without time zone,
     enviado_em timestamp without time zone,
