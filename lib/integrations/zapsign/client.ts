@@ -120,9 +120,14 @@ export async function criarDocumentoZapSign(
 
   const baseUrl = getBaseUrl();
 
+  // sandbox: false garante criação em produção mesmo se a conta tiver acesso ao sandbox
+  const isSandbox =
+    baseUrl.includes('sandbox') || process.env.ZAPSIGN_SANDBOX === '1';
+
   const body = {
     name: nome,
     base64_pdf: base64Pdf,
+    sandbox: isSandbox,
     signers: [
       {
         name: nomeAssinante,

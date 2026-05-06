@@ -77,7 +77,14 @@ export async function gerarTokenResetUsuario(
   const { nome, tipo_usuario } = res.rows[0];
   const link = `${effectiveBaseUrl}/resetar-senha?token=${token}`;
 
-  return { token, link, expira_em, nome, perfil: tipo_usuario, tabela: 'usuarios' };
+  return {
+    token,
+    link,
+    expira_em,
+    nome,
+    perfil: tipo_usuario,
+    tabela: 'usuarios',
+  };
 }
 
 /**
@@ -114,7 +121,14 @@ export async function gerarTokenResetRepresentante(
   const { nome } = res.rows[0];
   const link = `${effectiveBaseUrl}/resetar-senha?token=${token}`;
 
-  return { token, link, expira_em, nome, perfil: 'representante', tabela: 'representantes' };
+  return {
+    token,
+    link,
+    expira_em,
+    nome,
+    perfil: 'representante',
+    tabela: 'representantes',
+  };
 }
 
 /** Log fake de envio de email — padrão do projeto (sem provedor real) */
