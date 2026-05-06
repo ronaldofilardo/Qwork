@@ -9,6 +9,7 @@ import {
   TabelaLaudos,
   TabelaOperacionais,
   TabelaAceites,
+  TabelaFuncionarios,
 } from './auditorias/AuditoriaTables';
 import { LaudoDetalheDrawer } from './auditorias/LaudoDetalheDrawer';
 import { DelecaoTomadorContent } from './auditorias/DelecaoTomadorContent';
@@ -20,6 +21,7 @@ import type {
   AuditoriaLote,
   AuditoriaLaudo,
   AceiteUsuario,
+  AuditoriaFuncionario,
 } from './auditorias/types';
 
 const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
@@ -29,6 +31,7 @@ const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
   laudos: '/api/admin/auditorias/laudos',
   operacionais: '/api/admin/auditorias/operacionais',
   aceites: '/api/admin/auditorias/aceites',
+  funcionarios: '/api/admin/auditorias/funcionarios',
 };
 
 export function AuditoriasContent() {
@@ -44,6 +47,7 @@ export function AuditoriasContent() {
   const [laudos, setLaudos] = useState<AuditoriaLaudo[]>([]);
   const [operacionais, setOperacionais] = useState<AcessoOperacional[]>([]);
   const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
+  const [funcionarios, setFuncionarios] = useState<AuditoriaFuncionario[]>([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
     if (tab === 'delecao') return;
@@ -77,6 +81,9 @@ export function AuditoriasContent() {
           break;
         case 'aceites':
           setAceites(json.aceites ?? []);
+          break;
+        case 'funcionarios':
+          setFuncionarios(json.funcionarios ?? []);
           break;
       }
       setLastUpdated(new Date());
@@ -153,6 +160,13 @@ export function AuditoriasContent() {
           data={aceites}
           onAtualizar={() => fetchTab('aceites')}
           loading={loading && activeTab === 'aceites'}
+        />
+      )}
+      {activeTab === 'funcionarios' && (
+        <TabelaFuncionarios
+          data={funcionarios}
+          onAtualizar={() => fetchTab('funcionarios')}
+          loading={loading && activeTab === 'funcionarios'}
         />
       )}
       {activeTab === 'delecao' && <DelecaoTomadorContent />}

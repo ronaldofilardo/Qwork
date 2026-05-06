@@ -123,6 +123,26 @@ export interface AuditoriaLaudoDetalhe {
   timeline: TimelineEvent[];
 }
 
+export interface AuditoriaFuncionario {
+  funcionario_id: number;
+  cpf: string;
+  nome: string;
+  data_inclusao: string; // ISO date
+  status_atual: boolean; // true = ativo, false = inativo
+  tomador_tipo: 'rh' | 'entidade';
+  tomador_nome: string;
+  empresa_nome: string | null;
+  setor: string | null;
+}
+
+export interface FilterStateFuncionarios {
+  tomadorTipoFilter: string;
+  tomadorNomeSearchText: string;
+  cpfSearchText: string;
+  nomeSearchText: string;
+  statusFilter: string;
+}
+
 export type AuditoriaSubTab =
   | 'gestores'
   | 'avaliacoes'
@@ -130,6 +150,7 @@ export type AuditoriaSubTab =
   | 'laudos'
   | 'operacionais'
   | 'aceites'
+  | 'funcionarios'
   | 'delecao';
 
 // ── Acesso Suporte ────────────────────────────────────────────────────────────
