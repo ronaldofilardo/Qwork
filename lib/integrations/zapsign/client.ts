@@ -64,6 +64,17 @@ function getBaseUrl(): string {
   return url.trim().replace(/\/$/, ''); // remover whitespace/CRLF e trailing slash
 }
 
+/**
+ * Retorna a URL base do app ZapSign para assinatura (https://app.zapsign.com.br ou https://sandbox.app.zapsign.com.br)
+ * Convertendo da URL da API (que usa /api/v1)
+ */
+export function getZapSignAppBaseUrl(): string {
+  const apiUrl = getBaseUrl();
+  // Converter: https://api.zapsign.com.br → https://app.zapsign.com.br
+  //           https://sandbox.api.zapsign.com.br → https://sandbox.app.zapsign.com.br
+  return apiUrl.replace('api.zapsign', 'app.zapsign');
+}
+
 function getApiToken(): string {
   const token = process.env.ZAPSIGN_API_TOKEN?.trim();
   if (!token) {
