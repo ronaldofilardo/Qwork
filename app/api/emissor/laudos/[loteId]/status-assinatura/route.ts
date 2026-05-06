@@ -10,6 +10,7 @@
 import { requireRole } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { getZapSignAppBaseUrl } from '@/lib/integrations/zapsign/client';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,9 +82,7 @@ export const GET = async (
   const laudo = result.rows[0];
 
   // Usar sign_url salva no banco; fallback para reconstrução com signer_token
-  const zapSignBaseApp = (
-    process.env.ZAPSIGN_APP_URL ?? 'https://sandbox.app.zapsign.com.br'
-  ).trim();
+  const zapSignBaseApp = getZapSignAppBaseUrl();
   const signUrl =
     laudo.zapsign_sign_url ||
     (laudo.zapsign_signer_token
