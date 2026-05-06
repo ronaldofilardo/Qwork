@@ -15,6 +15,7 @@ import type {
   AuditoriaLaudo,
   AceiteUsuario,
   AcessoSuporte,
+  AuditoriaFuncionario,
 } from './types';
 
 /* ─── Refresh Button ─── */
@@ -1275,5 +1276,238 @@ export function TabelaAcessosSuporte({
         </tbody>
       </table>
     </TableShell>
+  );
+}
+
+/* ─── 8. Funcionários ─── */
+
+const FUNCIONARIO_STATUS_BADGE: Record<string, string> = {
+  'true': 'bg-green-100 text-green-800',
+  'false': 'bg-red-100 text-red-800',
+};
+
+const FUNCIONARIO_STATUS_LABEL: Record<string, string> = {
+  'true': 'Ativo',
+  'false': 'Inativo',
+};
+
+// eslint-disable-next-line max-lines-per-function
+export function TabelaFuncionarios({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: AuditoriaFuncionario[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  const [filtroTomadorTipo, setFiltroTomadorTipo] = useState('');
+  const [filtroTomadorNome, setFiltroTomadorNome] = useState('');
+  const [filtroCpf, setFiltroCpf] = useState('');
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
+
+  const normalizar = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+  const tiposDisponiveis = useMemo(() => {
+    const set = new Set(data.map((f) => f.tomador_tipo).filter(Boolean));
+    return Array.from(set).sort();
+  }, [data]);
+
+  const statusDisponiveis = useMemo(() => {
+    const set = new Set(data.map((f) => String(f.status_atual)).filter(Boolean));
+    return Array.from(set).sort();
+  }, [data]);
+
+  const filtrados = useMemo(() => {
+    return data.filter((f) => {
+      if (filtroTomadorTipo && f.tomador_tipo !== filtroTomadorTipo) {
+        return false;
+      }
+
+      if (filtroTomadorNome.trim()) {
+        const termo = normalizar(filtroTomadorNome.trim());
+        const tomadorOk = normalizar(f.tomador_nome ?? '').includes(termo);
+        if (!tomadorOk) return false;
+      }
+
+      if (filtroCpf.trim()) {
+        const digits = filtroCpf.replace(/\D/g, '');
+        const cpfDigits = (f.cpf ?? '').replace(/\D/g, '');
+        if (digits && !cpfDigits.includes(digits)) return false;
+      }
+
+      if (filtroNome.trim()) {
+        const termoNorm = normalizar(filtroNome.trim());
+        if (!normalizar(f.nome ?? '').includes(termoNorm)) return false;
+      }
+
+      if (filtroStatus) {
+        const statusStr = String(f.status_atual);
+        if (statusStr !== filtroStatus) return false;
+      }
+
+      return true;
+    });
+  }, [
+    data,
+    filtroTomadorTipo,
+    filtroTomadorNome,
+    filtroCpf,
+    filtroNome,
+    filtroStatus,
+  ]);
+
+  const temFiltro =
+    filtroTomadorTipo ||
+    filtroTomadorNome.trim() ||
+    filtroCpf.trim() ||
+    filtroNome.trim() ||
+    filtroStatus;
+
+  function limparFiltros() {
+    setFiltroTomadorTipo('');
+    setFiltroTomadorNome('');
+    setFiltroCpf('');
+    setFiltroNome('');
+    setFiltroStatus('');
+  }
+
+  function formatCpfDisplay(cpf: string | null | undefined): string {
+    if (!cpf) return '—';
+    const digits = cpf.replace(/\D/g, '').trim();
+    if (digits.length !== 11) return cpf?.trim() ?? '—';
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  }
+
+  return (
+    <div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {/* Filtro por Tomador Tipo */}
+        <select
+          value={filtroTomadorTipo}
+          onChange={(e) => setFiltroTomadorTipo(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+        >
+          <option value="">Todos os tipos</option>
+          {tiposDisponiveis.map((t) => (
+            <option key={t} value={t}>
+              {t === 'rh' ? 'RH' : 'Entidade'}
+            </option>
+          ))}
+        </select>
+
+        {/* Filtro por Tomador Nome */}
+        <input
+          type="text"
+          placeholder="Filtrar por tomador..."
+          value={filtroTomadorNome}
+          onChange={(e) => setFiltroTomadorNome(e.target.value)}
+          className="w-48 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+
+        {/* Filtro por CPF */}
+        <input
+          type="text"
+          placeholder="Filtrar por CPF..."
+          value={filtroCpf}
+          onChange={(e) => setFiltroCpf(e.target.value)}
+          className="w-44 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+
+        {/* Filtro por Nome */}
+        <input
+          type="text"
+          placeholder="Filtrar por nome..."
+          value={filtroNome}
+          onChange={(e) => setFiltroNome(e.target.value)}
+          className="w-52 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+
+        {/* Filtro por Status */}
+        <select
+          value={filtroStatus}
+          onChange={(e) => setFiltroStatus(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+        >
+          <option value="">Todos os status</option>
+          {statusDisponiveis.map((s) => (
+            <option key={s} value={s}>
+              {FUNCIONARIO_STATUS_LABEL[s] ?? s}
+            </option>
+          ))}
+        </select>
+
+        {temFiltro && (
+          <button
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Limpar filtros
+          </button>
+        )}
+
+        <span className="ml-auto text-xs text-gray-500">
+          {filtrados.length} de {data.length} funcionários
+        </span>
+      </div>
+
+      <TableShell
+        title="Auditoria de Funcionários"
+        subtitle={`Total: ${data.length} registros`}
+        headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+      >
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <Th>CPF</Th>
+              <Th>Nome</Th>
+              <Th>Tipo</Th>
+              <Th>Tomador</Th>
+              <Th>Data de Inclusão</Th>
+              <Th>Status</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
+                    : 'Nenhum funcionário encontrado.'}
+                </td>
+              </tr>
+            )}
+            {filtrados.map((f) => (
+              <tr key={f.funcionario_id} className="hover:bg-gray-50">
+                <Td mono>{formatCpfDisplay(f.cpf)}</Td>
+                <Td>{f.nome ?? '—'}</Td>
+                <Td>
+                  <span className="text-xs font-medium text-gray-600">
+                    {f.tomador_tipo === 'rh' ? 'RH' : 'Entidade'}
+                  </span>
+                </Td>
+                <Td className="text-gray-700 text-sm">{f.tomador_nome}</Td>
+                <Td>{formatDate(f.data_inclusao)}</Td>
+                <Td>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${FUNCIONARIO_STATUS_BADGE[String(f.status_atual)] ?? 'bg-gray-100 text-gray-800'}`}
+                  >
+                    {FUNCIONARIO_STATUS_LABEL[String(f.status_atual)] ?? '—'}
+                  </span>
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
+    </div>
   );
 }
