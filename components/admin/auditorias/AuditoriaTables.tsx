@@ -1282,13 +1282,13 @@ export function TabelaAcessosSuporte({
 /* ─── 8. Funcionários ─── */
 
 const FUNCIONARIO_STATUS_BADGE: Record<string, string> = {
-  'true': 'bg-green-100 text-green-800',
-  'false': 'bg-red-100 text-red-800',
+  true: 'bg-green-100 text-green-800',
+  false: 'bg-red-100 text-red-800',
 };
 
 const FUNCIONARIO_STATUS_LABEL: Record<string, string> = {
-  'true': 'Ativo',
-  'false': 'Inativo',
+  true: 'Ativo',
+  false: 'Inativo',
 };
 
 // eslint-disable-next-line max-lines-per-function
@@ -1319,7 +1319,9 @@ export function TabelaFuncionarios({
   }, [data]);
 
   const statusDisponiveis = useMemo(() => {
-    const set = new Set(data.map((f) => String(f.status_atual)).filter(Boolean));
+    const set = new Set(
+      data.map((f) => String(f.status_atual)).filter(Boolean)
+    );
     return Array.from(set).sort();
   }, [data]);
 

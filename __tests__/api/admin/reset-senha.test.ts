@@ -4,6 +4,8 @@
  * Valida geração de token de reset de senha pelo admin.
  * Perfis suportados: suporte, comercial, rh, gestor, emissor (tabela usuarios)
  *                    + representante (tabela representantes)
+ *                    + clínica (tabela clinicas → clinicas_senhas)
+ *                    + entidade (tabela entidades → entidades_senhas)
  */
 
 import { NextRequest } from 'next/server';
@@ -22,6 +24,8 @@ jest.mock('@/lib/reset-senha/gerar-token', () => ({
   PERFIS_RESET_USUARIOS: ['suporte', 'comercial', 'rh', 'gestor', 'emissor'],
   gerarTokenResetUsuario: jest.fn(),
   logEmailResetSenha: jest.fn(),
+  resetarSenhaInicialClinica: jest.fn(),
+  resetarSenhaInicialEntidade: jest.fn(),
 }));
 jest.mock('@/lib/validators/cpf-unico', () => ({
   checkCpfUnicoSistema: jest.fn().mockResolvedValue({
@@ -33,7 +37,11 @@ jest.mock('@/lib/validators/cpf-unico', () => ({
 
 import { query, transaction } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import { gerarTokenResetUsuario } from '@/lib/reset-senha/gerar-token';
+import {
+  gerarTokenResetUsuario,
+  resetarSenhaInicialClinica,
+  resetarSenhaInicialEntidade,
+} from '@/lib/reset-senha/gerar-token';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockTransaction = transaction as jest.MockedFunction<typeof transaction>;
@@ -193,6 +201,7 @@ describe('POST /api/admin/reset-senha', () => {
       expect(res.status).toBe(404);
       const data = await res.json();
       expect(data.error).toBeDefined();
+      expect(data.error).toMatch(/não encontrado|clínica|entidade/i);
     });
   });
 });
