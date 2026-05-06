@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import toast from 'react-hot-toast';
 
 // Hooks personalizados
 import {
@@ -15,6 +14,7 @@ import {
 } from '@/lib/hooks';
 import { useLiberarLote } from '@/lib/hooks/useLiberarLote';
 import { LiberandoCicloOverlay } from '@/components/LiberandoCicloOverlay';
+import { ErrorLiberacaoModal } from '@/components/modals/ErrorLiberacaoModal';
 
 // Componentes principais
 import { EmpresaHeader, TabNavigation, LotesGrid } from '@/components/rh';
@@ -96,6 +96,8 @@ export default function EmpresaDashboardPage() {
     liberarLote,
     loading: liberandoLote,
     error: erroLiberacao,
+    errorModalOpen,
+    closeErrorModal,
   } = useLiberarLote();
 
   // === ESTADOS DE UI ===
@@ -104,7 +106,6 @@ export default function EmpresaDashboardPage() {
   const [funcionarioParaEditar, setFuncionarioParaEditar] =
     useState<Funcionario | null>(null);
   const [cpfDetalhes, setCpfDetalhes] = useState<string | null>(null);
-  const [aguardandoNovoLote, setAguardandoNovoLote] = useState(false);
 
   // === VERIFICAÇÃO DE SESSÃO ===
   useEffect(() => {
@@ -195,27 +196,12 @@ export default function EmpresaDashboardPage() {
   }, [router]);
 
   const handleIniciarCiclo = useCallback(async () => {
-    try {
-      setAguardandoNovoLote(true);
-      const result = await liberarLote({ empresaId: parseInt(empresaId) });
+    const result = await liberarLote({ empresaId: parseInt(empresaId) });
 
-      if (result && result.success && result.loteId) {
-        router.push(`/rh/empresa/${empresaId}/lote/${result.loteId}`);
-      } else if (result && !result.success) {
-        toast.error(result.message || 'Erro ao liberar lote', {
-          duration: 4000,
-          position: 'top-right',
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao iniciar ciclo:', error);
-      toast.error('Erro ao liberar lote', {
-        duration: 4000,
-        position: 'top-right',
-      });
-    } finally {
-      setAguardandoNovoLote(false);
+    if (result && result.success && result.loteId) {
+      router.push(`/rh/empresa/${empresaId}/lote/${result.loteId}`);
     }
+    // Erro é tratado pelo hook que abre o modal automaticamente
   }, [liberarLote, empresaId, router]);
 
   // === LOADING STATE ===
@@ -302,9 +288,6 @@ export default function EmpresaDashboardPage() {
                     '\u{1F680} Iniciar Novo Ciclo'
                   )}
                 </button>
-                {erroLiberacao && (
-                  <p className="text-xs text-red-600 mt-1">{erroLiberacao}</p>
-                )}
               </div>
 
               <LotesGrid
@@ -346,6 +329,13 @@ export default function EmpresaDashboardPage() {
       </main>
 
       {/* Modais */}
+      <ErrorLiberacaoModal
+        isOpen={errorModalOpen}
+        onClose={closeErrorModal}
+        mensagem={erroLiberacao || ''}
+        title="Não foi possível criar o ciclo"
+      />
+
       {showInserirModal && empresa && session && (
         <ModalInserirFuncionario
           empresaId={parseInt(empresaId)}
@@ -382,7 +372,7 @@ export default function EmpresaDashboardPage() {
       )}
 
       <LiberandoCicloOverlay
-        visible={liberandoLote || aguardandoNovoLote}
+        visible={liberandoLote}
         empresaNome={empresa?.nome}
       />
     </div>

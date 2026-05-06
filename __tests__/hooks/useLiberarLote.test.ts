@@ -227,5 +227,87 @@ describe('useLiberarLote Hook', () => {
       expect(result.current.loading).toBe(false);
     });
   });
+
+  // === TESTES PARA ERROR MODAL ===
+  it('deve abrir errorModal quando recebe erro da API', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        success: false,
+        error: 'Ciclo já existe para esta empresa',
+      }),
+    });
+
+    const { result } = renderHook(() => useLiberarLote());
+
+    // Estado inicial
+    expect(result.current.errorModalOpen).toBe(false);
+
+    await act(async () => {
+      await result.current.liberarLote({ empresaId: 1 });
+    });
+
+    // Modal deve abrir quando há erro
+    expect(result.current.errorModalOpen).toBe(true);
+    expect(result.current.error).toBe('Ciclo já existe para esta empresa');
+  });
+
+  it('NÃO deve abrir errorModal quando liberação é bem-sucedida', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        success: true,
+        loteId: 123,
+      }),
+    });
+
+    const { result } = renderHook(() => useLiberarLote());
+
+    await act(async () => {
+      await result.current.liberarLote({ empresaId: 1 });
+    });
+
+    expect(result.current.errorModalOpen).toBe(false);
+  });
+
+  it('deve fechar errorModal quando chamando closeErrorModal', async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({
+        success: false,
+        error: 'Erro genérico',
+      }),
+    });
+
+    const { result } = renderHook(() => useLiberarLote());
+
+    // Abre modal
+    await act(async () => {
+      await result.current.liberarLote({ empresaId: 1 });
+    });
+
+    expect(result.current.errorModalOpen).toBe(true);
+
+    // Fecha modal
+    act(() => {
+      result.current.closeErrorModal();
+    });
+
+    expect(result.current.errorModalOpen).toBe(false);
+  });
+
+  it('deve abrir errorModal em caso de falha de rede', async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Falha na conexão'));
+
+    const { result } = renderHook(() => useLiberarLote());
+
+    await act(async () => {
+      await result.current.liberarLote({ empresaId: 1 });
+    });
+
+    expect(result.current.errorModalOpen).toBe(true);
+    expect(result.current.error).toBeTruthy();
+  });
 });
+
 

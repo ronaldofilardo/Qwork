@@ -53,6 +53,7 @@ export function useLiberarLote() {
   const [error, setError] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [errorHint, setErrorHint] = useState<string | null>(null);
+  const [errorModalOpen, setErrorModalOpen] = useState(false);
   const [result, setResult] = useState<LoteResponse | null>(null);
 
   const liberarLote = useCallback(async (params: LiberarLoteParams) => {
@@ -75,6 +76,7 @@ export function useLiberarLote() {
         setError(data.error || 'Erro ao liberar lote');
         setErrorCode(data.error_code || null);
         setErrorHint(data.hint || null);
+        setErrorModalOpen(true);
         setResult(null);
         return data;
       }
@@ -88,6 +90,7 @@ export function useLiberarLote() {
       setError(errorMsg);
       setErrorCode(null);
       setErrorHint(null);
+      setErrorModalOpen(true);
       setResult(null);
       return { success: false, error: errorMsg };
     } finally {
@@ -100,7 +103,12 @@ export function useLiberarLote() {
     setError(null);
     setErrorCode(null);
     setErrorHint(null);
+    setErrorModalOpen(false);
     setResult(null);
+  }, []);
+
+  const closeErrorModal = useCallback(() => {
+    setErrorModalOpen(false);
   }, []);
 
   return {
@@ -111,5 +119,7 @@ export function useLiberarLote() {
     errorHint,
     result,
     reset,
+    errorModalOpen,
+    closeErrorModal,
   };
 }
