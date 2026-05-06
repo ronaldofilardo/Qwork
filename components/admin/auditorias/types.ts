@@ -233,3 +233,15 @@ export interface AuditoriasContentProps {
   auditoriaLotes: AuditoriaLote[];
   auditoriaLaudos: AuditoriaLaudo[];
 }
+
+// ── Filtros para Lotes e Laudos ───────────────────────────────────────────
+
+export interface FilterStateLotes {
+  tomadorSearchText: string;
+  statusFilter: string;
+}
+
+export interface FilterStateLaudos {
+  tomadorSearchText: string;
+  statusFilter: string;
+}
