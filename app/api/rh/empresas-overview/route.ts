@@ -257,6 +257,7 @@ export async function GET(request: NextRequest) {
         COALESCE(laud.laudo_emitido, 0)      AS laudos_laudo_emitido,
 
         -- Funcionários elegíveis para próximo ciclo
+        -- Inclui inativos com indice=0 (nunca avaliados)
         COALESCE(
           (
             SELECT COUNT(*)
@@ -264,13 +265,18 @@ export async function GET(request: NextRequest) {
             JOIN funcionarios f2 ON fc2.funcionario_id = f2.id
             WHERE fc2.empresa_id = ec.id
               AND fc2.clinica_id = $1
-              AND fc2.ativo = TRUE
               AND f2.ativo = TRUE
               AND f2.perfil = 'funcionario'
               AND (
-                f2.indice_avaliacao = 0
-                OR f2.indice_avaliacao < COALESCE(la_atual.numero_ordem, 0) - 1
-                OR f2.data_ultimo_lote < NOW() - INTERVAL '1 year'
+                (
+                  fc2.ativo = TRUE
+                  AND (
+                    fc2.indice_avaliacao = 0
+                    OR fc2.indice_avaliacao < COALESCE(la_atual.numero_ordem, 0) - 1
+                    OR fc2.data_ultimo_lote < NOW() - INTERVAL '1 year'
+                  )
+                )
+                OR (fc2.ativo = FALSE AND fc2.indice_avaliacao = 0)
               )
           ),
           0

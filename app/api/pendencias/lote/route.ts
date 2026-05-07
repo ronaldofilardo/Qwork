@@ -150,7 +150,7 @@ export async function GET(request: NextRequest) {
                SELECT 1 FROM avaliacoes a4
                JOIN lotes_avaliacao la4 ON la4.id = a4.lote_id
                WHERE a4.funcionario_cpf = f.cpf AND la4.empresa_id = $1
-             ) AND fc.indice_avaliacao = 0 AND fc.ativo = true THEN 'CRITICA'
+             ) AND fc.indice_avaliacao = 0 THEN 'CRITICA'
              ELSE 'ALTA'
            END AS prioridade
          FROM funcionarios f
@@ -163,6 +163,7 @@ export async function GET(request: NextRequest) {
                SELECT 1 FROM avaliacoes a_lote
                WHERE a_lote.funcionario_cpf = f.cpf AND a_lote.lote_id = $3
              )
+             OR (fc.ativo = false AND fc.indice_avaliacao = 0)
            )
            AND NOT EXISTS (
              SELECT 1 FROM avaliacoes a5
@@ -243,7 +244,7 @@ export async function GET(request: NextRequest) {
            WHEN NOT EXISTS (
              SELECT 1 FROM avaliacoes a4
              WHERE a4.funcionario_cpf = f.cpf
-           ) AND fe.indice_avaliacao = 0 AND fe.ativo = true THEN 'CRITICA'
+           ) AND fe.indice_avaliacao = 0 THEN 'CRITICA'
            ELSE 'ALTA'
          END AS prioridade
        FROM funcionarios f
@@ -255,6 +256,7 @@ export async function GET(request: NextRequest) {
              SELECT 1 FROM avaliacoes a_lote
              WHERE a_lote.funcionario_cpf = f.cpf AND a_lote.lote_id = $2
            )
+           OR (fe.ativo = false AND fe.indice_avaliacao = 0)
          )
          AND NOT EXISTS (
            SELECT 1 FROM avaliacoes a5
