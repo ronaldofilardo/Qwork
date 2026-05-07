@@ -144,14 +144,14 @@ export async function POST(
     );
 
     // Recalcular o status do lote após inativação (inline para evitar validação de funcionário)
+    // Fórmula 70%: liberadas = status NOT IN ('rascunho', 'inativada')
+    //            threshold = FLOOR(0.7 * liberadas)
     const statsResult = await query(
       `
       SELECT
-        COUNT(a.id) as total_avaliacoes,
-        COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
+        COUNT(a.id) FILTER (WHERE a.status NOT IN ('rascunho', 'inativada')) as liberadas,
         COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
-        COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
-        COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
+        COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM avaliacoes a
       WHERE a.lote_id = $1
     `,
@@ -159,8 +159,7 @@ export async function POST(
       user
     );
 
-    const { ativas, concluidas, inativadas, liberadas } = statsResult.rows[0];
-    const _ativasNum = parseInt(String(ativas), 10) || 0;
+    const { concluidas, inativadas, liberadas } = statsResult.rows[0];
     const concluidasNum = parseInt(String(concluidas), 10) || 0;
     const inativadasNum = parseInt(String(inativadas), 10) || 0;
     const liberadasNum = parseInt(String(liberadas), 10) || 0;
@@ -176,8 +175,8 @@ export async function POST(
     ) {
       novoStatus = 'cancelado';
     } else if (
-      concluidasNum + inativadasNum === liberadasNum &&
-      liberadasNum > 0
+      liberadasNum > 0 &&
+      concluidasNum >= Math.floor(0.7 * liberadasNum)
     ) {
       novoStatus = 'concluido';
       loteFinalizado = true;

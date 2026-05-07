@@ -77,11 +77,11 @@ export const GET = async (
 
     try {
       await transactionWithContext(async (queryTx) => {
-        // Buscar estatísticas do lote
+        // Buscar estatísticas do lote (excluir inativadas e rascunho do denominador)
         const statsResult = await queryTx(
           `
           SELECT
-            COUNT(a.id) as total_avaliacoes,
+            COUNT(a.id) FILTER (WHERE a.status NOT IN ('rascunho', 'inativada')) as total_avaliacoes,
             COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
             COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
             COUNT(CASE WHEN a.status = 'iniciada' OR a.status = 'em_andamento' THEN 1 END) as avaliacoes_pendentes

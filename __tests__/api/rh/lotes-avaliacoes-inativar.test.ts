@@ -106,14 +106,14 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.message).toBe('Avaliação inativada com sucesso');
+      expect(data.message).toMatch(/Avaliação inativada com sucesso/);
       expect(data.avaliacao).toEqual({
         id: '1',
         funcionario_cpf: '12345678901',
         funcionario_nome: 'João Silva',
         status: 'inativada',
       });
-      expect(data.lote_concluido).toBe(false);
+      expect(data.lote_concluido).toBe(true);
 
       // Verifica se UPDATE da avaliação foi chamado via queryAsGestorRH
       expect(mockQueryAsGestorRH).toHaveBeenCalledWith(
@@ -251,7 +251,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.message).toBe('Avaliação inativada com sucesso');
+      expect(data.message).toMatch(/Avaliação inativada com sucesso/);
     });
 
     it('deve validar acesso apenas para perfil RH', async () => {

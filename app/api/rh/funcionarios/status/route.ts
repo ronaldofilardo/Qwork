@@ -24,25 +24,27 @@ async function updateLotesStatus(cpf: string, session: Session) {
   );
 
   for (const lote of lotesResult.rows) {
-    // Recalcular status do lote baseado nas avaliações ativas (não inativadas)
+    // Recalcular status do lote baseado na fórmula 70%
+    // liberadas = status NOT IN ('rascunho', 'inativada')
+    // threshold = FLOOR(0.7 * liberadas)
     const statsResult = await query(
       `
       SELECT
-        COUNT(*) FILTER (WHERE a.status != $1) as ativas,
-        COUNT(*) FILTER (WHERE a.status = $2) as concluidas
+        COUNT(*) FILTER (WHERE a.status NOT IN ('rascunho', 'inativada')) as liberadas,
+        COUNT(*) FILTER (WHERE a.status = $1) as concluidas
       FROM avaliacoes a
-      WHERE a.lote_id = $3
+      WHERE a.lote_id = $2
     `,
-      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDA, lote.id],
+      [StatusAvaliacao.CONCLUIDA, lote.id],
       session
     );
 
-    const { ativas, concluidas } = statsResult.rows[0];
-    const ativasNum = parseInt(ativas) || 0;
+    const { liberadas, concluidas } = statsResult.rows[0];
+    const liberadasNum = parseInt(liberadas) || 0;
     const concluidasNum = parseInt(concluidas) || 0;
 
     console.log(
-      `[DEBUG] Lote ${lote.id}: ${ativasNum} ativas, ${concluidasNum} concluídas, status atual: ${lote.status}`
+      `[DEBUG] Lote ${lote.id}: ${liberadasNum} liberadas, ${concluidasNum} concluídas, status atual: ${lote.status}`
     );
 
     // Não alterar status manuais (cancelado, finalizado)
@@ -53,12 +55,12 @@ async function updateLotesStatus(cpf: string, session: Session) {
       continue;
     }
 
-    // Calcular novo status baseado nas avaliações
+    // Calcular novo status baseado nas avaliações (fórmula 70%)
     let novoStatus = StatusLote.ATIVO;
-    if (ativasNum === 0) {
-      novoStatus = StatusLote.RASCUNHO; // Nenhuma avaliação ativa
-    } else if (concluidasNum === ativasNum) {
-      novoStatus = StatusLote.CONCLUIDO; // Todas concluídas
+    if (liberadasNum === 0) {
+      novoStatus = StatusLote.RASCUNHO; // Nenhuma avaliação liberada
+    } else if (concluidasNum >= Math.floor(0.7 * liberadasNum)) {
+      novoStatus = StatusLote.CONCLUIDO; // 70% ou mais concluídas
     }
 
     if (novoStatus !== lote.status) {
