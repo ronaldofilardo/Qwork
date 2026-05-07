@@ -207,13 +207,6 @@ function gerarEstilosCSS(): string {
       @page {
         margin: 15mm 10mm 15mm 10mm;
         size: A4;
-        
-        @bottom-center {
-          content: "Página " counter(page) " de " counter(pages) " | Lote #${'{{LOTE_ID}}'} | Data de Emissão: ${'{{DATA_EMISSAO}}'}";
-          font-size: 8pt;
-          color: #6b7280;
-          font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
       }
 
       @media print {
