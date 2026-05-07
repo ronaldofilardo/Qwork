@@ -427,7 +427,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (temNivelCargoDirecto) {
         const nivelPlanilhaRaw = ((row.nivel_cargo as string | undefined) ?? '')
           .trim()
-          .toLowerCase();
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
         if (
           nivelPlanilhaRaw !== 'gestao' &&
           nivelPlanilhaRaw !== 'operacional'

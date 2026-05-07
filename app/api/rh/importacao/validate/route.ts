@@ -390,7 +390,9 @@ export async function POST(request: Request): Promise<NextResponse> {
             : null;
         const nivelPlanilhaRaw = ((row.nivel_cargo as string | undefined) ?? '')
           .trim()
-          .toLowerCase();
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
         const nivelPlanilha: NivelCargoValue =
           nivelPlanilhaRaw === 'gestao' || nivelPlanilhaRaw === 'operacional'
             ? nivelPlanilhaRaw
@@ -512,7 +514,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (temNivelCargoDirecto) {
         const nivelNaPlanilha = ((row.nivel_cargo as string | undefined) ?? '')
           .trim()
-          .toLowerCase();
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
         const nivelValido =
           nivelNaPlanilha === 'gestao' || nivelNaPlanilha === 'operacional';
         if (!nivelValido) {
