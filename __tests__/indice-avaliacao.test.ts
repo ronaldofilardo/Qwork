@@ -89,7 +89,9 @@ describe('Sistema de Índice de Avaliação', () => {
 
   afterAll(async () => {
     // Cleanup: ordem inversa de FK
-    await q(`DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1`, [funcionarioIdTeste]);
+    await q(`DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1`, [
+      funcionarioIdTeste,
+    ]);
     await q(`DELETE FROM funcionarios WHERE cpf = '11122233344'`);
     await q(`DELETE FROM empresas_clientes WHERE id = $1`, [empresaIdTeste]);
     await q(`DELETE FROM clinicas WHERE id = $1`, [clinicaIdTeste]);
@@ -110,7 +112,9 @@ describe('Sistema de Índice de Avaliação', () => {
 
   describe('Campo numero_ordem em lotes_avaliacao', () => {
     it('deve ter campo numero_ordem', async () => {
-      const result = await q('SELECT numero_ordem FROM lotes_avaliacao LIMIT 1');
+      const result = await q(
+        'SELECT numero_ordem FROM lotes_avaliacao LIMIT 1'
+      );
 
       // Apenas verificar que a coluna existe
       expect(result.rows.length).toBeGreaterThanOrEqual(0);
@@ -175,8 +179,12 @@ describe('Sistema de Índice de Avaliação', () => {
       // Cenário: funcionário com indice=1 e avaliação concluída recente → lote 2 → diff=0 → não elegível
       const timestamp = Date.now();
       const cnpjDinamico = ('00000000000000' + String(timestamp)).slice(-14);
-      const responsavelCpf = ('00000000000' + String(timestamp % 99999999999)).slice(-11);
-      const responsavelCelular = ('00000000000' + String((timestamp + 1) % 99999999999)).slice(-11);
+      const responsavelCpf = (
+        '00000000000' + String(timestamp % 99999999999)
+      ).slice(-11);
+      const responsavelCelular = (
+        '00000000000' + String((timestamp + 1) % 99999999999)
+      ).slice(-11);
 
       const entidade = await q(
         `INSERT INTO entidades (nome, cnpj, email, telefone, endereco, cidade, estado, cep,
@@ -199,14 +207,18 @@ describe('Sistema de Índice de Avaliação', () => {
       );
       const entidadeId: number = entidade.rows[0].id;
 
-      const cpfTeste = ('00000000000' + String((timestamp + 2) % 99999999999)).slice(-11);
+      const cpfTeste = (
+        '00000000000' + String((timestamp + 2) % 99999999999)
+      ).slice(-11);
       await q(
         `INSERT INTO funcionarios (cpf, nome, senha_hash, perfil, nivel_cargo, usuario_tipo, ativo)
          VALUES ($1, 'Limite Teste', '$2b$10$dummy.hash.for.test', 'funcionario', 'operacional', 'funcionario_entidade', true)`,
         [cpfTeste]
       );
 
-      const funcRes = await q(`SELECT id FROM funcionarios WHERE cpf = $1`, [cpfTeste]);
+      const funcRes = await q(`SELECT id FROM funcionarios WHERE cpf = $1`, [
+        cpfTeste,
+      ]);
       const funcionarioId: number = funcRes.rows[0].id;
 
       // Criar lote 1 vinculado à entidade
@@ -243,7 +255,9 @@ describe('Sistema de Índice de Avaliação', () => {
       // Cleanup
       await q('DELETE FROM avaliacoes WHERE lote_id = $1', [lote1Id]);
       await q('DELETE FROM lotes_avaliacao WHERE id = $1', [lote1Id]);
-      await q('DELETE FROM funcionarios_entidades WHERE funcionario_id = $1', [funcionarioId]);
+      await q('DELETE FROM funcionarios_entidades WHERE funcionario_id = $1', [
+        funcionarioId,
+      ]);
       await q('DELETE FROM funcionarios WHERE cpf = $1', [cpfTeste]);
       await q('DELETE FROM entidades WHERE id = $1', [entidadeId]);
     });
@@ -256,7 +270,9 @@ describe('Sistema de Índice de Avaliação', () => {
       const ts = Date.now();
       const cnpjEnt = ('00000000000000' + String(ts)).slice(-14);
       const cpfResp = ('00000000000' + String(ts % 99999999999)).slice(-11);
-      const celResp = ('00000000000' + String((ts + 1) % 99999999999)).slice(-11);
+      const celResp = ('00000000000' + String((ts + 1) % 99999999999)).slice(
+        -11
+      );
 
       const entRes = await q(
         `INSERT INTO entidades (nome, cnpj, email, telefone, endereco, cidade, estado, cep,
@@ -279,14 +295,18 @@ describe('Sistema de Índice de Avaliação', () => {
       );
       const entidadeId: number = entRes.rows[0].id;
 
-      const cpfNovo = ('00000000000' + String((ts + 2) % 99999999999)).slice(-11);
+      const cpfNovo = ('00000000000' + String((ts + 2) % 99999999999)).slice(
+        -11
+      );
 
       await q(
         `INSERT INTO funcionarios (cpf, nome, senha_hash, perfil, nivel_cargo, usuario_tipo, ativo)
          VALUES ($1, 'Novo Func 1242', '$2b$10$dummy.hash.for.test', 'funcionario', 'operacional', 'funcionario_entidade', true)`,
         [cpfNovo]
       );
-      const funcRes = await q(`SELECT id FROM funcionarios WHERE cpf = $1`, [cpfNovo]);
+      const funcRes = await q(`SELECT id FROM funcionarios WHERE cpf = $1`, [
+        cpfNovo,
+      ]);
       const funcId: number = funcRes.rows[0].id;
 
       // indice_avaliacao=0 (nunca avaliado)
@@ -303,15 +323,18 @@ describe('Sistema de Índice de Avaliação', () => {
         [entidadeId]
       );
 
-      const row = elRes.rows.find((r: any) => r.funcionario_cpf.trim() === cpfNovo);
+      const row = elRes.rows.find(
+        (r: any) => r.funcionario_cpf.trim() === cpfNovo
+      );
       expect(row).toBeDefined();
       expect(row!.prioridade).toBe('CRITICA'); // Migration 1242: nunca avaliado sempre CRITICA
 
       // Cleanup
-      await q(`DELETE FROM funcionarios_entidades WHERE funcionario_id = $1`, [funcId]);
+      await q(`DELETE FROM funcionarios_entidades WHERE funcionario_id = $1`, [
+        funcId,
+      ]);
       await q(`DELETE FROM funcionarios WHERE cpf = $1`, [cpfNovo]);
       await q(`DELETE FROM entidades WHERE id = $1`, [entidadeId]);
     });
   });
 });
-

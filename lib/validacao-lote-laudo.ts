@@ -2,9 +2,10 @@
  * Biblioteca para validação de lotes prontos para emissão de laudo
  * Centraliza a lógica de validação usada no backend para evitar discrepâncias com o frontend
  *
- * Política vigente (Migration 1130):
- * - Threshold: CEIL(0.7 * total_liberadas) avaliações concluídas
- * - total_liberadas = COUNT WHERE status != 'rascunho' (inclui inativadas)
+ * Política vigente (Migration 1130 — Revisada):
+ * - Threshold: FLOOR(0.7 * total_liberadas_ativas) avaliações concluídas
+ * - total_liberadas_ativas = COUNT WHERE status NOT IN ('rascunho', 'inativada')
+ * - Avaliações inativadas NÃO contam no denominador do cálculo de 70%
  * - O trigger DB (fn_recalcular_status_lote_on_avaliacao_update) seta status='concluido' ao atingir 70%
  */
 
@@ -51,7 +52,7 @@ export async function validarLoteParaLaudo(
     SELECT 
       l.id,
       l.status,
-      COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_avaliacoes,
+      COUNT(a.id) FILTER (WHERE a.status NOT IN ('rascunho', 'inativada')) as total_avaliacoes,
       COUNT(a.id) FILTER (WHERE a.status = 'concluida') as avaliacoes_concluidas,
       COUNT(a.id) FILTER (WHERE a.status = 'inativada') as avaliacoes_inativadas,
       COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento', 'concluida')) as avaliacoes_ativas
@@ -91,10 +92,11 @@ export async function validarLoteParaLaudo(
   }
 
   // 3. Validar política 70% (PERCENTUAL_MINIMO_EMISSAO)
-  // Base: total_liberadas = status != 'rascunho' (inclui inativadas — alinhado com trigger DB)
+  // Base: total_liberadas_ativas = status NOT IN ('rascunho', 'inativada') — exclui inativadas
+  // Arredondamento: para BAIXO (FLOOR) — ex: 70% de 6 = 4.2 → 4
   const threshold70 =
     totalAvaliacoes > 0
-      ? Math.ceil((PERCENTUAL_MINIMO_EMISSAO / 100) * totalAvaliacoes)
+      ? Math.floor((PERCENTUAL_MINIMO_EMISSAO / 100) * totalAvaliacoes)
       : 0;
 
   if (totalAvaliacoes === 0) {

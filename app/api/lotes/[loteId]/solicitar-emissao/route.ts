@@ -134,7 +134,7 @@ export async function POST(
     // 4b. Validar política 70% — confirmar que o threshold é atendido
     const avaliacoesResult = await query(
       `SELECT
-        COUNT(*) FILTER (WHERE status != 'rascunho')::int AS total_liberadas,
+        COUNT(*) FILTER (WHERE status NOT IN ('rascunho', 'inativada'))::int AS total_liberadas,
         COUNT(*) FILTER (WHERE status = 'concluida')::int AS concluidas
        FROM avaliacoes WHERE lote_id = $1`,
       [loteId]
@@ -144,7 +144,7 @@ export async function POST(
       concluidas: 0,
     };
     const threshold70 =
-      total_liberadas > 0 ? Math.ceil(0.7 * total_liberadas) : 0;
+      total_liberadas > 0 ? Math.floor(0.7 * total_liberadas) : 0;
 
     if (total_liberadas === 0 || concluidas < threshold70) {
       const pct =

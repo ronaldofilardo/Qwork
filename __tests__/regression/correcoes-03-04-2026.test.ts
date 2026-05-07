@@ -139,7 +139,7 @@ describe('1b. POST /api/rh/empresas/import — pré-check bulk CNPJ', () => {
 
   it('deve buscar empresa globalmente (sem filtro clinica_id) dentro da transação', () => {
     expect(src).toContain(
-      'SELECT id, clinica_id FROM empresas_clientes WHERE cnpj = $1'
+      'SELECT id, clinica_id, nome FROM empresas_clientes WHERE cnpj = $1'
     );
     // O filtro AND clinica_id = $2 dentro do loop foi removido (busca global)
     expect(src).not.toContain('WHERE cnpj = $1 AND clinica_id = $2');
@@ -882,21 +882,23 @@ describe('8b. page.tsx lote detalhe — warning text correto sobre inativadas', 
 });
 
 // ---------------------------------------------------------------------------
-// BUG 9 — Lógica 70%: verificação de fórmula correta em toda a cadeia
+// BUG 9 — Lógica 70%: verificação de fórmula correta em toda a cadeia (REVISADA)
 // ---------------------------------------------------------------------------
-describe('9. Regra 70%: fórmula CEIL(0.7 * total_liberadas) — cadeia completa', () => {
-  function deveLiberar(concluidas: number, totalLiberadas: number): boolean {
-    if (totalLiberadas === 0) return false;
-    const threshold = Math.ceil(0.7 * totalLiberadas);
+describe('9. Regra 70%: fórmula FLOOR(0.7 * total_liberadas_ativas) — cadeia completa', () => {
+  function deveLiberar(concluidas: number, totalLiberadasAtivas: number): boolean {
+    if (totalLiberadasAtivas === 0) return false;
+    const threshold = Math.floor(0.7 * totalLiberadasAtivas);
     return concluidas >= threshold;
   }
 
-  it('Lote #46: 7 concluídas / 10 liberadas (1 inativada) — LIBERA', () => {
+  it('Lote #46: 7 concluídas / 9 liberadas ativas (1 inativada, 10 total) — LIBERA', () => {
     // status='concluido' pelo trigger; canSolicitarEmissao=true
-    expect(deveLiberar(7, 10)).toBe(true);
+    // FLOOR(0.7 * 9) = 6; 7 >= 6 → true
+    expect(deveLiberar(7, 9)).toBe(true);
   });
 
-  it('6 concluídas / 10 liberadas — NÃO libera', () => {
+  it('6 concluídas / 10 liberadas ativas — NÃO libera', () => {
+    // FLOOR(0.7 * 10) = 7; 6 < 7 → false
     expect(deveLiberar(6, 10)).toBe(false);
   });
 

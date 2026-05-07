@@ -1,13 +1,11 @@
 -- Migration 1130: Nova Política de 70% para Emissão de Laudo
 --
--- Substitui completamente o modelo anterior (concluidas + inativadas = liberadas)
--- pela nova política: >=70% das avaliações liberadas devem estar concluídas.
---
--- REGRAS DA NOVA POLÍTICA:
---   - Base do threshold: total_liberadas = COUNT WHERE status != 'rascunho'
---   - Threshold: CEIL(0.7 * total_liberadas)
+-- REGRAS DA NOVA POLÍTICA (REVISADA):
+--   - Base do threshold: total_liberadas = COUNT WHERE status NOT IN ('rascunho', 'inativada')
+--   - Avaliações inativadas NÃO contam no denominador do cálculo de 70%
+--   - Threshold: FLOOR(0.7 * total_liberadas)
 --   - Ex: 100 liberadas → 70 concluídas mínimo para lote 'concluido'
---   - Ex: 10 liberadas → 7 concluídas mínimo para lote 'concluido'
+--   - Ex: 10 liberadas, 4 inativadas → 6 ativas, FLOOR(4.2) = 4 concluídas mínimo
 --
 -- COBRANÇA:
 --   - Billing sobre total_liberadas (não sobre concluídas)
@@ -30,6 +28,7 @@ AS $$
 DECLARE
   v_lote_id INTEGER;
   v_total_liberadas INTEGER;
+  v_total_inativadas INTEGER;
   v_avaliacoes_concluidas INTEGER;
   v_threshold_70 INTEGER;
   v_lote_status status_lote;
@@ -50,18 +49,20 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  -- Contar avaliações do lote (base: liberadas = status != 'rascunho')
+  -- Contar avaliações do lote (base: liberadas = status NOT IN ('rascunho', 'inativada'))
   SELECT
-    COUNT(*) FILTER (WHERE status != 'rascunho')::int,
+    COUNT(*) FILTER (WHERE status NOT IN ('rascunho', 'inativada'))::int,
+    COUNT(*) FILTER (WHERE status = 'inativada')::int,
     COUNT(*) FILTER (WHERE status = 'concluida')::int
   INTO
     v_total_liberadas,
+    v_total_inativadas,
     v_avaliacoes_concluidas
   FROM avaliacoes
   WHERE lote_id = v_lote_id;
 
-  -- Nova política: >=70% das liberadas concluídas
-  v_threshold_70 := CEIL(0.7 * v_total_liberadas::NUMERIC);
+  -- Nova política: >=FLOOR(0.7 * liberadas) concluídas, excludindo inativadas
+  v_threshold_70 := FLOOR(0.7 * v_total_liberadas::NUMERIC);
 
   IF v_total_liberadas > 0 AND v_avaliacoes_concluidas >= v_threshold_70 THEN
     UPDATE lotes_avaliacao
@@ -71,8 +72,8 @@ BEGIN
     WHERE id = v_lote_id
       AND status = 'ativo';
 
-    RAISE NOTICE 'Lote % marcado como concluído (política 70%%): % concluídas de % liberadas (threshold: %)',
-      v_lote_id, v_avaliacoes_concluidas, v_total_liberadas, v_threshold_70;
+    RAISE NOTICE 'Lote % marcado como concluído (política 70%%): % concluídas de % liberadas (threshold: %), % inativadas',
+      v_lote_id, v_avaliacoes_concluidas, v_total_liberadas, v_threshold_70, v_total_inativadas;
   END IF;
 
   RETURN NEW;
@@ -81,9 +82,9 @@ $$;
 
 COMMENT ON FUNCTION fn_recalcular_status_lote_on_avaliacao_update() IS
 'Recalcula status do lote quando avaliação muda.
-Política 70%: lote passa para "concluido" quando avaliacoes_concluidas >= CEIL(0.7 * total_liberadas).
-NÃO agenda emissão automática — emissor deve processar MANUALMENTE.
-Migration 1130: substituiu política 100% (concluidas + inativadas = total).';
+Política 70%: lote passa para "concluido" quando avaliacoes_concluidas >= FLOOR(0.7 * total_liberadas).
+total_liberadas = status NOT IN (rascunho, inativada) (EXCLUI inativadas — regra de negócio revisada).
+Migration 1130: reformulou política para excludir inativadas do denominador e arredondar para baixo.';
 
 
 -- ===========================================================================
@@ -122,17 +123,17 @@ BEGIN
   FROM lotes_avaliacao
   WHERE id = p_lote_id;
 
-  -- Contar avaliações (base: liberadas = status != 'rascunho')
+  -- Contar avaliações (base: liberadas = status NOT IN ('rascunho', 'inativada'))
   SELECT
-    COUNT(*) FILTER (WHERE status != 'rascunho')::int,
+    COUNT(*) FILTER (WHERE status NOT IN ('rascunho', 'inativada'))::int,
     COUNT(*) FILTER (WHERE status = 'concluida')::int,
     COUNT(*) FILTER (WHERE status = 'inativada')::int
   INTO v_total_liberadas, v_avaliacoes_concluidas, v_avaliacoes_inativadas
   FROM avaliacoes
   WHERE lote_id = p_lote_id;
 
-  -- Calcular threshold 70% sobre total liberadas
-  v_threshold_70 := CEIL(0.7 * v_total_liberadas::NUMERIC);
+  -- Calcular threshold 70% sobre total liberadas (excludendo inativadas)
+  v_threshold_70 := FLOOR(0.7 * v_total_liberadas::NUMERIC);
 
   -- Taxa de conclusão (sobre liberadas)
   v_taxa_conclusao := ROUND(
