@@ -300,11 +300,6 @@ export async function gerarPDFLaudo(
   }
 }
 
-// ─── ZapSign removido ────────────────────────────────────────────────────────
-// enviarParaAssinaturaZapSign, ResultadoEnvioAssinatura e rotas /assinar,
-// /confirmar-assinatura, /status-assinatura e /upload-assinado foram removidos.
-// Para histórico completo, ver ZAPSIGN-DEPLOYMENT-STATUS.md
-
 // ─── Stubs de compatibilidade (públicos) ────────────────────────────────────
 
 /** @deprecated Use gerarPDFLaudo() */

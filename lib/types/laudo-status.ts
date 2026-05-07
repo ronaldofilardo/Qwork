@@ -120,26 +120,10 @@ export function podeEditarLaudo(status: StatusLaudoType): boolean {
 }
 
 /**
- * Verificar se laudo pode ser assinado digitalmente (fluxo legado)
- * @deprecated sem uso ativo desde a remoção do ZapSign
- */
-export function podeAssinarLaudo(_status: StatusLaudoType): boolean {
-  return false;
-}
-
-/**
  * Verificar se laudo pode ser enviado (fluxo legado)
  */
 export function podeEnviarLaudo(status: StatusLaudoType): boolean {
   return status === 'emitido';
-}
-
-/**
- * Verificar se laudo está em processo de assinatura
- * @deprecated sempre retorna false desde a remoção do ZapSign
- */
-export function laudoAguardandoAssinatura(_status: StatusLaudoType): boolean {
-  return false;
 }
 
 /**
