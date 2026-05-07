@@ -203,6 +203,39 @@ describe('xlsxParser - Parsing e Validações', () => {
         expect(result.valido).toBe(true);
       });
     });
+
+    it('deve normalizar nivel_cargo com acentos', () => {
+      // Testa que "gestão" (com acento) é normalizado para "gestao"
+      // e "técnico" (com acento) é normalizado para "tecnico"
+      const niveisComAcentos = [
+        { entrada: 'gestão', esperado: 'gestao' },
+        { entrada: 'Gestão', esperado: 'gestao' },
+        { entrada: 'GESTÃO', esperado: 'gestao' },
+        { entrada: 'técnico', esperado: 'operacional' },
+        { entrada: 'Técnico', esperado: 'operacional' },
+        { entrada: 'TÉCNICO', esperado: 'operacional' },
+        { entrada: 'líder', esperado: 'gestao' },
+        { entrada: 'Líder', esperado: 'gestao' },
+        { entrada: 'LÍDER', esperado: 'gestao' },
+      ];
+
+      niveisComAcentos.forEach(({ entrada, esperado }) => {
+        const row: FuncionarioImportRow = {
+          cpf: '12345678909',
+          nome: 'João Silva',
+          data_nascimento: '1985-04-15',
+          setor: 'TI',
+          funcao: 'Desenvolvedor',
+          email: 'joao@empresa.com',
+          nivel_cargo: entrada,
+        };
+
+        const result = validarLinhaFuncionario(row, 2);
+
+        expect(result.valido).toBe(true);
+        expect(row.nivel_cargo).toBe(esperado);
+      });
+    });
   });
 
   describe('validarEmailsUnicos', () => {

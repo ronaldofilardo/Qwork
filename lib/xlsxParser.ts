@@ -189,7 +189,10 @@ export function validarLinhaFuncionario(
   // Para perfil='funcionario', a constraint do banco aceita apenas: 'operacional' ou 'gestao'
   if (row.nivel_cargo) {
     const nivelOriginal = String(row.nivel_cargo).trim();
-    const nivelNormalizado = nivelOriginal.toLowerCase();
+    const nivelNormalizado = nivelOriginal
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, ''); // Remove diacríticos (ex: gestão → gestao)
 
     // Mapeamento de cargos comuns para níveis permitidos pelo banco
     const mapeamentoCargos: Record<string, string> = {
@@ -198,13 +201,12 @@ export function validarLinhaFuncionario(
       operador: 'operacional',
       assistente: 'operacional',
       auxiliar: 'operacional',
-      técnico: 'operacional',
-      tecnico: 'operacional',
+      tecnico: 'operacional', // normalizado: "técnico" → "tecnico"
       analista: 'operacional',
       especialista: 'operacional',
 
       // Nível Gestão
-      gestao: 'gestao',
+      gestao: 'gestao', // normalizado: "gestão" → "gestao"
       coordenador: 'gestao',
       coordenadora: 'gestao',
       supervisor: 'gestao',
@@ -212,8 +214,7 @@ export function validarLinhaFuncionario(
       gerente: 'gestao',
       gestor: 'gestao',
       gestora: 'gestao',
-      líder: 'gestao',
-      lider: 'gestao',
+      lider: 'gestao', // normalizado: "líder" → "lider"
     };
 
     const nivelMapeado = mapeamentoCargos[nivelNormalizado];
