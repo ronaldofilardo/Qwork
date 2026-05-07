@@ -82,7 +82,7 @@ export const GET = async (
   const laudo = result.rows[0];
 
   // Usar sign_url salva no banco; fallback para reconstrução com signer_token
-  const zapSignBaseApp = getZapSignAppBaseUrl();
+  const zapSignBaseApp = getZapSignAppBaseUrl(user.dbEnvironment);
   const signUrl =
     laudo.zapsign_sign_url ||
     (laudo.zapsign_signer_token

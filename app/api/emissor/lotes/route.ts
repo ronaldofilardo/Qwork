@@ -33,7 +33,7 @@ export const GET = async (req: Request) => {
         AND (
           fe.id IS NOT NULL
           OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL)
-          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando'))
+          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando', 'pdf_gerado'))
         )
         AND (
           la.status_pagamento = 'pago'
@@ -89,7 +89,7 @@ export const GET = async (req: Request) => {
         AND (
           fe.id IS NOT NULL
           OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL)
-          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando'))
+          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando', 'pdf_gerado'))
         )
         AND (
           la.status_pagamento = 'pago'
@@ -123,7 +123,9 @@ export const GET = async (req: Request) => {
       // A validação de bucket é apenas para RH/Entidade (solicitantes)
       const laudoEmitido =
         temLaudo &&
-        (lote.status_laudo === 'emitido' || lote.status_laudo === 'enviado');
+        (lote.status_laudo === 'pdf_gerado' ||
+          lote.status_laudo === 'emitido' ||
+          lote.status_laudo === 'enviado');
 
       const aguardandoAssinatura =
         temLaudo &&

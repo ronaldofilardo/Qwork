@@ -183,12 +183,12 @@ describe('UploadLaudoButton', () => {
     expect(error).toHaveBeenCalledWith('Apenas arquivos PDF são permitidos');
   });
 
-  it('rejeita arquivo PDF maior que 2MB', async () => {
+  it('rejeita arquivo PDF maior que 20MB', async () => {
     const { error } = await import('react-hot-toast');
     renderButton();
 
-    // 2MB + 1 byte
-    const bigContent = new Uint8Array(2 * 1024 * 1024 + 1).fill(0x25); // '%'
+    // 20MB + 1 byte
+    const bigContent = new Uint8Array(20 * 1024 * 1024 + 1).fill(0x25); // '%'
     const bigPdf = new File([bigContent], 'large.pdf', {
       type: 'application/pdf',
     });
@@ -203,7 +203,7 @@ describe('UploadLaudoButton', () => {
     });
 
     expect(error).toHaveBeenCalledWith(
-      'Arquivo excede o tamanho máximo de 2 MB'
+      'Arquivo excede o tamanho máximo de 20 MB'
     );
   });
 

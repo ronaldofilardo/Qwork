@@ -44,6 +44,14 @@ export interface CriarDocumentoParams {
   emailAssinante: string;
   /** Enviar email automático ao assinante (default: true) */
   enviarEmailAutomatico?: boolean;
+  /**
+   * Ambiente do banco escolhido pelo emissor local.
+   * Quando fornecido, usa credenciais ZapSign específicas do ambiente:
+   *   'production' → ZAPSIGN_BASE_URL_PRODUCTION / ZAPSIGN_API_TOKEN_PRODUCTION
+   *   'staging'    → ZAPSIGN_BASE_URL_STAGING / ZAPSIGN_API_TOKEN_STAGING
+   *   'development'→ fallback para ZAPSIGN_BASE_URL (sandbox)
+   */
+  dbEnvironment?: 'development' | 'staging' | 'production';
 }
 
 export interface ResultadoCriarDocumento {
@@ -54,42 +62,78 @@ export interface ResultadoCriarDocumento {
 
 // ─── Helpers internos ─────────────────────────────────────────────────────────
 
-function getBaseUrl(): string {
-  const url = process.env.ZAPSIGN_BASE_URL;
-  if (!url) {
+/**
+ * Retorna baseUrl e apiToken para o ambiente especificado.
+ *
+ * Prioridade para 'production':
+ *   1. ZAPSIGN_BASE_URL_PRODUCTION / ZAPSIGN_API_TOKEN_PRODUCTION
+ *   2. ZAPSIGN_BASE_URL / ZAPSIGN_API_TOKEN (fallback — funciona no Vercel)
+ *
+ * Prioridade para 'staging':
+ *   1. ZAPSIGN_BASE_URL_STAGING / ZAPSIGN_API_TOKEN_STAGING
+ *   2. ZAPSIGN_BASE_URL / ZAPSIGN_API_TOKEN (fallback)
+ *
+ * Para 'development' ou sem ambiente: sempre ZAPSIGN_BASE_URL.
+ */
+function getCredentials(dbEnvironment?: string): {
+  baseUrl: string;
+  apiToken: string;
+} {
+  let baseUrl: string | undefined;
+  let apiToken: string | undefined;
+
+  if (dbEnvironment === 'production') {
+    baseUrl = process.env.ZAPSIGN_BASE_URL_PRODUCTION?.trim().replace(
+      /\/$/,
+      ''
+    );
+    apiToken = process.env.ZAPSIGN_API_TOKEN_PRODUCTION?.trim();
+  } else if (dbEnvironment === 'staging') {
+    baseUrl = process.env.ZAPSIGN_BASE_URL_STAGING?.trim().replace(/\/$/, '');
+    apiToken = process.env.ZAPSIGN_API_TOKEN_STAGING?.trim();
+  }
+
+  // Fallback para variáveis genéricas (Vercel produção, ou dev sem env específico)
+  if (!baseUrl) {
+    baseUrl = process.env.ZAPSIGN_BASE_URL?.trim().replace(/\/$/, '');
+  }
+  if (!apiToken) {
+    apiToken = process.env.ZAPSIGN_API_TOKEN?.trim();
+  }
+
+  if (!baseUrl) {
     throw new Error(
       'ZAPSIGN_BASE_URL não está configurado. Defina no .env.local.'
     );
   }
-  return url.trim().replace(/\/$/, ''); // remover whitespace/CRLF e trailing slash
+  if (!apiToken) {
+    throw new Error(
+      'ZAPSIGN_API_TOKEN não está configurado ou está vazio. Defina no .env.local.'
+    );
+  }
+
+  return { baseUrl, apiToken };
+}
+
+function getBaseUrl(): string {
+  return getCredentials().baseUrl;
 }
 
 /**
  * Retorna a URL base do app ZapSign para assinatura (https://app.zapsign.com.br ou https://sandbox.app.zapsign.com.br)
  * Convertendo da URL da API (que usa /api/v1)
  */
-export function getZapSignAppBaseUrl(): string {
-  const apiUrl = getBaseUrl();
+export function getZapSignAppBaseUrl(dbEnvironment?: string): string {
+  const { baseUrl } = getCredentials(dbEnvironment);
   // Converter: https://api.zapsign.com.br → https://app.zapsign.com.br
   //           https://sandbox.api.zapsign.com.br → https://sandbox.app.zapsign.com.br
-  return apiUrl.replace('api.zapsign', 'app.zapsign');
+  return baseUrl.replace('api.zapsign', 'app.zapsign');
 }
 
-function getApiToken(): string {
-  const token = process.env.ZAPSIGN_API_TOKEN?.trim();
-  if (!token) {
-    throw new Error(
-      'ZAPSIGN_API_TOKEN não está configurado ou está vazio. Defina no .env.local.'
-    );
-  }
-  return token;
-}
-
-function buildHeaders(): Record<string, string> {
-  const token = getApiToken();
-  const authHeader = `Bearer ${token}`;
+function buildHeaders(dbEnvironment?: string): Record<string, string> {
+  const { apiToken } = getCredentials(dbEnvironment);
   return {
-    Authorization: authHeader,
+    Authorization: `Bearer ${apiToken}`,
     'Content-Type': 'application/json',
     Accept: 'application/json',
     'User-Agent': 'QWork-ZapSign-Client/1.0',
@@ -127,13 +171,20 @@ export async function criarDocumentoZapSign(
     nomeAssinante,
     emailAssinante,
     enviarEmailAutomatico = true,
+    dbEnvironment,
   } = params;
 
-  const baseUrl = getBaseUrl();
+  const { baseUrl } = getCredentials(dbEnvironment);
 
-  // sandbox: false garante criação em produção mesmo se a conta tiver acesso ao sandbox
+  // sandbox: false garante criação em produção quando baseUrl não contém 'sandbox'
   const isSandbox =
     baseUrl.includes('sandbox') || process.env.ZAPSIGN_SANDBOX === '1';
+
+  const headers = buildHeaders(dbEnvironment);
+
+  console.log(
+    `[ZapSign] criarDocumento: baseUrl=${baseUrl} | sandbox=${isSandbox} | dbEnv=${dbEnvironment ?? 'não informado'} | doc="${nome}" | tokenLen=${headers.Authorization.split(' ')[1].length}`
+  );
 
   const body = {
     name: nome,
@@ -147,8 +198,6 @@ export async function criarDocumentoZapSign(
       },
     ],
   };
-
-  const headers = buildHeaders();
 
   const response = await fetch(`${baseUrl}/api/v1/docs/`, {
     method: 'POST',
