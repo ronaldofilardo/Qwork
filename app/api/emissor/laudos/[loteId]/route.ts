@@ -536,7 +536,7 @@ export const POST = async (
           success: true,
           message:
             resultado.status === 'pdf_gerado'
-              ? 'PDF gerado com sucesso. Clique em "Assinar Digitalmente" para prosseguir.'
+              ? 'PDF gerado com sucesso. Acesse "Laudo emitido" para baixar e enviar ao bucket.'
               : 'Laudo gerado com sucesso',
           laudo_id: resultado.laudoId,
           status: resultado.status,

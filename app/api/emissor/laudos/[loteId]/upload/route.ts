@@ -17,6 +17,8 @@ import {
   uploadLaudoToBackblaze,
   calcularHash,
 } from '@/lib/storage/laudo-storage';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Upload pode levar até 60s
@@ -79,14 +81,11 @@ export async function POST(
     const laudo = laudoResult.rows[0];
     const laudoId = laudo.id;
 
-    // 3. Verificar se laudo foi gerado (tem PDF local)
-    // ⚠️ IMPORTANTE: Após mudança na emissão, o laudo permanece com status='rascunho'
-    // e é marcado como 'emitido' APÓS o upload ao bucket.
-    // Portanto, verificar se tem hash_pdf (indica PDF foi gerado localmente)
-    if (!laudo.hash_pdf) {
+    // 3. Verificar se laudo está no status correto para upload
+    if (laudo.status !== 'pdf_gerado') {
       return NextResponse.json(
         {
-          error: `Laudo ${laudoId} do lote ${loteId} não foi gerado ainda. Gere o laudo antes de fazer upload.`,
+          error: `Laudo ${laudoId} está em status '${laudo.status}'. Esperado: 'pdf_gerado'. Gere o laudo antes de fazer upload.`,
           success: false,
         },
         { status: 400 }
@@ -109,17 +108,7 @@ export async function POST(
       );
     }
 
-    // 5. Verificar hash disponível
-    if (!laudo.hash_pdf) {
-      return NextResponse.json(
-        {
-          error:
-            'Laudo sem hash SHA-256. Regenere o laudo antes de fazer upload.',
-          success: false,
-        },
-        { status: 400 }
-      );
-    }
+    // 5. (removido — hash não existe na geração, é calculado aqui no upload)
 
     // 6. Ler arquivo do FormData
     const formData = await req.formData();
@@ -144,12 +133,12 @@ export async function POST(
       );
     }
 
-    // 8. Validação: tamanho <= 2MB
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    // 8. Validação: tamanho <= 20MB (PDF assinado pode ser maior que o original)
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
         {
-          error: 'Arquivo excede o tamanho máximo permitido (2 MB)',
+          error: 'Arquivo excede o tamanho máximo permitido (20 MB)',
           success: false,
           maxSizeBytes: MAX_SIZE,
           fileSize: file.size,
@@ -174,41 +163,11 @@ export async function POST(
       );
     }
 
-    // 10. Calcular hash do arquivo recebido
+    // 10. Calcular hash do PDF assinado recebido (este é o hash definitivo do laudo)
     const uploadedFileHash = calcularHash(buffer);
+    console.log(`[UPLOAD] Hash SHA-256 do PDF assinado: ${uploadedFileHash}`);
 
-    // 11. IMUTABILIDADE: Comparar hash com hash_pdf do banco
-    if (uploadedFileHash !== laudo.hash_pdf) {
-      await query(
-        `INSERT INTO audit_logs (action, resource, resource_id, new_data, user_perfil, user_cpf)
-         VALUES ('laudo_upload_hash_mismatch', 'laudos', $1, $2, $3, $4)`,
-        [
-          laudoId.toString(),
-          JSON.stringify({
-            expected_hash: laudo.hash_pdf,
-            received_hash: uploadedFileHash,
-            lote_id: laudo.lote_id,
-            emissor_cpf: user.cpf,
-          }),
-          user.perfil,
-          user.cpf,
-        ],
-        user
-      );
-
-      return NextResponse.json(
-        {
-          error:
-            'Hash do arquivo enviado não corresponde ao hash registrado no banco de dados (imutabilidade violada).',
-          success: false,
-          details: {
-            expected: laudo.hash_pdf,
-            received: uploadedFileHash,
-          },
-        },
-        { status: 400 }
-      );
-    }
+    // 11. (removido — hash não existia antes do upload; agora é calculado aqui)
 
     // 12. Fazer upload para Backblaze e obter metadados da key real
     console.log(
@@ -258,7 +217,7 @@ export async function POST(
     // 15. Persistir metadados no banco de dados E MARCAR COMO ENVIADO
     // ⚠️ IMPORTANTE: Deve vir APÓS o passo 14 — o trigger check_laudo_immutability
     // permitirá este UPDATE pois emitido_em ainda é NULL neste momento.
-    // A validação de imutabilidade já foi feita no passo 4 (verificando arquivo_remoto_key)
+    // hash_pdf é calculado aqui (do PDF assinado, que inclui a página de assinatura).
     await query(
       `UPDATE laudos 
        SET arquivo_remoto_provider = $1,
@@ -268,11 +227,12 @@ export async function POST(
            arquivo_remoto_uploaded_at = NOW(),
            arquivo_remoto_etag = $5,
            arquivo_remoto_size = $6,
+           hash_pdf = $7,
            status = 'enviado',
            emitido_em = COALESCE(emitido_em, NOW()),
            enviado_em = NOW(),
            atualizado_em = NOW()
-       WHERE id = $7`,
+       WHERE id = $8`,
       [
         uploadResult.provider || 'backblaze',
         uploadResult.bucket || process.env.BACKBLAZE_BUCKET || 'laudos-qwork',
@@ -280,10 +240,27 @@ export async function POST(
         uploadResult.url,
         uploadResult.etag || null,
         buffer.length,
+        uploadedFileHash,
         laudoId,
       ],
       user
     );
+
+    // 15b. Salvar cópia local do PDF assinado em storage/laudos/laudo-[x]-assinado.pdf
+    try {
+      const storageDir = path.join(process.cwd(), 'storage', 'laudos');
+      if (!fs.existsSync(storageDir)) {
+        fs.mkdirSync(storageDir, { recursive: true });
+      }
+      const assinadoPath = path.join(storageDir, `laudo-${laudoId}-assinado.pdf`);
+      fs.writeFileSync(assinadoPath, buffer);
+      console.log(`[UPLOAD] Cópia local do PDF assinado salva em ${assinadoPath}`);
+    } catch (fsErr) {
+      // Filesystem indisponível em cloud (Vercel) — não é crítico, o Backblaze é a fonte de verdade
+      console.warn(
+        `[UPLOAD] Não foi possível salvar cópia local do PDF assinado: ${(fsErr as Error).message}`
+      );
+    }
 
     // 16. Auditoria de sucesso
     await query(

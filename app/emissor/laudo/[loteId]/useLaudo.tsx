@@ -34,7 +34,6 @@ export function useLaudo() {
   const [isPrevia, setIsPrevia] = useState(false);
   const [laudoStatus, setLaudoStatus] = useState<LaudoStatus>(null);
   const [gerandoLaudo, setGerandoLaudo] = useState(false);
-  const [assinandoLaudo, setAssinandoLaudo] = useState(false);
   const [verificandoAssinatura, setVerificandoAssinatura] = useState(false);
   const [modalUploadOpen, setModalUploadOpen] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -123,70 +122,19 @@ export function useLaudo() {
       const data = await response.json();
       if (data.success) {
         toast.dismiss('gerar-laudo');
-        if (data.pdf_gerado) {
-          toast.success(
-            'PDF gerado! Clique em "Assinar Digitalmente" para prosseguir.'
-          );
-        } else {
-          toast.success('Laudo gerado com sucesso!');
-        }
-        await fetchLaudo();
+        toast.success('PDF gerado! Acesse "Laudo emitido" para baixar e enviar ao bucket.');
+        router.push('/emissor');
       } else {
         toast.dismiss('gerar-laudo');
-        toast.error(data.error || 'Erro ao gerar laudo');
+        const errorMsg = data.detalhes ? `${data.error}: ${data.detalhes}` : (data.error || 'Erro ao gerar laudo');
+        console.error('[useLaudo] Erro da API:', errorMsg);
+        toast.error(errorMsg);
       }
     } catch {
       toast.dismiss('gerar-laudo');
       toast.error('Erro ao conectar com o servidor');
     } finally {
       setGerandoLaudo(false);
-    }
-  };
-
-  const handleAssinarDigitalmente = async () => {
-    if (!lote) return;
-    try {
-      setAssinandoLaudo(true);
-      toast.loading('Enviando para assinatura...', { id: 'assinar-laudo' });
-      const response = await fetch(`/api/emissor/laudos/${loteId}/assinar`, {
-        method: 'POST',
-      });
-      const data = await response.json();
-      if (data.success) {
-        toast.dismiss('assinar-laudo');
-        if (data.sign_url) {
-          toast.success(
-            (t) => (
-              <span>
-                Laudo enviado para assinatura!{' '}
-                <a
-                  href={data.sign_url as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline font-bold"
-                  onClick={() => toast.dismiss(t.id)}
-                >
-                  Clique aqui para assinar
-                </a>
-              </span>
-            ),
-            { duration: 30000 }
-          );
-        } else {
-          toast.success(
-            'Laudo enviado para assinatura digital! Verifique seu email.'
-          );
-        }
-        await fetchLaudo();
-      } else {
-        toast.dismiss('assinar-laudo');
-        toast.error(data.error || 'Erro ao enviar para assinatura');
-      }
-    } catch {
-      toast.dismiss('assinar-laudo');
-      toast.error('Erro ao conectar com o servidor');
-    } finally {
-      setAssinandoLaudo(false);
     }
   };
 
@@ -268,12 +216,10 @@ export function useLaudo() {
     isPrevia,
     laudoStatus,
     gerandoLaudo,
-    assinandoLaudo,
     verificandoAssinatura,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
-    handleAssinarDigitalmente,
     handleVerificarAssinatura,
     handleDownloadLaudo,
     handleUploadSuccess,

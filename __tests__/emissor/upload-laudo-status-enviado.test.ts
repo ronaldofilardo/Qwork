@@ -38,7 +38,7 @@ describe('Upload Laudo — Status final e ciclo de vida', () => {
     it("NÃO deve definir status = 'emitido' no UPDATE de upload", () => {
       // Extrair o bloco do UPDATE da query de persistência (passo 15)
       const updateStart = routeCode.indexOf('UPDATE laudos');
-      const updateEnd = routeCode.indexOf('WHERE id = $7', updateStart) + 15;
+      const updateEnd = routeCode.indexOf('WHERE id = $8', updateStart) + 15;
       const updateBlock = routeCode.substring(updateStart, updateEnd);
 
       // No bloco do UPDATE, deve haver 'enviado' e NÃO 'emitido' como SET
@@ -60,9 +60,9 @@ describe('Upload Laudo — Status final e ciclo de vida', () => {
   // AGRUPAMENTO 2: Máquina de estados do laudo
   // ============================================================================
   describe('Máquina de estados: rascunho → emitido → enviado', () => {
-    it('rascunho: laudo sem hash_pdf é barrado antes do upload', () => {
-      // Deve validar que hash_pdf existe (laudo foi gerado localmente)
-      expect(routeCode).toContain('!laudo.hash_pdf');
+    it('rascunho: laudo em status incorreto é barrado antes do upload', () => {
+      // Deve validar que laudo está no status 'pdf_gerado' (laudo foi gerado localmente)
+      expect(routeCode).toContain("laudo.status !== 'pdf_gerado'");
       expect(routeCode).toContain('Gere o laudo antes de fazer upload');
     });
 
@@ -97,9 +97,10 @@ describe('Upload Laudo — Status final e ciclo de vida', () => {
       );
     });
 
-    it('deve validar hash do arquivo contra banco de dados', () => {
-      // Imutabilidade de conteúdo: comparar hash do arquivo recebido com hash_pdf do banco
-      expect(routeCode).toContain('uploadedFileHash !== laudo.hash_pdf');
+    it('deve calcular hash do arquivo no upload e persistí-lo no banco', () => {
+      // Hash é calculado do PDF assinado no momento do upload e salvo no banco
+      expect(routeCode).toContain('calcularHash(buffer)');
+      expect(routeCode).toContain('hash_pdf = $7');
     });
   });
 

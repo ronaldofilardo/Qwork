@@ -33,6 +33,7 @@ export default function UploadLaudoButton({
 }: UploadLaudoButtonProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadedSuccessfully, setUploadedSuccessfully] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Para laudos aguardando assinatura ZapSign, o PDF assinado ainda não foi
@@ -41,13 +42,21 @@ export default function UploadLaudoButton({
   const isZapSignPending = status === 'aguardando_assinatura';
 
   // Verificar se pode fazer upload
+  // Permite upload quando:
+  // - Status é pdf_gerado (PDF gerado, aguardando envio ao bucket)
+  // - Status é emitido/enviado (fluxo legado)
+  // - Status é aguardando_assinatura (fluxo ZapSign, enviando PDF assinado)
   const canUpload =
-    (status === 'emitido' || status === 'enviado' || isZapSignPending) &&
+    !uploadedSuccessfully &&
+    (status === 'pdf_gerado' ||
+      status === 'emitido' ||
+      status === 'enviado' ||
+      isZapSignPending) &&
     (!arquivoRemotoKey || isZapSignPending);
   const canResync = hasUploadFailed && !arquivoRemotoKey;
 
   // Se já foi feito upload (imutável), não mostrar botão — exceto ZapSign pendente
-  if (arquivoRemotoKey && !hasUploadFailed && !isZapSignPending) {
+  if ((arquivoRemotoKey || uploadedSuccessfully) && !hasUploadFailed && !isZapSignPending) {
     return (
       <div className="flex items-center gap-2 text-xs text-green-600">
         <svg
@@ -106,6 +115,8 @@ export default function UploadLaudoButton({
 
       setUploadProgress(100);
 
+      setUploadedSuccessfully(true);
+
       // Sucesso
       toast.success(
         'Upload realizado com sucesso! O laudo está agora disponível no bucket.'
@@ -143,9 +154,9 @@ export default function UploadLaudoButton({
       return;
     }
 
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB (PDF assinado pode ser maior)
     if (file.size > MAX_SIZE) {
-      toast.error('Arquivo excede o tamanho máximo de 2 MB');
+      toast.error('Arquivo excede o tamanho máximo de 20 MB');
       return;
     }
 

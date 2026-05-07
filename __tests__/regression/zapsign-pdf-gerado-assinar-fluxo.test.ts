@@ -87,8 +87,9 @@ describe('1. lib/laudo-auto.ts — máquina de estados ZapSign', () => {
     expect(src).toContain("status: 'pdf_gerado'");
   });
 
-  it('fork legacy: deve retornar status emitido (com hash)', () => {
-    expect(src).toContain("status: 'emitido'");
+  it('ambos os forks devem retornar status pdf_gerado', () => {
+    expect(src).toContain("status: 'pdf_gerado'");
+    expect(src).not.toContain("status: 'emitido'");
   });
 
   it('rollback deve resetar pdf_gerado_em para NULL', () => {
@@ -107,7 +108,7 @@ describe('1. lib/laudo-auto.ts — máquina de estados ZapSign', () => {
 
   it('interface ResultadoEmissaoLaudo deve incluir campo status', () => {
     expect(src).toMatch(/ResultadoEmissaoLaudo/);
-    expect(src).toMatch(/pdf_gerado.*aguardando_assinatura.*emitido/s);
+    expect(src).toMatch(/pdf_gerado.*aguardando_assinatura/s);
   });
 });
 
@@ -261,12 +262,12 @@ describe('4. Webhook ZapSign — 3 fases atômicas', () => {
     expect(src).toContain('arquivo_remoto_provider');
   });
 
-  it('FASE C: deve finalizar lotes_avaliacao', () => {
+  it('FASE C: deve avançar lote até laudo_emitido via state walk', () => {
     expect(src).toContain('FASE C');
     expect(src).toContain('lotes_avaliacao');
-    // status pode ter espaços: SET status           = 'finalizado',
-    expect(src).toMatch(/SET status.*=.*'finalizado'/);
-    expect(src).toContain('laudo_enviado_em');
+    // FASE C usa parameterized query com steps — não literal 'finalizado'
+    // Walk: concluido → emissao_solicitada → emissao_em_andamento → laudo_emitido
+    expect(src).toContain("'emissao_em_andamento', to: 'laudo_emitido'");
   });
 
   it('FASE A deve ocorrer antes de FASE B no código', () => {
@@ -342,26 +343,13 @@ describe('6. useLaudo.tsx — polling ZapSign e handleAssinarDigitalmente', () =
     expect(src).toContain('laudoStatus');
   });
 
-  it('deve ter estado assinandoLaudo', () => {
-    expect(src).toContain('assinandoLaudo');
-  });
-
-  it('deve ter handleAssinarDigitalmente', () => {
-    expect(src).toContain('handleAssinarDigitalmente');
-  });
-
-  it('handleAssinarDigitalmente deve chamar /assinar endpoint', () => {
-    expect(src).toContain('/assinar');
-  });
-
   it('deve ter polling useEffect que observa laudoStatus', () => {
     expect(src).toContain('aguardando_assinatura');
     expect(src).toContain('setInterval');
   });
 
-  it('deve exportar laudoStatus e assinandoLaudo', () => {
+  it('deve exportar laudoStatus', () => {
     expect(src).toContain('laudoStatus,');
-    expect(src).toContain('assinandoLaudo,');
   });
 
   it('fetchLaudo deve conectar data.laudo_status ao estado', () => {
@@ -395,16 +383,8 @@ describe('7. LaudoHeader.tsx — botão Assinar e banner spinner', () => {
     expect(src).toContain('laudoStatus');
   });
 
-  it('deve aceitar prop assinandoLaudo', () => {
-    expect(src).toContain('assinandoLaudo');
-  });
-
-  it('deve aceitar prop onAssinarDigitalmente', () => {
-    expect(src).toContain('onAssinarDigitalmente');
-  });
-
-  it('deve renderizar botão Assinar Digitalmente quando pdf_gerado', () => {
-    expect(src).toContain('Assinar Digitalmente');
+  it('deve renderizar botão Enviar ao Bucket quando pdf_gerado', () => {
+    expect(src).toContain('Enviar ao Bucket');
     expect(src).toContain('pdf_gerado');
   });
 

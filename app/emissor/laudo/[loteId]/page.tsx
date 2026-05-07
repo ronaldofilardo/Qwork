@@ -18,12 +18,10 @@ export default function EditarLaudo() {
     isPrevia,
     laudoStatus,
     gerandoLaudo,
-    assinandoLaudo,
     verificandoAssinatura,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
-    handleAssinarDigitalmente,
     handleVerificarAssinatura,
     handleDownloadLaudo,
     handleUploadSuccess,
@@ -65,12 +63,13 @@ export default function EditarLaudo() {
           isPrevia={isPrevia}
           laudoStatus={laudoStatus}
           gerandoLaudo={gerandoLaudo}
-          assinandoLaudo={assinandoLaudo}
           onOpenUploadModal={() => setModalUploadOpen(true)}
           onGerarLaudo={handleGerarLaudo}
-          onAssinarDigitalmente={handleAssinarDigitalmente}
           verificandoAssinatura={verificandoAssinatura}
           onVerificarAssinatura={handleVerificarAssinatura}
+          loteId={loteId}
+          onDownloadLaudo={handleDownloadLaudo}
+          onUploadSuccess={handleUploadSuccess}
         />
 
         {mensagem && (
