@@ -205,3 +205,26 @@ describe('GET /api/rh/empresas-overview — ResumoKPI campos estendidos', () => 
     expect((queryMatches ?? []).length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('GET /api/rh/empresas-overview — count_elegiveis inclui inativos nunca avaliados', () => {
+  it('subquery count_elegiveis usa fc2 (não f2) para indice_avaliacao', () => {
+    // Garante que a coluna pertence à tabela correta (funcionarios_clinicas)
+    expect(src).toMatch(/fc2\.indice_avaliacao/);
+    expect(src).not.toMatch(/f2\.indice_avaliacao/);
+  });
+
+  it('subquery count_elegiveis usa fc2 (não f2) para data_ultimo_lote', () => {
+    expect(src).toMatch(/fc2\.data_ultimo_lote/);
+    expect(src).not.toMatch(/f2\.data_ultimo_lote/);
+  });
+
+  it('count_elegiveis inclui funcionários inativos com indice=0 (nunca avaliados)', () => {
+    // A condição OR (fc2.ativo = FALSE AND fc2.indice_avaliacao = 0) deve existir
+    expect(src).toMatch(/fc2\.ativo\s*=\s*FALSE\s+AND\s+fc2\.indice_avaliacao\s*=\s*0/);
+  });
+
+  it('count_elegiveis agrupa ativos e inativos nunca avaliados em OR separado', () => {
+    // Deve haver estrutura OR separando ativos (com critérios variados) e inativos (só indice=0)
+    expect(src).toMatch(/fc2\.ativo\s*=\s*TRUE[\s\S]*?fc2\.ativo\s*=\s*FALSE/);
+  });
+});
