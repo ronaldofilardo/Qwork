@@ -12,7 +12,10 @@ import {
   gerarHTMLLaudoCompleto,
   LaudoDadosCompletos,
 } from '@/lib/templates/laudo-html';
-import { formatarDataApenasData, formatarHora } from '@/lib/pdf/timezone-helper';
+import {
+  formatarDataApenasData,
+  formatarHora,
+} from '@/lib/pdf/timezone-helper';
 import {
   criarDocumentoZapSign,
   isZapSignHabilitado,
@@ -236,7 +239,9 @@ export async function gerarPDFLaudo(
           );
         }
       }
-      console.log(`[EMISSÃO] Lote ${loteId} caminhado até 'laudo_emitido' (ZapSign).`);
+      console.log(
+        `[EMISSÃO] Lote ${loteId} caminhado até 'laudo_emitido' (ZapSign).`
+      );
 
       const updateResult = await query(
         `UPDATE laudos

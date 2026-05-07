@@ -5,7 +5,7 @@
  *
  * 1. lib/laudo-auto.ts — máquina de estados duplamente bifurcada
  *    - ZapSign habilitado: gerarPDFLaudo() → {status:'pdf_gerado'} (sem hash)
- *    - ZapSign desabilitado: gerarPDFLaudo() → {status:'emitido'} (com hash)
+ *    - ZapSign desabilitado: gerarPDFLaudo() → {status:'pdf_gerado'} (hash calculado no upload)
  *    - enviarParaAssinaturaZapSign() → {status:'aguardando_assinatura'}
  *    - @deprecated stub gerarLaudoCompletoEmitirPDF() → delega a gerarPDFLaudo()
  *
@@ -28,14 +28,14 @@
  *
  * 5. lib/hooks/useProgressoEmissao.ts — novos status 'pdf_gerado' e 'aguardando_assinatura'
  *
- * 6. app/emissor/laudo/[loteId]/useLaudo.ts
- *    - handleAssinarDigitalmente() — POST /api/emissor/laudos/{loteId}/assinar
+ * 6. app/emissor/laudo/[loteId]/useLaudo.tsx
  *    - polling useEffect (10s) ativo quando laudoStatus === 'aguardando_assinatura'
  *    - fetchLaudo conecta data.laudo_status → state laudoStatus
+ *    - redirect para /emissor após gerarão bem-sucedida
  *
  * 7. app/emissor/laudo/[loteId]/components/LaudoHeader.tsx
- *    - Botão "Assinar Digitalmente" renderizado quando laudoStatus === 'pdf_gerado'
- *    - Banner spinner quando laudoStatus === 'aguardando_assinatura'
+ *    - Botão "Enviar ao Bucket" renderizado quando laudoStatus === 'pdf_gerado'
+ *    - Botão "Já foi assinado" + "Upload PDF Assinado" quando laudoStatus === 'aguardando_assinatura'
  *
  * 8. database/migrations/1139_laudo_pdf_gerado_status.sql
  *    - ALTER TYPE status_laudo_enum ADD VALUE 'pdf_gerado'
@@ -320,7 +320,7 @@ describe('5. useProgressoEmissao — novos status pdf_gerado e aguardando_assina
 
 // ─── 6. app/emissor/laudo/[loteId]/useLaudo.tsx ──────────────────────────────
 
-describe('6. useLaudo.tsx — polling ZapSign e handleAssinarDigitalmente', () => {
+describe('6. useLaudo.tsx — polling ZapSign', () => {
   const filePath = path.join(
     ROOT,
     'app',
@@ -359,7 +359,7 @@ describe('6. useLaudo.tsx — polling ZapSign e handleAssinarDigitalmente', () =
 
 // ─── 7. app/emissor/laudo/[loteId]/components/LaudoHeader.tsx ────────────────
 
-describe('7. LaudoHeader.tsx — botão Assinar e banner spinner', () => {
+describe('7. LaudoHeader.tsx — botão Enviar ao Bucket e banner ZapSign', () => {
   const filePath = path.join(
     ROOT,
     'app',
