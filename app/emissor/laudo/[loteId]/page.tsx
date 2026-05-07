@@ -18,11 +18,9 @@ export default function EditarLaudo() {
     isPrevia,
     laudoStatus,
     gerandoLaudo,
-    verificandoAssinatura,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
-    handleVerificarAssinatura,
     handleDownloadLaudo,
     handleUploadSuccess,
     router,
@@ -65,8 +63,6 @@ export default function EditarLaudo() {
           gerandoLaudo={gerandoLaudo}
           onOpenUploadModal={() => setModalUploadOpen(true)}
           onGerarLaudo={handleGerarLaudo}
-          verificandoAssinatura={verificandoAssinatura}
-          onVerificarAssinatura={handleVerificarAssinatura}
           loteId={loteId}
           onDownloadLaudo={handleDownloadLaudo}
           onUploadSuccess={handleUploadSuccess}

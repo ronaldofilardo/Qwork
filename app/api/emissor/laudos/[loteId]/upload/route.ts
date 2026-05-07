@@ -252,9 +252,14 @@ export async function POST(
       if (!fs.existsSync(storageDir)) {
         fs.mkdirSync(storageDir, { recursive: true });
       }
-      const assinadoPath = path.join(storageDir, `laudo-${laudoId}-assinado.pdf`);
+      const assinadoPath = path.join(
+        storageDir,
+        `laudo-${laudoId}-assinado.pdf`
+      );
       fs.writeFileSync(assinadoPath, buffer);
-      console.log(`[UPLOAD] Cópia local do PDF assinado salva em ${assinadoPath}`);
+      console.log(
+        `[UPLOAD] Cópia local do PDF assinado salva em ${assinadoPath}`
+      );
     } catch (fsErr) {
       // Filesystem indisponível em cloud (Vercel) — não é crítico, o Backblaze é a fonte de verdade
       console.warn(

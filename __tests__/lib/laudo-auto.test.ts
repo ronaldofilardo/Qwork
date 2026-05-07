@@ -134,21 +134,29 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
     });
   });
 
+  // Helper: monta a sequência completa de 7 mocks para o fluxo happy path
+  // q0: SELECT laudo (inexistente), q1: INSERT rascunho, q2: SELECT obs,
+  // q3-q5: state walk lotes_avaliacao (3 UPDATEs), q6: UPDATE laudos SET pdf_gerado
+  function mockFullFlow(opts?: { laudoId?: number; q6RowCount?: number; existingRascunho?: boolean }) {
+    const id = opts?.laudoId ?? 1;
+    if (opts?.existingRascunho) {
+      mockQuery.mockResolvedValueOnce({ rows: [{ id, status: 'rascunho' }], rowCount: 1 } as any); // q0: rascunho
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // q1: UPDATE emissor_cpf
+    } else {
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // q0: inexistente
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // q1: INSERT
+    }
+    mockQuery.mockResolvedValueOnce({ rows: [{ observacoes: '' }], rowCount: 1 } as any); // q2: obs
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // q3: state walk 1
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // q4: state walk 2
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // q5: state walk 3
+    const q6RowCount = opts?.q6RowCount ?? 1;
+    mockQuery.mockResolvedValueOnce({ rows: q6RowCount > 0 ? [{ id }] : [], rowCount: q6RowCount } as any); // q6: UPDATE laudos
+  }
+
   describe('Propagação de session RLS', () => {
     it('deve passar session a query ao verificar laudo existente', async () => {
-      // Arrange: laudo não existe
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // check laudo
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // INSERT rascunho
-      // Observações
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ observacoes: '' }],
-        rowCount: 1,
-      } as any);
-      // UPDATE para emitido
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 1 }],
-        rowCount: 1,
-      } as any);
+      mockFullFlow();
 
       await gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf, mockSession);
 
@@ -157,16 +165,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
     });
 
     it('deve passar session a query ao criar rascunho', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // check laudo
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // INSERT rascunho
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ observacoes: '' }],
-        rowCount: 1,
-      } as any);
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 1 }],
-        rowCount: 1,
-      } as any);
+      mockFullFlow();
 
       await gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf, mockSession);
 
@@ -175,17 +174,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
     });
 
     it('deve passar session a query ao atualizar rascunho existente', async () => {
-      mockQuery
-        .mockResolvedValueOnce({
-          rows: [{ id: 1, status: 'rascunho' }],
-          rowCount: 1,
-        } as any) // check laudo = rascunho
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE emissor
-        .mockResolvedValueOnce({
-          rows: [{ observacoes: 'Obs anterior' }],
-          rowCount: 1,
-        } as any) // SELECT observacoes
-        .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any); // UPDATE emitido
+      mockFullFlow({ existingRascunho: true });
 
       await gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf, mockSession);
 
@@ -196,16 +185,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
     });
 
     it('funciona sem session (undefined) - backward compatibility', async () => {
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ observacoes: '' }],
-        rowCount: 1,
-      } as any);
-      mockQuery.mockResolvedValueOnce({
-        rows: [{ id: 1 }],
-        rowCount: 1,
-      } as any);
+      mockFullFlow({ laudoId: 1 });
 
       // Não deve lançar erro quando session não é passado
       await expect(
@@ -216,14 +196,7 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
 
   describe('Fluxo de criação de laudo', () => {
     it('deve retornar o laudoId (= loteId) após emissão com sucesso', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // check
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT
-        .mockResolvedValueOnce({
-          rows: [{ observacoes: '' }],
-          rowCount: 1,
-        } as any) // SELECT obs
-        .mockResolvedValueOnce({ rows: [{ id: 42 }], rowCount: 1 } as any); // UPDATE emitido
+      mockFullFlow({ laudoId: 42 });
 
       const result = await gerarLaudoCompletoEmitirPDF(
         42,
@@ -234,15 +207,8 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
       expect((result as any).laudoId).toBe(42);
     });
 
-    it('deve lançar erro quando UPDATE para emitido não afeta nenhuma linha', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // check
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT
-        .mockResolvedValueOnce({
-          rows: [{ observacoes: '' }],
-          rowCount: 1,
-        } as any) // SELECT obs
-        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // UPDATE retorna 0 rows
+    it('deve lançar erro quando UPDATE para pdf_gerado não afeta nenhuma linha', async () => {
+      mockFullFlow({ q6RowCount: 0 });
 
       await expect(
         gerarLaudoCompletoEmitirPDF(1, mockEmissorCpf, mockSession)
@@ -251,19 +217,11 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
   });
 });
 
-// ─── Testes para o fluxo legado (DISABLE_ZAPSIGN=1) ─────────────────────────
+// ─── Testes para gerarPDFLaudo (fluxo único após remoção do ZapSign) ────────────────
 
-describe('lib/laudo-auto - gerarPDFLaudo - Fluxo legado (DISABLE_ZAPSIGN=1)', () => {
+describe('lib/laudo-auto - gerarPDFLaudo', () => {
   const mockEmissorCpf = '99999999999';
   const mockSession = { cpf: '99999999999', perfil: 'emissor' };
-
-  beforeAll(() => {
-    process.env.DISABLE_ZAPSIGN = '1';
-  });
-
-  afterAll(() => {
-    delete process.env.DISABLE_ZAPSIGN;
-  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -293,14 +251,14 @@ describe('lib/laudo-auto - gerarPDFLaudo - Fluxo legado (DISABLE_ZAPSIGN=1)', ()
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // concluido→emissao_solicitada
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // emissao_solicitada→emissao_em_andamento
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // emissao_em_andamento→laudo_emitido
-    // q6: UPDATE laudos SET emitido
+    // q6: UPDATE laudos SET pdf_gerado
     mockQuery.mockResolvedValueOnce({
       rows: overrides?.step6RowCount === 0 ? [] : [{ id: 42 }],
       rowCount: overrides?.step6RowCount ?? 1,
     } as any);
   }
 
-  it('deve caminhar lote pela máquina de estados antes de setar emitido_em', async () => {
+  it('deve caminhar lote pela máquina de estados antes de setar pdf_gerado_em', async () => {
     const { gerarPDFLaudo } = await import('@/lib/laudo-auto');
     mockLegadoQueries();
 
@@ -323,39 +281,44 @@ describe('lib/laudo-auto - gerarPDFLaudo - Fluxo legado (DISABLE_ZAPSIGN=1)', ()
     const q5 = mockQuery.mock.calls[5];
     expect(q5[0]).toContain('UPDATE lotes_avaliacao');
     expect(q5[1]).toEqual(['laudo_emitido', 42, 'emissao_em_andamento']);
+
+    // q6: UPDATE laudos SET pdf_gerado
+    const q6 = mockQuery.mock.calls[6];
+    expect(q6[0]).toContain("status        = 'pdf_gerado'");
+    expect(q6[0]).toContain('pdf_gerado_em = NOW()');
   });
 
-  it('state walk PRECEDE o UPDATE laudos SET emitido_em (ordem crítica)', async () => {
+  it('state walk PRECEDE o UPDATE laudos SET pdf_gerado_em (ordem crítica)', async () => {
     const { gerarPDFLaudo } = await import('@/lib/laudo-auto');
     mockLegadoQueries();
 
     await gerarPDFLaudo(42, mockEmissorCpf, mockSession);
 
-    // q6: UPDATE laudos SET emitido_em — deve vir APÓS as 3 queries de state walk
+    // q6: UPDATE laudos SET pdf_gerado_em — deve vir APÓS as 3 queries de state walk
     const q6 = mockQuery.mock.calls[6];
-    expect(q6[0]).toContain("status        = 'emitido'");
-    expect(q6[0]).toContain('emitido_em    = NOW()');
+    expect(q6[0]).toContain("status        = 'pdf_gerado'");
+    expect(q6[0]).toContain('pdf_gerado_em = NOW()');
     // Index 6 = após as 3 state walks (indices 3,4,5)
     expect(mockQuery.mock.calls.length).toBeGreaterThanOrEqual(7);
   });
 
-  it('deve retornar status="emitido" no fluxo legado', async () => {
+  it('deve retornar status="pdf_gerado" após geração com sucesso', async () => {
     const { gerarPDFLaudo } = await import('@/lib/laudo-auto');
     mockLegadoQueries();
 
     const result = await gerarPDFLaudo(42, mockEmissorCpf, mockSession);
 
-    expect(result.status).toBe('emitido');
+    expect(result.status).toBe('pdf_gerado');
     expect(result.laudoId).toBe(42);
   });
 
-  it('deve lançar erro quando UPDATE laudos para emitido não afeta nenhuma linha', async () => {
+  it('deve lançar erro quando UPDATE laudos para pdf_gerado não afeta nenhuma linha', async () => {
     const { gerarPDFLaudo } = await import('@/lib/laudo-auto');
     mockLegadoQueries({ step6RowCount: 0 });
 
     await expect(
       gerarPDFLaudo(42, mockEmissorCpf, mockSession)
-    ).rejects.toThrow('Falha ao salvar hash do laudo');
+    ).rejects.toThrow('Falha ao atualizar laudo para pdf_gerado');
   });
 
   it('deve continuar mesmo se state walk falhar (lote já no status correto)', async () => {
@@ -380,6 +343,6 @@ describe('lib/laudo-auto - gerarPDFLaudo - Fluxo legado (DISABLE_ZAPSIGN=1)', ()
     // Não deve lançar erro — state walk sem match é tratado silenciosamente
     await expect(
       gerarPDFLaudo(42, mockEmissorCpf, mockSession)
-    ).resolves.toMatchObject({ status: 'emitido', laudoId: 42 });
+    ).resolves.toMatchObject({ status: 'pdf_gerado', laudoId: 42 });
   });
 });

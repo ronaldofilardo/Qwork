@@ -25,7 +25,6 @@ export type StatusEmissao =
   | 'solicitado'
   | 'gerando_pdf'
   | 'pdf_gerado'
-  | 'aguardando_assinatura'
   | 'enviando_storage'
   | 'finalizando'
   | 'concluido'
@@ -242,8 +241,7 @@ export function getMensagemProgresso(status: StatusEmissao): string {
     solicitando: 'Solicitando emissão...',
     solicitado: 'Emissão solicitada',
     gerando_pdf: 'Gerando PDF do laudo...',
-    pdf_gerado: 'PDF gerado. Aguardando assinatura digital.',
-    aguardando_assinatura: 'Aguardando assinatura digital...',
+    pdf_gerado: 'PDF gerado. Processando...',
     enviando_storage: 'Enviando para armazenamento...',
     finalizando: 'Finalizando processo...',
     concluido: 'Emissão concluída com sucesso!',
@@ -267,7 +265,6 @@ export function calcularPorcentagem(
     solicitado: 20,
     gerando_pdf: 50,
     pdf_gerado: 60,
-    aguardando_assinatura: 70,
     enviando_storage: 80,
     finalizando: 95,
     concluido: 100,

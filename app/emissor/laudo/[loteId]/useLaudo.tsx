@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import type { LaudoPadronizado } from '@/lib/laudo-tipos';
@@ -8,8 +8,6 @@ import type { LaudoPadronizado } from '@/lib/laudo-tipos';
 type LaudoStatus =
   | 'rascunho'
   | 'pdf_gerado'
-  | 'aguardando_assinatura'
-  | 'assinado_processando'
   | 'emitido'
   | 'enviado'
   | null;
@@ -34,9 +32,7 @@ export function useLaudo() {
   const [isPrevia, setIsPrevia] = useState(false);
   const [laudoStatus, setLaudoStatus] = useState<LaudoStatus>(null);
   const [gerandoLaudo, setGerandoLaudo] = useState(false);
-  const [verificandoAssinatura, setVerificandoAssinatura] = useState(false);
   const [modalUploadOpen, setModalUploadOpen] = useState(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchLaudo = useCallback(async () => {
     try {
@@ -63,52 +59,6 @@ export function useLaudo() {
   useEffect(() => {
     fetchLaudo();
   }, [fetchLaudo]);
-
-  // Gerenciar polling com base no laudoStatus
-  useEffect(() => {
-    if (laudoStatus === 'aguardando_assinatura') {
-      if (pollingRef.current) return;
-      pollingRef.current = setInterval(async () => {
-        try {
-          // Usar endpoint leve /status-assinatura em vez do endpoint completo
-          const res = await fetch(
-            `/api/emissor/laudos/${loteId}/status-assinatura`
-          );
-          const data = await res.json();
-          if (
-            data.success &&
-            data.laudo?.status &&
-            data.laudo.status !== 'aguardando_assinatura' &&
-            data.laudo.status !== 'assinado_processando'
-          ) {
-            if (pollingRef.current) {
-              clearInterval(pollingRef.current);
-              pollingRef.current = null;
-            }
-            setLaudoStatus(data.laudo.status as LaudoStatus);
-            // Sempre recarregar para exibir os botões corretos ao mudar de status
-            fetchLaudo().catch(() => null);
-            if (data.laudo.status === 'enviado') {
-              toast.success('Laudo assinado e enviado com sucesso!');
-            }
-          }
-        } catch {
-          // silencioso
-        }
-      }, 10000);
-    } else {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    }
-    return () => {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    };
-  }, [laudoStatus, loteId, fetchLaudo]);
 
   const handleGerarLaudo = async () => {
     if (!lote) return;
@@ -172,41 +122,6 @@ export function useLaudo() {
     await fetchLaudo();
   };
 
-  const handleVerificarAssinatura = async () => {
-    try {
-      setVerificandoAssinatura(true);
-      toast.loading('Verificando assinatura no ZapSign...', {
-        id: 'verificar-assinatura',
-      });
-      const response = await fetch(
-        `/api/emissor/laudos/${loteId}/confirmar-assinatura`,
-        { method: 'POST' }
-      );
-      const data = await response.json();
-      toast.dismiss('verificar-assinatura');
-      if (!data.success) {
-        toast.error(data.error || 'Erro ao verificar assinatura');
-        return;
-      }
-      if (data.signed) {
-        toast.success(
-          'Assinatura confirmada! O laudo está disponível em "Laudo Emitido" para upload.'
-        );
-        router.push('/emissor');
-      } else {
-        toast.error(
-          `Documento ainda não assinado no ZapSign (status: ${data.zapsign_status ?? 'desconhecido'})`,
-          { duration: 6000 }
-        );
-      }
-    } catch {
-      toast.dismiss('verificar-assinatura');
-      toast.error('Erro ao conectar com o servidor');
-    } finally {
-      setVerificandoAssinatura(false);
-    }
-  };
-
   return {
     loteId,
     lote,
@@ -216,11 +131,9 @@ export function useLaudo() {
     isPrevia,
     laudoStatus,
     gerandoLaudo,
-    verificandoAssinatura,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
-    handleVerificarAssinatura,
     handleDownloadLaudo,
     handleUploadSuccess,
     router,

@@ -5,7 +5,7 @@
  * devem ter laudo exibido no LotesGrid.
  *
  * Fix aplicado: aceitar laudo_status='emitido' ou 'enviado' mesmo sem
- * arquivo_remoto_url (upload-assinado ZapSign preenche key mas não url).
+ * arquivo_remoto_url (ZapSign removido — fluxo atual é pdf_gerado → upload para bucket).
  */
 
 import fs from 'fs';
@@ -73,7 +73,7 @@ describe('Lógica de filtro de laudos — simulação em memória', () => {
     expect(result).toHaveLength(1);
   });
 
-  it('inclui laudo com status=emitido mesmo sem arquivo_remoto_url (fluxo ZapSign)', () => {
+  it('inclui laudo com status=emitido mesmo sem arquivo_remoto_url', () => {
     const result = applyLaudoFilter([
       { laudo_id: 1, laudo_arquivo_remoto_url: null, laudo_status: 'emitido' },
     ]);
@@ -94,9 +94,9 @@ describe('Lógica de filtro de laudos — simulação em memória', () => {
     expect(result).toHaveLength(0);
   });
 
-  it('exclui laudo sem url e com status aguardando_assinatura', () => {
+  it('exclui laudo sem url e com status pdf_gerado (ainda não enviado ao bucket)', () => {
     const result = applyLaudoFilter([
-      { laudo_id: 1, laudo_arquivo_remoto_url: null, laudo_status: 'aguardando_assinatura' },
+      { laudo_id: 1, laudo_arquivo_remoto_url: null, laudo_status: 'pdf_gerado' },
     ]);
     expect(result).toHaveLength(0);
   });
@@ -113,7 +113,6 @@ describe('Lógica de filtro de laudos — simulação em memória', () => {
 
 type MockLaudo = {
   _emitido?: boolean;
-  _aguardandoAssinatura?: boolean;
   enviado_em?: string | null;
   status?: string;
 };
@@ -124,12 +123,9 @@ function filterByTab(lotes: MockEmissorLote[], tab: string): MockEmissorLote[] {
   return lotes.filter((lote) => {
     switch (tab) {
       case 'laudo-para-emitir':
-        return !lote.laudo || (!lote.laudo._emitido && !lote.laudo._aguardandoAssinatura);
+        return !lote.laudo || !lote.laudo._emitido;
       case 'laudo-emitido':
-        return (
-          (lote.laudo?._emitido === true || lote.laudo?._aguardandoAssinatura === true) &&
-          !lote.laudo?.enviado_em
-        );
+        return lote.laudo?._emitido === true && !lote.laudo?.enviado_em;
       case 'laudos-enviados':
         return !!(lote.laudo?.enviado_em || lote.laudo?.status === 'enviado');
       default:
@@ -139,13 +135,14 @@ function filterByTab(lotes: MockEmissorLote[], tab: string): MockEmissorLote[] {
 }
 
 describe('Lógica de filtro de abas do emissor — sem mistura', () => {
-  const loteZapSign: MockEmissorLote = {
+  // Após remoção do ZapSign: pdf_gerado retorna _emitido:true
+  const lotePdfGerado: MockEmissorLote = {
     id: 8,
-    laudo: { status: 'aguardando_assinatura', _emitido: false, _aguardandoAssinatura: true },
+    laudo: { status: 'pdf_gerado', _emitido: true, enviado_em: null },
   };
   const loteEmitido: MockEmissorLote = {
     id: 2,
-    laudo: { status: 'emitido', _emitido: true, _aguardandoAssinatura: false, enviado_em: null },
+    laudo: { status: 'emitido', _emitido: true, enviado_em: null },
   };
   const loteSemLaudo: MockEmissorLote = { id: 3, laudo: null };
   const loteEnviado: MockEmissorLote = {
@@ -157,16 +154,16 @@ describe('Lógica de filtro de abas do emissor — sem mistura', () => {
     expect(filterByTab([loteSemLaudo], 'laudo-para-emitir')).toHaveLength(1);
   });
 
-  it('laudo-para-emitir: EXCLUI lote ZapSign (aguardando_assinatura)', () => {
-    expect(filterByTab([loteZapSign], 'laudo-para-emitir')).toHaveLength(0);
+  it('laudo-para-emitir: EXCLUI lote com pdf_gerado (_emitido:true)', () => {
+    expect(filterByTab([lotePdfGerado], 'laudo-para-emitir')).toHaveLength(0);
   });
 
   it('laudo-para-emitir: EXCLUI lote com _emitido=true', () => {
     expect(filterByTab([loteEmitido], 'laudo-para-emitir')).toHaveLength(0);
   });
 
-  it('laudo-emitido: inclui lote ZapSign (aguardando_assinatura)', () => {
-    expect(filterByTab([loteZapSign], 'laudo-emitido')).toHaveLength(1);
+  it('laudo-emitido: inclui lote pdf_gerado (_emitido:true, sem enviado_em)', () => {
+    expect(filterByTab([lotePdfGerado], 'laudo-emitido')).toHaveLength(1);
   });
 
   it('laudo-emitido: inclui lote emitido sem enviado_em', () => {
@@ -177,19 +174,19 @@ describe('Lógica de filtro de abas do emissor — sem mistura', () => {
     expect(filterByTab([loteEnviado], 'laudo-emitido')).toHaveLength(0);
   });
 
-  it('lote ZapSign aparece em exatamente UMA aba', () => {
-    const todos = [loteZapSign, loteEmitido, loteSemLaudo, loteEnviado];
+  it('lote pdf_gerado aparece em exatamente UMA aba', () => {
+    const todos = [lotePdfGerado, loteEmitido, loteSemLaudo, loteEnviado];
     const paraEmitir = filterByTab(todos, 'laudo-para-emitir');
     const laudoEmitido = filterByTab(todos, 'laudo-emitido');
     const enviados = filterByTab(todos, 'laudos-enviados');
 
-    const loteZapInParaEmitir = paraEmitir.some((l) => l.id === loteZapSign.id);
-    const loteZapInEmitido = laudoEmitido.some((l) => l.id === loteZapSign.id);
-    const loteZapInEnviados = enviados.some((l) => l.id === loteZapSign.id);
+    const emParaEmitir = paraEmitir.some((l) => l.id === lotePdfGerado.id);
+    const emEmitido = laudoEmitido.some((l) => l.id === lotePdfGerado.id);
+    const emEnviados = enviados.some((l) => l.id === lotePdfGerado.id);
 
     // Aparece em exatamente uma aba
-    const count = [loteZapInParaEmitir, loteZapInEmitido, loteZapInEnviados].filter(Boolean).length;
+    const count = [emParaEmitir, emEmitido, emEnviados].filter(Boolean).length;
     expect(count).toBe(1);
-    expect(loteZapInEmitido).toBe(true);
+    expect(emEmitido).toBe(true);
   });
 });

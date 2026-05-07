@@ -123,15 +123,13 @@ export function useEmissorLotes() {
     .filter((lote) => {
       switch (activeTab) {
         case 'laudo-para-emitir':
-          // Lotes ZapSign aguardando assinatura pertencem a "Laudo Emitido"
           return (
             !lote.laudo ||
-            (!lote.laudo._emitido && !lote.laudo._aguardandoAssinatura)
+            !lote.laudo._emitido
           );
         case 'laudo-emitido':
           return (
-            (lote.laudo?._emitido === true ||
-              lote.laudo?._aguardandoAssinatura === true) &&
+            lote.laudo?._emitido === true &&
             !lote.laudo?.enviado_em
           );
         case 'laudos-enviados':
@@ -156,11 +154,11 @@ export function useEmissorLotes() {
     number
   > = {
     'laudo-para-emitir': lotes.filter(
-      (l) => !l.laudo || (!l.laudo._emitido && !l.laudo._aguardandoAssinatura)
+      (l) => !l.laudo || !l.laudo._emitido
     ).length,
     'laudo-emitido': lotes.filter(
       (l) =>
-        (l.laudo?._emitido === true || l.laudo?._aguardandoAssinatura === true) &&
+        l.laudo?._emitido === true &&
         !l.laudo?.enviado_em
     ).length,
     'laudos-enviados': lotes.filter(

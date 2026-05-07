@@ -67,7 +67,14 @@ export function LotesGrid({
             laudoAssociado.hash) &&
           (lote.status === 'concluido' ||
             lote.status === 'finalizado' ||
-            lote.status === 'laudo_emitido')
+            lote.status === 'laudo_emitido' ||
+            // Fallback: se laudo foi emitido mas lote.status ainda é 'concluido',
+            // considerar que há laudo disponível
+            (lote.status === 'concluido' &&
+              laudoAssociado &&
+              (laudoAssociado.status === 'emitido' ||
+                laudoAssociado.status === 'enviado' ||
+            laudoAssociado.status === 'pdf_gerado')))
         );
         const isPronto = lote.pode_emitir_laudo || temLaudo;
         const isCancelado = lote.status === 'cancelado';
@@ -82,7 +89,14 @@ export function LotesGrid({
           !temLaudo
         );
         const aguardandoEmissao = Boolean(
-          lote.solicitado_em && statusPagamento === 'pago' && !temLaudo
+          lote.solicitado_em && 
+          statusPagamento === 'pago' && 
+          !temLaudo &&
+          // Fallback: não mostrar "aguardando emissão" se laudo já foi emitido
+          !(laudoAssociado &&
+            (laudoAssociado.status === 'emitido' ||
+              laudoAssociado.status === 'enviado' ||
+              laudoAssociado.status === 'pdf_gerado'))
         );
         const emissaoSolicitada = Boolean(
           lote.solicitado_em &&

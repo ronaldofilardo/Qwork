@@ -133,33 +133,19 @@ function determinarProgresso(dados: any): ProgressoEmissao {
     };
   }
 
-  // PDF gerado — aguardando assinatura digital (ZapSign)
+  // PDF gerado — aguardando envio para storage
   if (status_laudo === 'pdf_gerado') {
     return {
       status: 'pdf_gerado',
-      mensagem: 'PDF gerado — aguardando envio para assinatura digital',
+      mensagem: 'PDF gerado — aguardando envio para storage',
       porcentagem: 55,
       etapa: 3,
       totalEtapas: 5,
     };
   }
 
-  // Aguardando assinatura ZapSign
-  if (
-    status_laudo === 'aguardando_assinatura' ||
-    status_laudo === 'assinado_processando'
-  ) {
-    return {
-      status: 'aguardando_assinatura',
-      mensagem: 'Aguardando assinatura digital — verifique seu email',
-      porcentagem: 70,
-      etapa: 3,
-      totalEtapas: 5,
-    };
-  }
-
   // PDF gerado, enviando para storage (fluxo legado com hash_pdf mas sem emitido_em)
-  if (hash_pdf && !emitido_em && status_laudo !== 'aguardando_assinatura') {
+  if (hash_pdf && !emitido_em) {
     return {
       status: 'enviando_storage',
       mensagem: 'Enviando PDF para armazenamento...',

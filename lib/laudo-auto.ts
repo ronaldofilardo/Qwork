@@ -16,40 +16,26 @@ import {
   formatarDataApenasData,
   formatarHora,
 } from '@/lib/pdf/timezone-helper';
-import {
-  criarDocumentoZapSign,
-  isZapSignHabilitado,
-} from '@/lib/integrations/zapsign/client';
-import { downloadFromBackblaze } from '@/lib/storage/backblaze-client';
+
 
 // ─── Tipos de retorno ──────────────────────────────────────────────────────────
 
 export interface ResultadoEmissaoLaudo {
   /** ID do laudo (= lote_id) */
   laudoId: number;
-  /**
-   * Ambos os forks retornam 'pdf_gerado' após geração local.
-   * ZapSign após envio manual para assinatura: 'aguardando_assinatura'.
-   */
-  status: 'pdf_gerado' | 'aguardando_assinatura';
-  /** Link direto de assinatura ZapSign */
-  signUrl?: string;
+  /** Sempre 'pdf_gerado' após geração local. */
+  status: 'pdf_gerado';
   mensagem: string;
 }
 
 /**
  * 🔒 PRINCÍPIO DA IMUTABILIDADE DE LAUDOS
  *
- * Fluxo ZapSign (DISABLE_ZAPSIGN ≠ '1'):
+ * Fluxo:
  *   rascunho → [gerarPDFLaudo] → pdf_gerado
- *   pdf_gerado → [enviarParaAssinaturaZapSign] → aguardando_assinatura
- *   aguardando_assinatura → [webhook ZapSign] → enviado
+ *   pdf_gerado → [upload/route] → enviado (hash calculado no upload)
  *
- * Fluxo legado (DISABLE_ZAPSIGN=1):
- *   rascunho → [gerarPDFLaudo] → pdf_gerado (hash calculado ao fazer upload)
- *
- * ❌ NUNCA calcular hash antes da assinatura digital (quando ZapSign habilitado)
- * ✅ SEMPRE: PDF físico → [opcional: ZapSign → assinatura] → hash → status final
+ * ✅ SEMPRE: PDF físico gerado → emissor faz upload → hash calculado no upload
  */
 export async function gerarPDFLaudo(
   loteId: number,
@@ -76,7 +62,6 @@ export async function gerarPDFLaudo(
     // Imutabilidade: bloqueia regeneração após qualquer estágio pós-rascunho
     if (
       status === 'pdf_gerado' ||
-      status === 'aguardando_assinatura' ||
       status === 'emitido' ||
       status === 'enviado'
     ) {
@@ -161,8 +146,7 @@ export async function gerarPDFLaudo(
     const page = await (browser as any).newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    // Footer do PDF: posicionado 8mm acima do fim da página,
-    // deixando espaço para a barra de assinatura do ZapSign no rodapé.
+    // Footer do PDF: posicionado 8mm acima do fim da página.
     const now = new Date();
     const footerDateStr = `${formatarDataApenasData(now)} ${formatarHora(now)}`;
     const footerHtml = `<div style="position:absolute;bottom:8mm;left:0;right:0;text-align:center;font-size:7pt;color:#6b7280;font-family:'Segoe UI',sans-serif;">Página <span class="pageNumber"></span> de <span class="totalPages"></span> | Lote #${loteId} | Data de Emissão: ${footerDateStr}</div>`;
@@ -206,177 +190,99 @@ export async function gerarPDFLaudo(
       );
     }
 
-    // ─── FORK: ZapSign ou legado ───────────────────────────────────────────
-    if (isZapSignHabilitado()) {
-      // ─── FLUXO ZAPSIGN ─────────────────────────────────────────────────
-      // PDF é gerado, salvo localmente em /storage/laudos e armazenado em db.
-      // Lote caminha para 'laudo_emitido' e aparece em "Laudo emitido".
-      // Emissor clica em "Enviar ao Bucket" — naquele momento o PDF será enviado ao Backblaze.
-      // (Após assinatura externa, o PDF assinado é o que será enviado.)
-
-      // ⚠️ ORDEM CRÍTICA: caminhar lote ANTES de setar qualquer campo de emissão.
-      // O trigger prevent_modification_lote_when_laudo_emitted bloqueia qualquer
-      // UPDATE em lotes_avaliacao quando laudos.emitido_em IS NOT NULL.
-      const zapStateWalk = [
-        { from: 'concluido', to: 'emissao_solicitada' },
-        { from: 'emissao_solicitada', to: 'emissao_em_andamento' },
-        { from: 'emissao_em_andamento', to: 'laudo_emitido' },
-      ] as const;
-      for (const step of zapStateWalk) {
-        try {
-          await query(
-            `UPDATE lotes_avaliacao
-             SET status        = $1,
-                 atualizado_em = NOW()
-             WHERE id = $2 AND status = $3`,
-            [step.to, loteId, step.from],
-            session
-          );
-        } catch (e) {
-          console.warn(
-            `[EMISSÃO] Aviso ao transicionar lote ${loteId} ${step.from}→${step.to}:`,
-            e
-          );
-        }
-      }
-      console.log(
-        `[EMISSÃO] Lote ${loteId} caminhado até 'laudo_emitido' (ZapSign).`
-      );
-
-      const updateResult = await query(
-        `UPDATE laudos
-         SET status        = 'pdf_gerado',
-             pdf_gerado_em = NOW(),
-             atualizado_em = NOW()
-         WHERE id = $1 AND status = 'rascunho'
-         RETURNING id`,
-        [laudoId],
-        session
-      );
-
-      if (!updateResult || updateResult.rowCount === 0) {
-        throw new Error(
-          'Falha ao atualizar laudo para pdf_gerado. Laudo pode já ter sido processado.'
-        );
-      }
-
+    // ─── Caminhar lote: concluido → emissao_solicitada → emissao_em_andamento → laudo_emitido ───
+    // ⚠️ ORDEM CRÍTICA: caminhar lote ANTES de setar qualquer campo de emissão.
+    // O trigger prevent_modification_lote_when_laudo_emitted bloqueia qualquer
+    // UPDATE em lotes_avaliacao quando laudos.emitido_em IS NOT NULL.
+    const stateWalk = [
+      { from: 'concluido', to: 'emissao_solicitada' },
+      { from: 'emissao_solicitada', to: 'emissao_em_andamento' },
+      { from: 'emissao_em_andamento', to: 'laudo_emitido' },
+    ] as const;
+    let ultimoStatusAlcancado = 'rascunho';
+    for (const step of stateWalk) {
       try {
-        const metaZap = {
-          laudo_id: laudoId,
-          lote_id: loteId,
-          emissor_cpf: emissorCpf,
-          gerado_em: new Date().toISOString(),
-          arquivo_local: fileName,
-          tamanho_bytes: pdfBuffer.byteLength,
-          status: 'pdf_gerado',
-        };
-        fs.writeFileSync(
-          path.join(storageDir, `laudo-${laudoId}.json`),
-          JSON.stringify(metaZap, null, 2)
+        const resultado = await query(
+          `UPDATE lotes_avaliacao
+           SET status        = $1,
+               atualizado_em = NOW()
+           WHERE id = $2 AND status = $3
+           RETURNING id, status`,
+          [step.to, loteId, step.from],
+          session
         );
-      } catch {
-        // Metadata local não é crítico em ambiente cloud
-      }
-
-      console.log(
-        `[EMISSÃO] ✅ Laudo ${laudoId} com status 'pdf_gerado'. Acesse "Laudo emitido" para baixar e enviar ao bucket.`
-      );
-
-      return {
-        laudoId,
-        status: 'pdf_gerado',
-        mensagem:
-          'PDF gerado com sucesso. Acesse "Laudo emitido" para baixar e enviar ao bucket.',
-      };
-    } else {
-      // ─── FLUXO LEGADO (DISABLE_ZAPSIGN=1) ─────────────────────────────
-      // Hash NÃO é calculado aqui — será calculado no upload do PDF assinado.
-      // O emissor baixa este PDF, assina na ZapSign (que acrescenta página de
-      // assinatura), e faz upload do PDF assinado via "Enviar ao Bucket".
-      // Apenas naquele momento o hash do PDF definitivo é calculado e gravado.
-      console.log(
-        `[EMISSÃO] ZapSign desabilitado — fluxo legado. PDF salvo em pdf_gerado, hash calculado no upload.`
-      );
-
-      // ⚠️ ORDEM CRÍTICA: caminhar lote ANTES de setar qualquer campo de emissão.
-      // O trigger prevent_modification_lote_when_laudo_emitted bloqueia qualquer
-      // UPDATE em lotes_avaliacao quando laudos.emitido_em IS NOT NULL.
-      const legadoStateWalk = [
-        { from: 'concluido', to: 'emissao_solicitada' },
-        { from: 'emissao_solicitada', to: 'emissao_em_andamento' },
-        { from: 'emissao_em_andamento', to: 'laudo_emitido' },
-      ] as const;
-      for (const step of legadoStateWalk) {
-        try {
-          await query(
-            `UPDATE lotes_avaliacao
-             SET status        = $1,
-                 atualizado_em = NOW()
-             WHERE id = $2 AND status = $3`,
-            [step.to, loteId, step.from],
-            session
+        if (resultado && resultado.rowCount && resultado.rowCount > 0) {
+          ultimoStatusAlcancado = step.to;
+          console.log(
+            `[EMISSÃO] ✅ Lote ${loteId} transicionado ${step.from} → ${step.to}`
           );
-        } catch (e) {
+        } else {
           console.warn(
-            `[EMISSÃO] Aviso ao transicionar lote ${loteId} ${step.from}→${step.to}:`,
-            e
+            `[EMISSÃO] Lote ${loteId} não estava em status '${step.from}', pulando para próxima transição`
           );
+          // Não interromper — lote pode já estar em estado mais avançado
         }
-      }
-      console.log(
-        `[EMISSÃO] Lote ${loteId} caminhado até 'laudo_emitido' (legado).`
-      );
-
-      const updateLegado = await query(
-        `UPDATE laudos
-         SET status        = 'pdf_gerado',
-             pdf_gerado_em = NOW(),
-             atualizado_em = NOW()
-         WHERE id = $1 AND status = 'rascunho'
-         RETURNING id`,
-        [laudoId],
-        session
-      );
-
-      if (!updateLegado || updateLegado.rowCount === 0) {
-        throw new Error(
-          'Falha ao atualizar laudo para pdf_gerado. Laudo pode já ter sido processado.'
+      } catch (e) {
+        console.error(
+          `[EMISSÃO] ERRO ao transicionar lote ${loteId} ${step.from}→${step.to}:`,
+          e instanceof Error ? e.message : e
         );
+        break;
       }
-
-      try {
-        fs.writeFileSync(
-          path.join(storageDir, `laudo-${laudoId}.json`),
-          JSON.stringify(
-            {
-              laudo_id: laudoId,
-              lote_id: loteId,
-              emissor_cpf: emissorCpf,
-              gerado_em: new Date().toISOString(),
-              arquivo_local: fileName,
-              tamanho_bytes: pdfBuffer.byteLength,
-              status: 'pdf_gerado',
-              observacao: 'Hash calculado no upload do PDF assinado.',
-            },
-            null,
-            2
-          )
-        );
-      } catch {
-        // Metadata local não é crítico em ambiente cloud
-      }
-
-      console.log(
-        `[EMISSÃO] ✅ Laudo ${laudoId} em 'pdf_gerado'. Baixe, assine e use "Enviar ao Bucket".`
-      );
-
-      return {
-        laudoId,
-        status: 'pdf_gerado',
-        mensagem:
-          'PDF gerado com sucesso. Baixe, assine digitalmente e clique em "Enviar ao Bucket".',
-      };
     }
+    console.log(
+      `[EMISSÃO] Lote ${loteId} caminhado até '${ultimoStatusAlcancado}'.`
+    );
+
+    const updateResult = await query(
+      `UPDATE laudos
+       SET status        = 'pdf_gerado',
+           pdf_gerado_em = NOW(),
+           atualizado_em = NOW()
+       WHERE id = $1 AND status = 'rascunho'
+       RETURNING id`,
+      [laudoId],
+      session
+    );
+
+    if (!updateResult || updateResult.rowCount === 0) {
+      throw new Error(
+        'Falha ao atualizar laudo para pdf_gerado. Laudo pode já ter sido processado.'
+      );
+    }
+
+    try {
+      fs.writeFileSync(
+        path.join(storageDir, `laudo-${laudoId}.json`),
+        JSON.stringify(
+          {
+            laudo_id: laudoId,
+            lote_id: loteId,
+            emissor_cpf: emissorCpf,
+            gerado_em: new Date().toISOString(),
+            arquivo_local: fileName,
+            tamanho_bytes: pdfBuffer.byteLength,
+            status: 'pdf_gerado',
+            observacao: 'Hash calculado no upload do PDF.',
+          },
+          null,
+          2
+        )
+      );
+    } catch {
+      // Metadata local não é crítico em ambiente cloud
+    }
+
+    console.log(
+      `[EMISSÃO] ✅ Laudo ${laudoId} em 'pdf_gerado'. Baixe e use "Enviar ao Bucket".`
+    );
+
+    return {
+      laudoId,
+      status: 'pdf_gerado',
+      mensagem:
+        'PDF gerado com sucesso. Baixe e clique em "Enviar ao Bucket".',
+    };
   } catch (error) {
     // Se falhou, reverter para rascunho
     console.error(`[EMISSÃO] ❌ Erro ao gerar laudo ${laudoId}:`, error);
@@ -396,204 +302,12 @@ export async function gerarPDFLaudo(
   }
 }
 
-// ─── Função auxiliar: enviar PDF já gerado para assinatura ZapSign ────────────
+// ─── ZapSign removido ────────────────────────────────────────────────────────
+// enviarParaAssinaturaZapSign, ResultadoEnvioAssinatura e rotas /assinar,
+// /confirmar-assinatura, /status-assinatura e /upload-assinado foram removidos.
+// Para histórico completo, ver ZAPSIGN-DEPLOYMENT-STATUS.md
 
-export interface ResultadoEnvioAssinatura {
-  laudoId: number;
-  status: 'aguardando_assinatura';
-  signUrl: string;
-  mensagem: string;
-}
-
-/**
- * Envia o PDF já gerado (status='pdf_gerado') para assinatura digital via ZapSign.
- * Chamado via POST /api/emissor/laudos/[loteId]/assinar
- */
-export async function enviarParaAssinaturaZapSign(
-  loteId: number,
-  emissorCpf: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  session?: any
-): Promise<ResultadoEnvioAssinatura> {
-  const laudoId = loteId;
-
-  const laudoResult = await query(
-    `SELECT id, status, arquivo_remoto_key FROM laudos WHERE lote_id = $1 LIMIT 1`,
-    [loteId],
-    session
-  );
-
-  if (laudoResult.rows.length === 0) {
-    throw new Error(`Laudo para lote ${loteId} não encontrado`);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const laudoRow = laudoResult.rows[0] as any;
-  const laudoStatus = laudoRow.status as string;
-  const laudoArquivoRemotoKey = laudoRow.arquivo_remoto_key as string | null;
-
-  if (laudoStatus !== 'pdf_gerado') {
-    throw new Error(
-      `Laudo ${laudoId} está em status '${laudoStatus}' — esperado 'pdf_gerado'. ` +
-        `Gere o PDF primeiro antes de assinar.`
-    );
-  }
-
-  const storageDir = path.join(process.cwd(), 'storage', 'laudos');
-  const pdfPath = path.join(storageDir, `laudo-${laudoId}.pdf`);
-
-  let pdfBuffer: Buffer;
-  if (fs.existsSync(pdfPath)) {
-    pdfBuffer = fs.readFileSync(pdfPath);
-    console.log(`[ASSINATURA] PDF lido do filesystem local: ${pdfPath}`);
-  } else if (laudoArquivoRemotoKey) {
-    console.log(
-      `[ASSINATURA] PDF não encontrado localmente, baixando do Backblaze: ${laudoArquivoRemotoKey}`
-    );
-    pdfBuffer = await downloadFromBackblaze(laudoArquivoRemotoKey);
-  } else {
-    throw new Error(
-      `Arquivo PDF não encontrado (local: ${pdfPath}, Backblaze: não disponível). Regenere o laudo.`
-    );
-  }
-
-  const base64Pdf = pdfBuffer.toString('base64');
-
-  // Buscar dados do emissor: primeiro em funcionarios, depois em usuarios (conta de sistema)
-  const emissorFuncResult = await query(
-    `SELECT nome, email FROM funcionarios 
-     WHERE cpf = $1 AND ativo = true 
-     AND perfil IN ('admin', 'rh', 'gestor', 'emissor', 'funcionario')
-     LIMIT 1`,
-    [emissorCpf],
-    session
-  );
-
-  let emissorNome: string = emissorCpf;
-  let emissorEmail: string | null = null;
-
-  if (emissorFuncResult.rows.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const row = emissorFuncResult.rows[0] as any;
-    emissorNome = row.nome;
-    emissorEmail = row.email || null;
-    console.log(
-      `[ASSINATURA] Emissor encontrado em funcionarios: ${emissorNome}`
-    );
-  } else {
-    // Tentar na tabela usuarios (emissores são contas de sistema, não funcionários)
-    const emissorUsuarioResult = await query(
-      `SELECT nome, email FROM usuarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
-      [emissorCpf],
-      session
-    );
-    if (emissorUsuarioResult.rows.length > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const row = emissorUsuarioResult.rows[0] as any;
-      emissorNome = row.nome;
-      emissorEmail = row.email || null;
-      console.log(
-        `[ASSINATURA] Emissor encontrado em usuarios: ${emissorNome}`
-      );
-    }
-  }
-
-  // Fallback final: email da sessão (ex.: sessão criada com email)
-  if (!emissorEmail && session?.email) {
-    emissorEmail = session.email;
-    if (session.nome) emissorNome = session.nome;
-    console.log(
-      `[ASSINATURA] Usando email da sessão: ${emissorNome} <${emissorEmail}>`
-    );
-  }
-
-  if (!emissorEmail) {
-    throw new Error(
-      `Emissor ${emissorNome} (CPF ${emissorCpf}) não possui email cadastrado — necessário para ZapSign`
-    );
-  }
-
-  const emissor = { nome: emissorNome, email: emissorEmail };
-
-  console.log(
-    `[ASSINATURA] Enviando laudo ${laudoId} ao ZapSign para assinatura por ${emissor.nome} <${emissor.email}>`
-  );
-
-  const { docToken, signerToken, signUrl } = await criarDocumentoZapSign({
-    nome: `Laudo NR — Lote ${loteId}`,
-    base64Pdf,
-    nomeAssinante: emissor.nome,
-    emailAssinante: emissor.email,
-    enviarEmailAutomatico: true,
-    dbEnvironment: session?.dbEnvironment,
-  });
-
-  console.log(
-    `[ASSINATURA] Documento criado no ZapSign: doc_token=${docToken}`
-  );
-
-  const updateResult = await query(
-    `UPDATE laudos
-     SET status               = 'aguardando_assinatura',
-         zapsign_doc_token    = $1,
-         zapsign_signer_token = $2,
-         zapsign_sign_url     = $3,
-         zapsign_status       = 'pending',
-         atualizado_em        = NOW()
-     WHERE id = $4 AND status = 'pdf_gerado'
-     RETURNING id`,
-    [docToken, signerToken, signUrl, laudoId],
-    session
-  );
-
-  if (!updateResult || updateResult.rowCount === 0) {
-    throw new Error(
-      'Falha ao atualizar laudo para aguardando_assinatura. O laudo pode ter mudado de status.'
-    );
-  }
-
-  // Atualizar metadata JSON
-  const metaPath = path.join(storageDir, `laudo-${laudoId}.json`);
-  try {
-    const existing = fs.existsSync(metaPath)
-      ? (JSON.parse(fs.readFileSync(metaPath, 'utf-8')) as Record<
-          string,
-          unknown
-        >)
-      : {};
-    fs.writeFileSync(
-      metaPath,
-      JSON.stringify(
-        {
-          ...existing,
-          zapsign_doc_token: docToken,
-          zapsign_signer_token: signerToken,
-          sign_url: signUrl,
-          status: 'aguardando_assinatura',
-          enviado_zapsign_em: new Date().toISOString(),
-        },
-        null,
-        2
-      )
-    );
-  } catch {
-    // Falha no metadata não é crítica
-  }
-
-  console.log(
-    `[ASSINATURA] ✅ Laudo ${laudoId} enviado ao ZapSign. Aguardando assinatura digital.`
-  );
-
-  return {
-    laudoId,
-    status: 'aguardando_assinatura',
-    signUrl,
-    mensagem:
-      'Laudo enviado para assinatura digital. Um email foi enviado ao emissor com o link para assinar.',
-  };
-}
-
-// ─── Stubs de compatibilidade ─────────────────────────────────────────────────
+// ─── Stubs de compatibilidade (públicos) ────────────────────────────────────
 
 /** @deprecated Use gerarPDFLaudo() */
 export async function gerarLaudoCompletoEmitirPDF(
@@ -612,3 +326,4 @@ export function emitirLaudosAutomaticamente(): Promise<void> {
 export function emitirLaudoImediato(): Promise<void> {
   throw new Error('emitirLaudoImediato não implementado (stub)');
 }
+

@@ -36,27 +36,18 @@ export default function UploadLaudoButton({
   const [uploadedSuccessfully, setUploadedSuccessfully] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Para laudos aguardando assinatura ZapSign, o PDF assinado ainda não foi
-  // enviado — mesmo que arquivo_remoto_key exista (PDF original gerado pelo
-  // Puppeteer), o emissor precisa enviar o PDF com a página de evidências.
-  const isZapSignPending = status === 'aguardando_assinatura';
-
   // Verificar se pode fazer upload
-  // Permite upload quando:
-  // - Status é pdf_gerado (PDF gerado, aguardando envio ao bucket)
-  // - Status é emitido/enviado (fluxo legado)
-  // - Status é aguardando_assinatura (fluxo ZapSign, enviando PDF assinado)
+  // Permite upload quando status é pdf_gerado, emitido ou enviado
   const canUpload =
     !uploadedSuccessfully &&
     (status === 'pdf_gerado' ||
       status === 'emitido' ||
-      status === 'enviado' ||
-      isZapSignPending) &&
-    (!arquivoRemotoKey || isZapSignPending);
+      status === 'enviado') &&
+    !arquivoRemotoKey;
   const canResync = hasUploadFailed && !arquivoRemotoKey;
 
-  // Se já foi feito upload (imutável), não mostrar botão — exceto ZapSign pendente
-  if ((arquivoRemotoKey || uploadedSuccessfully) && !hasUploadFailed && !isZapSignPending) {
+  // Se já foi feito upload (imutável), não mostrar botão
+  if ((arquivoRemotoKey || uploadedSuccessfully) && !hasUploadFailed) {
     return (
       <div className="flex items-center gap-2 text-xs text-green-600">
         <svg
@@ -95,10 +86,7 @@ export default function UploadLaudoButton({
 
       setUploadProgress(20);
 
-      const uploadRoute =
-        status === 'aguardando_assinatura'
-          ? `/api/emissor/laudos/${loteId}/upload-assinado`
-          : `/api/emissor/laudos/${loteId}/upload`;
+      const uploadRoute = `/api/emissor/laudos/${loteId}/upload`;
 
       const response = await fetch(uploadRoute, {
         method: 'POST',

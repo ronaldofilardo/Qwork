@@ -127,11 +127,6 @@ export const GET = async (req: Request) => {
           lote.status_laudo === 'emitido' ||
           lote.status_laudo === 'enviado');
 
-      const aguardandoAssinatura =
-        temLaudo &&
-        (lote.status_laudo === 'aguardando_assinatura' ||
-          lote.status_laudo === 'assinado_processando');
-
       const laudoObj = temLaudo
         ? {
             id: lote.laudo_id,
@@ -145,9 +140,7 @@ export const GET = async (req: Request) => {
             arquivo_remoto_key: lote.arquivo_remoto_key || null,
             arquivo_remoto_url: lote.arquivo_remoto_url || null,
             arquivo_remoto_uploaded_at: lote.arquivo_remoto_uploaded_at || null,
-            zapsign_sign_url: lote.zapsign_sign_url || null,
             _emitido: laudoEmitido,
-            _aguardandoAssinatura: aguardandoAssinatura,
           }
         : null;
 

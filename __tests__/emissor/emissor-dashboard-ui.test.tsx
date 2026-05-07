@@ -125,20 +125,18 @@ describe('Emissor Dashboard UI', () => {
     });
   });
 
-  it('lote ZapSign aguardando_assinatura aparece em Laudo Emitido, NÃO em Para Emitir', async () => {
+  it('lote com laudo pdf_gerado (_emitido:true) aparece em Laudo Emitido, NÃO em Para Emitir', async () => {
     mockFetch([
       makeLote({
         id: 8,
         laudo: {
           id: 200,
-          status: 'aguardando_assinatura',
+          status: 'pdf_gerado',
           emitido_em: null,
           enviado_em: null,
           hash_pdf: null,
           emissor_nome: 'Dr. João',
-          _emitido: false,
-          _aguardandoAssinatura: true,
-          zapsign_sign_url: 'https://zapsign.example.com/sign/abc',
+          _emitido: true,
         },
       }),
     ]);
@@ -148,7 +146,7 @@ describe('Emissor Dashboard UI', () => {
       expect(screen.queryByText('Carregando lotes...')).not.toBeInTheDocument()
     );
 
-    // Aba "Para Emitir" (padrão) — lote 8 NÃO deve aparecer
+    // Aba "Para Emitir" (padrão) — lote 8 NÃO deve aparecer (laudo já emitido)
     expect(screen.queryByText('Lote ID: 8')).not.toBeInTheDocument();
 
     // Muda para "Laudo Emitido" — lote 8 DEVE aparecer
@@ -158,20 +156,19 @@ describe('Emissor Dashboard UI', () => {
     });
   });
 
-  it('lote ZapSign aguardando_assinatura mostra botão Abrir ZapSign na aba Laudo Emitido', async () => {
+  it('lote com laudo pdf_gerado mostra UploadLaudoButton na aba Laudo Emitido', async () => {
     mockFetch([
       makeLote({
         id: 8,
         laudo: {
           id: 200,
-          status: 'aguardando_assinatura',
+          status: 'pdf_gerado',
           emitido_em: null,
           enviado_em: null,
           hash_pdf: null,
           emissor_nome: 'Dr. João',
-          _emitido: false,
-          _aguardandoAssinatura: true,
-          zapsign_sign_url: 'https://zapsign.example.com/sign/abc',
+          _emitido: true,
+          arquivo_remoto_key: null,
         },
       }),
     ]);
@@ -183,7 +180,7 @@ describe('Emissor Dashboard UI', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /laudo emitido/i }));
     await waitFor(() => {
-      expect(screen.getByText(/Abrir ZapSign para assinar/i)).toBeInTheDocument();
+      expect(screen.getByTestId('upload-laudo-button')).toBeInTheDocument();
     });
   });
 

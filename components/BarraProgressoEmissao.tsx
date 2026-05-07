@@ -61,8 +61,6 @@ export function BarraProgressoEmissao({
         return 'bg-green-500';
       case 'erro':
         return 'bg-red-500';
-      case 'aguardando_assinatura':
-        return 'bg-yellow-500 animate-pulse';
       case 'gerando_pdf':
       case 'enviando_storage':
         return 'bg-blue-500 animate-pulse';
@@ -79,8 +77,6 @@ export function BarraProgressoEmissao({
         return '✓';
       case 'erro':
         return '✗';
-      case 'aguardando_assinatura':
-        return '✍';
       case 'gerando_pdf':
         return '⚙';
       case 'enviando_storage':

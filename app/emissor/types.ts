@@ -35,12 +35,10 @@ export interface Lote {
     enviado_em: string | null;
     hash_pdf: string | null;
     _emitido?: boolean;
-    _aguardandoAssinatura?: boolean;
     emissor_nome?: string;
     arquivo_remoto_key?: string | null;
     arquivo_remoto_url?: string | null;
     arquivo_remoto_uploaded_at?: string | null;
-    zapsign_sign_url?: string | null;
   } | null;
   notificacoes?: NotificacaoLote[];
 }

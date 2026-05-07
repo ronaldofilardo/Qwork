@@ -24,7 +24,11 @@ import ProgressBarLote from './ProgressBarLote';
 function CicloStatusCell({ lote }: { lote: LoteAtualInfo | null }) {
   if (!lote) return <span className="text-xs text-gray-300">—</span>;
 
-  switch (lote.status) {
+  // Prioridade: se laudo já foi emitido/enviado, mostra "Laudo disponível"
+  // independente do status do lote (que pode estar desatualizado no DB)
+  const statusEffetivo = lote.tem_laudo_emitido ? 'laudo_emitido' : lote.status;
+
+  switch (statusEffetivo) {
     case 'rascunho':
       return (
         <span className="inline-flex items-center gap-1 text-xs text-gray-500">

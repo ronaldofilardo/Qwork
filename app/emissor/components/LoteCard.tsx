@@ -148,20 +148,9 @@ export default function LoteCard({
 
       {/* Action buttons */}
       <div className="flex justify-end gap-2 items-center flex-wrap">
-        {/* Abrir ZapSign para assinar (fluxo ZapSign) */}
-        {lote.laudo?._aguardandoAssinatura && lote.laudo.zapsign_sign_url && (
-          <a
-            href={lote.laudo.zapsign_sign_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-sm font-medium transition-colors"
-          >
-            Abrir ZapSign para assinar
-          </a>
-        )}{' '}
-        {/* Enviar ao bucket — fluxo normal e fluxo ZapSign (após assinar) */}
+        {/* Enviar ao bucket */}
         {lote.laudo &&
-          (lote.laudo._emitido || lote.laudo._aguardandoAssinatura) && (
+          lote.laudo._emitido && (
             <UploadLaudoButton
               laudoId={lote.laudo.id}
               loteId={lote.id}
@@ -403,7 +392,6 @@ function MainActionButton({
   const laudoDisponivelParaDownload = Boolean(
     lote.laudo &&
     (lote.laudo._emitido ||
-      lote.laudo._aguardandoAssinatura ||
       lote.laudo.status === 'enviado' ||
       lote.laudo.hash_pdf)
   );
