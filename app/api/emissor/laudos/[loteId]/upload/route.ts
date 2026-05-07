@@ -3,8 +3,8 @@
  *
  * Endpoint para upload de laudo ao bucket Backblaze
  * - Somente role 'emissor'
- * - Valida PDF, tamanho <= 2MB
- * - Verifica hash do arquivo contra laudos.hash_pdf
+ * - Valida PDF, tamanho <= 20MB
+ * - Calcula hash SHA-256 do PDF no upload (não existe antes deste passo)
  * - Upload único (imutabilidade) - rejeita se já existe arquivo_remoto_key
  * - Persiste metadados no banco de dados
  * - Auditoria completa

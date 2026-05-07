@@ -4,7 +4,7 @@
  * Botão para fazer upload de laudo (PDF) para o bucket Backblaze
  * - Exibe botão "Enviar ao Bucket" se laudo emitido e sem arquivo_remoto_key
  * - Exibe botão "Re-sincronizar" apenas se houve falha de upload anterior
- * - Validação client-side: PDF, máximo 2MB
+ * - Validação client-side: PDF, máximo 20MB
  * - Indicador de progresso
  * - Após sucesso: desabilita botão (imutabilidade)
  */
