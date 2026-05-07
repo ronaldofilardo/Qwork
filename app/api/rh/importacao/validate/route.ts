@@ -642,11 +642,13 @@ export async function POST(request: Request): Promise<NextResponse> {
         temNivelCargoDirecto,
         erros: validacao.erros,
         // Deduplicar: avisos do DB (com nome de empresa) sobrepõem avisos genéricos de data_demissao
+        // Suprimir aviso de funcao quando nivel_cargo está mapeado (classificação vem do nivel_cargo, não da funcao)
         avisos: (() => {
           const linhasComAvisoDb = new Set(avisosDb.map((a) => a.linha));
           const avisosBase = validacao.avisos.filter(
             (a) =>
-              !(a.campo === 'data_demissao' && linhasComAvisoDb.has(a.linha))
+              !(a.campo === 'data_demissao' && linhasComAvisoDb.has(a.linha)) &&
+              !(temNivelCargoDirecto && a.campo === 'funcao')
           );
           return [...avisosBase, ...avisosDb];
         })(),
