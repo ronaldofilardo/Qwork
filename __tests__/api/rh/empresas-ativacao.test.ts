@@ -82,7 +82,7 @@ describe('PATCH /api/rh/empresas/[id] - Ativação/Inativação de Empresas', ()
       expect(data.success).toBe(true)
       expect(data.empresa.ativa).toBe(false)
       expect(data.funcionarios_inativados).toBe(2)
-      expect(data.mensagem).toContain('2 funcionário(s) foram inativados')
+      expect(data.mensagem).toMatch(/2.*vínculo\(s\).*inativados/)
     })
 
     it('deve usar transação e fazer ROLLBACK em caso de erro', async () => {

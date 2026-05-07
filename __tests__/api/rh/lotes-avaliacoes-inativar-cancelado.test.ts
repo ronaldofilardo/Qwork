@@ -5,17 +5,19 @@
 
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar/route';
-import { requireAuth } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 import { query } from '@/lib/db';
 
 jest.mock('@/lib/session', () => ({
-  requireAuth: jest.fn(),
+  requireRole: jest.fn(),
   requireRHWithEmpresaAccess: jest.fn(),
 }));
 jest.mock('@/lib/db', () => ({ query: jest.fn() }));
 jest.mock('@/lib/db-gestor', () => ({ queryAsGestorRH: jest.fn() }));
 
-const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
+const mockRequireRHWithEmpresaAccess = (require('@/lib/session') as any)
+  .requireRHWithEmpresaAccess as jest.MockedFunction<any>;
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockQueryAsGestorRH = (require('@/lib/db-gestor') as any)
   .queryAsGestorRH as jest.MockedFunction<any>;
@@ -26,11 +28,13 @@ describe('POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar - cancelado'
   });
 
   it('cancela lote quando todas as avaliacoes ficam inativadas', async () => {
-    mockRequireAuth.mockResolvedValue({
+    mockRequireRole.mockResolvedValue({
       cpf: '111',
       nome: 'RH',
       perfil: 'rh',
     } as any);
+
+    mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
     mockQuery
       .mockResolvedValueOnce({
