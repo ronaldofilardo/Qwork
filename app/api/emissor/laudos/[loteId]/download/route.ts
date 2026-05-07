@@ -28,9 +28,7 @@ export const GET = async (
     }
 
     // Verificar se o laudo existe e pertence ao emissor
-    // ✅ EMISSOR: Permite download de laudos gerados ou emitidos/enviados
-    // Inclui status ZapSign (pdf_gerado, aguardando_assinatura) para permitir
-    // download pré-assinatura quando necessário
+    // Permite download de laudos gerados ou emitidos/enviados
     const laudoQuery = await query(
       `
       SELECT
@@ -42,7 +40,7 @@ export const GET = async (
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.lote_id = $1 
         AND l.emissor_cpf = $2 
-        AND l.status IN ('pdf_gerado', 'aguardando_assinatura', 'assinado_processando', 'emitido', 'enviado')
+        AND l.status IN ('pdf_gerado', 'emitido', 'enviado')
     `,
       [loteId, user.cpf],
       user
@@ -85,10 +83,10 @@ export const GET = async (
       }
     }
 
-    // 2) Laudo assinado via ZapSign — arquivo final (com página de evidências) está no Backblaze
+    // 2) Laudo no Backblaze — arquivo final
     if (
       laudo.arquivo_remoto_key &&
-      ['emitido', 'enviado', 'assinado_processando'].includes(laudo.status)
+      ['emitido', 'enviado'].includes(laudo.status)
     ) {
       console.log(
         `[INFO] Servindo laudo assinado do Backblaze: ${laudo.arquivo_remoto_key}`
@@ -116,7 +114,7 @@ export const GET = async (
       });
     }
 
-    // 3) Fallback: instruir geração client-side para laudos sem arquivo remoto (pdf_gerado, aguardando_assinatura)
+    // 3) Fallback: instruir geração client-side para laudos sem arquivo remoto (pdf_gerado)
     console.log(
       `[INFO] PDF não encontrado para laudo ${loteId}. Retornando instrução para geração client-side.`
     );

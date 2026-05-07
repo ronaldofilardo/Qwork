@@ -33,7 +33,7 @@ export const GET = async (req: Request) => {
         AND (
           fe.id IS NOT NULL
           OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL)
-          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando', 'pdf_gerado'))
+          OR (l.id IS NOT NULL AND l.status = 'pdf_gerado')
         )
         AND (
           la.status_pagamento = 'pago'
@@ -72,7 +72,6 @@ export const GET = async (req: Request) => {
         l.arquivo_remoto_key,
         l.arquivo_remoto_url,
         l.arquivo_remoto_uploaded_at,
-        l.zapsign_sign_url,
         f.nome as emissor_nome,
         fe.solicitado_por,
         fe.solicitado_em,
@@ -89,13 +88,13 @@ export const GET = async (req: Request) => {
         AND (
           fe.id IS NOT NULL
           OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL)
-          OR (l.id IS NOT NULL AND l.status IN ('aguardando_assinatura', 'assinado_processando', 'pdf_gerado'))
+          OR (l.id IS NOT NULL AND l.status = 'pdf_gerado')
         )
         AND (
           la.status_pagamento = 'pago'
           OR COALESCE(ent.isento_pagamento, c.isento_pagamento, false) = true
         )
-      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, l.zapsign_sign_url, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE
           WHEN la.status IN ('emissao_solicitada', 'emissao_em_andamento') THEN 1
