@@ -293,6 +293,15 @@ export default function EmpresasTable({
                             {empresa.elegibilidade.motivo_bloqueio}
                           </p>
                         )}
+                        {empresa.elegibilidade.count_elegiveis > 0 && (
+                          <p className="text-sm text-blue-600 mt-1 font-medium">
+                            {empresa.elegibilidade.count_elegiveis} pendência
+                            {empresa.elegibilidade.count_elegiveis !== 1
+                              ? 's'
+                              : ''}{' '}
+                            aguardando
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

@@ -159,7 +159,7 @@ function computarElegibilidade(row: EmpresaRow): ElegibilidadeInfo {
 
   return {
     elegivel: false,
-    count_elegiveis: 0,
+    count_elegiveis: row.count_elegiveis ?? 0,
     motivo_bloqueio:
       labelStatus[statusAtual] ?? `Lote atual status: ${statusAtual}`,
   };

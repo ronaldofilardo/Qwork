@@ -40,9 +40,7 @@ export default function UploadLaudoButton({
   // Permite upload quando status é pdf_gerado, emitido ou enviado
   const canUpload =
     !uploadedSuccessfully &&
-    (status === 'pdf_gerado' ||
-      status === 'emitido' ||
-      status === 'enviado') &&
+    (status === 'pdf_gerado' || status === 'emitido' || status === 'enviado') &&
     !arquivoRemotoKey;
   const canResync = hasUploadFailed && !arquivoRemotoKey;
 

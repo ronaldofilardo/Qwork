@@ -17,7 +17,6 @@ import {
   formatarHora,
 } from '@/lib/pdf/timezone-helper';
 
-
 // ─── Tipos de retorno ──────────────────────────────────────────────────────────
 
 export interface ResultadoEmissaoLaudo {
@@ -280,8 +279,7 @@ export async function gerarPDFLaudo(
     return {
       laudoId,
       status: 'pdf_gerado',
-      mensagem:
-        'PDF gerado com sucesso. Baixe e clique em "Enviar ao Bucket".',
+      mensagem: 'PDF gerado com sucesso. Baixe e clique em "Enviar ao Bucket".',
     };
   } catch (error) {
     // Se falhou, reverter para rascunho
@@ -326,4 +324,3 @@ export function emitirLaudosAutomaticamente(): Promise<void> {
 export function emitirLaudoImediato(): Promise<void> {
   throw new Error('emitirLaudoImediato não implementado (stub)');
 }
-

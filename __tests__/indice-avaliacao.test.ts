@@ -249,9 +249,10 @@ describe('Sistema de Índice de Avaliação', () => {
     });
   });
 
-  describe('Regressão Migration 1240 — prioridade de funcionário novo', () => {
-    it('funcionario com indice=0 em lote 3+ deve ter prioridade ALTA (não CRITICA)', async () => {
-      // Bug corrigido: indice=0 em lote 3 → antes daria CRITICA, agora deve ser ALTA
+  describe('Regressão Migration 1242 — prioridade de funcionário novo sempre CRITICA', () => {
+    it('funcionario com indice=0 deve ter prioridade CRITICA (alinhado com API pendencias)', async () => {
+      // Fix migration 1242: indice=0 (nunca avaliado) sempre deve ser CRITICA
+      // (alinhado com /api/pendencias/lote/route.ts)
       const ts = Date.now();
       const cnpjEnt = ('00000000000000' + String(ts)).slice(-14);
       const cpfResp = ('00000000000' + String(ts % 99999999999)).slice(-11);
@@ -262,9 +263,9 @@ describe('Sistema de Índice de Avaliação', () => {
            responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
         [
-          'Entidade Reg1240',
+          'Entidade Reg1242',
           cnpjEnt,
-          `reg1240+${ts}@teste.local`,
+          `reg1242+${ts}@teste.local`,
           '0000000000',
           'Rua Reg, 1',
           'Cidade',
@@ -282,7 +283,7 @@ describe('Sistema de Índice de Avaliação', () => {
 
       await q(
         `INSERT INTO funcionarios (cpf, nome, senha_hash, perfil, nivel_cargo, usuario_tipo, ativo)
-         VALUES ($1, 'Novo Func 1240', '$2b$10$dummy.hash.for.test', 'funcionario', 'operacional', 'funcionario_entidade', true)`,
+         VALUES ($1, 'Novo Func 1242', '$2b$10$dummy.hash.for.test', 'funcionario', 'operacional', 'funcionario_entidade', true)`,
         [cpfNovo]
       );
       const funcRes = await q(`SELECT id FROM funcionarios WHERE cpf = $1`, [cpfNovo]);
@@ -295,7 +296,7 @@ describe('Sistema de Índice de Avaliação', () => {
         [funcId, entidadeId]
       );
 
-      // Lote 3: antes da fix daria CRITICA, após fix deve ser ALTA
+      // Lote 3: indice=0 deve ser CRITICA (migration 1242)
       const elRes = await q(
         `SELECT funcionario_cpf, prioridade
            FROM calcular_elegibilidade_lote_tomador($1::integer, 3)`,
@@ -304,7 +305,7 @@ describe('Sistema de Índice de Avaliação', () => {
 
       const row = elRes.rows.find((r: any) => r.funcionario_cpf.trim() === cpfNovo);
       expect(row).toBeDefined();
-      expect(row!.prioridade).toBe('ALTA'); // Regressão migration 1240: nunca CRITICA para indice=0
+      expect(row!.prioridade).toBe('CRITICA'); // Migration 1242: nunca avaliado sempre CRITICA
 
       // Cleanup
       await q(`DELETE FROM funcionarios_entidades WHERE funcionario_id = $1`, [funcId]);
